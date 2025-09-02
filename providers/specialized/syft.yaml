@@ -1,0 +1,103 @@
+# Syft Provider Data - SBOM generation
+version: "1.0"
+
+provider:
+  name: "syft"
+  display_name: "Syft SBOM Generator"
+  description: "Generate Software Bill of Materials (SBOM)"
+  type: "sbom"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["scan", "generate", "convert", "validate", "diff", "export"]
+
+actions:
+  scan:
+    description: "Scan for packages and dependencies"
+    template: "syft {{scan_target}} -o {{output_format}} --file {{sbom_output}}"
+    variables:
+      scan_target: "{{saidata.directories.data.path}}"
+      output_format: "spdx-json"
+      sbom_output: "/tmp/sbom-{{saidata.metadata.name}}.json"
+
+  generate:
+    description: "Generate SBOM from container image"
+    template: "syft {{image_name}} -o {{output_format}} --file {{sbom_output}}"
+    variables:
+      image_name: "{{saidata.packages.server.image}}"
+      output_format: "spdx-json"
+      sbom_output: "/tmp/sbom-{{saidata.metadata.name}}-image.json"
+
+  convert:
+    description: "Convert SBOM between formats"
+    template: "syft convert {{input_sbom}} -o {{target_format}} --file {{converted_output}}"
+    variables:
+      input_sbom: "/tmp/sbom-{{saidata.metadata.name}}.json"
+      target_format: "cyclonedx-json"
+      converted_output: "/tmp/sbom-{{saidata.metadata.name}}-cyclone.json"
+
+  validate:
+    description: "Validate SBOM format"
+    template: "syft validate {{sbom_file}}"
+    variables:
+      sbom_file: "/tmp/sbom-{{saidata.metadata.name}}.json"
+
+  diff:
+    description: "Compare two SBOMs"
+    template: "syft diff {{baseline_sbom}} {{current_sbom}} -o table"
+    variables:
+      baseline_sbom: "/tmp/sbom-{{saidata.metadata.name}}-baseline.json"
+      current_sbom: "/tmp/sbom-{{saidata.metadata.name}}-current.json"
+
+  export:
+    description: "Export SBOM to multiple formats"
+    steps:
+      - name: "export-spdx"
+        command: "syft {{scan_target}} -o spdx-json --file {{export_dir}}/{{saidata.metadata.name}}-spdx.json"
+      - name: "export-cyclone"
+        command: "syft {{scan_target}} -o cyclonedx-json --file {{export_dir}}/{{saidata.metadata.name}}-cyclone.json"
+      - name: "export-table"
+        command: "syft {{scan_target}} -o table --file {{export_dir}}/{{saidata.metadata.name}}-table.txt"
+    variables:
+      scan_target: "{{saidata.directories.data.path}}"
+      export_dir: "/tmp/sbom-export-{{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      image: "{{saidata.metadata.name}}:{{saidata.packages.server.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "sbom_target"
+
+  files:
+    config:
+      path: "/tmp/syft-{{saidata.metadata.name}}.yaml"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/syft-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    sbom:
+      path: "/tmp/sbom-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{saidata.directories.data.path}}"
+
+  commands:
+    scan:
+      path: "syft {{saidata.directories.data.path}}"
+    generate:
+      path: "syft {{saidata.packages.server.image}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

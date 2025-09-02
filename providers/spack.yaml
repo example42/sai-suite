@@ -1,0 +1,134 @@
+# Spack Provider Data - Scientific computing package manager
+version: "1.0"
+
+provider:
+  name: "spack"
+  display_name: "Spack"
+  description: "A flexible package manager for scientific computing"
+  type: "package_manager"
+  platforms: ["linux", "macos"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via Spack"
+    template: "spack install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 3600
+    validation:
+      command: "spack find | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "spack uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via Spack"
+    template: "spack uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! spack find | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via Spack"
+    steps:
+      - name: "uninstall-old"
+        command: "spack uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        ignore_failure: true
+      - name: "install-new"
+        command: "spack install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 3600
+
+  start:
+    description: "Start application"
+    template: "spack load {{saidata.packages.server.name}} && {{saidata.commands.server.path}}"
+
+  stop:
+    description: "Stop application"
+    template: "pkill -f {{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart application"
+    steps:
+      - name: "stop-app"
+        command: "pkill -f {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-app"
+        command: "spack load {{saidata.packages.server.name}} && {{saidata.commands.server.path}}"
+
+  status:
+    description: "Check application status"
+    template: "pgrep -f {{saidata.metadata.name}}"
+
+  info:
+    description: "Show package information"
+    template: "spack info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "spack list | grep {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "spack find | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "application"
+
+  files:
+    config:
+      path: "{{spack_prefix}}/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "{{spack_prefix}}/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "{{spack_prefix}}/etc/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{spack_prefix}}/var/lib/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    logs:
+      path: "{{spack_prefix}}/var/log/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{spack_prefix}}/bin/{{saidata.metadata.name}}-server"
+    client:
+      path: "{{spack_prefix}}/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "{{spack_prefix}}/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    spack_prefix: "$(spack location -i {{saidata.packages.server.name}})"

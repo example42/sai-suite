@@ -1,0 +1,114 @@
+# Trivy Provider Data - Comprehensive security scanner
+version: "1.0"
+
+provider:
+  name: "trivy"
+  display_name: "Trivy Security Scanner"
+  description: "Comprehensive security scanner for containers, filesystems, and more"
+  type: "security"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["image", "filesystem", "repository", "config", "secret", "license", "sbom"]
+
+actions:
+  image:
+    description: "Scan container image"
+    template: "trivy image {{scan_options}} {{image_name}} -o {{output_format}} --output {{image_output}}"
+    variables:
+      scan_options: "--severity HIGH,CRITICAL"
+      image_name: "{{saidata.packages.server.image}}"
+      output_format: "json"
+      image_output: "/tmp/trivy-image-{{saidata.metadata.name}}.json"
+
+  filesystem:
+    description: "Scan filesystem"
+    template: "trivy fs {{scan_options}} {{scan_path}} -o {{output_format}} --output {{fs_output}}"
+    variables:
+      scan_options: "--severity HIGH,CRITICAL"
+      scan_path: "{{saidata.directories.data.path}}"
+      output_format: "json"
+      fs_output: "/tmp/trivy-fs-{{saidata.metadata.name}}.json"
+
+  repository:
+    description: "Scan git repository"
+    template: "trivy repo {{scan_options}} {{repo_url}} -o {{output_format}} --output {{repo_output}}"
+    variables:
+      scan_options: "--severity HIGH,CRITICAL"
+      repo_url: "{{saidata.urls.repository}}"
+      output_format: "json"
+      repo_output: "/tmp/trivy-repo-{{saidata.metadata.name}}.json"
+
+  config:
+    description: "Scan configuration files"
+    template: "trivy config {{scan_options}} {{config_path}} -o {{output_format}} --output {{config_output}}"
+    variables:
+      scan_options: "--severity HIGH,CRITICAL"
+      config_path: "{{saidata.directories.config.path}}"
+      output_format: "json"
+      config_output: "/tmp/trivy-config-{{saidata.metadata.name}}.json"
+
+  secret:
+    description: "Scan for secrets"
+    template: "trivy fs --scanners secret {{scan_path}} -o {{output_format}} --output {{secret_output}}"
+    variables:
+      scan_path: "{{saidata.directories.data.path}}"
+      output_format: "json"
+      secret_output: "/tmp/trivy-secrets-{{saidata.metadata.name}}.json"
+
+  license:
+    description: "Scan for license compliance"
+    template: "trivy fs --scanners license {{scan_path}} -o {{output_format}} --output {{license_output}}"
+    variables:
+      scan_path: "{{saidata.directories.data.path}}"
+      output_format: "json"
+      license_output: "/tmp/trivy-licenses-{{saidata.metadata.name}}.json"
+
+  sbom:
+    description: "Generate SBOM"
+    template: "trivy image {{image_name}} --format spdx-json --output {{sbom_output}}"
+    variables:
+      image_name: "{{saidata.packages.server.image}}"
+      sbom_output: "/tmp/trivy-sbom-{{saidata.metadata.name}}.json"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      image: "{{saidata.metadata.name}}:{{saidata.packages.server.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "security_target"
+
+  files:
+    config:
+      path: "/tmp/trivy-{{saidata.metadata.name}}.yaml"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/trivy-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    security:
+      path: "/tmp/security-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{saidata.directories.data.path}}"
+    config:
+      path: "{{saidata.directories.config.path}}"
+
+  commands:
+    scan:
+      path: "trivy image {{saidata.packages.server.image}}"
+    filesystem:
+      path: "trivy fs {{saidata.directories.data.path}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

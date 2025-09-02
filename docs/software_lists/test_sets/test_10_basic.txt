@@ -1,0 +1,22 @@
+# Basic Test Set - 10 Common Software Packages
+# Mix of different providers and operating systems
+
+# System utilities (apt/dnf)
+htop
+curl
+
+# Development tools (brew/apt)
+git
+python3
+
+# Media (cross-platform)
+vlc
+firefox
+
+# Productivity (Windows/macOS/Linux)
+libreoffice
+docker
+
+# Programming languages (multiple providers)
+nodejs
+nginx

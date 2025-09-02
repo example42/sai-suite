@@ -1,0 +1,161 @@
+# Helm Provider Data - Kubernetes package manager
+version: "1.0"
+
+provider:
+  name: "helm"
+  display_name: "Helm"
+  description: "The package manager for Kubernetes"
+  type: "package_manager"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status", "logs"]
+
+actions:
+  install:
+    description: "Install Helm chart"
+    steps:
+      - name: "add-repo"
+        command: "helm repo add {{chart_repo}} {{saidata.urls.repository}}"
+        ignore_failure: true
+      - name: "update-repo"
+        command: "helm repo update"
+      - name: "install-chart"
+        command: "helm install {{release_name}} {{chart_repo}}/{{saidata.packages.server.name}} --namespace {{namespace}} --create-namespace"
+    timeout: 600
+    validation:
+      command: "helm list -n {{namespace}} | grep {{release_name}}"
+      expected_exit_code: 0
+    rollback: "helm uninstall {{release_name}} -n {{namespace}}"
+    variables:
+      release_name: "{{saidata.metadata.name}}-release"
+      namespace: "{{saidata.metadata.name}}"
+      chart_repo: "{{saidata.metadata.name}}-repo"
+
+  uninstall:
+    description: "Remove Helm chart"
+    template: "helm uninstall {{release_name}} -n {{namespace}}"
+    validation:
+      command: "! helm list -n {{namespace}} | grep {{release_name}}"
+      expected_exit_code: 0
+    variables:
+      release_name: "{{saidata.metadata.name}}-release"
+      namespace: "{{saidata.metadata.name}}"
+
+  upgrade:
+    description: "Upgrade Helm chart"
+    steps:
+      - name: "update-repo"
+        command: "helm repo update"
+      - name: "upgrade-chart"
+        command: "helm upgrade {{release_name}} {{chart_repo}}/{{saidata.packages.server.name}} -n {{namespace}}"
+    timeout: 600
+    variables:
+      release_name: "{{saidata.metadata.name}}-release"
+      namespace: "{{saidata.metadata.name}}"
+      chart_repo: "{{saidata.metadata.name}}-repo"
+
+  start:
+    description: "Scale up Kubernetes deployment"
+    template: "kubectl scale deployment {{saidata.metadata.name}} --replicas=1 -n {{namespace}}"
+    variables:
+      namespace: "{{saidata.metadata.name}}"
+
+  stop:
+    description: "Scale down Kubernetes deployment"
+    template: "kubectl scale deployment {{saidata.metadata.name}} --replicas=0 -n {{namespace}}"
+    variables:
+      namespace: "{{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart Kubernetes deployment"
+    template: "kubectl rollout restart deployment/{{saidata.metadata.name}} -n {{namespace}}"
+    variables:
+      namespace: "{{saidata.metadata.name}}"
+
+  status:
+    description: "Check Helm release status"
+    template: "helm status {{release_name}} -n {{namespace}}"
+    variables:
+      release_name: "{{saidata.metadata.name}}-release"
+      namespace: "{{saidata.metadata.name}}"
+
+  logs:
+    description: "Show Kubernetes pod logs"
+    template: "kubectl logs -l app={{saidata.metadata.name}} -n {{namespace}} --tail=50"
+    variables:
+      namespace: "{{saidata.metadata.name}}"
+
+  info:
+    description: "Show Helm chart information"
+    template: "helm show chart {{chart_repo}}/{{saidata.packages.server.name}}"
+    variables:
+      chart_repo: "{{saidata.metadata.name}}-repo"
+
+  search:
+    description: "Search for Helm charts"
+    template: "helm search repo {{saidata.metadata.name}}"
+
+  list:
+    description: "List Helm releases"
+    template: "helm list -n {{namespace}} | grep {{saidata.metadata.name}}"
+    variables:
+      namespace: "{{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+      chart: "{{saidata.metadata.name}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+      chart: "{{saidata.metadata.name}}-client"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "kubernetes"
+      namespace: "{{saidata.metadata.name}}"
+
+  files:
+    config:
+      path: "/etc/{{saidata.metadata.name}}/config"
+      type: "configmap"
+      name: "{{saidata.metadata.name}}-config"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}"
+      type: "volume"
+      name: "{{saidata.metadata.name}}-logs"
+
+  directories:
+    config:
+      path: "/etc/{{saidata.metadata.name}}"
+      type: "configmap"
+      name: "{{saidata.metadata.name}}-config"
+    data:
+      path: "/var/lib/{{saidata.metadata.name}}"
+      type: "persistentvolume"
+      name: "{{saidata.metadata.name}}-data"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      type: "volume"
+      name: "{{saidata.metadata.name}}-logs"
+
+  commands:
+    server:
+      path: "kubectl exec -it deployment/{{saidata.metadata.name}} -n {{namespace}} -- {{saidata.metadata.name}}-server"
+    client:
+      path: "kubectl exec -it deployment/{{saidata.metadata.name}} -n {{namespace}} -- {{saidata.metadata.name}}-cli"
+    admin:
+      path: "kubectl exec -it deployment/{{saidata.metadata.name}} -n {{namespace}} -- {{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      service_type: "ClusterIP"
+      configurable: true
+
+  variables:
+    "*":
+      environment: "{{variable_name|upper}}"
+    namespace: "{{saidata.metadata.name}}"

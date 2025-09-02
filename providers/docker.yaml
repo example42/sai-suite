@@ -1,0 +1,160 @@
+# Docker Provider Data - Container platform
+version: "1.0"
+
+provider:
+  name: "docker"
+  display_name: "Docker"
+  description: "Container platform for building, shipping, and running applications"
+  type: "container"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "logs", "info", "list"]
+
+actions:
+  install:
+    description: "Pull and create Docker container"
+    steps:
+      - name: "pull-image"
+        command: "docker pull {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+      - name: "create-container"
+        command: "docker create --name {{container_name}} -p {{saidata.ports.main.default_port}}:{{saidata.ports.main.default_port}} {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+    timeout: 600
+    validation:
+      command: "docker ps -a | grep {{container_name}}"
+      expected_exit_code: 0
+    rollback: "docker rm -f {{container_name}}"
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  uninstall:
+    description: "Remove Docker container and image"
+    steps:
+      - name: "stop-container"
+        command: "docker stop {{container_name}}"
+        ignore_failure: true
+      - name: "remove-container"
+        command: "docker rm {{container_name}}"
+        ignore_failure: true
+      - name: "remove-image"
+        command: "docker rmi {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+        ignore_failure: true
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  upgrade:
+    description: "Upgrade Docker container"
+    steps:
+      - name: "stop-container"
+        command: "docker stop {{container_name}}"
+      - name: "remove-container"
+        command: "docker rm {{container_name}}"
+      - name: "pull-new-image"
+        command: "docker pull {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+      - name: "create-new-container"
+        command: "docker create --name {{container_name}} -p {{saidata.ports.main.default_port}}:{{saidata.ports.main.default_port}} {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+      - name: "start-container"
+        command: "docker start {{container_name}}"
+    timeout: 600
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  start:
+    description: "Start Docker container"
+    template: "docker start {{container_name}}"
+    validation:
+      command: "docker ps | grep {{container_name}}"
+      expected_exit_code: 0
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  stop:
+    description: "Stop Docker container"
+    template: "docker stop {{container_name}}"
+    validation:
+      command: "docker ps | grep {{container_name}} || exit 0"
+      expected_exit_code: 0
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  restart:
+    description: "Restart Docker container"
+    template: "docker restart {{container_name}}"
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  status:
+    description: "Check Docker container status"
+    template: "docker ps -a | grep {{container_name}}"
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  logs:
+    description: "Show Docker container logs"
+    template: "docker logs --tail 50 {{container_name}}"
+    variables:
+      container_name: "{{saidata.metadata.name}}-container"
+
+  info:
+    description: "Show Docker image information"
+    template: "docker inspect {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+
+  list:
+    description: "List Docker containers"
+    template: "docker ps -a | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+      image: "{{saidata.metadata.name}}:{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+      image: "{{saidata.metadata.name}}-client:{{saidata.packages.client.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}-container"
+      type: "docker"
+
+  files:
+    config:
+      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      type: "volume"
+      mount: "/etc/{{saidata.metadata.name}}"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      type: "volume"
+      mount: "/var/log/{{saidata.metadata.name}}"
+
+  directories:
+    config:
+      path: "/etc/{{saidata.metadata.name}}"
+      type: "volume"
+      mount: "/etc/{{saidata.metadata.name}}"
+    data:
+      path: "/var/lib/{{saidata.metadata.name}}"
+      type: "volume"
+      mount: "/var/lib/{{saidata.metadata.name}}"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      type: "volume"
+      mount: "/var/log/{{saidata.metadata.name}}"
+
+  commands:
+    server:
+      path: "docker exec -it {{saidata.metadata.name}}-container {{saidata.metadata.name}}-server"
+    client:
+      path: "docker exec -it {{saidata.metadata.name}}-container {{saidata.metadata.name}}-cli"
+    admin:
+      path: "docker exec -it {{saidata.metadata.name}}-container {{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      host_port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      environment: "{{variable_name|upper}}"

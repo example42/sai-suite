@@ -1,0 +1,75 @@
+# Diverse Test Set - 50 Software Packages
+# Comprehensive mix across providers, OS, and categories
+
+## System Tools (Linux/Unix)
+htop
+curl
+wget
+git
+vim
+tmux
+rsync
+ssh
+grep
+find
+
+## Development Tools
+python3
+nodejs
+go
+rust
+java
+docker
+kubernetes
+terraform
+ansible
+jenkins
+
+## Web Browsers
+firefox
+chromium
+brave
+tor-browser
+opera
+
+## Media and Graphics
+vlc
+ffmpeg
+gimp
+blender
+obs-studio
+
+## Productivity
+libreoffice
+thunderbird
+keepassxc
+syncthing
+nextcloud
+
+## Databases
+postgresql
+mysql
+redis
+mongodb
+sqlite
+
+## Web Servers
+nginx
+apache2
+caddy
+traefik
+haproxy
+
+## Security Tools
+nmap
+wireshark
+fail2ban
+ufw
+clamav
+
+## Programming Languages/Runtimes
+php
+ruby
+perl
+lua
+r-base

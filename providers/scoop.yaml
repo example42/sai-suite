@@ -1,0 +1,128 @@
+# Scoop Provider Data - Windows package manager
+version: "1.0"
+
+provider:
+  name: "scoop"
+  display_name: "Scoop"
+  description: "A command-line installer for Windows"
+  type: "package_manager"
+  platforms: ["windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via Scoop"
+    template: "scoop install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+    validation:
+      command: "scoop list | findstr {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "scoop uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via Scoop"
+    template: "scoop uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "scoop list | findstr {{saidata.metadata.name}} || exit 1"
+      expected_exit_code: 1
+
+  upgrade:
+    description: "Upgrade packages via Scoop"
+    template: "scoop update {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+
+  start:
+    description: "Start application"
+    template: "{{saidata.commands.server.path}}"
+
+  stop:
+    description: "Stop application"
+    template: "taskkill /F /IM {{saidata.metadata.name}}.exe"
+
+  restart:
+    description: "Restart application"
+    steps:
+      - name: "stop-app"
+        command: "taskkill /F /IM {{saidata.metadata.name}}.exe"
+        ignore_failure: true
+      - name: "start-app"
+        command: "{{saidata.commands.server.path}}"
+
+  status:
+    description: "Check application status"
+    template: "tasklist | findstr {{saidata.metadata.name}}.exe"
+
+  info:
+    description: "Show package information"
+    template: "scoop info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "scoop search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "scoop list | findstr {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "application"
+
+  files:
+    config:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}.conf"
+      owner: "%USERNAME%"
+      group: "Users"
+      mode: "0644"
+    log:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\logs\\{{saidata.metadata.name}}.log"
+      owner: "%USERNAME%"
+      group: "Users"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current"
+      owner: "%USERNAME%"
+      group: "Users"
+      mode: "0755"
+    data:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\data"
+      owner: "%USERNAME%"
+      group: "Users"
+      mode: "0755"
+    logs:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\logs"
+      owner: "%USERNAME%"
+      group: "Users"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}.exe"
+    client:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}-cli.exe"
+    admin:
+      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}-admin.exe"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

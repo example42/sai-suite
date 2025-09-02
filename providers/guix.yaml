@@ -1,0 +1,147 @@
+# Guix Provider Data - GNU Guix package manager
+version: "1.0"
+
+provider:
+  name: "guix"
+  display_name: "GNU Guix"
+  description: "Transactional package manager and system configuration tool"
+  type: "package_manager"
+  platforms: ["guix", "linux"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install packages via Guix"
+    template: "guix install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+    validation:
+      command: "guix package -I | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "guix remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via Guix"
+    template: "guix remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! guix package -I | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via Guix"
+    steps:
+      - name: "pull-updates"
+        command: "guix pull"
+        timeout: 300
+      - name: "upgrade-packages"
+        command: "guix upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+
+  start:
+    description: "Start service via herd"
+    template: "herd start {{saidata.services.main.name}}"
+    validation:
+      command: "herd status {{saidata.services.main.name}} | grep started"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via herd"
+    template: "herd stop {{saidata.services.main.name}}"
+    validation:
+      command: "herd status {{saidata.services.main.name}} | grep stopped"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via herd"
+    template: "herd restart {{saidata.services.main.name}}"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "herd enable {{saidata.services.main.name}}"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "herd disable {{saidata.services.main.name}}"
+
+  status:
+    description: "Check service status"
+    template: "herd status {{saidata.services.main.name}}"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 {{saidata.files.log.path}}"
+
+  info:
+    description: "Show package information"
+    template: "guix show {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "guix search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "guix package -I | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "shepherd"
+
+  files:
+    config:
+      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "/etc/{{saidata.metadata.name}}"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+    data:
+      path: "/var/lib/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+
+  commands:
+    server:
+      path: "{{guix_profile}}/bin/{{saidata.metadata.name}}-server"
+    client:
+      path: "{{guix_profile}}/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "{{guix_profile}}/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    guix_profile: "~/.guix-profile"

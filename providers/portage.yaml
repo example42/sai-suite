@@ -1,0 +1,151 @@
+# Portage Provider Data - Alternative Gentoo interface
+version: "1.0"
+
+provider:
+  name: "portage"
+  display_name: "Portage Package System"
+  description: "Alternative interface to Gentoo's Portage system"
+  type: "package_manager"
+  platforms: ["gentoo"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install packages via Portage tools"
+    steps:
+      - name: "sync-portage"
+        command: "emaint sync -a"
+        timeout: 300
+      - name: "install-packages"
+        command: "emerge {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        timeout: 3600
+    validation:
+      command: "equery list {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "emerge --depclean {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via Portage"
+    template: "emerge --depclean {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! equery list {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via Portage"
+    steps:
+      - name: "sync-portage"
+        command: "emaint sync -a"
+        timeout: 300
+      - name: "upgrade-packages"
+        command: "emerge -uDN {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        timeout: 3600
+
+  start:
+    description: "Start service via rc-service"
+    template: "rc-service {{saidata.services.main.name}} start"
+    validation:
+      command: "rc-service {{saidata.services.main.name}} status"
+      expected_output: "started"
+
+  stop:
+    description: "Stop service via rc-service"
+    template: "rc-service {{saidata.services.main.name}} stop"
+    validation:
+      command: "rc-service {{saidata.services.main.name}} status"
+      expected_output: "stopped"
+
+  restart:
+    description: "Restart service via rc-service"
+    template: "rc-service {{saidata.services.main.name}} restart"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "rc-update add {{saidata.services.main.name}} default"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "rc-update del {{saidata.services.main.name}} default"
+
+  status:
+    description: "Check service status"
+    template: "rc-service {{saidata.services.main.name}} status"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 {{saidata.files.log.path}}"
+
+  info:
+    description: "Show package information"
+    template: "equery meta {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "equery list -p {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "equery list {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "openrc"
+
+  files:
+    config:
+      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "/etc/{{saidata.metadata.name}}"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+    data:
+      path: "/var/lib/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+
+  commands:
+    server:
+      path: "/usr/bin/{{saidata.metadata.name}}-server"
+    client:
+      path: "/usr/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "/usr/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

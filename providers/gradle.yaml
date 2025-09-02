@@ -1,0 +1,136 @@
+# Gradle Provider Data - Java/Kotlin build tool
+version: "1.0"
+
+provider:
+  name: "gradle"
+  display_name: "Gradle"
+  description: "Build automation tool for Java, Kotlin, and other languages"
+  type: "package_manager"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via Gradle"
+    template: "gradle build --include-build {{saidata.packages.server.name}}"
+    timeout: 600
+    validation:
+      command: "find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
+      expected_exit_code: 0
+    rollback: "rm -rf {{gradle_cache}}/{{saidata.metadata.name}}"
+    variables:
+      gradle_cache: "~/.gradle/caches"
+
+  uninstall:
+    description: "Remove packages via Gradle"
+    template: "rm -rf {{gradle_cache}}/{{saidata.metadata.name}}"
+    validation:
+      command: "! find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
+      expected_exit_code: 0
+    variables:
+      gradle_cache: "~/.gradle/caches"
+
+  upgrade:
+    description: "Upgrade packages via Gradle"
+    template: "gradle build --refresh-dependencies"
+    timeout: 600
+
+  start:
+    description: "Start Java application"
+    template: "java -jar {{saidata.commands.server.path}}"
+
+  stop:
+    description: "Stop Java application"
+    template: "pkill -f {{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart Java application"
+    steps:
+      - name: "stop-app"
+        command: "pkill -f {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-app"
+        command: "java -jar {{saidata.commands.server.path}}"
+
+  status:
+    description: "Check application status"
+    template: "pgrep -f {{saidata.metadata.name}}"
+
+  info:
+    description: "Show package information"
+    template: "gradle dependencies | grep {{saidata.metadata.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "gradle dependencies --configuration compileClasspath | grep {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
+    variables:
+      gradle_cache: "~/.gradle/caches"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.maintainer}}:{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.maintainer}}:{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.maintainer}}:{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "java"
+
+  files:
+    config:
+      path: "{{gradle_home}}/config/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "{{gradle_home}}/config/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{gradle_home}}/data/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    logs:
+      path: "/tmp"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{gradle_home}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}-{{saidata.packages.server.version}}.jar"
+    client:
+      path: "{{gradle_home}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}-client-{{saidata.packages.client.version}}.jar"
+    admin:
+      path: "{{gradle_home}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}-admin-{{saidata.packages.tools.version}}.jar"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    gradle_home: "${GRADLE_USER_HOME:-~/.gradle}"
+    gradle_cache: "~/.gradle/caches"

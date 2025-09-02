@@ -1,0 +1,118 @@
+# Perf Provider Data - Linux performance analysis
+version: "1.0"
+
+provider:
+  name: "perf"
+  display_name: "Linux Performance Tools"
+  description: "Performance analysis and profiling"
+  type: "profile"
+  platforms: ["linux"]
+  capabilities: ["record", "report", "stat", "top", "trace", "flamegraph", "annotate", "diff"]
+
+actions:
+  record:
+    description: "Record performance data"
+    steps:
+      - name: "start-recording"
+        command: "perf record {{record_options}} -p $(pgrep -f {{saidata.metadata.name}}) sleep {{duration}}"
+      - name: "save-data"
+        command: "mv perf.data {{perf_output}}"
+    variables:
+      record_options: "-g --call-graph dwarf"
+      duration: "30"
+      perf_output: "/tmp/perf-{{saidata.metadata.name}}.data"
+
+  report:
+    description: "Generate performance report"
+    template: "perf report -i {{perf_input}} --stdio > {{report_output}}"
+    variables:
+      perf_input: "/tmp/perf-{{saidata.metadata.name}}.data"
+      report_output: "/tmp/perf-report-{{saidata.metadata.name}}.txt"
+
+  stat:
+    description: "Show performance statistics"
+    template: "perf stat {{stat_options}} -p $(pgrep -f {{saidata.metadata.name}}) sleep {{duration}} 2>&1 | tee {{stat_output}}"
+    variables:
+      stat_options: "-e cycles,instructions,cache-references,cache-misses"
+      duration: "10"
+      stat_output: "/tmp/perf-stat-{{saidata.metadata.name}}.txt"
+
+  top:
+    description: "Real-time performance monitoring"
+    template: "perf top {{top_options}} -p $(pgrep -f {{saidata.metadata.name}})"
+    variables:
+      top_options: "-g --call-graph dwarf"
+
+  trace:
+    description: "Trace system events"
+    template: "perf trace {{trace_options}} -p $(pgrep -f {{saidata.metadata.name}}) 2>&1 | tee {{trace_output}}"
+    variables:
+      trace_options: "--duration 30000"
+      trace_output: "/tmp/perf-trace-{{saidata.metadata.name}}.log"
+
+  flamegraph:
+    description: "Generate flame graph"
+    steps:
+      - name: "record-data"
+        command: "perf record -g -p $(pgrep -f {{saidata.metadata.name}}) sleep 30"
+      - name: "generate-stacks"
+        command: "perf script | stackcollapse-perf.pl > {{stacks_file}}"
+      - name: "create-flamegraph"
+        command: "flamegraph.pl {{stacks_file}} > {{flamegraph_output}}"
+    variables:
+      stacks_file: "/tmp/stacks-{{saidata.metadata.name}}.txt"
+      flamegraph_output: "/tmp/flamegraph-{{saidata.metadata.name}}.svg"
+
+  annotate:
+    description: "Annotate source code with performance data"
+    template: "perf annotate -i {{perf_input}} --stdio > {{annotate_output}}"
+    variables:
+      perf_input: "/tmp/perf-{{saidata.metadata.name}}.data"
+      annotate_output: "/tmp/perf-annotate-{{saidata.metadata.name}}.txt"
+
+  diff:
+    description: "Compare performance data"
+    template: "perf diff {{baseline_data}} {{comparison_data}} --stdio > {{diff_output}}"
+    variables:
+      baseline_data: "/tmp/perf-baseline-{{saidata.metadata.name}}.data"
+      comparison_data: "/tmp/perf-current-{{saidata.metadata.name}}.data"
+      diff_output: "/tmp/perf-diff-{{saidata.metadata.name}}.txt"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "profile_target"
+
+  files:
+    config:
+      path: "/tmp/perf-{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/perf-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    profile:
+      path: "/tmp/profile-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    profile:
+      path: "perf record {{saidata.commands.server.path}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

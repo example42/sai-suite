@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "name": "Codebase Quality Review",
+  "description": "Automatically reviews code changes for documentation updates, optimization opportunities, security issues, and CHANGELOG maintenance",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "saidata_gen/**/*.py",
+      "tests/**/*.py",
+      "scripts/**/*.py",
+      "examples/**/*.py",
+      "docs/**/*.md",
+      "README.md",
+      "pyproject.toml",
+      "requirements.txt"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Code changes have been detected in the repository. Please perform the following review tasks:\n\n1. **Documentation Review**: Check if any documentation needs to be updated based on the code changes. Look at:\n   - README.md for any new features or changed functionality\n   - docs/ folder for API documentation, configuration guides, etc.\n   - Inline code comments and docstrings\n\n2. **Code Optimization Review**: Analyze the changed code for potential optimizations:\n   - Performance improvements\n   - Memory usage optimizations\n   - Algorithm efficiency\n   - Code structure and patterns\n\n3. **Security Review**: Examine the code changes for security vulnerabilities:\n   - Input validation issues\n   - Authentication/authorization problems\n   - Data exposure risks\n   - Dependency security concerns\n\n4. **TESTS**: Run relevant tests to validate that the changes of this Agent Hook has not introduced errors.\n\n5. **CHANGELOG Update**: Review if CHANGELOG.md needs to be updated with:\n   - New features added\n   - Bug fixes implemented\n   - Breaking changes introduced\n   - Performance improvements made\n\nPlease provide specific recommendations for each area and identify which files need updates."
+  }
+}

@@ -1,0 +1,129 @@
+# Composer Provider Data - PHP package manager
+version: "1.0"
+
+provider:
+  name: "composer"
+  display_name: "Composer"
+  description: "Dependency manager for PHP"
+  type: "package_manager"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via Composer"
+    template: "composer global require {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+    validation:
+      command: "composer global show | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "composer global remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via Composer"
+    template: "composer global remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! composer global show | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via Composer"
+    template: "composer global update {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+
+  start:
+    description: "Start PHP application"
+    template: "php {{saidata.commands.server.path}}"
+
+  stop:
+    description: "Stop PHP application"
+    template: "pkill -f {{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart PHP application"
+    steps:
+      - name: "stop-app"
+        command: "pkill -f {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-app"
+        command: "php {{saidata.commands.server.path}}"
+
+  status:
+    description: "Check application status"
+    template: "pgrep -f {{saidata.metadata.name}}"
+
+  info:
+    description: "Show package information"
+    template: "composer global info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "composer search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "composer global show | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}/{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}/{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}/{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "php"
+
+  files:
+    config:
+      path: "{{composer_home}}/config/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "{{composer_home}}/config/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{composer_home}}/data/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    logs:
+      path: "/tmp"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{composer_home}}/vendor/bin/{{saidata.metadata.name}}"
+    client:
+      path: "{{composer_home}}/vendor/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "{{composer_home}}/vendor/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    composer_home: "${COMPOSER_HOME:-~/.composer}"

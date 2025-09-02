@@ -1,0 +1,143 @@
+# Snap Provider Data - Universal Linux packages
+version: "1.0"
+
+provider:
+  name: "snap"
+  display_name: "Snap"
+  description: "Universal Linux package manager with sandboxing"
+  type: "package_manager"
+  platforms: ["ubuntu", "fedora", "debian", "opensuse", "arch"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install snap package"
+    template: "snap install {{saidata.packages.server.name}} {{install_options}}"
+    timeout: 600
+    validation:
+      command: "snap list | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "snap remove {{saidata.packages.server.name}}"
+    variables:
+      install_options: "--classic"
+
+  uninstall:
+    description: "Remove snap package"
+    template: "snap remove {{saidata.packages.server.name}}"
+    validation:
+      command: "! snap list | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Refresh snap package"
+    template: "snap refresh {{saidata.packages.server.name}}"
+    timeout: 600
+
+  start:
+    description: "Start snap service"
+    template: "snap start {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    validation:
+      command: "snap services | grep {{saidata.packages.server.name}}.{{saidata.services.main.name}} | grep active"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop snap service"
+    template: "snap stop {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    validation:
+      command: "snap services | grep {{saidata.packages.server.name}}.{{saidata.services.main.name}} | grep inactive"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart snap service"
+    template: "snap restart {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+
+  enable:
+    description: "Enable snap service"
+    template: "snap start --enable {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+
+  disable:
+    description: "Disable snap service"
+    template: "snap stop --disable {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+
+  status:
+    description: "Check snap service status"
+    template: "snap services {{saidata.packages.server.name}}"
+
+  logs:
+    description: "Show snap service logs"
+    template: "snap logs {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+
+  info:
+    description: "Show snap information"
+    template: "snap info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for snaps"
+    template: "snap find {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed snaps"
+    template: "snap list | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "snap"
+
+  files:
+    config:
+      path: "/var/snap/{{saidata.metadata.name}}/common/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+    log:
+      path: "/var/snap/{{saidata.metadata.name}}/common/logs/{{saidata.metadata.name}}.log"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "/var/snap/{{saidata.metadata.name}}/common"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+    data:
+      path: "/var/snap/{{saidata.metadata.name}}/common/data"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+    logs:
+      path: "/var/snap/{{saidata.metadata.name}}/common/logs"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "/snap/bin/{{saidata.metadata.name}}.server"
+    client:
+      path: "/snap/bin/{{saidata.metadata.name}}.cli"
+    admin:
+      path: "/snap/bin/{{saidata.metadata.name}}.admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

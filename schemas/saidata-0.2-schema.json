@@ -1,0 +1,352 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SaiData Schema",
+  "description": "Saidata structure. With resources defaults and providers and repositories overrides",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "display_name": { "type": "string" },
+        "description": { "type": "string" },
+        "version": { "type": "string" },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "license": { "type": "string" },
+        "language": { "type": "string" },
+        "maintainer": { "type": "string" },
+        "urls": { "$ref": "#/definitions/urls" },
+        "security": { "$ref": "#/definitions/security_metadata" }
+      },
+      "required": ["name"]
+    },
+    "packages": { 
+      "type": "array", 
+      "description": "Default package definitions that apply across providers",
+      "items": { "$ref": "#/definitions/package" } 
+    },
+    "services": { 
+      "type": "array", 
+      "description": "Default service definitions that apply across providers",
+      "items": { "$ref": "#/definitions/service" } 
+    },
+    "files": { 
+      "type": "array", 
+      "description": "Default file definitions that apply across providers",
+      "items": { "$ref": "#/definitions/file" } 
+    },
+    "directories": { 
+      "type": "array", 
+      "description": "Default directory definitions that apply across providers",
+      "items": { "$ref": "#/definitions/directory" } 
+    },
+    "commands": { 
+      "type": "array", 
+      "description": "Default command definitions that apply across providers",
+      "items": { "$ref": "#/definitions/command" } 
+    },
+    "ports": { 
+      "type": "array", 
+      "description": "Default port definitions that apply across providers",
+      "items": { "$ref": "#/definitions/port" } 
+    },
+    "containers": { 
+      "type": "array", 
+      "description": "Default container definitions that apply across providers",
+      "items": { "$ref": "#/definitions/container" } 
+    },
+    "providers": {
+      "type": "object",
+      "description": "Provider-specific configurations that can override or extend defaults",
+      "additionalProperties": {
+        "$ref": "#/definitions/provider_config"
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "matrix": {
+          "type": "array",
+          "description": "Compatibility matrix showing which providers work on which platforms",
+          "items": { "$ref": "#/definitions/compatibility_entry" }
+        },
+        "versions": { "$ref": "#/definitions/version_compatibility" }
+      }
+    }
+  },
+  "required": ["version", "metadata"],
+  "definitions": {
+    "provider_config": {
+      "type": "object",
+      "properties": {
+        "actions": { 
+          "type": "array", 
+          "description": "Supported actions for this provider",
+          "items": { 
+            "type": "string",
+            "enum": [
+              "install", "upgrade", "uninstall",
+              "start", "stop", "restart", "enable", "disable",
+              "status", "monitor", "observe",
+              "log", "check", "debug", "troubleshoot", "trace",
+              "info", "help", "ask",
+              "list", "search",
+              "update",
+              "apply", "manage", "config",
+              "scan", "sbom"
+            ]
+          }
+        },
+        "prerequisites": {
+          "type": "array",
+          "description": "Required packages for source compilation",
+          "items": { "type": "string" }
+        },
+        "build_commands": {
+          "type": "array", 
+          "description": "Commands used for source compilation",
+          "items": { "type": "string" }
+        },
+        "packages": { "type": "array", "items": { "$ref": "#/definitions/package" } },
+        "package_sources": { "type": "array", "items": { "$ref": "#/definitions/package_source" } },
+        "repositories": { "type": "array", "items": { "$ref": "#/definitions/repository" } },
+        "services": { "type": "array", "items": { "$ref": "#/definitions/service" } },
+        "files": { "type": "array", "items": { "$ref": "#/definitions/file" } },
+        "directories": { "type": "array", "items": { "$ref": "#/definitions/directory" } },
+        "commands": { "type": "array", "items": { "$ref": "#/definitions/command" } },
+        "ports": { "type": "array", "items": { "$ref": "#/definitions/port" } },
+        "containers": { "type": "array", "items": { "$ref": "#/definitions/container" } }
+      }
+    },
+    "package": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "alternatives": { "type": "array", "items": { "type": "string" } },
+        "install_options": { "type": "string" },
+        "repository": { "type": "string" },
+        "checksum": { "type": "string" },
+        "signature": { "type": "string" },
+        "download_url": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "service_name": { "type": "string" },
+        "type": { "type": "string", "enum": ["systemd", "init", "launchd", "windows_service", "docker", "kubernetes"] },
+        "enabled": { "type": "boolean" },
+        "config_files": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name"]
+    },
+    "file": {
+      "type": "object",
+      "properties": {
+        "name": { 
+          "type": "string",
+          "description": "Logical name for the file (e.g., config, dotconf, log, data, binary)"
+        },
+        "path": { "type": "string" },
+        "type": { "type": "string", "enum": ["config", "binary", "library", "data", "log", "temp", "socket"] },
+        "owner": { "type": "string" },
+        "group": { "type": "string" },
+        "mode": { "type": "string" },
+        "backup": { "type": "boolean" }
+      },
+      "required": ["name", "path"]
+    },
+    "directory": {
+      "type": "object",
+      "properties": {
+        "name": { 
+          "type": "string",
+          "description": "Logical name for the directory (e.g., config, dotconf, log, data, lib)"
+        },
+        "path": { "type": "string" },
+        "owner": { "type": "string" },
+        "group": { "type": "string" },
+        "mode": { "type": "string" },
+        "recursive": { "type": "boolean" }
+      },
+      "required": ["name", "path"]
+    },
+    "command": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "path": { "type": "string" },
+        "arguments": { "type": "array", "items": { "type": "string" } },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "shell_completion": { "type": "boolean" },
+        "man_page": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "port": {
+      "type": "object",
+      "properties": {
+        "port": { "type": "integer" },
+        "protocol": { "type": "string", "enum": ["tcp", "udp", "sctp"] },
+        "service": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["port"]
+    },
+    "container": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "image": { "type": "string" },
+        "tag": { "type": "string" },
+        "registry": { "type": "string" },
+        "platform": { "type": "string" },
+        "ports": { "type": "array", "items": { "type": "string" } },
+        "volumes": { "type": "array", "items": { "type": "string" } },
+        "environment": { "type": "object", "additionalProperties": { "type": "string" } },
+        "networks": { "type": "array", "items": { "type": "string" } },
+        "labels": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "required": ["name", "image"]
+    },
+    "package_source": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Source identifier (e.g., official, os-default, backports)" },
+        "priority": { "type": "integer", "description": "Priority order (1 = highest)" },
+        "recommended": { "type": "boolean", "description": "Whether this source is recommended" },
+        "repository": { "type": "string", "description": "Repository name to use" },
+        "packages": { "type": "array", "items": { "$ref": "#/definitions/package" } },
+        "notes": { "type": "string", "description": "Additional information about this source" }
+      },
+      "required": ["name", "repository", "packages"]
+    },
+    "repository": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "key": { "type": "string" },
+        "type": { 
+          "type": "string", 
+          "enum": ["upstream", "os-default", "os-backports", "third-party"],
+          "description": "Repository type"
+        },
+        "components": { "type": "array", "items": { "type": "string" } },
+        "maintainer": { "type": "string", "description": "Repository maintainer" },
+        "priority": { "type": "integer", "description": "Priority order (1 = highest)" },
+        "recommended": { "type": "boolean", "description": "Whether this repository is recommended" },
+        "notes": { "type": "string" },
+        
+        "packages": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/package" },
+          "description": "Package overrides for this repository"
+        },
+        "services": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/service" },
+          "description": "Service overrides/additions for this repository"
+        },
+        "files": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/file" },
+          "description": "File overrides/additions for this repository"
+        },
+        "directories": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/directory" },
+          "description": "Directory overrides/additions for this repository"
+        },
+        "commands": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/command" },
+          "description": "Command overrides/additions for this repository"
+        },
+        "ports": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/port" },
+          "description": "Port overrides/additions for this repository"
+        },
+        "containers": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/container" },
+          "description": "Container overrides/additions for this repository"
+        }
+      },
+      "required": ["name"]
+    },
+    "compatibility_entry": {
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string" },
+        "platform": { 
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "architecture": { 
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "os_version": { 
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "supported": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "tested": { "type": "boolean" },
+        "recommended": { "type": "boolean" }
+      },
+      "required": ["provider", "platform", "supported"]
+    },
+    "versions": {
+      "type": "object",
+      "properties": {
+        "latest": { "type": "string" },
+        "minimum": { "type": "string" },
+        "latest_lts": { "type": "string" },
+        "latest_minimum": { "type": "string" }
+      }
+    },
+    "security_metadata": {
+      "type": "object",
+      "properties": {
+        "cve_exceptions": { "type": "array", "items": { "type": "string" } },
+        "security_contact": { "type": "string" },
+        "vulnerability_disclosure": { "type": "string" },
+        "sbom_url": { "type": "string" },
+        "signing_key": { "type": "string" }
+      }
+    },
+    "urls": {
+      "type": "object",
+      "properties": {
+        "website": { "type": "string" },
+        "documentation": { "type": "string" },
+        "source": { "type": "string" },
+        "issues": { "type": "string" },
+        "support": { "type": "string" },
+        "download": { "type": "string" },
+        "changelog": { "type": "string" },
+        "license": { "type": "string" },
+        "sbom": { "type": "string" },
+        "icon": { "type": "string" }
+      }
+    }
+  }
+}

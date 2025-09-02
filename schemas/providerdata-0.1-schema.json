@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProviderData Schema - Implementation Details",
+  "description": "Schema for provider-specific implementation of software management actions",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+    },
+    "provider": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Provider name (e.g., 'apt', 'brew', 'docker')" },
+        "display_name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["package_manager", "container", "binary", "source", "cloud", "custom", "debug", "trace", "profile", "security", "sbom", "troubleshoot", "network", "audit", "backup"] },
+        "platforms": { "type": "array", "items": { "type": "string" } },
+        "capabilities": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "type"]
+    },
+    "actions": {
+      "type": "object",
+      "description": "Supported actions and their implementations",
+      "additionalProperties": { "$ref": "#/definitions/action" }
+    },
+    "mappings": {
+      "type": "object",
+      "description": "How to map saidata logical components to provider-specific implementations",
+      "properties": {
+        "packages": {
+          "type": "object",
+          "description": "Map logical packages to provider packages",
+          "additionalProperties": { "$ref": "#/definitions/package_mapping" }
+        },
+        "services": {
+          "type": "object",
+          "description": "Map logical services to provider services",
+          "additionalProperties": { "$ref": "#/definitions/service_mapping" }
+        },
+        "files": {
+          "type": "object",
+          "description": "Map logical files to provider file paths",
+          "additionalProperties": { "$ref": "#/definitions/file_mapping" }
+        },
+        "directories": {
+          "type": "object",
+          "description": "Map logical directories to provider directory paths",
+          "additionalProperties": { "$ref": "#/definitions/directory_mapping" }
+        },
+        "commands": {
+          "type": "object",
+          "description": "Map logical commands to provider command paths",
+          "additionalProperties": { "$ref": "#/definitions/command_mapping" }
+        },
+        "ports": {
+          "type": "object",
+          "description": "Map logical ports to provider port configurations",
+          "additionalProperties": { "$ref": "#/definitions/port_mapping" }
+        },
+        "variables": {
+          "type": "object",
+          "description": "Map saidata variables to provider-specific values",
+          "additionalProperties": { "$ref": "#/definitions/variable_mapping" }
+        }
+      }
+    }
+  },
+  "required": ["version", "provider", "actions"],
+  "definitions": {
+    "action": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "template": { "type": "string", "description": "Command template with placeholders" },
+        "command": { "type": "string", "description": "Static command" },
+        "script": { "type": "string", "description": "Multi-line script" },
+        "steps": {
+          "type": "array",
+          "description": "Multiple steps to execute",
+          "items": { "$ref": "#/definitions/step" }
+        },
+        "requires_root": { "type": "boolean", "default": false },
+        "timeout": { "type": "integer", "default": 300 },
+        "retry": { "$ref": "#/definitions/retry_config" },
+        "validation": { "$ref": "#/definitions/validation" },
+        "rollback": { "type": "string", "description": "Rollback command template" },
+        "variables": {
+          "type": "object",
+          "description": "Action-specific variable defaults",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "oneOf": [
+        { "required": ["template"] },
+        { "required": ["command"] },
+        { "required": ["script"] },
+        { "required": ["steps"] }
+      ]
+    },
+    "step": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "command": { "type": "string" },
+        "condition": { "type": "string" },
+        "ignore_failure": { "type": "boolean", "default": false },
+        "timeout": { "type": "integer" }
+      },
+      "required": ["command"]
+    },
+    "retry_config": {
+      "type": "object",
+      "properties": {
+        "attempts": { "type": "integer", "default": 3 },
+        "delay": { "type": "integer", "default": 5 },
+        "backoff": { "type": "string", "enum": ["linear", "exponential"], "default": "linear" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "command": { "type": "string" },
+        "expected_exit_code": { "type": "integer", "default": 0 },
+        "expected_output": { "type": "string" },
+        "timeout": { "type": "integer", "default": 30 }
+      },
+      "required": ["command"]
+    },
+    "package_mapping": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Provider-specific package name" },
+        "version": { "type": "string", "description": "Version pattern or constraint" },
+        "repository": { "type": "string", "description": "Repository to use" },
+        "alternatives": { "type": "array", "items": { "type": "string" } },
+        "install_options": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "service_mapping": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Provider-specific service name" },
+        "type": { "type": "string" },
+        "config_files": { "type": "array", "items": { "type": "string" } },
+        "environment": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "required": ["name"]
+    },
+    "file_mapping": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "description": "Provider-specific file path" },
+        "owner": { "type": "string" },
+        "group": { "type": "string" },
+        "mode": { "type": "string" },
+        "template": { "type": "string", "description": "File content template" }
+      },
+      "required": ["path"]
+    },
+    "directory_mapping": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "description": "Provider-specific directory path" },
+        "owner": { "type": "string" },
+        "group": { "type": "string" },
+        "mode": { "type": "string" },
+        "create": { "type": "boolean", "default": true }
+      },
+      "required": ["path"]
+    },
+    "command_mapping": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "description": "Provider-specific command path" },
+        "alternatives": { "type": "array", "items": { "type": "string" } },
+        "wrapper": { "type": "string", "description": "Command wrapper or prefix" }
+      },
+      "required": ["path"]
+    },
+    "port_mapping": {
+      "type": "object",
+      "properties": {
+        "port": { "type": ["integer", "string"], "description": "Provider-specific default port" },
+        "configurable": { "type": "boolean", "default": true },
+        "config_key": { "type": "string", "description": "Configuration key to change port" }
+      }
+    },
+    "variable_mapping": {
+      "type": ["object", "string"],
+      "properties": {
+        "value": { "type": ["string", "integer", "boolean"], "description": "Provider-specific default value" },
+        "config_key": { "type": "string", "description": "Configuration key for this variable" },
+        "environment": { "type": "string", "description": "Environment variable name" }
+      }
+    }
+  }
+}

@@ -1,0 +1,145 @@
+# Chocolatey Provider Data - Windows package manager
+version: "1.0"
+
+provider:
+  name: "choco"
+  display_name: "Chocolatey"
+  description: "The package manager for Windows"
+  type: "package_manager"
+  platforms: ["windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install packages via Chocolatey"
+    template: "choco install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    timeout: 600
+    validation:
+      command: "choco list --local-only | findstr {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "choco uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+
+  uninstall:
+    description: "Remove packages via Chocolatey"
+    template: "choco uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    validation:
+      command: "choco list --local-only | findstr {{saidata.metadata.name}} || exit 1"
+      expected_exit_code: 1
+
+  upgrade:
+    description: "Upgrade packages via Chocolatey"
+    template: "choco upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    timeout: 600
+
+  start:
+    description: "Start service via sc command"
+    template: "sc start {{saidata.services.main.name}}"
+    validation:
+      command: "sc query {{saidata.services.main.name}} | findstr RUNNING"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via sc command"
+    template: "sc stop {{saidata.services.main.name}}"
+    validation:
+      command: "sc query {{saidata.services.main.name}} | findstr STOPPED"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via sc command"
+    steps:
+      - name: "stop-service"
+        command: "sc stop {{saidata.services.main.name}}"
+      - name: "start-service"
+        command: "sc start {{saidata.services.main.name}}"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "sc config {{saidata.services.main.name}} start= auto"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "sc config {{saidata.services.main.name}} start= disabled"
+
+  status:
+    description: "Check service status"
+    template: "sc query {{saidata.services.main.name}}"
+
+  logs:
+    description: "Show service logs"
+    template: "Get-WinEvent -LogName Application | Where-Object {$_.ProviderName -eq '{{saidata.metadata.name}}'} | Select-Object -First 50"
+
+  info:
+    description: "Show package information"
+    template: "choco info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "choco search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "choco list --local-only | findstr {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "windows_service"
+
+  files:
+    config:
+      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}.conf"
+      owner: "SYSTEM"
+      group: "Administrators"
+      mode: "0644"
+    log:
+      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\logs\\{{saidata.metadata.name}}.log"
+      owner: "SYSTEM"
+      group: "Administrators"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "C:\\ProgramData\\{{saidata.metadata.name}}"
+      owner: "SYSTEM"
+      group: "Administrators"
+      mode: "0755"
+    data:
+      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\data"
+      owner: "SYSTEM"
+      group: "Administrators"
+      mode: "0755"
+    logs:
+      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\logs"
+      owner: "SYSTEM"
+      group: "Administrators"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}.exe"
+    client:
+      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}-cli.exe"
+    admin:
+      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}-admin.exe"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

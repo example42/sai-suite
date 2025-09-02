@@ -1,0 +1,130 @@
+# Gem Provider Data - Ruby package manager
+version: "1.0"
+
+provider:
+  name: "gem"
+  display_name: "RubyGems"
+  description: "Package manager for Ruby"
+  type: "package_manager"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via Gem"
+    template: "gem install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+    validation:
+      command: "gem list | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "gem uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via Gem"
+    template: "gem uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! gem list | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via Gem"
+    template: "gem update {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+
+  start:
+    description: "Start Ruby application"
+    template: "{{saidata.commands.server.path}}"
+
+  stop:
+    description: "Stop Ruby application"
+    template: "pkill -f {{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart Ruby application"
+    steps:
+      - name: "stop-app"
+        command: "pkill -f {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-app"
+        command: "{{saidata.commands.server.path}}"
+
+  status:
+    description: "Check application status"
+    template: "pgrep -f {{saidata.metadata.name}}"
+
+  info:
+    description: "Show package information"
+    template: "gem info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "gem search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "gem list | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "ruby"
+
+  files:
+    config:
+      path: "{{gem_home}}/config/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "{{gem_home}}/config/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{gem_home}}/data/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    logs:
+      path: "/tmp"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{gem_bindir}}/{{saidata.metadata.name}}"
+    client:
+      path: "{{gem_bindir}}/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "{{gem_bindir}}/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    gem_home: "${GEM_HOME:-$(gem env gemhome)}"
+    gem_bindir: "$(gem env bindir)"

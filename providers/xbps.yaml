@@ -1,0 +1,149 @@
+# XBPS Provider Data - Void Linux package manager
+version: "1.0"
+
+provider:
+  name: "xbps"
+  display_name: "X Binary Package System"
+  description: "Package manager for Void Linux"
+  type: "package_manager"
+  platforms: ["void"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install packages via XBPS"
+    steps:
+      - name: "sync-repos"
+        command: "xbps-install -S"
+      - name: "install-packages"
+        command: "xbps-install -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+    validation:
+      command: "xbps-query -l | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "xbps-remove -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via XBPS"
+    template: "xbps-remove -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! xbps-query -l | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via XBPS"
+    steps:
+      - name: "sync-repos"
+        command: "xbps-install -S"
+      - name: "upgrade-packages"
+        command: "xbps-install -u {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+
+  start:
+    description: "Start service via sv"
+    template: "sv start {{saidata.services.main.name}}"
+    validation:
+      command: "sv status {{saidata.services.main.name}}"
+      expected_output: "run"
+
+  stop:
+    description: "Stop service via sv"
+    template: "sv stop {{saidata.services.main.name}}"
+    validation:
+      command: "sv status {{saidata.services.main.name}}"
+      expected_output: "down"
+
+  restart:
+    description: "Restart service via sv"
+    template: "sv restart {{saidata.services.main.name}}"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "ln -sf /etc/sv/{{saidata.services.main.name}} /var/service/"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "rm -f /var/service/{{saidata.services.main.name}}"
+
+  status:
+    description: "Check service status"
+    template: "sv status {{saidata.services.main.name}}"
+
+  logs:
+    description: "Show service logs"
+    template: "svlogtail {{saidata.services.main.name}}"
+
+  info:
+    description: "Show package information"
+    template: "xbps-query -R {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "xbps-query -Rs {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "xbps-query -l | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "runit"
+
+  files:
+    config:
+      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "/etc/{{saidata.metadata.name}}"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+    data:
+      path: "/var/lib/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+
+  commands:
+    server:
+      path: "/usr/bin/{{saidata.metadata.name}}-server"
+    client:
+      path: "/usr/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "/usr/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

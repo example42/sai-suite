@@ -1,0 +1,130 @@
+# PyPI Provider Data - Python package manager
+version: "1.0"
+
+provider:
+  name: "pypi"
+  display_name: "Python Package Index"
+  description: "Package manager for Python packages"
+  type: "package_manager"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via pip"
+    template: "pip install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+    validation:
+      command: "pip list | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "pip uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via pip"
+    template: "pip uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! pip list | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via pip"
+    template: "pip install --upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+
+  start:
+    description: "Start Python application"
+    template: "python -m {{saidata.packages.server.name}}"
+
+  stop:
+    description: "Stop Python application"
+    template: "pkill -f {{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart Python application"
+    steps:
+      - name: "stop-app"
+        command: "pkill -f {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-app"
+        command: "python -m {{saidata.packages.server.name}}"
+
+  status:
+    description: "Check application status"
+    template: "pgrep -f {{saidata.metadata.name}}"
+
+  info:
+    description: "Show package information"
+    template: "pip show {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "pip search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "pip list | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "python"
+
+  files:
+    config:
+      path: "{{python_site}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "{{python_site}}/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{python_site}}/{{saidata.metadata.name}}/data"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    logs:
+      path: "/tmp"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "python -m {{saidata.packages.server.name}}"
+    client:
+      path: "{{python_scripts}}/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "{{python_scripts}}/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    python_site: "$(python -c 'import site; print(site.getsitepackages()[0])')"
+    python_scripts: "$(python -c 'import sysconfig; print(sysconfig.get_path(\"scripts\"))')"

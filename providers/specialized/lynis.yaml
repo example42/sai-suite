@@ -1,0 +1,96 @@
+# Lynis Provider Data - Security auditing
+version: "1.0"
+
+provider:
+  name: "lynis"
+  display_name: "Lynis Security Auditor"
+  description: "Security auditing and compliance checking"
+  type: "audit"
+  platforms: ["linux", "macos"]
+  capabilities: ["audit", "compliance", "hardening", "report", "baseline", "custom"]
+
+actions:
+  audit:
+    description: "Perform full security audit"
+    template: "lynis audit system --logfile {{audit_log}} --reportfile {{audit_report}}"
+    variables:
+      audit_log: "/tmp/lynis-audit-{{saidata.metadata.name}}.log"
+      audit_report: "/tmp/lynis-report-{{saidata.metadata.name}}.dat"
+
+  compliance:
+    description: "Check compliance standards"
+    template: "lynis audit system --compliance {{compliance_standard}} --logfile {{compliance_log}}"
+    variables:
+      compliance_standard: "pci"
+      compliance_log: "/tmp/lynis-compliance-{{saidata.metadata.name}}.log"
+
+  hardening:
+    description: "Check system hardening"
+    template: "lynis audit system --tests-from-group hardening --logfile {{hardening_log}}"
+    variables:
+      hardening_log: "/tmp/lynis-hardening-{{saidata.metadata.name}}.log"
+
+  report:
+    description: "Generate detailed report"
+    steps:
+      - name: "run-audit"
+        command: "lynis audit system --logfile {{audit_log}} --reportfile {{audit_report}}"
+      - name: "generate-html"
+        command: "lynis show report --report-file {{audit_report}} > {{html_report}}"
+    variables:
+      audit_log: "/tmp/lynis-audit-{{saidata.metadata.name}}.log"
+      audit_report: "/tmp/lynis-report-{{saidata.metadata.name}}.dat"
+      html_report: "/tmp/lynis-report-{{saidata.metadata.name}}.html"
+
+  baseline:
+    description: "Create security baseline"
+    template: "lynis audit system --logfile {{baseline_log}} --reportfile {{baseline_report}} --upload"
+    variables:
+      baseline_log: "/tmp/lynis-baseline-{{saidata.metadata.name}}.log"
+      baseline_report: "/tmp/lynis-baseline-{{saidata.metadata.name}}.dat"
+
+  custom:
+    description: "Run custom test groups"
+    template: "lynis audit system --tests-from-group {{test_groups}} --logfile {{custom_log}}"
+    variables:
+      test_groups: "authentication,networking,storage"
+      custom_log: "/tmp/lynis-custom-{{saidata.metadata.name}}.log"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "audit_target"
+
+  files:
+    config:
+      path: "/etc/lynis/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+    log:
+      path: "/tmp/lynis-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    audit:
+      path: "/tmp/audit-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    audit:
+      path: "lynis audit system"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

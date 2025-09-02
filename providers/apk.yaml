@@ -1,0 +1,149 @@
+# APK Provider Data - Alpine Linux package manager
+version: "1.0"
+
+provider:
+  name: "apk"
+  display_name: "Alpine Package Keeper"
+  description: "Package manager for Alpine Linux"
+  type: "package_manager"
+  platforms: ["alpine"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install packages via APK"
+    steps:
+      - name: "update-index"
+        command: "apk update"
+      - name: "install-packages"
+        command: "apk add {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+    validation:
+      command: "apk info | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "apk del {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via APK"
+    template: "apk del {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! apk info | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via APK"
+    steps:
+      - name: "update-index"
+        command: "apk update"
+      - name: "upgrade-packages"
+        command: "apk upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+
+  start:
+    description: "Start service via rc-service"
+    template: "rc-service {{saidata.services.main.name}} start"
+    validation:
+      command: "rc-service {{saidata.services.main.name}} status"
+      expected_output: "started"
+
+  stop:
+    description: "Stop service via rc-service"
+    template: "rc-service {{saidata.services.main.name}} stop"
+    validation:
+      command: "rc-service {{saidata.services.main.name}} status"
+      expected_output: "stopped"
+
+  restart:
+    description: "Restart service via rc-service"
+    template: "rc-service {{saidata.services.main.name}} restart"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "rc-update add {{saidata.services.main.name}} default"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "rc-update del {{saidata.services.main.name}} default"
+
+  status:
+    description: "Check service status"
+    template: "rc-service {{saidata.services.main.name}} status"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 {{saidata.files.log.path}}"
+
+  info:
+    description: "Show package information"
+    template: "apk info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "apk search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "apk info | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "openrc"
+
+  files:
+    config:
+      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "root"
+      mode: "0644"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "/etc/{{saidata.metadata.name}}"
+      owner: "root"
+      group: "root"
+      mode: "0755"
+    data:
+      path: "/var/lib/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+
+  commands:
+    server:
+      path: "/usr/bin/{{saidata.metadata.name}}-server"
+    client:
+      path: "/usr/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "/usr/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

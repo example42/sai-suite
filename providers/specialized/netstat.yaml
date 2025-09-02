@@ -1,0 +1,90 @@
+# Netstat Provider Data - Network statistics
+version: "1.0"
+
+provider:
+  name: "netstat"
+  display_name: "Network Statistics"
+  description: "Display network connections and statistics"
+  type: "network"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["connections", "listening", "routing", "interfaces", "statistics", "processes"]
+
+actions:
+  connections:
+    description: "Show all network connections"
+    template: "netstat -an | grep {{saidata.ports.main.default_port}} | tee {{connections_output}}"
+    variables:
+      connections_output: "/tmp/netstat-connections-{{saidata.metadata.name}}.txt"
+
+  listening:
+    description: "Show listening ports"
+    template: "netstat -ln | grep {{saidata.ports.main.default_port}} | tee {{listening_output}}"
+    variables:
+      listening_output: "/tmp/netstat-listening-{{saidata.metadata.name}}.txt"
+
+  routing:
+    description: "Show routing table"
+    template: "netstat -rn | tee {{routing_output}}"
+    variables:
+      routing_output: "/tmp/netstat-routing-{{saidata.metadata.name}}.txt"
+
+  interfaces:
+    description: "Show network interfaces"
+    template: "netstat -i | tee {{interfaces_output}}"
+    variables:
+      interfaces_output: "/tmp/netstat-interfaces-{{saidata.metadata.name}}.txt"
+
+  statistics:
+    description: "Show network statistics"
+    template: "netstat -s | tee {{statistics_output}}"
+    variables:
+      statistics_output: "/tmp/netstat-statistics-{{saidata.metadata.name}}.txt"
+
+  processes:
+    description: "Show processes using network"
+    template: "netstat -p | grep {{saidata.metadata.name}} | tee {{processes_output}}"
+    variables:
+      processes_output: "/tmp/netstat-processes-{{saidata.metadata.name}}.txt"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "network_target"
+
+  files:
+    config:
+      path: "/tmp/netstat-{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/netstat-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    network:
+      path: "/tmp/network-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    network:
+      path: "netstat -an | grep {{saidata.ports.main.default_port}}"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

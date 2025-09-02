@@ -1,0 +1,129 @@
+# NuGet Provider Data - .NET package manager
+version: "1.0"
+
+provider:
+  name: "nuget"
+  display_name: "NuGet"
+  description: "Package manager for .NET"
+  type: "package_manager"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+
+actions:
+  install:
+    description: "Install packages via NuGet"
+    template: "dotnet tool install -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+    validation:
+      command: "dotnet tool list -g | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "dotnet tool uninstall -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via NuGet"
+    template: "dotnet tool uninstall -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! dotnet tool list -g | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via NuGet"
+    template: "dotnet tool update -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 300
+
+  start:
+    description: "Start .NET application"
+    template: "{{saidata.commands.server.path}}"
+
+  stop:
+    description: "Stop .NET application"
+    template: "pkill -f {{saidata.metadata.name}}"
+
+  restart:
+    description: "Restart .NET application"
+    steps:
+      - name: "stop-app"
+        command: "pkill -f {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-app"
+        command: "{{saidata.commands.server.path}}"
+
+  status:
+    description: "Check application status"
+    template: "pgrep -f {{saidata.metadata.name}}"
+
+  info:
+    description: "Show package information"
+    template: "dotnet tool list -g | grep {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "dotnet package search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "dotnet tool list -g | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}.Client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}.Tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "dotnet"
+
+  files:
+    config:
+      path: "{{dotnet_tools}}/config/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "{{dotnet_tools}}/config/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{dotnet_tools}}/data/{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    logs:
+      path: "/tmp"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{dotnet_tools}}/{{saidata.metadata.name}}"
+    client:
+      path: "{{dotnet_tools}}/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "{{dotnet_tools}}/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
+    dotnet_tools: "~/.dotnet/tools"

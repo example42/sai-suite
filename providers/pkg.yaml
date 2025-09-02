@@ -1,0 +1,138 @@
+# PKG Provider Data - FreeBSD package manager
+version: "1.0"
+
+provider:
+  name: "pkg"
+  display_name: "FreeBSD Package Manager"
+  description: "Binary package manager for FreeBSD and DragonFly BSD"
+  type: "package_manager"
+  platforms: ["freebsd", "dragonfly"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  install:
+    description: "Install packages via PKG"
+    template: "pkg install -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+    validation:
+      command: "pkg info | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+    rollback: "pkg delete -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+
+  uninstall:
+    description: "Remove packages via PKG"
+    template: "pkg delete -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    validation:
+      command: "! pkg info | grep {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade packages via PKG"
+    template: "pkg upgrade -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    timeout: 600
+
+  start:
+    description: "Start service via service command"
+    template: "service {{saidata.services.main.name}} start"
+    validation:
+      command: "service {{saidata.services.main.name}} status"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via service command"
+    template: "service {{saidata.services.main.name}} stop"
+
+  restart:
+    description: "Restart service via service command"
+    template: "service {{saidata.services.main.name}} restart"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "sysrc {{saidata.services.main.name}}_enable=YES"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "sysrc {{saidata.services.main.name}}_enable=NO"
+
+  status:
+    description: "Check service status"
+    template: "service {{saidata.services.main.name}} status"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 {{saidata.files.log.path}}"
+
+  info:
+    description: "Show package information"
+    template: "pkg info {{saidata.packages.server.name}}"
+
+  search:
+    description: "Search for packages"
+    template: "pkg search {{saidata.metadata.name}}"
+
+  list:
+    description: "List installed packages"
+    template: "pkg info | grep {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+      version: "{{saidata.packages.server.version}}"
+    client:
+      name: "{{saidata.metadata.name}}-client"
+      version: "{{saidata.packages.client.version}}"
+    tools:
+      name: "{{saidata.metadata.name}}-tools"
+      version: "{{saidata.packages.tools.version}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "rc"
+
+  files:
+    config:
+      path: "/usr/local/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
+      owner: "root"
+      group: "wheel"
+      mode: "0644"
+    log:
+      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0644"
+
+  directories:
+    config:
+      path: "/usr/local/etc/{{saidata.metadata.name}}"
+      owner: "root"
+      group: "wheel"
+      mode: "0755"
+    data:
+      path: "/var/db/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+    logs:
+      path: "/var/log/{{saidata.metadata.name}}"
+      owner: "{{saidata.metadata.name}}"
+      group: "{{saidata.metadata.name}}"
+      mode: "0750"
+
+  commands:
+    server:
+      path: "/usr/local/bin/{{saidata.metadata.name}}-server"
+    client:
+      path: "/usr/local/bin/{{saidata.metadata.name}}-cli"
+    admin:
+      path: "/usr/local/bin/{{saidata.metadata.name}}-admin"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
