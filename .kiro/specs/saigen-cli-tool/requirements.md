@@ -17,10 +17,11 @@ The `saigen` CLI tool is an AI-powered saidata generation utility that creates c
 3. WHEN LLM data is available THEN the system SHALL combine it with repository data for accuracy
 4. WHEN generation completes THEN the system SHALL validate the output against the saidata schema
 5. WHEN validation fails THEN the system SHALL attempt to fix common issues automatically
+6. WHEN LLMs queries are done, log in a <software-name> dedicated directory all the inputs, outputs and interactions done
 
 ### Requirement 2
 
-**User Story:** As a system administrator, I want the tool to download and cache repository data from multiple package managers, so that generated saidata reflects actual package availability and naming.
+**User Story:** As a system administrator, I want the tool to download and cache repository data from multiple package managers, so that generated saidata reflects actual package availability, versions and naming.
 
 #### Acceptance Criteria
 
@@ -28,8 +29,9 @@ The `saigen` CLI tool is an AI-powered saidata generation utility that creates c
 2. WHEN repository data is downloaded THEN it SHALL be cached locally with configurable expiration
 3. WHEN generating saidata THEN it SHALL use cached repository data to verify package names and versions
 4. WHEN I run `saigen update-cache` THEN it SHALL refresh repository data from all configured sources
-5. WHEN repository data is unavailable THEN it SHALL continue generation with LLM data only##
-# Requirement 3
+5. WHEN repository data is unavailable THEN it SHALL continue generation with LLM data only
+
+### Requirement 3
 
 **User Story:** As a developer, I want to use both local and cloud-based LLMs for generation, so that I can choose between privacy, cost, and capability based on my needs.
 
@@ -75,8 +77,9 @@ The `saigen` CLI tool is an AI-powered saidata generation utility that creates c
 2. WHEN batch processing THEN it SHALL support parallel generation with configurable concurrency
 3. WHEN batch processing THEN it SHALL continue on individual failures and report summary
 4. WHEN I provide a category filter THEN it SHALL generate saidata only for matching software
-5. WHEN batch processing completes THEN it SHALL provide detailed success/failure statistics### Requ
-irement 7
+5. WHEN batch processing completes THEN it SHALL provide detailed success/failure statistics
+
+### Requirement 7
 
 **User Story:** As a configuration manager, I want flexible configuration options for LLM providers, repository sources, and generation parameters, so that I can customize the tool for different environments.
 
