@@ -29,6 +29,8 @@ pip install -e ".[dev,llm,rag]"
 1. Configure your LLM provider:
 ```bash
 export OPENAI_API_KEY="your-api-key"
+# or
+export ANTHROPIC_API_KEY="your-api-key"
 ```
 
 2. Generate saidata for a software package:
@@ -36,36 +38,82 @@ export OPENAI_API_KEY="your-api-key"
 saigen generate nginx
 ```
 
-3. Validate generated saidata:
+3. View current configuration:
 ```bash
-saigen validate nginx.yaml
+saigen config --show
 ```
+
+4. Generate with specific options:
+```bash
+saigen generate nginx --llm-provider openai --providers apt brew --output nginx.yaml
+```
+
+## Commands
+
+- `saigen generate <software>` - Generate saidata for software
+- `saigen config --show` - Display current configuration
+- `saigen --help` - Show all available commands and options
 
 ## Configuration
 
 saigen looks for configuration files in the following locations:
-- `~/.saigen/config.yaml`
-- `.saigen.yaml` (in current directory)
-- `saigen.yaml` (in current directory)
+- `~/.saigen/config.yaml` or `~/.saigen/config.json`
+- `.saigen.yaml` or `.saigen.json` (in current directory)
+- `saigen.yaml` or `saigen.json` (in current directory)
+
+Configuration can also be set via environment variables:
+- `OPENAI_API_KEY` - OpenAI API key
+- `ANTHROPIC_API_KEY` - Anthropic API key
+- `SAIGEN_LOG_LEVEL` - Logging level (debug, info, warning, error)
+- `SAIGEN_CACHE_DIR` - Cache directory path
+- `SAIGEN_OUTPUT_DIR` - Output directory path
 
 Example configuration:
 ```yaml
+config_version: "0.1.0"
+log_level: info
+
 llm_providers:
   openai:
     provider: openai
     model: gpt-3.5-turbo
     max_tokens: 4000
     temperature: 0.1
+    timeout: 30
+    max_retries: 3
+    enabled: true
+  anthropic:
+    provider: anthropic
+    model: claude-3-sonnet-20240229
+    enabled: false
 
 repositories:
   apt:
     type: apt
     enabled: true
     cache_ttl: 3600
+    priority: 1
+
+cache:
+  directory: ~/.saigen/cache
+  max_size_mb: 1000
+  default_ttl: 3600
+
+rag:
+  enabled: true
+  index_directory: ~/.saigen/rag_index
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  max_context_items: 5
 
 generation:
   default_providers: [apt, brew, winget]
   output_directory: ./saidata
+  parallel_requests: 3
+  request_timeout: 120
+
+validation:
+  strict_mode: true
+  auto_fix_common_issues: true
 ```
 
 ## License
