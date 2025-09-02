@@ -5,37 +5,6 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 
-class ActionType(str, Enum):
-    """Supported provider actions."""
-    INSTALL = "install"
-    UPGRADE = "upgrade"
-    UNINSTALL = "uninstall"
-    START = "start"
-    STOP = "stop"
-    RESTART = "restart"
-    ENABLE = "enable"
-    DISABLE = "disable"
-    STATUS = "status"
-    MONITOR = "monitor"
-    OBSERVE = "observe"
-    LOG = "log"
-    CHECK = "check"
-    DEBUG = "debug"
-    TROUBLESHOOT = "troubleshoot"
-    TRACE = "trace"
-    INFO = "info"
-    HELP = "help"
-    ASK = "ask"
-    LIST = "list"
-    SEARCH = "search"
-    UPDATE = "update"
-    APPLY = "apply"
-    MANAGE = "manage"
-    CONFIG = "config"
-    SCAN = "scan"
-    SBOM = "sbom"
-
-
 class ServiceType(str, Enum):
     """Service management types."""
     SYSTEMD = "systemd"
@@ -217,7 +186,6 @@ class Repository(BaseModel):
 
 class ProviderConfig(BaseModel):
     """Provider-specific configuration."""
-    actions: Optional[List[ActionType]] = None
     prerequisites: Optional[List[str]] = None
     build_commands: Optional[List[str]] = None
     packages: Optional[List[Package]] = None

@@ -85,24 +85,6 @@
     "provider_config": {
       "type": "object",
       "properties": {
-        "actions": { 
-          "type": "array", 
-          "description": "Supported actions for this provider",
-          "items": { 
-            "type": "string",
-            "enum": [
-              "install", "upgrade", "uninstall",
-              "start", "stop", "restart", "enable", "disable",
-              "status", "monitor", "observe",
-              "log", "check", "debug", "troubleshoot", "trace",
-              "info", "help", "ask",
-              "list", "search",
-              "update",
-              "apply", "manage", "config",
-              "scan", "sbom"
-            ]
-          }
-        },
         "prerequisites": {
           "type": "array",
           "description": "Required packages for source compilation",
