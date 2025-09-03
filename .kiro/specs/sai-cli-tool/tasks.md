@@ -79,7 +79,7 @@
   - Create cache management commands and cleanup
   - _Requirements: 2.4_
 
-- [-] 14. Implement additional software management actions
+- [x] 14. Implement additional software management actions
   - Add support for service management actions (start, stop, restart, status)
   - Implement info and search commands using provider capabilities
   - Add list command to show managed software

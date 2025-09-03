@@ -162,6 +162,15 @@ def list(ctx: click.Context, timeout: Optional[int]):
     _execute_software_action(ctx, 'list', '', timeout, requires_confirmation=False)
 
 
+@cli.command()
+@click.argument('software', required=True)
+@click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.pass_context
+def logs(ctx: click.Context, software: str, timeout: Optional[int]):
+    """Show software service logs."""
+    _execute_software_action(ctx, 'logs', software, timeout, requires_confirmation=False)
+
+
 def _execute_software_action(ctx: click.Context, action: str, software: str, 
                            timeout: Optional[int], requires_confirmation: bool = True):
     """Execute a software management action."""
@@ -186,7 +195,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             click.echo("No available providers found.", err=True)
             ctx.exit(1)
         
-        # Load saidata if software name is provided
+        # Load saidata if software name is provided, or create minimal saidata
         saidata = None
         if software:
             try:
@@ -201,8 +210,27 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                     version="0.2",
                     metadata=Metadata(name=software)
                 )
+        else:
+            # Create minimal saidata for commands that don't require software name
+            from ..models.saidata import SaiData, Metadata
+            saidata = SaiData(
+                version="0.2",
+                metadata=Metadata(name="")
+            )
         
-        # Create execution engine
+        # Define informational actions that should run on all supporting providers
+        informational_actions = {'info', 'status', 'search', 'list', 'logs', 'debug'}
+        
+        # Check if this is an informational action and no specific provider is requested
+        if (action in informational_actions and not requires_confirmation and 
+            not ctx.obj.get('provider')):
+            # Execute on all providers that support this action
+            _execute_informational_action_on_all_providers(
+                ctx, action, software, timeout, provider_instances, saidata
+            )
+            return
+        
+        # Create execution engine for single provider execution
         engine = ExecutionEngine(provider_instances, ctx.obj['sai_config'])
         
         # Create execution context
@@ -355,6 +383,117 @@ def version(ctx: click.Context):
         click.echo(json.dumps({'version': __version__}))
     else:
         click.echo(f"sai version {__version__}")
+
+
+def _execute_informational_action_on_all_providers(ctx: click.Context, action: str, 
+                                                  software: str, timeout: Optional[int],
+                                                  provider_instances: List, saidata):
+    """Execute an informational action on all providers that support it."""
+    from ..core.execution_engine import ExecutionEngine, ExecutionContext
+    
+    # Find providers that support this action
+    supporting_providers = [
+        p for p in provider_instances 
+        if p.has_action(action)
+    ]
+    
+    if not supporting_providers:
+        click.echo(f"No providers support action '{action}'", err=True)
+        ctx.exit(1)
+    
+    # Execute on each supporting provider
+    results = []
+    for provider in supporting_providers:
+        try:
+            # Create execution engine with single provider
+            engine = ExecutionEngine([provider], ctx.obj['sai_config'])
+            
+            # Create execution context
+            execution_context = ExecutionContext(
+                action=action,
+                software=software,
+                saidata=saidata,
+                provider=provider.name,  # Force this specific provider
+                dry_run=ctx.obj['dry_run'],
+                verbose=ctx.obj['verbose'],
+                timeout=timeout
+            )
+            
+            # Execute the action
+            result = engine.execute_action(execution_context)
+            results.append((provider.name, result))
+            
+        except Exception as e:
+            # Log error but continue with other providers
+            if ctx.obj['verbose']:
+                click.echo(f"Error executing {action} on provider {provider.name}: {e}", err=True)
+            results.append((provider.name, None))
+    
+    # Output results
+    if ctx.obj['output_json']:
+        import json
+        output = {
+            'action': action,
+            'software': software,
+            'providers': []
+        }
+        
+        for provider_name, result in results:
+            provider_output = {
+                'provider': provider_name,
+                'success': result.success if result else False
+            }
+            
+            if result:
+                provider_output.update({
+                    'status': result.status.value,
+                    'message': result.message,
+                    'commands_executed': result.commands_executed,
+                    'execution_time': result.execution_time,
+                    'dry_run': result.dry_run
+                })
+                
+                if result.stdout:
+                    provider_output['stdout'] = result.stdout
+                if result.stderr:
+                    provider_output['stderr'] = result.stderr
+                if result.error_details:
+                    provider_output['error_details'] = result.error_details
+            else:
+                provider_output['error'] = 'Execution failed'
+            
+            output['providers'].append(provider_output)
+        
+        click.echo(json.dumps(output, indent=2))
+    else:
+        # Human-readable output
+        successful_results = [r for _, r in results if r and r.success]
+        
+        if not successful_results:
+            click.echo(f"No providers successfully executed action '{action}'", err=True)
+            ctx.exit(1)
+        
+        # Display results from all successful providers
+        for provider_name, result in results:
+            if result and result.success:
+                if len(supporting_providers) > 1:
+                    click.echo(f"\n--- {provider_name} ---")
+                
+                if not ctx.obj['quiet']:
+                    if result.stdout:
+                        click.echo(result.stdout.strip())
+                    elif result.message:
+                        click.echo(result.message)
+                
+                if ctx.obj['verbose'] and result.commands_executed:
+                    click.echo("Commands executed:")
+                    for cmd in result.commands_executed:
+                        click.echo(f"  {cmd}")
+            elif ctx.obj['verbose'] and result:
+                click.echo(f"\n--- {provider_name} (failed) ---")
+                click.echo(f"✗ {result.message}", err=True)
+                if result.error_details:
+                    click.echo(f"Error details: {result.error_details}", err=True)
 
 
 # Execution history and metrics commands
