@@ -109,7 +109,6 @@ containers:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "jenkins-official"
         url: "https://pkg.jenkins.io/debian-stable"
@@ -121,7 +120,6 @@ providers:
             version: "2.414.0"
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "jenkins-official"
         url: "https://pkg.jenkins.io/redhat-stable"
@@ -133,13 +131,11 @@ providers:
             version: "2.414.0"
 
   brew:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     packages:
       - name: "jenkins"
         alternatives: ["jenkins-lts"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status", "logs"]
     containers:
       - name: "jenkins"
         image: "jenkins/jenkins"
@@ -151,7 +147,6 @@ providers:
           JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
 
   helm:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     repositories:
       - name: "jenkins"
         url: "https://charts.jenkins.io"

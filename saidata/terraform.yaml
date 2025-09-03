@@ -77,7 +77,6 @@ commands:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "info"]
     repositories:
       - name: "hashicorp-official"
         url: "https://apt.releases.hashicorp.com"
@@ -89,7 +88,6 @@ providers:
             version: "1.5.0"
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "info"]
     repositories:
       - name: "hashicorp-official"
         url: "https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
@@ -100,19 +98,16 @@ providers:
             version: "1.5.0"
 
   brew:
-    actions: ["install", "uninstall", "upgrade", "info"]
     packages:
       - name: "terraform"
         alternatives: ["terraform"]
 
   snap:
-    actions: ["install", "uninstall", "upgrade", "info"]
     packages:
       - name: "terraform"
         alternatives: ["terraform"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status"]
     containers:
       - name: "terraform"
         image: "hashicorp/terraform"

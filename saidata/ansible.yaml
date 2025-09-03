@@ -103,7 +103,6 @@ commands:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "info"]
     packages:
       - name: "ansible"
         alternatives: ["ansible"]
@@ -115,19 +114,16 @@ providers:
             alternatives: ["ansible"]
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "info"]
     packages:
       - name: "ansible"
         alternatives: ["ansible"]
 
   brew:
-    actions: ["install", "uninstall", "upgrade", "info"]
     packages:
       - name: "ansible"
         alternatives: ["ansible"]
 
   pypi:
-    actions: ["install", "uninstall", "upgrade", "info"]
     packages:
       - name: "ansible"
         alternatives: ["ansible"]
@@ -135,7 +131,6 @@ providers:
         alternatives: ["ansible-core"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status"]
     containers:
       - name: "ansible"
         image: "ansible/ansible-runner"

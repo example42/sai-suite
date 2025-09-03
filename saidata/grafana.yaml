@@ -114,7 +114,6 @@ containers:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "grafana-official"
         url: "https://packages.grafana.com/oss/deb"
@@ -126,7 +125,6 @@ providers:
             version: "10.0.0"
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "grafana-official"
         url: "https://packages.grafana.com/oss/rpm"
@@ -138,13 +136,11 @@ providers:
             version: "10.0.0"
 
   brew:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     packages:
       - name: "grafana"
         alternatives: ["grafana"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status", "logs"]
     containers:
       - name: "grafana"
         image: "grafana/grafana"
@@ -156,7 +152,6 @@ providers:
           GF_SECURITY_ADMIN_PASSWORD: "admin"
 
   helm:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     repositories:
       - name: "grafana"
         url: "https://grafana.github.io/helm-charts"

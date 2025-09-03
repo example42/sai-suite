@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **SAI CLI Tool**: Complete implementation of sai CLI tool with provider-based software management
 - Core data models for SaiData, configuration, and generation requests
 - Pydantic models with comprehensive validation and type safety
 - Configuration management system with environment variable support
@@ -23,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite with basic model validation
 - API reference documentation
 - Configuration guide with examples and troubleshooting
+- SAI CLI tool with Click-based interface and provider management
+- ProviderData models with comprehensive action and mapping support
 
 ### Changed
 - Project structure follows modular architecture principles

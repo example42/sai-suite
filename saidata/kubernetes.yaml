@@ -156,7 +156,6 @@ containers:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "kubernetes-official"
         url: "https://apt.kubernetes.io"
@@ -172,7 +171,6 @@ providers:
             version: "1.28.0-00"
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "kubernetes-official"
         url: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
@@ -188,7 +186,6 @@ providers:
             version: "1.28.0-0"
 
   brew:
-    actions: ["install", "uninstall", "upgrade"]
     packages:
       - name: "kubectl"
         alternatives: ["kubectl"]
@@ -196,7 +193,6 @@ providers:
         alternatives: ["kubeadm"]
 
   helm:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     repositories:
       - name: "bitnami"
         url: "https://charts.bitnami.com/bitnami"
@@ -206,7 +202,6 @@ providers:
             alternatives: ["kubernetes"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status", "logs"]
     containers:
       - name: "kind-cluster"
         image: "kindest/node"

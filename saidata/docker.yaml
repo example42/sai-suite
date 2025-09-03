@@ -101,7 +101,6 @@ ports:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "docker-official"
         url: "https://download.docker.com/linux/ubuntu"
@@ -128,7 +127,6 @@ providers:
         notes: "Older version, not recommended for production"
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     repositories:
       - name: "docker-official"
         url: "https://download.docker.com/linux/fedora"
@@ -144,7 +142,6 @@ providers:
             alternatives: ["docker-compose-plugin"]
 
   brew:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     packages:
       - name: "engine"
         alternatives: ["docker"]
@@ -152,7 +149,6 @@ providers:
         alternatives: ["docker-compose"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status", "logs"]
     containers:
       - name: "dind"
         image: "docker"

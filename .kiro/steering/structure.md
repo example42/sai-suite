@@ -9,8 +9,20 @@
 - **Saidata**: `saidata/` - Generated saidata
 - **Providerdata**: `providerdata/` - Provider data to support actions
 
-## Core Package Structure (`saigen/`)
-## TODEFINE
+## Core Package Structure
+
+### SAI CLI Tool (`sai/`)
+- **`sai/cli/`** - Command-line interface and main entry point
+- **`sai/models/`** - Configuration and provider data models
+- **`sai/utils/`** - Configuration management and utilities
+
+### SAIGEN AI Tool (`saigen/`)
+- **`saigen/cli/`** - Command-line interface with command modules
+- **`saigen/core/`** - Core generation engine and logic
+- **`saigen/llm/`** - LLM provider integrations (OpenAI, Anthropic, etc.)
+- **`saigen/models/`** - Data models for saidata, generation, and configuration
+- **`saigen/repositories/`** - Package repository integrations and downloaders
+- **`saigen/utils/`** - Utilities and configuration management
 
 ### Modular Architecture
 - Clear separation of concerns between modules

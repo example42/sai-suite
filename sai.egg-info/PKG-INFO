@@ -1,3 +1,51 @@
+Metadata-Version: 2.4
+Name: sai
+Version: 0.1.0
+Summary: SAI Software Management Suite: CLI tool (sai) and AI-powered generation tool (saigen)
+Author-email: SAI Team <team@sai.software>
+License: MIT
+Project-URL: Homepage, https://sai.software
+Project-URL: Documentation, https://sai.software/docs
+Project-URL: Repository, https://github.com/example42/sai
+Project-URL: Issues, https://github.com/example42/sai/issues
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Systems Administration
+Classifier: Topic :: System :: Software Distribution
+Classifier: Topic :: Utilities
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: click>=8.0.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: httpx>=0.24.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: jsonschema>=4.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Provides-Extra: llm
+Requires-Dist: openai>=1.0.0; extra == "llm"
+Requires-Dist: anthropic>=0.3.0; extra == "llm"
+Provides-Extra: rag
+Requires-Dist: sentence-transformers>=2.2.0; extra == "rag"
+Requires-Dist: faiss-cpu>=1.7.0; extra == "rag"
+Requires-Dist: numpy>=1.21.0; extra == "rag"
+
 # SAI Software Management Suite
 
 This repository contains two complementary tools for software metadata management:

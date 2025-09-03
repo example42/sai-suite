@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "saigen"
+name = "sai"
 version = "0.1.0"
-description = "AI-powered saidata generation tool"
+description = "SAI Software Management Suite: CLI tool (sai) and AI-powered generation tool (saigen)"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -24,6 +24,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Systems Administration",
+    "Topic :: System :: Software Distribution",
+    "Topic :: Utilities",
 ]
 requires-python = ">=3.8"
 dependencies = [
@@ -58,14 +60,15 @@ rag = [
 [project.urls]
 Homepage = "https://sai.software"
 Documentation = "https://sai.software/docs"
-Repository = "https://github.com/sai/sai"
-Issues = "https://github.com/sai/sai/issues"
+Repository = "https://github.com/example42/sai"
+Issues = "https://github.com/example42/sai/issues"
 
 [project.scripts]
 saigen = "saigen.cli.main:main"
+sai = "sai.cli.main:main"
 
 [tool.setuptools.packages.find]
-include = ["saigen*"]
+include = ["saigen*", "sai*"]
 
 [tool.black]
 line-length = 100

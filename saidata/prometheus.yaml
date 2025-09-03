@@ -154,7 +154,6 @@ containers:
 
 providers:
   apt:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     packages:
       - name: "prometheus"
         alternatives: ["prometheus"]
@@ -164,7 +163,6 @@ providers:
         alternatives: ["prometheus-alertmanager"]
 
   dnf:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "enable", "disable"]
     packages:
       - name: "prometheus"
         alternatives: ["prometheus"]
@@ -172,7 +170,6 @@ providers:
         alternatives: ["golang-github-prometheus-node-exporter"]
 
   brew:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     packages:
       - name: "prometheus"
         alternatives: ["prometheus"]
@@ -182,7 +179,6 @@ providers:
         alternatives: ["alertmanager"]
 
   docker:
-    actions: ["install", "start", "stop", "restart", "status", "logs"]
     containers:
       - name: "prometheus"
         image: "prom/prometheus"
@@ -192,7 +188,6 @@ providers:
         volumes: ["/etc/prometheus:/etc/prometheus", "/var/lib/prometheus:/prometheus"]
 
   helm:
-    actions: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status"]
     repositories:
       - name: "prometheus-community"
         url: "https://prometheus-community.github.io/helm-charts"
