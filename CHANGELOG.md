@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **SAI CLI Tool**: Complete implementation of sai CLI tool with provider-based software management
+- **CLI Commands**: Implemented `sai stats`, `sai config-show`, and `sai version` commands
+- **Provider Statistics**: Comprehensive statistics system with detailed provider and action analysis
 - **Template Engine**: Advanced Jinja2-based template resolution engine with array expansion support
 - **Provider System**: Comprehensive provider loading, caching, and availability detection
 - **System Utilities**: Cross-platform system detection and executable management
@@ -66,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Suite**: Fixed configuration tests to match actual implementation behavior
 - **Template Resolution**: Improved error handling and context building for complex scenarios
 - **Provider Availability**: Enhanced executable detection with proper platform support checking
+- **Pydantic V2 Migration**: Updated saigen configuration models to use Pydantic V2 syntax, eliminating deprecation warnings
 
 ## [0.1.0] - Initial Release
 

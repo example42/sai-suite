@@ -1,7 +1,7 @@
 """Configuration models for saigen tool."""
 
 from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field, SecretStr, validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, ConfigDict
 from pathlib import Path
 from enum import Enum
 
@@ -16,6 +16,8 @@ class LogLevel(str, Enum):
 
 class LLMConfig(BaseModel):
     """LLM provider configuration."""
+    model_config = ConfigDict(validate_assignment=True)
+    
     provider: str
     api_key: Optional[SecretStr] = None
     api_base: Optional[str] = None
@@ -25,14 +27,12 @@ class LLMConfig(BaseModel):
     timeout: Optional[int] = 30
     max_retries: Optional[int] = 3
     enabled: bool = True
-    
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
 
 
 class RepositoryConfig(BaseModel):
     """Repository configuration."""
+    model_config = ConfigDict(validate_assignment=True)
+    
     name: str
     type: str  # apt, dnf, brew, winget, etc.
     url: Optional[str] = None
@@ -40,61 +40,49 @@ class RepositoryConfig(BaseModel):
     cache_ttl: int = 3600  # seconds
     priority: int = 1
     credentials: Optional[Dict[str, SecretStr]] = None
-    
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
 
 
 class CacheConfig(BaseModel):
     """Cache configuration."""
+    model_config = ConfigDict(validate_assignment=True)
+    
     directory: Path = Path.home() / ".saigen" / "cache"
     max_size_mb: int = 1000
     default_ttl: int = 3600  # seconds
     cleanup_interval: int = 86400  # seconds (24 hours)
-    
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
 
 
 class RAGConfig(BaseModel):
     """RAG (Retrieval-Augmented Generation) configuration."""
+    model_config = ConfigDict(validate_assignment=True)
+    
     enabled: bool = True
     index_directory: Path = Path.home() / ".saigen" / "rag_index"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     max_context_items: int = 5
     similarity_threshold: float = 0.7
     rebuild_on_startup: bool = False
-    
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
 
 
 class ValidationConfig(BaseModel):
     """Validation configuration."""
+    model_config = ConfigDict(validate_assignment=True)
+    
     schema_path: Optional[Path] = None
     strict_mode: bool = True
     auto_fix_common_issues: bool = True
     validate_repository_accuracy: bool = True
-    
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
 
 
 class GenerationConfig(BaseModel):
     """Generation configuration."""
+    model_config = ConfigDict(validate_assignment=True)
+    
     default_providers: List[str] = Field(default_factory=lambda: ["apt", "brew", "winget"])
     output_directory: Path = Path.cwd() / "saidata"
     backup_existing: bool = True
     parallel_requests: int = 3
     request_timeout: int = 120
-    
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
 
 
 class SaigenConfig(BaseModel):
@@ -119,12 +107,10 @@ class SaigenConfig(BaseModel):
     
 
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
     
-    @validator('llm_providers')
+    @field_validator('llm_providers')
+    @classmethod
     def validate_llm_providers(cls, v):
         """Ensure at least one LLM provider is configured."""
         if not v:
@@ -139,7 +125,7 @@ class SaigenConfig(BaseModel):
     
     def get_masked_config(self) -> Dict[str, Any]:
         """Return configuration with sensitive data masked."""
-        config_dict = self.dict()
+        config_dict = self.model_dump()
         
         # Mask API keys and credentials
         for provider_name, provider_config in config_dict.get('llm_providers', {}).items():
