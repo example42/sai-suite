@@ -10,10 +10,9 @@ from sai.core.execution_engine import (
     ExecutionEngine, 
     ExecutionContext, 
     ExecutionResult, 
-    ExecutionStatus,
-    ProviderSelectionError,
-    ExecutionError
+    ExecutionStatus
 )
+from sai.utils.errors import ProviderSelectionError, ExecutionError
 from sai.providers.base import BaseProvider
 from sai.models.provider_data import ProviderData, Provider, Action, ProviderType
 from sai.models.saidata import SaiData, Metadata
@@ -131,11 +130,10 @@ class TestExecutionEngine:
             dry_run=True
         )
         
-        result = execution_engine.execute_action(context)
+        with pytest.raises(ProviderSelectionError) as exc_info:
+            execution_engine.execute_action(context)
         
-        assert result.success is False
-        assert result.status == ExecutionStatus.FAILURE
-        assert "not available" in result.message
+        assert "not available" in str(exc_info.value)
     
     def test_unsupported_action(self, execution_engine, sample_saidata):
         """Test execution with unsupported action."""
@@ -146,11 +144,10 @@ class TestExecutionEngine:
             dry_run=True
         )
         
-        result = execution_engine.execute_action(context)
+        with pytest.raises(ProviderSelectionError) as exc_info:
+            execution_engine.execute_action(context)
         
-        assert result.success is False
-        assert result.status == ExecutionStatus.FAILURE
-        assert "No available provider supports action" in result.message
+        assert "No available provider supports action" in str(exc_info.value)
     
     def test_get_available_providers(self, execution_engine):
         """Test getting available providers."""
@@ -348,11 +345,10 @@ class TestExecutionEngine:
                 dry_run=True
             )
             
-            result = engine.execute_action(context)
+            with pytest.raises(ProviderSelectionError) as exc_info:
+                engine.execute_action(context)
             
-            assert result.success is False
-            assert result.status == ExecutionStatus.FAILURE
-            assert "No available provider supports action" in result.message
+            assert "No available provider supports action" in str(exc_info.value)
 
 
 if __name__ == "__main__":

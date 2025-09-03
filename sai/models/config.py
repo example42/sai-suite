@@ -19,7 +19,7 @@ class SaiConfig(BaseModel):
     # Core settings
     config_version: str = "0.1.0"
     log_level: LogLevel = LogLevel.INFO
-    log_file: Optional[Path] = None
+    log_file: Optional[Path] = Field(default_factory=lambda: Path.home() / ".sai" / "logs" / "sai.log")
     
     # CLI-specific settings
     provider_priorities: Dict[str, int] = Field(default_factory=dict)

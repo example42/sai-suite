@@ -12,23 +12,21 @@ from ..providers.loader import ProviderLoader
 from ..core.execution_engine import ExecutionEngine, ExecutionContext
 from ..core.saidata_loader import SaidataLoader, SaidataNotFoundError, ValidationError
 from ..models.config import LogLevel
+from ..utils.errors import (
+    SaiError, format_error_for_cli, get_error_suggestions, 
+    is_user_error, is_system_error
+)
+from ..utils.logging import get_logger
 from .completion import (
     complete_software_names, complete_provider_names, complete_action_names,
     complete_config_keys, complete_log_levels, complete_saidata_files
 )
 
 
-def setup_logging(level: str, verbose: bool = False):
+def setup_logging(config, verbose: bool = False):
     """Setup logging configuration."""
-    if verbose:
-        level = LogLevel.DEBUG
-    
-    log_level = getattr(logging, level.upper(), logging.INFO)
-    logging.basicConfig(
-        level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+    from ..utils.logging import setup_root_logging
+    setup_root_logging(config, verbose)
 
 
 @click.group()
@@ -67,10 +65,19 @@ def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str],
         ctx.obj['sai_config'] = sai_config
         
         # Setup logging
-        setup_logging(sai_config.log_level.value, verbose)
+        setup_logging(sai_config, verbose)
         
     except Exception as e:
-        click.echo(f"Error loading configuration: {e}", err=True)
+        error_msg = format_error_for_cli(e, verbose)
+        click.echo(f"Error loading configuration: {error_msg}", err=True)
+        
+        if isinstance(e, SaiError):
+            suggestions = get_error_suggestions(e)
+            if suggestions:
+                click.echo("\nSuggestions:", err=True)
+                for suggestion in suggestions:
+                    click.echo(f"  • {suggestion}", err=True)
+        
         ctx.exit(1)
 
 
@@ -196,7 +203,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                 )
         
         # Create execution engine
-        engine = ExecutionEngine(provider_instances)
+        engine = ExecutionEngine(provider_instances, ctx.obj['sai_config'])
         
         # Create execution context
         execution_context = ExecutionContext(
@@ -306,18 +313,36 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             error_output = {
                 'success': False,
                 'error': str(e),
+                'error_type': e.__class__.__name__,
                 'action': action,
                 'software': software
             }
+            
+            # Add SAI error details if available
+            if isinstance(e, SaiError):
+                error_output.update(e.to_dict())
+            
             click.echo(json.dumps(error_output, indent=2))
         else:
-            click.echo(f"Error: {e}", err=True)
+            # Format error for human-readable output
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error: {error_msg}", err=True)
+            
+            # Show suggestions for SAI errors
+            if isinstance(e, SaiError):
+                suggestions = get_error_suggestions(e)
+                if suggestions:
+                    click.echo("\nSuggestions:", err=True)
+                    for suggestion in suggestions:
+                        click.echo(f"  • {suggestion}", err=True)
         
-        if ctx.obj['verbose']:
-            import traceback
-            traceback.print_exc()
-        
-        ctx.exit(1)
+        # Determine exit code based on error type
+        if is_user_error(e):
+            ctx.exit(2)  # User error
+        elif is_system_error(e):
+            ctx.exit(3)  # System error
+        else:
+            ctx.exit(1)  # General error
 
 
 @cli.command()
@@ -330,6 +355,149 @@ def version(ctx: click.Context):
         click.echo(json.dumps({'version': __version__}))
     else:
         click.echo(f"sai version {__version__}")
+
+
+# Execution history and metrics commands
+@cli.group()
+def history():
+    """View execution history and metrics."""
+    pass
+
+
+@history.command('list')
+@click.option('--limit', '-n', type=int, default=10, help='Number of executions to show')
+@click.option('--action', help='Filter by action')
+@click.option('--software', help='Filter by software')
+@click.option('--provider', help='Filter by provider')
+@click.option('--success-only', is_flag=True, help='Show only successful executions')
+@click.option('--detailed', '-d', is_flag=True, help='Show detailed execution information')
+@click.pass_context
+def history_list(ctx: click.Context, limit: int, action: Optional[str], 
+                software: Optional[str], provider: Optional[str], 
+                success_only: bool, detailed: bool):
+    """List recent execution history."""
+    try:
+        from ..utils.execution_tracker import get_execution_tracker
+        
+        tracker = get_execution_tracker(ctx.obj['sai_config'])
+        executions = tracker.get_execution_history(
+            limit=limit,
+            action_filter=action,
+            software_filter=software,
+            provider_filter=provider,
+            success_only=success_only
+        )
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'executions': [exec.to_dict() for exec in executions],
+                'total_shown': len(executions),
+                'filters': {
+                    'action': action,
+                    'software': software,
+                    'provider': provider,
+                    'success_only': success_only
+                }
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            if not executions:
+                click.echo("No executions found matching criteria.")
+                return
+            
+            click.echo(f"Recent Executions ({len(executions)} shown):")
+            click.echo()
+            
+            for execution in executions:
+                if detailed:
+                    click.echo(execution.get_detailed_report())
+                    click.echo("-" * 50)
+                else:
+                    click.echo(execution.get_summary())
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error retrieving execution history: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@history.command('metrics')
+@click.pass_context
+def history_metrics(ctx: click.Context):
+    """Show execution metrics and statistics."""
+    try:
+        from ..utils.execution_tracker import get_execution_tracker
+        
+        tracker = get_execution_tracker(ctx.obj['sai_config'])
+        metrics = tracker.get_metrics()
+        
+        if ctx.obj['output_json']:
+            import json
+            click.echo(json.dumps(metrics.to_dict(), indent=2))
+        else:
+            click.echo("Execution Metrics:")
+            click.echo(f"  Total Executions: {metrics.total_executions}")
+            click.echo(f"  Successful: {metrics.successful_executions}")
+            click.echo(f"  Failed: {metrics.failed_executions}")
+            
+            if metrics.total_executions > 0:
+                success_rate = (metrics.successful_executions / metrics.total_executions) * 100
+                click.echo(f"  Success Rate: {success_rate:.1f}%")
+            
+            click.echo(f"  Total Execution Time: {metrics.total_execution_time:.2f}s")
+            click.echo(f"  Average Execution Time: {metrics.average_execution_time:.2f}s")
+            click.echo(f"  Commands Executed: {metrics.commands_executed}")
+            click.echo(f"  Cache Hits: {metrics.cache_hits}")
+            click.echo(f"  Cache Misses: {metrics.cache_misses}")
+            
+            if metrics.cache_hits + metrics.cache_misses > 0:
+                cache_hit_rate = (metrics.cache_hits / (metrics.cache_hits + metrics.cache_misses)) * 100
+                click.echo(f"  Cache Hit Rate: {cache_hit_rate:.1f}%")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error retrieving metrics: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@history.command('clear')
+@click.option('--older-than', type=int, help='Clear executions older than N days')
+@click.option('--confirm', is_flag=True, help='Skip confirmation prompt')
+@click.pass_context
+def history_clear(ctx: click.Context, older_than: Optional[int], confirm: bool):
+    """Clear execution history."""
+    try:
+        from ..utils.execution_tracker import get_execution_tracker
+        
+        if not confirm and not ctx.obj['yes']:
+            if older_than:
+                message = f"Clear executions older than {older_than} days?"
+            else:
+                message = "Clear all execution history?"
+            
+            if not click.confirm(message):
+                click.echo("Cancelled.")
+                return
+        
+        tracker = get_execution_tracker(ctx.obj['sai_config'])
+        cleared_count = tracker.clear_history(older_than_days=older_than)
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'success': True,
+                'cleared_count': cleared_count,
+                'older_than_days': older_than
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            click.echo(f"✓ Cleared {cleared_count} execution record(s)")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error clearing history: {error_msg}", err=True)
+        ctx.exit(1)
 
 
 # Provider management commands

@@ -14,9 +14,15 @@ from ..models.saidata import SaiData
 from ..models.provider_data import Action, Step
 from ..providers.base import BaseProvider
 from ..utils.system import get_system_info
+from ..utils.logging import get_logger
+from ..utils.errors import (
+    ExecutionError, ProviderSelectionError, CommandExecutionError,
+    PermissionError, UnsafeCommandError, CommandInjectionError
+)
+from ..utils.execution_tracker import get_execution_tracker, ExecutionStatus
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ExecutionStatus(str, Enum):
@@ -58,27 +64,23 @@ class ExecutionContext:
     additional_context: Optional[Dict[str, Any]] = None
 
 
-class ProviderSelectionError(Exception):
-    """Exception raised when provider selection fails."""
-    pass
-
-
-class ExecutionError(Exception):
-    """Exception raised when command execution fails."""
-    pass
+# Remove old exception classes - now using centralized error hierarchy
 
 
 class ExecutionEngine:
     """Core execution engine that coordinates provider selection and action execution."""
     
-    def __init__(self, providers: List[BaseProvider]):
+    def __init__(self, providers: List[BaseProvider], config: Optional[Any] = None):
         """Initialize the execution engine.
         
         Args:
             providers: List of available providers
+            config: SAI configuration object
         """
         self.providers = providers
         self.available_providers = [p for p in providers if p.is_available()]
+        self.config = config
+        self.execution_tracker = get_execution_tracker(config)
         
         logger.info(f"ExecutionEngine initialized with {len(self.providers)} providers "
                    f"({len(self.available_providers)} available)")
@@ -96,48 +98,91 @@ class ExecutionEngine:
             ProviderSelectionError: If no suitable provider is found
             ExecutionError: If execution fails
         """
+        execution_id = None
         start_time = self._get_current_time()
         
         try:
             # Select the best provider for this action
             selected_provider = self._select_provider(context)
             
+            # Start execution tracking
+            execution_id = self.execution_tracker.start_execution(
+                action=context.action,
+                software=context.software,
+                provider=selected_provider.name,
+                dry_run=context.dry_run,
+                verbose=context.verbose,
+                timeout=context.timeout,
+                additional_context={
+                    'saidata_version': getattr(context.saidata, 'version', None) if context.saidata else None
+                }
+            )
+            
             logger.info(f"Executing action '{context.action}' for '{context.software}' "
-                       f"using provider '{selected_provider.name}'")
+                       f"using provider '{selected_provider.name}' (ID: {execution_id})")
             
             # Get the action definition
             action = selected_provider.get_action(context.action)
             if not action:
-                raise ExecutionError(f"Action '{context.action}' not found in provider '{selected_provider.name}'")
+                raise ExecutionError(
+                    f"Action '{context.action}' not found in provider '{selected_provider.name}'",
+                    action=context.action,
+                    provider=selected_provider.name
+                )
             
             # Execute the action
             if context.dry_run:
-                result = self._dry_run_action(selected_provider, action, context)
+                result = self._dry_run_action(selected_provider, action, context, execution_id)
             else:
-                result = self._execute_action(selected_provider, action, context)
+                result = self._execute_action(selected_provider, action, context, execution_id)
             
             # Calculate execution time
             result.execution_time = self._get_current_time() - start_time
+            
+            # Finish execution tracking
+            final_result = self.execution_tracker.finish_execution(
+                execution_id=execution_id,
+                success=result.success,
+                message=result.message,
+                error_details=result.error_details
+            )
             
             logger.info(f"Action execution completed: {result.status} in {result.execution_time:.2f}s")
             return result
             
         except Exception as e:
             execution_time = self._get_current_time() - start_time
-            error_msg = f"Action execution failed: {e}"
-            logger.error(error_msg)
             
-            return ExecutionResult(
-                success=False,
-                status=ExecutionStatus.FAILURE,
-                message=error_msg,
-                provider_used="none",
-                action_name=context.action,
-                commands_executed=[],
-                execution_time=execution_time,
-                error_details=str(e),
-                dry_run=context.dry_run
-            )
+            # Handle execution tracking cleanup
+            if execution_id:
+                try:
+                    self.execution_tracker.finish_execution(
+                        execution_id=execution_id,
+                        success=False,
+                        message=f"Execution failed: {e}",
+                        error_details=str(e)
+                    )
+                except Exception as tracking_error:
+                    logger.error(f"Failed to update execution tracking: {tracking_error}")
+            
+            # Log error with context
+            logger.error(f"Action execution failed: {e}", extra={
+                'action': context.action,
+                'software': context.software,
+                'execution_time': execution_time,
+                'dry_run': context.dry_run
+            }, exc_info=True)
+            
+            # Re-raise SAI errors as-is, wrap others
+            if isinstance(e, (ProviderSelectionError, ExecutionError)):
+                raise
+            else:
+                raise ExecutionError(
+                    f"Unexpected error during execution: {e}",
+                    action=context.action,
+                    software=context.software,
+                    error_code="EXECUTION_UNEXPECTED_ERROR"
+                ) from e
     
     def _select_provider(self, context: ExecutionContext) -> BaseProvider:
         """Select the most appropriate provider for the action.
@@ -191,7 +236,7 @@ class ExecutionEngine:
         return selected
     
     def _dry_run_action(self, provider: BaseProvider, action: Action, 
-                       context: ExecutionContext) -> ExecutionResult:
+                       context: ExecutionContext, execution_id: Optional[str] = None) -> ExecutionResult:
         """Perform a dry run of the action (show what would be executed).
         
         Args:
@@ -264,7 +309,7 @@ class ExecutionEngine:
             )
     
     def _execute_action(self, provider: BaseProvider, action: Action,
-                       context: ExecutionContext) -> ExecutionResult:
+                       context: ExecutionContext, execution_id: Optional[str] = None) -> ExecutionResult:
         """Execute the action using the selected provider.
         
         Args:
@@ -286,13 +331,13 @@ class ExecutionEngine:
             # Execute based on action type
             if action.steps:
                 # Multi-step execution
-                result = self._execute_steps(resolved['steps'], action, commands_executed, context)
+                result = self._execute_steps(resolved['steps'], action, commands_executed, context, execution_id)
             elif 'command' in resolved:
                 # Single command execution
-                result = self._execute_command(resolved['command'], action, commands_executed, context)
+                result = self._execute_command(resolved['command'], action, commands_executed, context, execution_id)
             elif 'script' in resolved:
                 # Script execution
-                result = self._execute_script(resolved['script'], action, commands_executed, context)
+                result = self._execute_script(resolved['script'], action, commands_executed, context, execution_id)
             else:
                 raise ExecutionError("No executable command, script, or steps found in action")
             
@@ -319,7 +364,7 @@ class ExecutionEngine:
             )
     
     def _execute_command(self, command: str, action: Action, commands_executed: List[str],
-                        context: ExecutionContext) -> ExecutionResult:
+                        context: ExecutionContext, execution_id: Optional[str] = None) -> ExecutionResult:
         """Execute a single command.
         
         Args:
@@ -343,12 +388,25 @@ class ExecutionEngine:
             raise ExecutionError("Empty command")
         
         # Execute with security constraints
+        cmd_start_time = self._get_current_time()
         result = self._run_secure_command(
             cmd_args, 
             timeout=context.timeout or action.timeout,
             requires_root=action.requires_root,
             verbose=context.verbose
         )
+        cmd_execution_time = self._get_current_time() - cmd_start_time
+        
+        # Track command execution if execution_id is provided
+        if execution_id and self.execution_tracker:
+            self.execution_tracker.add_command_result(
+                execution_id=execution_id,
+                command=command,
+                exit_code=result.get('exit_code', -1),
+                stdout=result.get('stdout', ''),
+                stderr=result.get('stderr', ''),
+                execution_time=cmd_execution_time
+            )
         
         if result['success']:
             return ExecutionResult(
@@ -379,7 +437,7 @@ class ExecutionEngine:
             )
     
     def _execute_steps(self, steps: List[Dict], action: Action, commands_executed: List[str],
-                      context: ExecutionContext) -> ExecutionResult:
+                      context: ExecutionContext, execution_id: Optional[str] = None) -> ExecutionResult:
         """Execute multiple steps in sequence.
         
         Args:
@@ -416,12 +474,25 @@ class ExecutionEngine:
                 logger.warning(f"Invalid command syntax in {step_name}, ignoring: {e}")
                 continue
             
+            step_start_time = self._get_current_time()
             result = self._run_secure_command(
                 cmd_args,
                 timeout=step_timeout,
                 requires_root=action.requires_root,
                 verbose=context.verbose
             )
+            step_execution_time = self._get_current_time() - step_start_time
+            
+            # Track command execution if execution_id is provided
+            if execution_id and self.execution_tracker:
+                self.execution_tracker.add_command_result(
+                    execution_id=execution_id,
+                    command=command,
+                    exit_code=result.get('exit_code', -1),
+                    stdout=result.get('stdout', ''),
+                    stderr=result.get('stderr', ''),
+                    execution_time=step_execution_time
+                )
             
             if not result['success'] and not ignore_failure:
                 return ExecutionResult(
@@ -451,7 +522,7 @@ class ExecutionEngine:
         )
     
     def _execute_script(self, script: str, action: Action, commands_executed: List[str],
-                       context: ExecutionContext) -> ExecutionResult:
+                       context: ExecutionContext, execution_id: Optional[str] = None) -> ExecutionResult:
         """Execute a script.
         
         Args:
@@ -467,12 +538,25 @@ class ExecutionEngine:
         
         # For now, treat script as a shell command
         # In the future, this could be enhanced to support different script types
+        script_start_time = self._get_current_time()
         result = self._run_secure_command(
             ['/bin/sh', '-c', script],
             timeout=context.timeout or action.timeout,
             requires_root=action.requires_root,
             verbose=context.verbose
         )
+        script_execution_time = self._get_current_time() - script_start_time
+        
+        # Track script execution if execution_id is provided
+        if execution_id and self.execution_tracker:
+            self.execution_tracker.add_command_result(
+                execution_id=execution_id,
+                command=f"<script: {len(script)} characters>",
+                exit_code=result.get('exit_code', -1),
+                stdout=result.get('stdout', ''),
+                stderr=result.get('stderr', ''),
+                execution_time=script_execution_time
+            )
         
         if result['success']:
             return ExecutionResult(
@@ -562,6 +646,15 @@ class ExecutionEngine:
                 'stdout': '',
                 'stderr': ''
             }
+    
+    def _get_current_time(self) -> float:
+        """Get current time in seconds since epoch.
+        
+        Returns:
+            Current time as float
+        """
+        import time
+        return time.time()
     
     def _validate_command_security(self, cmd_args: List[str], requires_root: bool) -> Dict[str, Any]:
         """Validate command arguments for security issues.
