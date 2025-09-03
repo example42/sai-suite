@@ -66,7 +66,7 @@ class BaseProvider:
         # For now, return a default priority
         return 50
     
-    def is_available(self) -> bool:
+    def is_available(self, use_cache: bool = True) -> bool:
         """Check if provider is available on the current system.
         
         This checks:
@@ -74,33 +74,76 @@ class BaseProvider:
         2. Required executables are available
         3. Provider functionality (if test command is defined)
         
+        Args:
+            use_cache: Whether to use cached results if available
+        
         Returns:
             True if provider is available and functional
         """
+        # Try to use cache first if enabled
+        if use_cache:
+            try:
+                from ..utils.cache import ProviderCache
+                from ..utils.config import get_config
+                
+                config = get_config()
+                cache = ProviderCache(config)
+                
+                cached_info = cache.get_cached_provider_info(self.name)
+                if cached_info is not None:
+                    logger.debug(f"Using cached availability for provider '{self.name}': {cached_info['available']}")
+                    return cached_info['available']
+                    
+            except Exception as e:
+                logger.debug(f"Failed to check cache for provider '{self.name}': {e}")
+                # Continue with fresh detection
+        
         try:
             # Check platform compatibility
             if not is_platform_supported(self.platforms):
                 logger.debug(f"Provider '{self.name}' not supported on current platform")
-                return False
+                availability = False
+            else:
+                # Get the main executable for this provider
+                main_executable = self._get_main_executable()
+                if not main_executable:
+                    logger.debug(f"Provider '{self.name}' has no main executable defined")
+                    availability = False
+                elif not is_executable_available(main_executable):
+                    logger.debug(f"Provider '{self.name}' executable '{main_executable}' not found")
+                    availability = False
+                elif not self._test_functionality():
+                    logger.debug(f"Provider '{self.name}' failed functionality test")
+                    availability = False
+                else:
+                    logger.debug(f"Provider '{self.name}' is available")
+                    availability = True
             
-            # Get the main executable for this provider
-            main_executable = self._get_main_executable()
-            if not main_executable:
-                logger.debug(f"Provider '{self.name}' has no main executable defined")
-                return False
+            # Update cache with result if caching is enabled
+            if use_cache:
+                try:
+                    from ..utils.cache import ProviderCache
+                    from ..utils.config import get_config
+                    
+                    config = get_config()
+                    cache = ProviderCache(config)
+                    
+                    cache_info = {
+                        'available': availability,
+                        'executable_path': self.get_executable_path() if availability else None,
+                        'version': self.get_version() if availability else None,
+                        'priority': self.get_priority(),
+                        'actions': self.get_supported_actions(),
+                        'platforms': self.platforms,
+                        'type': self.type.value
+                    }
+                    
+                    cache.update_provider_cache(self.name, cache_info)
+                    
+                except Exception as e:
+                    logger.debug(f"Failed to update cache for provider '{self.name}': {e}")
             
-            # Check if main executable is available
-            if not is_executable_available(main_executable):
-                logger.debug(f"Provider '{self.name}' executable '{main_executable}' not found")
-                return False
-            
-            # Run functionality test if defined
-            if not self._test_functionality():
-                logger.debug(f"Provider '{self.name}' failed functionality test")
-                return False
-            
-            logger.debug(f"Provider '{self.name}' is available")
-            return True
+            return availability
             
         except Exception as e:
             logger.warning(f"Error checking availability for provider '{self.name}': {e}")
@@ -345,11 +388,12 @@ class ProviderFactory:
         logger.info(f"Found {len(available_providers)} available providers out of {len(all_providers)} total")
         return available_providers
     
-    def detect_providers(self, additional_directories: List = None) -> Dict[str, Dict[str, any]]:
+    def detect_providers(self, additional_directories: List = None, use_cache: bool = True) -> Dict[str, Dict[str, any]]:
         """Detect all providers and return detailed information about their availability.
         
         Args:
             additional_directories: Additional directories to search for providers
+            use_cache: Whether to use cached results if available
             
         Returns:
             Dictionary mapping provider names to their detection information
@@ -361,6 +405,8 @@ class ProviderFactory:
         
         for provider in all_providers:
             try:
+                is_available = provider.is_available(use_cache=use_cache)
+                
                 info = {
                     'name': provider.name,
                     'display_name': provider.display_name,
@@ -370,9 +416,9 @@ class ProviderFactory:
                     'capabilities': provider.capabilities,
                     'supported_actions': provider.get_supported_actions(),
                     'priority': provider.get_priority(),
-                    'available': provider.is_available(),
-                    'executable_path': provider.get_executable_path(),
-                    'version': provider.get_version() if provider.is_available() else None,
+                    'available': is_available,
+                    'executable_path': provider.get_executable_path() if is_available else None,
+                    'version': provider.get_version() if is_available else None,
                 }
                 
                 provider_info[provider.name] = info

@@ -155,7 +155,7 @@ class TestBaseProviderAvailability:
         
         provider = self.create_test_provider()
         
-        result = provider.is_available()
+        result = provider.is_available(use_cache=False)
         
         assert result is True
         mock_platform_supported.assert_called_once_with(['linux', 'darwin'])
@@ -168,7 +168,7 @@ class TestBaseProviderAvailability:
         
         provider = self.create_test_provider()
         
-        result = provider.is_available()
+        result = provider.is_available(use_cache=False)
         
         assert result is False
         mock_platform_supported.assert_called_once_with(['linux', 'darwin'])
@@ -182,7 +182,7 @@ class TestBaseProviderAvailability:
         
         provider = self.create_test_provider()
         
-        result = provider.is_available()
+        result = provider.is_available(use_cache=False)
         
         assert result is False
         mock_exec_available.assert_called_once_with('test-exec')

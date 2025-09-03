@@ -342,8 +342,9 @@ def providers():
 @providers.command('list')
 @click.option('--available-only', is_flag=True, help='Show only available providers')
 @click.option('--detailed', '-d', is_flag=True, help='Show detailed provider information')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh detection')
 @click.pass_context
-def providers_list(ctx: click.Context, available_only: bool, detailed: bool):
+def providers_list(ctx: click.Context, available_only: bool, detailed: bool, no_cache: bool):
     """List all providers and their status."""
     try:
         provider_loader = ProviderLoader()
@@ -355,10 +356,12 @@ def providers_list(ctx: click.Context, available_only: bool, detailed: bool):
         
         # Create provider instances to check availability
         provider_info = []
+        use_cache = not no_cache
+        
         for name, provider_data in providers.items():
             from ..providers.base import BaseProvider
             provider_instance = BaseProvider(provider_data)
-            is_available = provider_instance.is_available()
+            is_available = provider_instance.is_available(use_cache=use_cache)
             
             if available_only and not is_available:
                 continue
@@ -405,8 +408,9 @@ def providers_list(ctx: click.Context, available_only: bool, detailed: bool):
 
 
 @providers.command('detect')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh detection')
 @click.pass_context
-def providers_detect(ctx: click.Context):
+def providers_detect(ctx: click.Context, no_cache: bool):
     """Detect and refresh provider availability."""
     try:
         provider_loader = ProviderLoader()
@@ -423,10 +427,12 @@ def providers_detect(ctx: click.Context):
             click.echo("Detecting provider availability...")
         
         results = []
+        use_cache = not no_cache
+        
         for name, provider_data in providers.items():
             from ..providers.base import BaseProvider
             provider_instance = BaseProvider(provider_data)
-            is_available = provider_instance.is_available()
+            is_available = provider_instance.is_available(use_cache=use_cache)
             
             if is_available:
                 available_count += 1
@@ -462,8 +468,9 @@ def providers_detect(ctx: click.Context):
 
 @providers.command('info')
 @click.argument('provider_name', required=True)
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh detection')
 @click.pass_context
-def providers_info(ctx: click.Context, provider_name: str):
+def providers_info(ctx: click.Context, provider_name: str, no_cache: bool):
     """Show detailed information about a specific provider."""
     try:
         provider_loader = ProviderLoader()
@@ -477,11 +484,14 @@ def providers_info(ctx: click.Context, provider_name: str):
         from ..providers.base import BaseProvider
         provider_instance = BaseProvider(provider_data)
         
+        use_cache = not no_cache
+        is_available = provider_instance.is_available(use_cache=use_cache)
+        
         info = {
             'name': provider_name,
             'type': provider_data.provider.type.value,
             'executable': getattr(provider_data.provider, 'executable', 'N/A'),
-            'available': provider_instance.is_available(),
+            'available': is_available,
             'priority': provider_instance.get_priority(),
             'platforms': provider_data.provider.platforms or [],
             'capabilities': provider_data.provider.capabilities or [],
@@ -521,6 +531,193 @@ def providers_info(ctx: click.Context, provider_name: str):
     
     except Exception as e:
         click.echo(f"Error getting provider info: {e}", err=True)
+        if ctx.obj['verbose']:
+            import traceback
+            traceback.print_exc()
+        ctx.exit(1)
+
+
+@providers.command('clear-cache')
+@click.option('--provider', '-p', help='Clear cache for specific provider only')
+@click.pass_context
+def providers_clear_cache(ctx: click.Context, provider: Optional[str]):
+    """Clear provider detection cache."""
+    try:
+        from ..utils.cache import ProviderCache
+        
+        cache = ProviderCache(ctx.obj['sai_config'])
+        
+        if provider:
+            # Clear cache for specific provider
+            cleared = cache.clear_provider_cache(provider)
+            if cleared:
+                if not ctx.obj['quiet']:
+                    click.echo(f"✓ Cleared cache for provider '{provider}'")
+            else:
+                click.echo(f"No cache found for provider '{provider}'", err=True)
+                ctx.exit(1)
+        else:
+            # Clear all provider cache
+            cleared_count = cache.clear_all_provider_cache()
+            if not ctx.obj['quiet']:
+                click.echo(f"✓ Cleared cache for {cleared_count} provider(s)")
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'success': True,
+                'provider': provider,
+                'cleared_count': 1 if provider else cleared_count
+            }
+            click.echo(json.dumps(output, indent=2))
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {
+                'success': False,
+                'error': str(e),
+                'provider': provider
+            }
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            click.echo(f"Error clearing cache: {e}", err=True)
+        
+        if ctx.obj['verbose']:
+            import traceback
+            traceback.print_exc()
+        ctx.exit(1)
+
+
+@providers.command('cache-status')
+@click.pass_context
+def providers_cache_status(ctx: click.Context):
+    """Show provider cache status and statistics."""
+    try:
+        from ..utils.cache import ProviderCache
+        
+        cache = ProviderCache(ctx.obj['sai_config'])
+        cache_info = cache.get_cache_status()
+        
+        if ctx.obj['output_json']:
+            import json
+            click.echo(json.dumps(cache_info, indent=2))
+        else:
+            click.echo("Provider Cache Status:")
+            click.echo(f"  Cache Directory: {cache_info['cache_directory']}")
+            click.echo(f"  Cache Enabled: {cache_info['cache_enabled']}")
+            click.echo(f"  Total Cached Providers: {cache_info['total_cached_providers']}")
+            click.echo(f"  Cache Size: {cache_info['cache_size_mb']:.2f} MB")
+            
+            if cache_info['cached_providers']:
+                click.echo("\nCached Providers:")
+                for provider_info in cache_info['cached_providers']:
+                    age_str = f"({provider_info['age_hours']:.1f}h ago)" if provider_info['age_hours'] < 24 else f"({provider_info['age_days']:.1f}d ago)"
+                    status = "✓ Available" if provider_info['available'] else "✗ Not available"
+                    click.echo(f"  {provider_info['name']}: {status} {age_str}")
+            else:
+                click.echo("\nNo providers currently cached.")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {
+                'success': False,
+                'error': str(e)
+            }
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            click.echo(f"Error getting cache status: {e}", err=True)
+        
+        if ctx.obj['verbose']:
+            import traceback
+            traceback.print_exc()
+        ctx.exit(1)
+
+
+@providers.command('refresh-cache')
+@click.option('--provider', '-p', help='Refresh cache for specific provider only')
+@click.pass_context
+def providers_refresh_cache(ctx: click.Context, provider: Optional[str]):
+    """Refresh provider detection cache."""
+    try:
+        from ..utils.cache import ProviderCache
+        
+        cache = ProviderCache(ctx.obj['sai_config'])
+        
+        if not ctx.obj['quiet']:
+            if provider:
+                click.echo(f"Refreshing cache for provider '{provider}'...")
+            else:
+                click.echo("Refreshing provider detection cache...")
+        
+        # Load providers and refresh cache
+        provider_loader = ProviderLoader()
+        providers = provider_loader.load_all_providers()
+        
+        if not providers:
+            click.echo("No providers found to cache.", err=True)
+            ctx.exit(1)
+        
+        refreshed_count = 0
+        results = []
+        
+        for name, provider_data in providers.items():
+            if provider and name != provider:
+                continue
+                
+            from ..providers.base import BaseProvider
+            provider_instance = BaseProvider(provider_data)
+            is_available = provider_instance.is_available()
+            
+            # Update cache
+            cache.update_provider_cache(name, {
+                'available': is_available,
+                'executable_path': provider_instance.get_executable_path(),
+                'version': provider_instance.get_version() if is_available else None,
+                'priority': provider_instance.get_priority(),
+                'actions': provider_instance.get_supported_actions(),
+                'platforms': provider_data.provider.platforms or [],
+                'type': provider_data.provider.type.value
+            })
+            
+            refreshed_count += 1
+            results.append({
+                'name': name,
+                'available': is_available
+            })
+            
+            if ctx.obj['verbose']:
+                status = "✓" if is_available else "✗"
+                click.echo(f"  {status} {name}")
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'success': True,
+                'refreshed_count': refreshed_count,
+                'providers': results
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            if not ctx.obj['quiet']:
+                if provider:
+                    click.echo(f"✓ Refreshed cache for provider '{provider}'")
+                else:
+                    click.echo(f"✓ Refreshed cache for {refreshed_count} provider(s)")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {
+                'success': False,
+                'error': str(e),
+                'provider': provider
+            }
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            click.echo(f"Error refreshing cache: {e}", err=True)
+        
         if ctx.obj['verbose']:
             import traceback
             traceback.print_exc()

@@ -85,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Provider Availability**: Enhanced executable detection with proper platform support checking
 - **Pydantic V2 Migration**: Completed migration of all Pydantic models to V2 ConfigDict syntax, eliminating all 14 deprecation warnings across both sai and saigen packages
 - **CLI Documentation**: Updated README.md to reflect all available CLI commands including new provider management and validation commands
+- **Test Cache Issues**: Fixed provider availability tests to bypass cache during testing for accurate mocking behavior
 
 ## [0.1.0] - Initial Release
 
