@@ -1,7 +1,7 @@
 """Pydantic models for generation requests and responses."""
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
 from datetime import datetime
 from enum import Enum
@@ -36,10 +36,7 @@ class GenerationRequest(BaseModel):
     generation_mode: GenerationMode = GenerationMode.CREATE
     existing_saidata: Optional[SaiData] = None
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
 
 
 class GenerationContext(BaseModel):
@@ -51,9 +48,7 @@ class GenerationContext(BaseModel):
     target_providers: List[str] = Field(default_factory=list)
     existing_saidata: Optional[SaiData] = None
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class ValidationError(BaseModel):
@@ -76,9 +71,7 @@ class GenerationResult(BaseModel):
     tokens_used: Optional[int] = None
     cost_estimate: Optional[float] = None
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class BatchGenerationRequest(BaseModel):
@@ -92,10 +85,7 @@ class BatchGenerationRequest(BaseModel):
     continue_on_error: bool = True
     category_filter: Optional[str] = None
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
 
 
 class BatchGenerationResult(BaseModel):
@@ -108,6 +98,4 @@ class BatchGenerationResult(BaseModel):
     total_time: float
     average_time_per_item: float
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)

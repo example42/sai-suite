@@ -1,7 +1,7 @@
 """Pydantic models for repository data structures."""
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 
@@ -25,10 +25,7 @@ class RepositoryPackage(BaseModel):
     category: Optional[str] = None
     last_updated: Optional[datetime] = None
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-        extra = "allow"  # Allow additional fields from different repositories
+    model_config = ConfigDict(validate_assignment=True, extra="allow")
 
 
 class CacheEntry(BaseModel):
@@ -40,9 +37,7 @@ class CacheEntry(BaseModel):
     checksum: str
     metadata: Optional[Dict[str, Any]] = None
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class RepositoryInfo(BaseModel):
@@ -59,9 +54,7 @@ class RepositoryInfo(BaseModel):
     enabled: bool = True
     priority: int = 1
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class SearchResult(BaseModel):
@@ -72,6 +65,4 @@ class SearchResult(BaseModel):
     search_time: float
     repository_sources: List[str]
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)

@@ -1,7 +1,7 @@
 """Configuration models for sai CLI tool."""
 
 from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from pathlib import Path
 from enum import Enum
 
@@ -46,7 +46,4 @@ class SaiConfig(BaseModel):
     require_confirmation: bool = True
     dry_run_default: bool = False
     
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(validate_assignment=True)

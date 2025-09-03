@@ -1,7 +1,7 @@
 """Pydantic models for ProviderData structure."""
 
 from typing import Dict, List, Optional, Union, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -22,6 +22,13 @@ class ProviderType(str, Enum):
     NETWORK = "network"
     AUDIT = "audit"
     BACKUP = "backup"
+    FILESYSTEM = "filesystem"
+    SYSTEM = "system"
+    MONITORING = "monitoring"
+    IO = "io"
+    MEMORY = "memory"
+    MONITOR = "monitor"
+    PROCESS = "process"
 
 
 class BackoffType(str, Enum):
@@ -78,9 +85,7 @@ class Action(BaseModel):
     rollback: Optional[str] = None
     variables: Optional[Dict[str, str]] = None
 
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class PackageMapping(BaseModel):
@@ -157,8 +162,8 @@ class ProviderData(BaseModel):
     actions: Dict[str, Action]
     mappings: Optional[Mappings] = None
 
-    class Config:
-        """Pydantic configuration."""
-        use_enum_values = True
-        validate_assignment = True
-        extra = "forbid"
+    model_config = ConfigDict(
+        use_enum_values=True,
+        validate_assignment=True,
+        extra="forbid"
+    )

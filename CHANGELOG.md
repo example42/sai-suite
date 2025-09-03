@@ -9,7 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **SAI CLI Tool**: Complete implementation of sai CLI tool with provider-based software management
+- **Enhanced Security**: Comprehensive command injection prevention and secure subprocess execution
+- **Execution Engine**: Robust execution engine with timeout handling, privilege escalation, and process isolation
+- **Security Validation**: Multi-layer command validation with dangerous pattern detection
+- **Resource Management**: Process resource limits and secure environment variable handling
 - **CLI Commands**: Implemented `sai stats`, `sai config-show`, and `sai version` commands
+- **Advanced Security Features**: 
+  - Command argument sanitization with length limits
+  - Executable safety validation with allowlist/blocklist
+  - Root command safety checks for privileged operations
+  - Secure environment variable handling with minimal attack surface
+  - Process isolation with new session groups and resource limits
+- **Comprehensive Statistics**: Detailed provider and action coverage analysis with multiple view options
 - **Provider Statistics**: Comprehensive statistics system with detailed provider and action analysis
 - **Template Engine**: Advanced Jinja2-based template resolution engine with array expansion support
 - **Provider System**: Comprehensive provider loading, caching, and availability detection
@@ -59,6 +70,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Command Execution Security**: Enhanced subprocess execution with argument validation and minimal environment
 - **Template Security**: Jinja2 StrictUndefined prevents template injection and silent failures
 - **Input Sanitization**: Comprehensive validation of command arguments and template variables
+- **Process Isolation**: New process groups with resource limits (CPU time, memory usage)
+- **Privilege Escalation**: Secure sudo handling with non-interactive mode and argument separation
+- **Command Injection Prevention**: Multi-layer validation against dangerous patterns and executables
+- **Environment Hardening**: Minimal secure environment variables, removal of dangerous PATH entries
 
 ### Fixed
 - Configuration file encoding issues with explicit UTF-8 handling
@@ -68,7 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Suite**: Fixed configuration tests to match actual implementation behavior
 - **Template Resolution**: Improved error handling and context building for complex scenarios
 - **Provider Availability**: Enhanced executable detection with proper platform support checking
-- **Pydantic V2 Migration**: Updated saigen configuration models to use Pydantic V2 syntax, eliminating deprecation warnings
+- **Pydantic V2 Migration**: Completed migration of all Pydantic models to V2 ConfigDict syntax, eliminating all 14 deprecation warnings across both sai and saigen packages
+- **CLI Documentation**: Updated README.md to reflect all available CLI commands including new provider management and validation commands
 
 ## [0.1.0] - Initial Release
 

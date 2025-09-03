@@ -94,13 +94,20 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 
 ### SAI Commands
 - `sai install <software>` - Install software using available providers
-- `sai configure <software>` - Configure software
+- `sai uninstall <software>` - Uninstall software using available providers
 - `sai start <software>` - Start software/service
 - `sai stop <software>` - Stop software/service
+- `sai restart <software>` - Restart software/service
+- `sai status <software>` - Show software service status
+- `sai info <software>` - Show software information
+- `sai search <term>` - Search for available software
+- `sai list` - List installed software managed through sai
 - `sai providers list` - List available providers
-- `sai actions <software>` - Show available actions for software
+- `sai providers detect` - Detect and refresh provider availability
+- `sai providers info <provider>` - Show detailed provider information
 - `sai stats` - Show comprehensive statistics about providers and actions
-- `sai config-show` - Display current SAI configuration
+- `sai config show` - Display current SAI configuration
+- `sai validate <saidata-file>` - Validate a saidata file against the schema
 - `sai version` - Show version information
 
 ### SAIGEN Commands

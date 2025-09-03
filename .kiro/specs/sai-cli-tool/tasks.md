@@ -30,19 +30,19 @@
   - Implement saidata file merging with precedence rules
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
   
-- [ ] 6. Build core execution engine
+- [x] 6. Build core execution engine
   - Create ExecutionEngine class to coordinate provider selection and action execution
   - Implement provider priority-based selection logic
   - Add dry-run mode that shows commands without executing
   - _Requirements: 1.1, 1.2, 1.3, 5.4_
 
-- [ ] 7. Implement command execution with security
+- [x] 7. Implement command execution with security
   - Create secure command executor with input sanitization
   - Add timeout handling and process management
   - Implement sudo handling for privileged operations
   - _Requirements: 3.1, 5.1, 5.2_
 
-- [ ] 8. Create CLI argument parser and command router
+- [x] 8. Create CLI argument parser and command router
   - Implement Click-based CLI with subcommands (install, uninstall, etc.)
   - Add global options (--provider, --dry-run, --verbose)
   - Create command validation and help system

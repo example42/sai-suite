@@ -1,7 +1,7 @@
 """Pydantic models for SaiData structure."""
 
 from typing import Dict, List, Optional, Union, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -239,8 +239,4 @@ class SaiData(BaseModel):
     providers: Optional[Dict[str, ProviderConfig]] = None
     compatibility: Optional[Compatibility] = None
 
-    class Config:
-        """Pydantic configuration."""
-        use_enum_values = True
-        validate_assignment = True
-        extra = "forbid"
+    model_config = ConfigDict(use_enum_values=True)
