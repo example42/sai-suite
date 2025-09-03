@@ -5,7 +5,7 @@ The SAI Software Management Suite consists of two complementary tools:
 ## SAI (Software Action Interface)
 A lightweight CLI tool for executing software management actions using provider-based configurations.
 
-## SAIGEN (SAI Generation) 
+## SAIGEN (SAI data Generation) 
 A comprehensive Python tool for generating, validating, and managing software metadata in YAML format following the saidata json schema specification.
 
 ## Core Purpose

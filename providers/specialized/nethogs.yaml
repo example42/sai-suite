@@ -1,0 +1,74 @@
+# NETHOGS Provider Data - Network usage by process
+version: "1.0"
+
+provider:
+  name: "nethogs"
+  display_name: "Network Hogs"
+  description: "Network usage monitoring by process using nethogs"
+  type: "network"
+  platforms: ["linux"]
+  capabilities: ["status", "info", "logs", "list", "upgrade"]
+
+actions:
+  status:
+    description: "Monitor network usage by process"
+    template: "nethogs {{interface}}"
+    variables:
+      interface: "eth0"
+
+  info:
+    description: "Monitor specific device"
+    template: "nethogs -d {{delay}} {{interface}}"
+    variables:
+      delay: "2"
+      interface: "eth0"
+
+  logs:
+    description: "Trace mode monitoring"
+    template: "nethogs -t {{interface}}"
+    variables:
+      interface: "eth0"
+
+  list:
+    description: "List processes using network"
+    template: "nethogs -p {{interface}}"
+    variables:
+      interface: "eth0"
+
+  upgrade:
+    description: "Show version information"
+    template: "nethogs -V"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "network_target"
+
+  files:
+    log:
+      path: "/tmp/nethogs-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    network:
+      path: "/tmp/network-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "nethogs eth0"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

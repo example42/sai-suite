@@ -1,0 +1,73 @@
+# DU Provider Data - Disk usage analyzer
+version: "1.0"
+
+provider:
+  name: "du"
+  display_name: "Disk Usage"
+  description: "Disk usage analysis using du command"
+  type: "filesystem"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["info", "list", "logs", "search", "upgrade"]
+
+actions:
+  info:
+    description: "Show disk usage size"
+    template: "du -sh {{saidata.directories.data.path}}"
+
+  list:
+    description: "Summarize directory usage"
+    template: "du -s {{saidata.directories.data.path}} {{saidata.directories.config.path}}"
+
+  logs:
+    description: "Human readable format"
+    template: "du -h {{saidata.directories.data.path}}"
+
+  search:
+    description: "Show usage with depth limit"
+    template: "du -h --max-depth={{max_depth}} {{saidata.directories.data.path}}"
+    variables:
+      max_depth: "2"
+
+  upgrade:
+    description: "Exclude patterns"
+    template: "du -h --exclude='{{exclude_pattern}}' {{saidata.directories.data.path}}"
+    variables:
+      exclude_pattern: "*.log"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "filesystem_target"
+
+  files:
+    log:
+      path: "/tmp/du-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    filesystem:
+      path: "/tmp/filesystem-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{saidata.directories.data.path}}"
+    config:
+      path: "{{saidata.directories.config.path}}"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    analyze:
+      path: "du -sh {{saidata.directories.data.path}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

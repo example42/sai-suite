@@ -1,0 +1,69 @@
+# NCDU Provider Data - Interactive disk usage analyzer
+version: "1.0"
+
+provider:
+  name: "ncdu"
+  display_name: "NCurses Disk Usage"
+  description: "Interactive disk usage analyzer using ncdu"
+  type: "filesystem"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["info", "logs", "search", "upgrade", "list"]
+
+actions:
+  info:
+    description: "Interactive disk usage analysis"
+    template: "ncdu {{saidata.directories.data.path}}"
+
+  logs:
+    description: "Analyze with exclusions"
+    template: "ncdu --exclude '{{exclude_pattern}}' {{saidata.directories.data.path}}"
+    variables:
+      exclude_pattern: "*.log"
+
+  search:
+    description: "Export analysis to file"
+    template: "ncdu -o /tmp/ncdu-{{saidata.metadata.name}}.json {{saidata.directories.data.path}}"
+
+  upgrade:
+    description: "Import analysis from file"
+    template: "ncdu -f /tmp/ncdu-{{saidata.metadata.name}}.json"
+
+  list:
+    description: "One filesystem only"
+    template: "ncdu -x {{saidata.directories.data.path}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "filesystem_target"
+
+  files:
+    log:
+      path: "/tmp/ncdu-{{saidata.metadata.name}}.json"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    filesystem:
+      path: "/tmp/filesystem-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{saidata.directories.data.path}}"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    analyze:
+      path: "ncdu {{saidata.directories.data.path}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

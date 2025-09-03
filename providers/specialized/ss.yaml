@@ -1,0 +1,70 @@
+# SS Provider Data - Socket statistics
+version: "1.0"
+
+provider:
+  name: "ss"
+  display_name: "Socket Statistics"
+  description: "Socket statistics and network connection analysis"
+  type: "network"
+  platforms: ["linux"]
+  capabilities: ["info", "list", "status", "search", "logs"]
+
+actions:
+  info:
+    description: "TCP socket statistics"
+    template: "ss -t | grep {{saidata.ports.main.default_port}}"
+
+  list:
+    description: "UDP socket statistics"
+    template: "ss -u | grep {{saidata.ports.main.default_port}}"
+
+  status:
+    description: "Listening sockets"
+    template: "ss -l | grep {{saidata.ports.main.default_port}}"
+
+  search:
+    description: "Process information with sockets"
+    template: "ss -p | grep {{saidata.metadata.name}}"
+
+  logs:
+    description: "Numeric addresses summary"
+    template: "ss -n -s"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "network_target"
+
+  files:
+    log:
+      path: "/tmp/ss-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    network:
+      path: "/tmp/network-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "ss -tuln | grep {{saidata.ports.main.default_port}}"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

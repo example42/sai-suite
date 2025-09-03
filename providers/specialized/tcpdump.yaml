@@ -1,0 +1,81 @@
+# TCPDUMP Provider Data - Network packet analyzer
+version: "1.0"
+
+provider:
+  name: "tcpdump"
+  display_name: "Network Packet Analyzer"
+  description: "Network packet capture and analysis using tcpdump"
+  type: "network"
+  platforms: ["linux", "macos"]
+  capabilities: ["logs", "info", "search", "list", "status"]
+
+actions:
+  logs:
+    description: "Capture network packets"
+    template: "tcpdump -i {{interface}} port {{saidata.ports.main.default_port}} -c {{packet_count}}"
+    variables:
+      interface: "any"
+      packet_count: "100"
+
+  info:
+    description: "Filter specific traffic"
+    template: "tcpdump -i {{interface}} host {{target_host}} and port {{saidata.ports.main.default_port}}"
+    variables:
+      interface: "any"
+      target_host: "localhost"
+
+  search:
+    description: "Capture to file"
+    template: "tcpdump -i {{interface}} -w /tmp/tcpdump-{{saidata.metadata.name}}.pcap port {{saidata.ports.main.default_port}}"
+    variables:
+      interface: "any"
+
+  list:
+    description: "List available interfaces"
+    template: "tcpdump -D"
+
+  status:
+    description: "Verbose packet capture"
+    template: "tcpdump -v -i {{interface}} port {{saidata.ports.main.default_port}} -c {{packet_count}}"
+    variables:
+      interface: "any"
+      packet_count: "10"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "network_target"
+
+  files:
+    log:
+      path: "/tmp/tcpdump-{{saidata.metadata.name}}.pcap"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    network:
+      path: "/tmp/network-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    capture:
+      path: "tcpdump -i any port {{saidata.ports.main.default_port}}"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

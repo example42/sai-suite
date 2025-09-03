@@ -1,0 +1,67 @@
+# PMAP Provider Data - Process memory mapping
+version: "1.0"
+
+provider:
+  name: "pmap"
+  display_name: "Process Memory Map"
+  description: "Process memory mapping analysis using pmap"
+  type: "memory"
+  platforms: ["linux", "macos"]
+  capabilities: ["info", "list", "status", "search", "logs"]
+
+actions:
+  info:
+    description: "Show memory mapping"
+    template: "pmap $(pgrep -f {{saidata.metadata.name}})"
+
+  list:
+    description: "Extended memory information"
+    template: "pmap -x $(pgrep -f {{saidata.metadata.name}})"
+
+  status:
+    description: "Device format mapping"
+    template: "pmap -d $(pgrep -f {{saidata.metadata.name}})"
+
+  search:
+    description: "Quiet mode mapping"
+    template: "pmap -q $(pgrep -f {{saidata.metadata.name}})"
+
+  logs:
+    description: "Address range mapping"
+    template: "pmap -A {{address_range}} $(pgrep -f {{saidata.metadata.name}})"
+    variables:
+      address_range: "low,high"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "memory_target"
+
+  files:
+    log:
+      path: "/tmp/pmap-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    memory:
+      path: "/tmp/memory-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    map:
+      path: "pmap $(pgrep -f {{saidata.metadata.name}})"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

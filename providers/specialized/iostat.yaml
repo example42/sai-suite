@@ -1,0 +1,75 @@
+# IOSTAT Provider Data - I/O statistics
+version: "1.0"
+
+provider:
+  name: "iostat"
+  display_name: "I/O Statistics"
+  description: "I/O statistics and system performance monitoring"
+  type: "io"
+  platforms: ["linux", "macos"]
+  capabilities: ["info", "logs", "status", "list", "upgrade"]
+
+actions:
+  info:
+    description: "I/O statistics report"
+    template: "iostat"
+
+  logs:
+    description: "Continuous I/O monitoring"
+    template: "iostat {{monitor_interval}} {{monitor_count}}"
+    variables:
+      monitor_interval: "2"
+      monitor_count: "10"
+
+  status:
+    description: "CPU statistics"
+    template: "iostat -c {{report_interval}} 1"
+    variables:
+      report_interval: "1"
+
+  list:
+    description: "Device statistics"
+    template: "iostat -d {{device_name}}"
+    variables:
+      device_name: ""
+
+  upgrade:
+    description: "Extended statistics"
+    template: "iostat -x {{extended_interval}} {{extended_count}}"
+    variables:
+      extended_interval: "2"
+      extended_count: "5"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "io_target"
+
+  files:
+    log:
+      path: "/tmp/iostat-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    io:
+      path: "/tmp/io-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "iostat 2"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

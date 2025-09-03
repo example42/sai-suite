@@ -12,13 +12,13 @@
   - Add error handling for malformed provider files
   - _Requirements: 2.1, 2.2_
 
-- [ ] 3. Build command template resolution engine
+- [x] 3. Build command template resolution engine
   - Implement template variable substitution using Jinja2 or similar
   - Create context builder that extracts variables from saidata
   - Add support for array expansion (e.g., {{saidata.packages.*.name}})
   - _Requirements: 3.1, 3.2_
 
-- [ ] 4. Create base provider class and factory
+- [x] 4. Create base provider class and factory
   - Implement BaseProvider class with YAML-driven behavior
   - Create ProviderFactory to instantiate providers from YAML data
   - Add provider availability detection using executable checks

@@ -1,0 +1,80 @@
+# KILLALL Provider Data - Kill processes by name
+version: "1.0"
+
+provider:
+  name: "killall"
+  display_name: "Kill All Processes"
+  description: "Kill processes by name using killall command"
+  type: "process"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["stop", "restart", "status", "info"]
+
+actions:
+  stop:
+    description: "Kill all processes by name"
+    template: "killall {{kill_signal}} {{saidata.metadata.name}}"
+    variables:
+      kill_signal: "-TERM"
+    validation:
+      command: "! pgrep -f {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  restart:
+    description: "Kill and restart all processes"
+    steps:
+      - name: "kill-processes"
+        command: "killall {{kill_signal}} {{saidata.metadata.name}}"
+        ignore_failure: true
+        variables:
+          kill_signal: "-TERM"
+      - name: "wait-termination"
+        command: "sleep {{restart_delay}}"
+      - name: "force-kill-if-needed"
+        command: "killall -KILL {{saidata.metadata.name}}"
+        ignore_failure: true
+      - name: "start-process"
+        command: "{{saidata.commands.server.path}} &"
+    variables:
+      restart_delay: "3"
+
+  status:
+    description: "Check processes before killing"
+    template: "pgrep -f {{saidata.metadata.name}} && echo 'Processes found' || echo 'No processes found'"
+
+  info:
+    description: "Show processes that would be killed"
+    template: "pgrep -a -f {{saidata.metadata.name}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "process_target"
+
+  files:
+    log:
+      path: "/tmp/killall-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    process:
+      path: "/tmp/process-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    kill:
+      path: "killall {{saidata.metadata.name}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

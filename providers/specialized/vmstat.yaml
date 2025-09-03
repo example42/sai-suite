@@ -1,0 +1,72 @@
+# VMSTAT Provider Data - Virtual memory statistics
+version: "1.0"
+
+provider:
+  name: "vmstat"
+  display_name: "Virtual Memory Statistics"
+  description: "Virtual memory statistics and system performance monitoring"
+  type: "system"
+  platforms: ["linux", "macos"]
+  capabilities: ["info", "logs", "status", "list", "upgrade"]
+
+actions:
+  info:
+    description: "System memory report"
+    template: "vmstat"
+
+  logs:
+    description: "Continuous monitoring with interval"
+    template: "vmstat {{monitor_interval}} {{monitor_count}}"
+    variables:
+      monitor_interval: "2"
+      monitor_count: "10"
+
+  status:
+    description: "Single report with count"
+    template: "vmstat {{report_interval}} 1"
+    variables:
+      report_interval: "1"
+
+  list:
+    description: "Disk statistics"
+    template: "vmstat -d"
+
+  upgrade:
+    description: "Partition statistics"
+    template: "vmstat -p {{partition_device}}"
+    variables:
+      partition_device: "/dev/sda1"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "system_target"
+
+  files:
+    log:
+      path: "/tmp/vmstat-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    system:
+      path: "/tmp/system-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "vmstat 2"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

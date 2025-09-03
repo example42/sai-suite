@@ -1,0 +1,69 @@
+# STAT Provider Data - File/filesystem status
+version: "1.0"
+
+provider:
+  name: "stat"
+  display_name: "File Status"
+  description: "File and filesystem status information using stat command"
+  type: "filesystem"
+  platforms: ["linux", "macos"]
+  capabilities: ["info", "list", "logs", "search", "status"]
+
+actions:
+  info:
+    description: "Show file information"
+    template: "stat {{saidata.files.config.path}}"
+
+  list:
+    description: "Custom format output"
+    template: "stat --format='%n %s %y' {{saidata.files.config.path}}"
+
+  logs:
+    description: "Filesystem information"
+    template: "stat -f {{saidata.directories.data.path}}"
+
+  search:
+    description: "Dereference symbolic links"
+    template: "stat -L {{saidata.files.config.path}}"
+
+  status:
+    description: "Terse format output"
+    template: "stat -t {{saidata.files.config.path}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "filesystem_target"
+
+  files:
+    config:
+      path: "{{saidata.files.config.path}}"
+    log:
+      path: "/tmp/stat-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    filesystem:
+      path: "/tmp/filesystem-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+    data:
+      path: "{{saidata.directories.data.path}}"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    info:
+      path: "stat {{saidata.files.config.path}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

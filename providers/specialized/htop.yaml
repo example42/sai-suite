@@ -1,0 +1,75 @@
+# HTOP Provider Data - Interactive process viewer
+version: "1.0"
+
+provider:
+  name: "htop"
+  display_name: "Interactive Process Viewer"
+  description: "Interactive process viewer and system monitor"
+  type: "monitor"
+  platforms: ["linux", "macos"]
+  capabilities: ["status", "list", "info", "search", "stop"]
+
+actions:
+  status:
+    description: "Interactive process monitoring"
+    template: "htop -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+
+  list:
+    description: "List processes in tree view"
+    template: "htop --tree -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+
+  info:
+    description: "Show detailed process information"
+    template: "htop -d {{delay}} -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    variables:
+      delay: "10"
+
+  search:
+    description: "Search and filter processes"
+    template: "htop --filter={{saidata.metadata.name}}"
+
+  stop:
+    description: "Kill process interactively"
+    template: "kill -TERM $(pgrep -f {{saidata.metadata.name}})"
+    validation:
+      command: "! pgrep -f {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "monitor_target"
+
+  files:
+    config:
+      path: "~/.config/htop/htoprc"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/htop-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    monitor:
+      path: "/tmp/monitor-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "htop -p $(pgrep -f {{saidata.metadata.name}})"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

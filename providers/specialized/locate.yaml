@@ -1,0 +1,65 @@
+# LOCATE Provider Data - Find files by name
+version: "1.0"
+
+provider:
+  name: "locate"
+  display_name: "File Locator"
+  description: "Find files by name using locate database"
+  type: "filesystem"
+  platforms: ["linux", "macos"]
+  capabilities: ["search", "info", "upgrade", "list", "logs"]
+
+actions:
+  search:
+    description: "Search files by name"
+    template: "locate {{saidata.metadata.name}}"
+
+  info:
+    description: "Update locate database"
+    template: "updatedb"
+
+  upgrade:
+    description: "Show database statistics"
+    template: "locate -S"
+
+  list:
+    description: "Case insensitive search"
+    template: "locate -i {{saidata.metadata.name}}"
+
+  logs:
+    description: "Regex pattern search"
+    template: "locate --regex '.*{{saidata.metadata.name}}.*'"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "filesystem_target"
+
+  files:
+    log:
+      path: "/tmp/locate-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    search:
+      path: "/tmp/search-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    search:
+      path: "locate {{saidata.metadata.name}}"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

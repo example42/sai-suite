@@ -1,0 +1,82 @@
+# IFTOP Provider Data - Network bandwidth by connection
+version: "1.0"
+
+provider:
+  name: "iftop"
+  display_name: "Interface Top"
+  description: "Network bandwidth monitoring by connection using iftop"
+  type: "network"
+  platforms: ["linux", "macos"]
+  capabilities: ["status", "info", "logs", "list", "search"]
+
+actions:
+  status:
+    description: "Monitor network bandwidth"
+    template: "iftop -i {{interface}}"
+    variables:
+      interface: "any"
+
+  info:
+    description: "Monitor specific interface"
+    template: "iftop -i {{interface}} -P"
+    variables:
+      interface: "eth0"
+
+  logs:
+    description: "Monitor specific port"
+    template: "iftop -i {{interface}} -f 'port {{saidata.ports.main.default_port}}'"
+    variables:
+      interface: "any"
+
+  list:
+    description: "Monitor specific host"
+    template: "iftop -i {{interface}} -f 'host {{target_host}}'"
+    variables:
+      interface: "any"
+      target_host: "localhost"
+
+  search:
+    description: "Filter network traffic"
+    template: "iftop -i {{interface}} -f '{{filter_expression}}'"
+    variables:
+      interface: "any"
+      filter_expression: "port {{saidata.ports.main.default_port}}"
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "network_target"
+
+  files:
+    log:
+      path: "/tmp/iftop-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    network:
+      path: "/tmp/network-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "iftop -i any -f 'port {{saidata.ports.main.default_port}}'"
+
+  ports:
+    main:
+      port: "{{saidata.ports.main.default_port}}"
+      configurable: true
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"

@@ -1,0 +1,75 @@
+# TOP Provider Data - Real-time process monitoring
+version: "1.0"
+
+provider:
+  name: "top"
+  display_name: "Top Process Monitor"
+  description: "Real-time process monitoring using top command"
+  type: "monitor"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["status", "list", "info", "logs", "stop"]
+
+actions:
+  status:
+    description: "Monitor processes in real-time"
+    template: "top -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+
+  list:
+    description: "List top processes"
+    template: "top -b -n1 | grep {{saidata.metadata.name}}"
+
+  info:
+    description: "Show process information from top"
+    template: "top -b -n1 -p $(pgrep -f {{saidata.metadata.name}})"
+
+  logs:
+    description: "Monitor process continuously"
+    template: "top -d {{monitor_interval}} -p $(pgrep -f {{saidata.metadata.name}})"
+    variables:
+      monitor_interval: "2"
+
+  stop:
+    description: "Kill process from top interface"
+    template: "kill -TERM $(pgrep -f {{saidata.metadata.name}})"
+    validation:
+      command: "! pgrep -f {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+mappings:
+  packages:
+    server:
+      name: "{{saidata.metadata.name}}"
+
+  services:
+    main:
+      name: "{{saidata.metadata.name}}"
+      type: "monitor_target"
+
+  files:
+    config:
+      path: "~/.toprc"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+    log:
+      path: "/tmp/top-{{saidata.metadata.name}}.log"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0644"
+
+  directories:
+    monitor:
+      path: "/tmp/monitor-{{saidata.metadata.name}}"
+      owner: "$(whoami)"
+      group: "$(whoami)"
+      mode: "0755"
+
+  commands:
+    server:
+      path: "{{saidata.commands.server.path}}"
+    monitor:
+      path: "top -p $(pgrep -f {{saidata.metadata.name}})"
+
+  variables:
+    "*":
+      config_key: "{{variable_name}}"
