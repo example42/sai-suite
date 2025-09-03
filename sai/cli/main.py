@@ -126,94 +126,104 @@ def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str],
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def install(ctx: click.Context, software: str, timeout: Optional[int]):
+def install(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Install software using the best available provider."""
-    _execute_software_action(ctx, 'install', software, timeout)
+    _execute_software_action(ctx, 'install', software, timeout, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def uninstall(ctx: click.Context, software: str, timeout: Optional[int]):
+def uninstall(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Uninstall software using the best available provider."""
-    _execute_software_action(ctx, 'uninstall', software, timeout)
+    _execute_software_action(ctx, 'uninstall', software, timeout, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def start(ctx: click.Context, software: str, timeout: Optional[int]):
+def start(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Start software service."""
-    _execute_software_action(ctx, 'start', software, timeout)
+    _execute_software_action(ctx, 'start', software, timeout, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def stop(ctx: click.Context, software: str, timeout: Optional[int]):
+def stop(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Stop software service."""
-    _execute_software_action(ctx, 'stop', software, timeout)
+    _execute_software_action(ctx, 'stop', software, timeout, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def restart(ctx: click.Context, software: str, timeout: Optional[int]):
+def restart(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Restart software service."""
-    _execute_software_action(ctx, 'restart', software, timeout)
+    _execute_software_action(ctx, 'restart', software, timeout, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def status(ctx: click.Context, software: str, timeout: Optional[int]):
+def status(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Show software service status."""
-    _execute_software_action(ctx, 'status', software, timeout, requires_confirmation=False)
+    _execute_software_action(ctx, 'status', software, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def info(ctx: click.Context, software: str, timeout: Optional[int]):
+def info(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Show software information."""
-    _execute_software_action(ctx, 'info', software, timeout, requires_confirmation=False)
+    _execute_software_action(ctx, 'info', software, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('term', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def search(ctx: click.Context, term: str, timeout: Optional[int]):
+def search(ctx: click.Context, term: str, timeout: Optional[int], no_cache: bool):
     """Search for available software."""
-    _execute_software_action(ctx, 'search', term, timeout, requires_confirmation=False)
+    _execute_software_action(ctx, 'search', term, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
 @cli.command()
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def list(ctx: click.Context, timeout: Optional[int]):
+def list(ctx: click.Context, timeout: Optional[int], no_cache: bool):
     """List installed software managed through sai."""
-    _execute_software_action(ctx, 'list', '', timeout, requires_confirmation=False)
+    _execute_software_action(ctx, 'list', '', timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
 @click.pass_context
-def logs(ctx: click.Context, software: str, timeout: Optional[int]):
+def logs(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
     """Show software service logs."""
-    _execute_software_action(ctx, 'logs', software, timeout, requires_confirmation=False)
+    _execute_software_action(ctx, 'logs', software, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
 def _execute_software_action(ctx: click.Context, action: str, software: str, 
-                           timeout: Optional[int], requires_confirmation: bool = True):
+                           timeout: Optional[int], requires_confirmation: bool = True, use_cache: bool = True):
     """Execute a software management action."""
     try:
         # Load providers
@@ -229,7 +239,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
         for name, provider_data in providers.items():
             from ..providers.base import BaseProvider
             provider_instance = BaseProvider(provider_data)
-            if provider_instance.is_available():
+            if provider_instance.is_available(use_cache=use_cache):
                 provider_instances.append(provider_instance)
         
         if not provider_instances:
@@ -241,7 +251,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
         if software:
             try:
                 saidata_loader = SaidataLoader(ctx.obj['sai_config'])
-                saidata = saidata_loader.load_saidata(software)
+                saidata = saidata_loader.load_saidata(software, use_cache=use_cache)
             except SaidataNotFoundError:
                 if not ctx.obj['quiet'] and ctx.obj['verbose']:
                     click.echo(f"Warning: No saidata found for '{software}', using basic execution", err=True)
@@ -267,7 +277,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             not ctx.obj.get('provider')):
             # Execute on all providers that support this action
             _execute_informational_action_on_all_providers(
-                ctx, action, software, timeout, provider_instances, saidata
+                ctx, action, software, timeout, provider_instances, saidata, use_cache
             )
             return
         
@@ -507,7 +517,7 @@ def _convert_config_value(key: str, value: str, current_type: type):
 
 def _execute_informational_action_on_all_providers(ctx: click.Context, action: str, 
                                                   software: str, timeout: Optional[int],
-                                                  provider_instances: List, saidata):
+                                                  provider_instances: List, saidata, use_cache: bool = True):
     """Execute an informational action on all providers that support it."""
     from ..core.execution_engine import ExecutionEngine, ExecutionContext
     
@@ -2112,6 +2122,192 @@ def validate(ctx: click.Context, file: Path, detailed: bool):
         else:
             error_msg = format_error_for_cli(e, ctx.obj['verbose'])
             click.echo(f"Error validating file: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+# Cache management commands
+@cli.group()
+def cache():
+    """Manage cache for performance optimization."""
+    pass
+
+
+@cache.command('status')
+@click.pass_context
+def cache_status(ctx: click.Context):
+    """Show comprehensive cache status and statistics."""
+    try:
+        from ..utils.cache import CacheManager
+        
+        cache_manager = CacheManager(ctx.obj['sai_config'])
+        cache_info = cache_manager.get_comprehensive_status()
+        
+        if ctx.obj['output_json']:
+            import json
+            click.echo(json.dumps(cache_info, indent=2))
+        else:
+            click.echo("Cache Status:")
+            click.echo(f"  Cache Directory: {cache_info['cache_directory']}")
+            click.echo(f"  Cache Enabled: {cache_info['cache_enabled']}")
+            click.echo(f"  Cache TTL: {cache_info['cache_ttl_hours']:.1f} hours")
+            click.echo(f"  Total Cache Size: {cache_info['total_cache_size_mb']:.2f} MB")
+            
+            # Provider cache details
+            provider_cache = cache_info['provider_cache']
+            click.echo(f"\n  Provider Cache:")
+            click.echo(f"    Size: {provider_cache['cache_size_mb']:.2f} MB")
+            click.echo(f"    Cached Providers: {provider_cache['total_cached_providers']}")
+            
+            if provider_cache['cached_providers']:
+                click.echo("    Providers:")
+                for provider in provider_cache['cached_providers']:
+                    status = "✓" if provider['available'] else "✗"
+                    expired = " (expired)" if provider['expired'] else ""
+                    age = f"{provider['age_hours']:.1f}h"
+                    click.echo(f"      {status} {provider['name']} - {age} ago{expired}")
+            
+            # Saidata cache details
+            saidata_cache = cache_info['saidata_cache']
+            click.echo(f"\n  Saidata Cache:")
+            click.echo(f"    Size: {saidata_cache['cache_size_mb']:.2f} MB")
+            click.echo(f"    Cached Saidata: {saidata_cache['total_cached_saidata']}")
+            
+            if saidata_cache['cached_saidata']:
+                click.echo("    Saidata:")
+                for saidata in saidata_cache['cached_saidata']:
+                    expired = " (expired)" if saidata['expired'] else ""
+                    age = f"{saidata['age_hours']:.1f}h"
+                    click.echo(f"      {saidata['software_name']} - {age} ago{expired}")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            click.echo(f"Error getting cache status: {e}", err=True)
+        
+        if ctx.obj['verbose']:
+            import traceback
+            click.echo(traceback.format_exc(), err=True)
+        
+        ctx.exit(1)
+
+
+@cache.command('clear')
+@click.option('--provider', '-p', help='Clear cache for specific provider only')
+@click.option('--saidata', '-s', help='Clear cache for specific saidata only')
+@click.option('--all', 'clear_all', is_flag=True, help='Clear all cache data')
+@click.pass_context
+def cache_clear(ctx: click.Context, provider: Optional[str], saidata: Optional[str], clear_all: bool):
+    """Clear cache data."""
+    try:
+        from ..utils.cache import CacheManager
+        
+        cache_manager = CacheManager(ctx.obj['sai_config'])
+        
+        if clear_all:
+            # Clear all caches
+            results = cache_manager.clear_all_caches()
+            
+            if ctx.obj['output_json']:
+                import json
+                click.echo(json.dumps(results, indent=2))
+            else:
+                total_cleared = results['total_cleared']
+                if total_cleared > 0:
+                    if not ctx.obj['quiet']:
+                        click.echo(f"✓ Cleared {results['provider_cache_cleared']} provider cache entries")
+                        click.echo(f"✓ Cleared {results['saidata_cache_cleared']} saidata cache entries")
+                        click.echo(f"✓ Total cleared: {total_cleared} entries")
+                else:
+                    click.echo("No cache data found to clear")
+        
+        elif provider:
+            # Clear cache for specific provider
+            cleared = cache_manager.provider_cache.clear_provider_cache(provider)
+            
+            if ctx.obj['output_json']:
+                import json
+                click.echo(json.dumps({'provider': provider, 'cleared': cleared}, indent=2))
+            else:
+                if cleared:
+                    if not ctx.obj['quiet']:
+                        click.echo(f"✓ Cleared cache for provider '{provider}'")
+                else:
+                    click.echo(f"No cache found for provider '{provider}'", err=True)
+                    ctx.exit(1)
+        
+        elif saidata:
+            # Clear cache for specific saidata
+            cleared = cache_manager.saidata_cache.clear_saidata_cache(saidata)
+            
+            if ctx.obj['output_json']:
+                import json
+                click.echo(json.dumps({'saidata': saidata, 'cleared': cleared}, indent=2))
+            else:
+                if cleared > 0:
+                    if not ctx.obj['quiet']:
+                        click.echo(f"✓ Cleared {cleared} cache entries for saidata '{saidata}'")
+                else:
+                    click.echo(f"No cache found for saidata '{saidata}'", err=True)
+                    ctx.exit(1)
+        
+        else:
+            click.echo("Please specify --provider, --saidata, or --all to clear cache", err=True)
+            ctx.exit(1)
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            click.echo(f"Error clearing cache: {e}", err=True)
+        
+        if ctx.obj['verbose']:
+            import traceback
+            click.echo(traceback.format_exc(), err=True)
+        
+        ctx.exit(1)
+
+
+@cache.command('cleanup')
+@click.pass_context
+def cache_cleanup(ctx: click.Context):
+    """Clean up expired cache entries."""
+    try:
+        from ..utils.cache import CacheManager
+        
+        cache_manager = CacheManager(ctx.obj['sai_config'])
+        results = cache_manager.cleanup_all_expired()
+        
+        if ctx.obj['output_json']:
+            import json
+            click.echo(json.dumps(results, indent=2))
+        else:
+            total_cleaned = results['total_cleaned']
+            if total_cleaned > 0:
+                if not ctx.obj['quiet']:
+                    click.echo(f"✓ Cleaned up {results['provider_cache_cleaned']} expired provider cache entries")
+                    click.echo(f"✓ Cleaned up {results['saidata_cache_cleaned']} expired saidata cache entries")
+                    click.echo(f"✓ Total cleaned: {total_cleaned} entries")
+            else:
+                if not ctx.obj['quiet']:
+                    click.echo("No expired cache entries found")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            click.echo(f"Error cleaning up cache: {e}", err=True)
+        
+        if ctx.obj['verbose']:
+            import traceback
+            click.echo(traceback.format_exc(), err=True)
+        
         ctx.exit(1)
 
 

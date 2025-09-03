@@ -52,11 +52,19 @@ class SaidataLoader:
         self.config = config or SaiConfig()
         self._schema_cache: Optional[Dict[str, Any]] = None
         
-    def load_saidata(self, software_name: str) -> Optional[SaiData]:
+        # Initialize saidata cache if enabled
+        if self.config.cache_enabled:
+            from ..utils.cache import SaidataCache
+            self._saidata_cache = SaidataCache(self.config)
+        else:
+            self._saidata_cache = None
+        
+    def load_saidata(self, software_name: str, use_cache: bool = True) -> Optional[SaiData]:
         """Load and validate saidata for software.
         
         Args:
             software_name: Name of the software to load saidata for
+            use_cache: Whether to use cached data if available
             
         Returns:
             SaiData object if found and valid, None otherwise
@@ -73,8 +81,20 @@ class SaidataLoader:
         if not saidata_files:
             raise SaidataNotFoundError(f"No saidata files found for software: {software_name}")
         
-        # Load and merge saidata files with precedence rules
-        merged_data = self._merge_saidata_files(saidata_files)
+        # Check cache first if enabled and requested
+        merged_data = None
+        if use_cache and self._saidata_cache:
+            merged_data = self._saidata_cache.get_cached_saidata(software_name, saidata_files)
+            if merged_data:
+                logger.debug(f"Using cached saidata for {software_name}")
+        
+        # Load and merge saidata files if not cached
+        if merged_data is None:
+            merged_data = self._merge_saidata_files(saidata_files)
+            
+            # Cache the merged data if caching is enabled
+            if self._saidata_cache:
+                self._saidata_cache.update_saidata_cache(software_name, saidata_files, merged_data)
         
         # Validate the merged data
         validation_result = self.validate_saidata(merged_data)
