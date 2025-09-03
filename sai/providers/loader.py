@@ -38,15 +38,18 @@ class ProviderLoadError(Exception):
 class ProviderLoader:
     """Loads and validates provider YAML files."""
     
-    def __init__(self, schema_path: Optional[Path] = None):
+    def __init__(self, schema_path: Optional[Path] = None, enable_caching: bool = True):
         """Initialize the provider loader.
         
         Args:
             schema_path: Path to the provider data JSON schema file.
                         If None, uses the default schema location.
+            enable_caching: Whether to enable provider data caching for performance
         """
         self.schema_path = schema_path or Path(__file__).parent.parent.parent / "schemas" / "providerdata-0.1-schema.json"
         self._schema_validator: Optional[Draft7Validator] = None
+        self.enable_caching = enable_caching
+        self._provider_cache: Dict[Path, ProviderData] = {}
         self._load_schema()
     
     def _load_schema(self) -> None:
@@ -176,7 +179,29 @@ class ProviderLoader:
         """
         logger.debug(f"Loading provider file: {provider_file}")
         
+        # Check cache first if enabled
+        if self.enable_caching and provider_file in self._provider_cache:
+            # Check if file has been modified since caching
+            try:
+                cached_mtime = getattr(self._provider_cache[provider_file], '_cached_mtime', 0)
+                current_mtime = provider_file.stat().st_mtime
+                if cached_mtime >= current_mtime:
+                    logger.debug(f"Using cached provider data for {provider_file}")
+                    return self._provider_cache[provider_file]
+            except (OSError, AttributeError):
+                # File might have been deleted or cache corrupted, continue with fresh load
+                pass
+        
         try:
+            # Security check: limit file size to prevent DoS attacks
+            file_size = provider_file.stat().st_size
+            max_size = 10 * 1024 * 1024  # 10MB limit
+            if file_size > max_size:
+                raise ProviderLoadError(
+                    provider_file,
+                    f"Provider file too large: {file_size} bytes (max: {max_size})"
+                )
+            
             # Load YAML file
             with open(provider_file, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f)
@@ -192,6 +217,12 @@ class ProviderLoader:
             
             # Validate and parse with Pydantic
             provider_data = self.validate_pydantic_model(data, provider_file)
+            
+            # Cache the result if caching is enabled
+            if self.enable_caching:
+                # Store modification time for cache invalidation
+                setattr(provider_data, '_cached_mtime', provider_file.stat().st_mtime)
+                self._provider_cache[provider_file] = provider_data
             
             logger.info(f"Successfully loaded provider: {provider_data.provider.name} from {provider_file}")
             return provider_data

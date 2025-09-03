@@ -103,6 +103,10 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `saigen config --show` - Display current configuration
 - `saigen --help` - Show all available commands and options
 
+## Troubleshooting
+
+For common issues and solutions, see the [Troubleshooting Guide](docs/troubleshooting.md).
+
 ## Configuration
 
 ### SAI Configuration

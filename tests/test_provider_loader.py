@@ -148,6 +148,80 @@ class TestProviderLoader:
             assert len(providers) == 2
             assert "apt" in providers
             assert "brew" in providers
+    
+    def test_provider_caching(self, tmp_path):
+        """Test provider file caching functionality."""
+        # Create a valid provider YAML
+        provider_data = {
+            "version": "1.0",
+            "provider": {
+                "name": "test-cache",
+                "type": "package_manager"
+            },
+            "actions": {
+                "install": {
+                    "template": "test install {{saidata.metadata.name}}"
+                }
+            }
+        }
+        
+        provider_file = tmp_path / "test-cache.yaml"
+        with open(provider_file, 'w') as f:
+            yaml.dump(provider_data, f)
+        
+        with patch.object(ProviderLoader, '_load_schema'):
+            loader = ProviderLoader(enable_caching=True)
+            loader._schema_validator = None
+            
+            # First load - should read from file
+            result1 = loader.load_provider_file(provider_file)
+            assert result1.provider.name == "test-cache"
+            assert len(loader._provider_cache) == 1
+            
+            # Second load - should use cache
+            result2 = loader.load_provider_file(provider_file)
+            assert result2.provider.name == "test-cache"
+            assert result1 is result2  # Should be same object from cache
+    
+    def test_variable_mapping_string_support(self, tmp_path):
+        """Test that variable mappings support both string and object formats."""
+        # Create provider with string variable mapping (like npm_prefix)
+        provider_data = {
+            "version": "1.0",
+            "provider": {
+                "name": "test-variables",
+                "type": "package_manager"
+            },
+            "actions": {
+                "install": {
+                    "template": "test install {{saidata.metadata.name}}"
+                }
+            },
+            "mappings": {
+                "variables": {
+                    "string_var": "$(some command)",
+                    "object_var": {
+                        "value": "default_value",
+                        "config_key": "test.key"
+                    }
+                }
+            }
+        }
+        
+        provider_file = tmp_path / "test-variables.yaml"
+        with open(provider_file, 'w') as f:
+            yaml.dump(provider_data, f)
+        
+        with patch.object(ProviderLoader, '_load_schema'):
+            loader = ProviderLoader()
+            loader._schema_validator = None
+            
+            result = loader.load_provider_file(provider_file)
+            assert result.provider.name == "test-variables"
+            assert result.mappings is not None
+            assert result.mappings.variables is not None
+            assert "string_var" in result.mappings.variables
+            assert "object_var" in result.mappings.variables
 
 
 class TestBaseProvider:

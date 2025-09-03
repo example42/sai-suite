@@ -147,7 +147,7 @@ class Mappings(BaseModel):
     directories: Optional[Dict[str, DirectoryMapping]] = None
     commands: Optional[Dict[str, CommandMapping]] = None
     ports: Optional[Dict[str, PortMapping]] = None
-    variables: Optional[Dict[str, VariableMapping]] = None
+    variables: Optional[Dict[str, Union[VariableMapping, str]]] = None
 
 
 class ProviderData(BaseModel):
