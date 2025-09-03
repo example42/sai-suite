@@ -58,6 +58,21 @@ class ConfigManager:
         
         config_data = config.dict(exclude_none=True)
         
+        # Convert Path objects and enums to strings for serialization
+        def convert_for_serialization(obj):
+            if isinstance(obj, Path):
+                return str(obj)
+            elif hasattr(obj, 'value'):  # Handle enums
+                return obj.value
+            elif isinstance(obj, dict):
+                return {k: convert_for_serialization(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_for_serialization(item) for item in obj]
+            else:
+                return obj
+        
+        config_data = convert_for_serialization(config_data)
+        
         try:
             if save_path.suffix.lower() == '.json':
                 with open(save_path, 'w', encoding='utf-8') as f:
@@ -127,10 +142,22 @@ class ConfigManager:
         if not self._config:
             self.load_config()
         
-        # Apply updates (simplified - in practice would need deep merge)
+        # Apply updates with proper validation
         for key, value in updates.items():
             if hasattr(self._config, key):
-                setattr(self._config, key, value)
+                # Handle special cases for complex types
+                if key == 'provider_priorities' and isinstance(value, dict):
+                    # Merge with existing priorities
+                    current_priorities = getattr(self._config, key) or {}
+                    current_priorities.update(value)
+                    setattr(self._config, key, current_priorities)
+                elif key in ['saidata_paths', 'provider_paths'] and isinstance(value, list):
+                    # Replace the entire list
+                    setattr(self._config, key, value)
+                else:
+                    setattr(self._config, key, value)
+            else:
+                raise ValueError(f"Unknown configuration key: {key}")
     
     def validate_config(self) -> List[str]:
         """Validate current configuration and return any issues."""

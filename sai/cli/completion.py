@@ -70,18 +70,33 @@ def complete_action_names(ctx: click.Context, param: click.Parameter, incomplete
 
 def complete_config_keys(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
     """Complete configuration keys."""
-    config_keys = [
-        'log_level',
-        'cache_enabled',
-        'cache_directory',
-        'default_provider',
-        'action_timeout',
-        'require_confirmation',
-        'dry_run_default',
-        'max_concurrent_actions'
-    ]
-    
-    return [key for key in config_keys if key.startswith(incomplete)]
+    try:
+        # Get actual config keys from the SaiConfig model
+        from ..models.config import SaiConfig
+        config_instance = SaiConfig()
+        config_keys = [
+            attr for attr in dir(config_instance)
+            if not attr.startswith('_') and not callable(getattr(config_instance, attr))
+        ]
+        
+        return [key for key in config_keys if key.startswith(incomplete)]
+    except Exception:
+        # Fallback to hardcoded list
+        config_keys = [
+            'log_level',
+            'cache_enabled',
+            'cache_directory',
+            'default_provider',
+            'action_timeout',
+            'require_confirmation',
+            'dry_run_default',
+            'max_concurrent_actions',
+            'saidata_paths',
+            'provider_paths',
+            'provider_priorities'
+        ]
+        
+        return [key for key in config_keys if key.startswith(incomplete)]
 
 
 def complete_log_levels(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:

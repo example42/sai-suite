@@ -507,9 +507,24 @@ def format_error_for_cli(error: Exception, verbose: bool = False) -> str:
         # For non-SAI errors, provide basic formatting
         message = str(error)
         
+        # Always show line number information for better debugging
+        import traceback
+        tb = traceback.extract_tb(error.__traceback__)
+        if tb:
+            # Get the last frame (where the error occurred)
+            last_frame = tb[-1]
+            filename = last_frame.filename
+            line_number = last_frame.lineno
+            function_name = last_frame.name
+            
+            # Show just the filename (not full path) for cleaner output
+            import os
+            filename = os.path.basename(filename)
+            
+            message += f" (at {filename}:{line_number} in {function_name})"
+        
         if verbose:
-            import traceback
-            message += "\n\nTraceback:\n" + traceback.format_exc()
+            message += "\n\nFull Traceback:\n" + traceback.format_exc()
         
         return message
 

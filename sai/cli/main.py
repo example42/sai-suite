@@ -23,10 +23,43 @@ from .completion import (
 )
 
 
+def format_command_execution(provider_name: str, command: str, verbose: bool = False) -> str:
+    """Format command execution message with highlighting."""
+    if verbose:
+        return f"[{provider_name}] Executing: {command}"
+    else:
+        # Use click.style for colored output
+        provider_styled = click.style(f"[{provider_name}]", fg='blue', bold=True)
+        command_styled = click.style(command, fg='cyan')
+        return f"{provider_styled} {command_styled}"
+
+
 def setup_logging(config, verbose: bool = False):
     """Setup logging configuration."""
     from ..utils.logging import setup_root_logging
-    setup_root_logging(config, verbose)
+    
+    # Set logging level based on verbose flag
+    if verbose:
+        setup_root_logging(config, verbose)
+    else:
+        # Suppress all logging except critical errors when not verbose
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.CRITICAL)
+        
+        # Remove all existing handlers to prevent any output
+        for handler in root_logger.handlers[:]:
+            root_logger.removeHandler(handler)
+        
+        # Suppress all sai loggers by setting them to CRITICAL
+        for logger_name in ['sai', 'sai.providers', 'sai.core', 'sai.utils', 
+                           'sai.providers.loader', 'sai.core.execution_engine', 
+                           'sai.utils.execution_tracker', 'sai.providers.base',
+                           'sai.providers.template_engine']:
+            logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+            # Also remove handlers from these loggers
+            logger = logging.getLogger(logger_name)
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
 
 
 @click.group()
@@ -66,6 +99,14 @@ def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str],
         
         # Setup logging
         setup_logging(sai_config, verbose)
+        
+        # Additional logging suppression for non-verbose mode
+        if not verbose:
+            # Disable all logging from the sai package
+            import logging
+            logging.getLogger('sai').disabled = True
+            logging.getLogger('sai.utils.execution_tracker').disabled = True
+            logging.getLogger('sai.core.execution_engine').disabled = True
         
     except Exception as e:
         error_msg = format_error_for_cli(e, verbose)
@@ -202,7 +243,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                 saidata_loader = SaidataLoader(ctx.obj['sai_config'])
                 saidata = saidata_loader.load_saidata(software)
             except SaidataNotFoundError:
-                if not ctx.obj['quiet']:
+                if not ctx.obj['quiet'] and ctx.obj['verbose']:
                     click.echo(f"Warning: No saidata found for '{software}', using basic execution", err=True)
                 # Create minimal saidata
                 from ..models.saidata import SaiData, Metadata
@@ -267,7 +308,24 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                     click.echo(f"Requested provider '{ctx.obj['provider']}' not available", err=True)
                     ctx.exit(1)
                 
-                click.echo(f"Will execute: {action} {software} using {selected.name}")
+                # Show what command will be executed
+                try:
+                    resolved = selected.resolve_action_templates(action, saidata, {})
+                    if 'command' in resolved:
+                        command_msg = format_command_execution(selected.name, resolved['command'], ctx.obj['verbose'])
+                        click.echo(f"Will execute: {command_msg}")
+                    elif 'steps' in resolved and resolved['steps']:
+                        first_step = resolved['steps'][0]
+                        if 'command' in first_step:
+                            command_msg = format_command_execution(selected.name, first_step['command'], ctx.obj['verbose'])
+                            click.echo(f"Will execute: {command_msg}")
+                        else:
+                            click.echo(f"Will execute: {action} {software} using {selected.name}")
+                    else:
+                        click.echo(f"Will execute: {action} {software} using {selected.name}")
+                except Exception:
+                    click.echo(f"Will execute: {action} {software} using {selected.name}")
+                
                 if not click.confirm("Continue?"):
                     click.echo("Cancelled.")
                     ctx.exit(0)
@@ -324,7 +382,24 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             # Human-readable output
             if result.success:
                 if not ctx.obj['quiet']:
-                    click.echo(f"✓ {result.message}")
+                    # Show command being executed if not already shown
+                    if requires_confirmation or ctx.obj['verbose']:
+                        # Command was already shown during confirmation or in verbose mode
+                        pass
+                    else:
+                        # Show the command that was executed
+                        if result.commands_executed:
+                            command_msg = format_command_execution(result.provider_used, result.commands_executed[0], ctx.obj['verbose'])
+                            click.echo(command_msg)
+                    
+                    # Show result output
+                    if result.stdout:
+                        click.echo(result.stdout.strip())
+                    elif result.message and not result.message.startswith("Command executed successfully"):
+                        # Don't show generic success messages unless verbose
+                        if ctx.obj['verbose']:
+                            click.echo(f"✓ {result.message}")
+                    
                     if ctx.obj['verbose'] and result.commands_executed:
                         click.echo("Commands executed:")
                         for cmd in result.commands_executed:
@@ -385,6 +460,51 @@ def version(ctx: click.Context):
         click.echo(f"sai version {__version__}")
 
 
+
+
+
+
+
+
+def _convert_config_value(key: str, value: str, current_type: type):
+    """Convert string value to appropriate type for configuration."""
+    from ..models.config import LogLevel
+    
+    # Handle special cases
+    if key == 'log_level':
+        try:
+            return LogLevel(value.lower())
+        except ValueError:
+            valid_levels = [level.value for level in LogLevel]
+            raise ValueError(f"Invalid log level '{value}'. Valid levels: {', '.join(valid_levels)}")
+    
+    if key in ['cache_directory', 'log_file']:
+        return Path(value)
+    
+    if key in ['saidata_paths', 'provider_paths']:
+        # Handle list values - split by comma
+        return [path.strip() for path in value.split(',')]
+    
+    if key == 'provider_priorities':
+        # Handle dict values - format: "provider1:priority1,provider2:priority2"
+        result = {}
+        for pair in value.split(','):
+            if ':' in pair:
+                provider, priority = pair.split(':', 1)
+                result[provider.strip()] = int(priority.strip())
+        return result
+    
+    # Handle basic types
+    if current_type == bool:
+        return value.lower() in ('true', '1', 'yes', 'on')
+    elif current_type == int:
+        return int(value)
+    elif current_type == float:
+        return float(value)
+    else:
+        return value
+
+
 def _execute_informational_action_on_all_providers(ctx: click.Context, action: str, 
                                                   software: str, timeout: Optional[int],
                                                   provider_instances: List, saidata):
@@ -405,6 +525,27 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
     results = []
     for provider in supporting_providers:
         try:
+            # Show what command will be executed (unless quiet mode)
+            if not ctx.obj['quiet']:
+                try:
+                    # Get the resolved command to show user what will be executed
+                    resolved = provider.resolve_action_templates(action, saidata, {})
+                    if 'command' in resolved:
+                        command_msg = format_command_execution(provider.name, resolved['command'], ctx.obj['verbose'])
+                        click.echo(command_msg)
+                    elif 'steps' in resolved and resolved['steps']:
+                        # Show first step for multi-step actions
+                        first_step = resolved['steps'][0]
+                        if 'command' in first_step:
+                            command_msg = format_command_execution(provider.name, first_step['command'], ctx.obj['verbose'])
+                            click.echo(command_msg)
+                except Exception:
+                    # If template resolution fails, just show the action
+                    if not ctx.obj['verbose']:
+                        provider_styled = click.style(f"[{provider.name}]", fg='blue', bold=True)
+                        action_styled = click.style(f"{action} {software}".strip(), fg='cyan')
+                        click.echo(f"{provider_styled} {action_styled}")
+            
             # Create execution engine with single provider
             engine = ExecutionEngine([provider], ctx.obj['sai_config'])
             
@@ -476,24 +617,33 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
         # Display results from all successful providers
         for provider_name, result in results:
             if result and result.success:
-                if len(supporting_providers) > 1:
-                    click.echo(f"\n--- {provider_name} ---")
+                if len(supporting_providers) > 1 and not ctx.obj['quiet']:
+                    # Use styled separator for multiple providers
+                    separator = click.style(f"--- {provider_name} ---", fg='green', bold=True)
+                    click.echo(f"\n{separator}")
                 
                 if not ctx.obj['quiet']:
                     if result.stdout:
                         click.echo(result.stdout.strip())
-                    elif result.message:
-                        click.echo(result.message)
+                    elif result.message and result.message != f"Command executed successfully: {result.commands_executed[0] if result.commands_executed else ''}":
+                        # Don't show generic success messages unless verbose
+                        if ctx.obj['verbose'] or not result.message.startswith("Command executed successfully"):
+                            click.echo(result.message)
                 
                 if ctx.obj['verbose'] and result.commands_executed:
                     click.echo("Commands executed:")
                     for cmd in result.commands_executed:
                         click.echo(f"  {cmd}")
             elif ctx.obj['verbose'] and result:
-                click.echo(f"\n--- {provider_name} (failed) ---")
+                separator = click.style(f"--- {provider_name} (failed) ---", fg='red', bold=True)
+                click.echo(f"\n{separator}")
                 click.echo(f"✗ {result.message}", err=True)
                 if result.error_details:
                     click.echo(f"Error details: {result.error_details}", err=True)
+            elif not result and not ctx.obj['verbose']:
+                # Show minimal error for failed providers when not verbose
+                error_msg = click.style(f"✗ [{provider_name}] Failed", fg='red')
+                click.echo(error_msg, err=True)
 
 
 # Execution history and metrics commands
@@ -1088,73 +1238,315 @@ def config_show(ctx: click.Context):
 
 
 @config.command('set')
-@click.argument('key', required=True)
+@click.argument('key', required=True, shell_complete=complete_config_keys)
 @click.argument('value', required=True)
+@click.option('--config-file', type=click.Path(path_type=Path), help='Specific config file to modify')
 @click.pass_context
-def config_set(ctx: click.Context, key: str, value: str):
+def config_set(ctx: click.Context, key: str, value: str, config_file: Optional[Path]):
     """Set a configuration value."""
-    # This is a placeholder - in a real implementation, this would
-    # modify the configuration file
-    click.echo(f"Setting {key} = {value}")
-    click.echo("Note: Configuration modification not yet implemented.")
-
-
-# Validation command
-@cli.command()
-@click.argument('saidata_file', type=click.Path(exists=True, path_type=Path), required=True)
-@click.pass_context
-def validate(ctx: click.Context, saidata_file: Path):
-    """Validate a saidata file against the schema."""
     try:
-        saidata_loader = SaidataLoader(ctx.obj['sai_config'])
+        from ..utils.config import get_config_manager
         
-        # Load and validate the file
-        import yaml
-        with open(saidata_file, 'r') as f:
-            data = yaml.safe_load(f)
+        # Get config manager
+        config_manager = get_config_manager(config_file)
+        current_config = config_manager.get_config()
         
-        validation_result = saidata_loader.validate_saidata(data)
+        # Validate key exists
+        if not hasattr(current_config, key):
+            available_keys = [attr for attr in dir(current_config) if not attr.startswith('_')]
+            click.echo(f"Error: Unknown configuration key '{key}'", err=True)
+            click.echo(f"Available keys: {', '.join(sorted(available_keys))}", err=True)
+            ctx.exit(1)
+        
+        # Convert value to appropriate type
+        current_value = getattr(current_config, key)
+        converted_value = _convert_config_value(key, value, type(current_value))
+        
+        # Update configuration
+        updates = {key: converted_value}
+        config_manager.update_config(updates)
+        
+        # Save configuration
+        save_path = config_file or config_manager.DEFAULT_CONFIG_PATHS[0]
+        config_manager.save_config(config_manager.get_config(), save_path)
         
         if ctx.obj['output_json']:
             import json
             output = {
-                'file': str(saidata_file),
-                'valid': validation_result.valid,
-                'errors': validation_result.errors,
-                'warnings': validation_result.warnings
+                'success': True,
+                'key': key,
+                'old_value': str(current_value) if current_value is not None else None,
+                'new_value': str(converted_value),
+                'config_file': str(save_path)
             }
             click.echo(json.dumps(output, indent=2))
         else:
-            if validation_result.valid:
-                click.echo(f"✓ {saidata_file} is valid")
-                if validation_result.warnings:
-                    click.echo("\nWarnings:")
-                    for warning in validation_result.warnings:
-                        click.echo(f"  ⚠ {warning}")
+            click.echo(f"✓ Set {key} = {converted_value}")
+            click.echo(f"Configuration saved to: {save_path}")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error setting configuration: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@config.command('reset')
+@click.argument('key', required=False, shell_complete=complete_config_keys)
+@click.option('--all', 'reset_all', is_flag=True, help='Reset all configuration to defaults')
+@click.option('--config-file', type=click.Path(path_type=Path), help='Specific config file to modify')
+@click.pass_context
+def config_reset(ctx: click.Context, key: Optional[str], reset_all: bool, config_file: Optional[Path]):
+    """Reset configuration key(s) to default values."""
+    try:
+        from ..utils.config import get_config_manager
+        from ..models.config import SaiConfig
+        
+        if not key and not reset_all:
+            click.echo("Error: Must specify either a key or --all flag", err=True)
+            ctx.exit(1)
+        
+        # Get config manager and current config
+        config_manager = get_config_manager(config_file)
+        current_config = config_manager.get_config()
+        default_config = SaiConfig()
+        
+        if reset_all:
+            if not ctx.obj['yes'] and not click.confirm("Reset all configuration to defaults?"):
+                click.echo("Cancelled.")
+                return
+            
+            # Save default configuration
+            save_path = config_file or config_manager.DEFAULT_CONFIG_PATHS[0]
+            config_manager.save_config(default_config, save_path)
+            
+            if ctx.obj['output_json']:
+                import json
+                output = {
+                    'success': True,
+                    'reset': 'all',
+                    'config_file': str(save_path)
+                }
+                click.echo(json.dumps(output, indent=2))
             else:
-                click.echo(f"✗ {saidata_file} is invalid", err=True)
-                click.echo("\nErrors:")
-                for error in validation_result.errors:
+                click.echo("✓ All configuration reset to defaults")
+                click.echo(f"Configuration saved to: {save_path}")
+        else:
+            # Reset specific key
+            if not hasattr(current_config, key):
+                available_keys = [attr for attr in dir(current_config) if not attr.startswith('_')]
+                click.echo(f"Error: Unknown configuration key '{key}'", err=True)
+                click.echo(f"Available keys: {', '.join(sorted(available_keys))}", err=True)
+                ctx.exit(1)
+            
+            old_value = getattr(current_config, key)
+            default_value = getattr(default_config, key)
+            
+            # Update configuration
+            updates = {key: default_value}
+            config_manager.update_config(updates)
+            
+            # Save configuration
+            save_path = config_file or config_manager.DEFAULT_CONFIG_PATHS[0]
+            config_manager.save_config(config_manager.get_config(), save_path)
+            
+            if ctx.obj['output_json']:
+                import json
+                output = {
+                    'success': True,
+                    'key': key,
+                    'old_value': str(old_value) if old_value is not None else None,
+                    'new_value': str(default_value) if default_value is not None else None,
+                    'config_file': str(save_path)
+                }
+                click.echo(json.dumps(output, indent=2))
+            else:
+                click.echo(f"✓ Reset {key} to default value: {default_value}")
+                click.echo(f"Configuration saved to: {save_path}")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error resetting configuration: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@config.command('validate')
+@click.option('--config-file', type=click.Path(exists=True, path_type=Path), help='Specific config file to validate')
+@click.pass_context
+def config_validate(ctx: click.Context, config_file: Optional[Path]):
+    """Validate configuration file and settings."""
+    try:
+        from ..utils.config import get_config_manager
+        
+        # Get config manager
+        config_manager = get_config_manager(config_file)
+        
+        # Load and validate configuration
+        config = config_manager.get_config()
+        issues = config_manager.validate_config()
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'valid': len(issues) == 0,
+                'config_file': str(config_file) if config_file else 'default',
+                'issues': issues
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            if issues:
+                click.echo("Configuration validation issues found:", err=True)
+                for issue in issues:
+                    click.echo(f"  ⚠ {issue}", err=True)
+                ctx.exit(1)
+            else:
+                click.echo("✓ Configuration is valid")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error validating configuration: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@config.command('paths')
+@click.pass_context
+def config_paths(ctx: click.Context):
+    """Show configuration file search paths."""
+    from ..utils.config import ConfigManager
+    
+    config_manager = ConfigManager()
+    current_path = config_manager._find_config_file()
+    
+    if ctx.obj['output_json']:
+        import json
+        output = {
+            'search_paths': [str(path) for path in config_manager.DEFAULT_CONFIG_PATHS],
+            'current_config': str(current_path) if current_path else None
+        }
+        click.echo(json.dumps(output, indent=2))
+    else:
+        click.echo("Configuration file search paths:")
+        for i, path in enumerate(config_manager.DEFAULT_CONFIG_PATHS, 1):
+            exists = "✓" if path.exists() else "✗"
+            current = " (current)" if path == current_path else ""
+            click.echo(f"  {i}. {path} {exists}{current}")
+
+
+# Validation command
+@cli.command()
+@click.argument('saidata_files', nargs=-1, type=click.Path(exists=True))
+@click.option('--strict', is_flag=True, help='Treat warnings as errors')
+@click.pass_context
+def validate(ctx: click.Context, saidata_files: tuple, strict: bool):
+    """Validate saidata file(s) against the schema."""
+    try:
+        if not saidata_files:
+            click.echo("No files specified for validation", err=True)
+            click.echo("Usage: sai validate <file1> [file2] ...")
+            ctx.exit(1)
+        
+        saidata_loader = SaidataLoader(ctx.obj['sai_config'])
+        
+        # Validate each file
+        results = []
+        total_valid = 0
+        total_errors = 0
+        total_warnings = 0
+        
+        for file_path_str in saidata_files:
+            file_path = Path(file_path_str)
+            try:
+                # Load and validate the file
+                import yaml
+                with open(file_path, 'r') as f:
+                    data = yaml.safe_load(f)
+                
+                validation_result = saidata_loader.validate_saidata(data)
+                
+                file_result = {
+                    'file': str(file_path),
+                    'valid': validation_result.valid,
+                    'errors': validation_result.errors,
+                    'warnings': validation_result.warnings
+                }
+                
+                results.append(file_result)
+                
+                if validation_result.valid and (not strict or len(validation_result.warnings) == 0):
+                    total_valid += 1
+                
+                total_errors += len(validation_result.errors)
+                total_warnings += len(validation_result.warnings)
+                
+            except Exception as e:
+                file_result = {
+                    'file': str(file_path),
+                    'valid': False,
+                    'errors': [f"Failed to load file: {e}"],
+                    'warnings': []
+                }
+                results.append(file_result)
+                total_errors += 1
+        
+        # Output results
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'total_files': len(saidata_files),
+                'valid_files': total_valid,
+                'total_errors': total_errors,
+                'total_warnings': total_warnings,
+                'strict_mode': strict,
+                'results': results
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            # Human-readable output
+            click.echo(f"Validated {len(saidata_files)} file(s)")
+            click.echo(f"Valid: {total_valid}, Errors: {total_errors}, Warnings: {total_warnings}")
+            
+            if strict and total_warnings > 0:
+                click.echo("(Warnings treated as errors in strict mode)")
+            
+            click.echo()
+            
+            for result in results:
+                file_path = result['file']
+                
+                if result['valid'] and (not strict or len(result['warnings']) == 0):
+                    click.echo(f"✓ {file_path}")
+                else:
+                    click.echo(f"✗ {file_path}", err=True)
+                
+                # Show errors
+                for error in result['errors']:
                     click.echo(f"  ✗ {error}", err=True)
                 
-                if validation_result.warnings:
-                    click.echo("\nWarnings:")
-                    for warning in validation_result.warnings:
+                # Show warnings
+                for warning in result['warnings']:
+                    if strict:
+                        click.echo(f"  ✗ {warning} (warning treated as error)", err=True)
+                    else:
                         click.echo(f"  ⚠ {warning}")
-                
-                ctx.exit(1)
+        
+        # Exit with error if any validation failed
+        failed_files = len(saidata_files) - total_valid
+        if strict:
+            failed_files = sum(1 for r in results if not r['valid'] or len(r['warnings']) > 0)
+        
+        if failed_files > 0:
+            ctx.exit(1)
     
     except Exception as e:
         if ctx.obj['output_json']:
             import json
             error_output = {
-                'file': str(saidata_file),
-                'valid': False,
-                'error': str(e)
+                'success': False,
+                'error': str(e),
+                'files': list(saidata_files) if saidata_files else []
             }
             click.echo(json.dumps(error_output, indent=2))
         else:
-            click.echo(f"Error validating {saidata_file}: {e}", err=True)
+            click.echo(f"Error during validation: {e}", err=True)
         
         if ctx.obj['verbose']:
             import traceback
@@ -1452,6 +1844,274 @@ def completion_uninstall(ctx: click.Context, shell: Optional[str]):
         
     except Exception as e:
         click.echo(f"Error uninstalling completion: {e}", err=True)
+        ctx.exit(1)
+
+
+# Configuration management commands
+@cli.group()
+def config():
+    """Configuration management commands."""
+    pass
+
+
+@config.command('show')
+@click.option('--key', help='Show specific configuration key')
+@click.pass_context
+def config_show(ctx: click.Context, key: Optional[str]):
+    """Show current configuration."""
+    try:
+        from ..utils.config import get_config_manager
+        
+        config_manager = get_config_manager(ctx.obj.get('config_path'))
+        sai_config = config_manager.get_config()
+        
+        if ctx.obj['output_json']:
+            import json
+            config_dict = sai_config.model_dump(exclude_none=True)
+            
+            # Convert Path objects and enums to strings for JSON serialization
+            def convert_for_json(obj):
+                if hasattr(obj, '__class__') and 'Path' in obj.__class__.__name__:
+                    return str(obj)
+                elif hasattr(obj, 'value'):  # Handle enums
+                    return obj.value
+                elif type(obj).__name__ == 'dict':
+                    return {k: convert_for_json(v) for k, v in obj.items()}
+                elif type(obj).__name__ == 'list':
+                    return [convert_for_json(item) for item in obj]
+                else:
+                    return obj
+            
+            config_dict = convert_for_json(config_dict)
+            
+            if key:
+                if key in config_dict:
+                    click.echo(json.dumps({key: config_dict[key]}, indent=2))
+                else:
+                    click.echo(json.dumps({'error': f'Configuration key "{key}" not found'}, indent=2))
+                    ctx.exit(1)
+            else:
+                click.echo(json.dumps(config_dict, indent=2))
+        else:
+            # Human-readable output
+            if key:
+                if hasattr(sai_config, key):
+                    value = getattr(sai_config, key)
+                    if hasattr(value, '__class__') and 'Path' in value.__class__.__name__:
+                        value = str(value)
+                    elif hasattr(value, 'value'):  # Handle enums
+                        value = value.value
+                    click.echo(f"{key}: {value}")
+                else:
+                    click.echo(f"Configuration key '{key}' not found", err=True)
+                    ctx.exit(1)
+            else:
+                click.echo("Current Configuration:")
+                click.echo("=" * 50)
+                
+                config_dict = sai_config.model_dump(exclude_none=True)
+                for config_key, value in config_dict.items():
+                    # Handle Path objects by checking the type name to avoid import issues
+                    if hasattr(value, '__class__') and 'Path' in value.__class__.__name__:
+                        value = str(value)
+                    elif hasattr(value, 'value'):  # Handle enums
+                        value = value.value
+                    elif type(value).__name__ == 'list':
+                        value = ', '.join(str(item) for item in value)
+                    elif type(value).__name__ == 'dict':
+                        value = ', '.join(f"{k}:{v}" for k, v in value.items())
+                    
+                    click.echo(f"{config_key}: {value}")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error showing configuration: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@config.command('set')
+@click.argument('key', shell_complete=complete_config_keys)
+@click.argument('value')
+@click.option('--save', is_flag=True, help='Save configuration to file')
+@click.pass_context
+def config_set(ctx: click.Context, key: str, value: str, save: bool):
+    """Set configuration value."""
+    try:
+        from ..utils.config import get_config_manager
+        
+        config_manager = get_config_manager(ctx.obj.get('config_path'))
+        sai_config = config_manager.get_config()
+        
+        # Validate key exists
+        if not hasattr(sai_config, key):
+            click.echo(f"Unknown configuration key: {key}", err=True)
+            click.echo("Available keys:", err=True)
+            for attr in dir(sai_config):
+                if not attr.startswith('_') and not callable(getattr(sai_config, attr)):
+                    click.echo(f"  {attr}", err=True)
+            ctx.exit(1)
+        
+        # Get current value type for conversion
+        current_value = getattr(sai_config, key)
+        current_type = type(current_value)
+        
+        # Convert value to appropriate type
+        try:
+            converted_value = _convert_config_value(key, value, current_type)
+        except ValueError as e:
+            click.echo(f"Invalid value for {key}: {e}", err=True)
+            ctx.exit(1)
+        
+        # Update configuration
+        config_manager.update_config({key: converted_value})
+        
+        # Save if requested
+        if save:
+            config_manager.save_config(config_manager.get_config())
+            click.echo(f"✓ Configuration saved: {key} = {converted_value}")
+        else:
+            click.echo(f"✓ Configuration updated: {key} = {converted_value}")
+            click.echo("Use --save to persist changes to file")
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error setting configuration: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+@config.command('validate')
+@click.pass_context
+def config_validate(ctx: click.Context):
+    """Validate current configuration."""
+    try:
+        from ..utils.config import get_config_manager
+        
+        config_manager = get_config_manager(ctx.obj.get('config_path'))
+        issues = config_manager.validate_config()
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'valid': len(issues) == 0,
+                'issues': issues
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            if not issues:
+                click.echo("✓ Configuration is valid")
+            else:
+                click.echo("Configuration issues found:", err=True)
+                for issue in issues:
+                    click.echo(f"  • {issue}", err=True)
+                ctx.exit(1)
+    
+    except Exception as e:
+        error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+        click.echo(f"Error validating configuration: {error_msg}", err=True)
+        ctx.exit(1)
+
+
+# Saidata validation command
+@cli.command()
+@click.argument('file', type=click.Path(exists=True, path_type=Path), shell_complete=complete_saidata_files)
+@click.option('--detailed', '-d', is_flag=True, help='Show detailed validation information')
+@click.pass_context
+def validate(ctx: click.Context, file: Path, detailed: bool):
+    """Validate saidata file against schema."""
+    try:
+        from ..core.saidata_loader import SaidataLoader
+        
+        # Load the file content
+        saidata_loader = SaidataLoader(ctx.obj['sai_config'])
+        
+        try:
+            file_data = saidata_loader._load_saidata_file(file)
+        except ValueError as e:
+            if ctx.obj['output_json']:
+                import json
+                output = {
+                    'valid': False,
+                    'file': str(file),
+                    'errors': [f"Failed to load file: {e}"],
+                    'warnings': []
+                }
+                click.echo(json.dumps(output, indent=2))
+            else:
+                click.echo(f"✗ Failed to load file: {e}", err=True)
+            ctx.exit(1)
+        
+        # Validate the data
+        validation_result = saidata_loader.validate_saidata(file_data)
+        
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'valid': validation_result.valid,
+                'file': str(file),
+                'errors': validation_result.errors,
+                'warnings': validation_result.warnings
+            }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            # Human-readable output
+            if validation_result.valid:
+                click.echo(f"✓ {file} is valid")
+                if validation_result.warnings and detailed:
+                    click.echo("Warnings:")
+                    for warning in validation_result.warnings:
+                        click.echo(f"  ⚠ {warning}")
+            else:
+                click.echo(f"✗ {file} validation failed", err=True)
+                if validation_result.errors:
+                    click.echo("Errors:", err=True)
+                    for error in validation_result.errors:
+                        click.echo(f"  • {error}", err=True)
+                
+                if validation_result.warnings and detailed:
+                    click.echo("Warnings:", err=True)
+                    for warning in validation_result.warnings:
+                        click.echo(f"  ⚠ {warning}", err=True)
+                
+                ctx.exit(1)
+        
+        # Try to create SaiData object if validation passed
+        if validation_result.valid and detailed:
+            try:
+                from ..models.saidata import SaiData
+                saidata = SaiData(**file_data)
+                
+                if not ctx.obj['output_json']:
+                    click.echo(f"✓ Successfully created SaiData object")
+                    click.echo(f"  Software: {saidata.metadata.name}")
+                    if saidata.packages:
+                        click.echo(f"  Packages: {len(saidata.packages)}")
+                    if saidata.services:
+                        click.echo(f"  Services: {len(saidata.services)}")
+                    if saidata.providers:
+                        click.echo(f"  Provider configs: {len(saidata.providers)}")
+            except Exception as e:
+                if ctx.obj['output_json']:
+                    # Update JSON output with model creation error
+                    import json
+                    output = json.loads(click.get_text_stream('stdout').getvalue().split('\n')[-2])
+                    output['model_creation_error'] = str(e)
+                    click.echo(json.dumps(output, indent=2))
+                else:
+                    click.echo(f"⚠ Warning: Could not create SaiData object: {e}")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {
+                'valid': False,
+                'file': str(file),
+                'error': str(e),
+                'error_type': e.__class__.__name__
+            }
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error validating file: {error_msg}", err=True)
         ctx.exit(1)
 
 

@@ -93,6 +93,8 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 ## Commands
 
 ### SAI Commands
+
+#### Software Management
 - `sai install <software>` - Install software using available providers
 - `sai uninstall <software>` - Uninstall software using available providers
 - `sai start <software>` - Start software/service
@@ -102,11 +104,34 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai info <software>` - Show software information
 - `sai search <term>` - Search for available software
 - `sai list` - List installed software managed through sai
+- `sai logs <software>` - Show software service logs
+
+#### Provider Management
 - `sai providers list` - List available providers
 - `sai providers detect` - Detect and refresh provider availability
 - `sai providers info <provider>` - Show detailed provider information
-- `sai stats` - Show comprehensive statistics about providers and actions
+- `sai providers clear-cache` - Clear provider detection cache
+- `sai providers cache-status` - Show provider cache status
+- `sai providers refresh-cache` - Refresh provider detection cache
+
+#### Configuration Management
 - `sai config show` - Display current SAI configuration
+- `sai config set <key> <value>` - Set configuration value
+- `sai config reset [key]` - Reset configuration to defaults
+- `sai config validate` - Validate configuration file
+- `sai config paths` - Show configuration file search paths
+
+#### History and Analytics
+- `sai history list` - Show execution history
+- `sai history metrics` - Show execution metrics and statistics
+- `sai history clear` - Clear execution history
+
+#### Shell Integration
+- `sai completion install` - Install shell completion
+- `sai completion uninstall` - Uninstall shell completion
+
+#### Utilities
+- `sai stats` - Show comprehensive statistics about providers and actions
 - `sai validate <saidata-file>` - Validate a saidata file against the schema
 - `sai version` - Show version information
 
