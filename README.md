@@ -58,10 +58,12 @@ sai configure nginx --provider apt
 sai install nginx --dry-run
 ```
 
-2. View available providers and actions:
+2. View available providers and statistics:
 ```bash
 sai providers list
 sai actions nginx
+sai stats --detailed
+sai config-show
 ```
 
 ### SAIGEN AI Generation Tool
@@ -97,6 +99,9 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai stop <software>` - Stop software/service
 - `sai providers list` - List available providers
 - `sai actions <software>` - Show available actions for software
+- `sai stats` - Show comprehensive statistics about providers and actions
+- `sai config-show` - Display current SAI configuration
+- `sai version` - Show version information
 
 ### SAIGEN Commands
 - `saigen generate <software>` - Generate saidata for software

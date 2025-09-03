@@ -1,6 +1,7 @@
 """System detection utilities for SAI CLI tool."""
 
 import logging
+import os
 import platform
 import shutil
 import subprocess
@@ -133,13 +134,20 @@ def check_executable_functionality(executable: str, test_command: List[str],
             
         logger.debug(f"Testing functionality of '{executable}' with command: {test_command}")
         
-        # Run the test command
+        # Validate command arguments to prevent injection
+        if not all(isinstance(arg, str) for arg in test_command):
+            logger.warning(f"Invalid command arguments for '{executable}': non-string arguments detected")
+            return False
+        
+        # Run the test command with security constraints
         result = subprocess.run(
             test_command,
             capture_output=True,
             text=True,
             timeout=timeout,
-            check=False  # Don't raise exception on non-zero exit
+            check=False,  # Don't raise exception on non-zero exit
+            shell=False,  # Never use shell=True for security
+            env={'PATH': os.environ.get('PATH', '')},  # Minimal environment
         )
         
         success = result.returncode == expected_exit_code

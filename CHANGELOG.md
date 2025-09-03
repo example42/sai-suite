@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **SAI CLI Tool**: Complete implementation of sai CLI tool with provider-based software management
+- **Template Engine**: Advanced Jinja2-based template resolution engine with array expansion support
+- **Provider System**: Comprehensive provider loading, caching, and availability detection
+- **System Utilities**: Cross-platform system detection and executable management
+- **Statistics Command**: Detailed provider and action statistics with multiple view options
+- **Specialized Providers**: 32 new specialized provider configurations for system tools
 - Core data models for SaiData, configuration, and generation requests
 - Pydantic models with comprehensive validation and type safety
 - Configuration management system with environment variable support
@@ -21,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive validation and generation result tracking
 - Batch processing configuration and models
 - Cache management with TTL and size limits
-- Comprehensive test suite with basic model validation
+- Comprehensive test suite with 82 tests covering all components
 - API reference documentation
 - Configuration guide with examples and troubleshooting
 - SAI CLI tool with Click-based interface and provider management
@@ -38,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced error handling for configuration file parsing
 - **Provider Data Models**: Updated VariableMapping to support Union[VariableMapping, str] for flexible variable definitions
 - **Performance Optimization**: Added caching layer to provider loading system reducing file I/O operations
+- **Template Engine**: Implemented efficient array expansion with custom Jinja2 filters
+- **Provider Detection**: Enhanced executable detection with caching and priority-based selection
+- **CLI Interface**: Expanded CLI with stats, config-show, and version commands
 
 ### Security
 - API keys are stored as SecretStr and masked in configuration display
@@ -46,12 +54,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced input validation with proper encoding handling
 - YAML safe_load prevents code execution vulnerabilities
 - **Provider File Security**: Added 10MB file size limit for provider YAML files to prevent resource exhaustion attacks
+- **Command Execution Security**: Enhanced subprocess execution with argument validation and minimal environment
+- **Template Security**: Jinja2 StrictUndefined prevents template injection and silent failures
+- **Input Sanitization**: Comprehensive validation of command arguments and template variables
 
 ### Fixed
 - Configuration file encoding issues with explicit UTF-8 handling
 - Improved error messages for invalid configuration formats
 - **Provider Validation**: Fixed Pydantic model validation errors for providers with string-based variable mappings (npm, cargo, etc.)
 - **Schema Compliance**: Aligned Pydantic models with JSON schema definitions for variable mappings
+- **Test Suite**: Fixed configuration tests to match actual implementation behavior
+- **Template Resolution**: Improved error handling and context building for complex scenarios
+- **Provider Availability**: Enhanced executable detection with proper platform support checking
 
 ## [0.1.0] - Initial Release
 

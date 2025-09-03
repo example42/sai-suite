@@ -137,20 +137,33 @@ class BaseProvider:
         Returns:
             Main executable name if found, None otherwise
         """
-        # For now, we'll look for common patterns in the provider data
-        # This may need to be extended based on the actual provider YAML structure
+        # Cache the result to avoid repeated computation
+        if hasattr(self, '_cached_executable'):
+            return self._cached_executable
         
         # Check if there's a direct executable field (not in current schema but might be added)
         if hasattr(self.provider_data.provider, 'executable'):
-            return self.provider_data.provider.executable
+            self._cached_executable = self.provider_data.provider.executable
+            return self._cached_executable
         
-        # Look for executable in action commands
+        # Look for executable in action commands (prioritize common actions)
+        priority_actions = ['install', 'list', 'info', 'search']
+        for action_name in priority_actions:
+            if action_name in self.provider_data.actions:
+                action = self.provider_data.actions[action_name]
+                if action.command:
+                    command_parts = action.command.strip().split()
+                    if command_parts:
+                        self._cached_executable = command_parts[0]
+                        return self._cached_executable
+        
+        # Look for executable in any action commands
         for action_name, action in self.provider_data.actions.items():
             if action.command:
-                # Extract the first word as the executable
                 command_parts = action.command.strip().split()
                 if command_parts:
-                    return command_parts[0]
+                    self._cached_executable = command_parts[0]
+                    return self._cached_executable
         
         # Look for executable in action steps
         for action_name, action in self.provider_data.actions.items():
@@ -159,11 +172,13 @@ class BaseProvider:
                     if step.command:
                         command_parts = step.command.strip().split()
                         if command_parts:
-                            return command_parts[0]
+                            self._cached_executable = command_parts[0]
+                            return self._cached_executable
         
         # If no executable found, use provider name as fallback
         logger.debug(f"No explicit executable found for provider '{self.name}', using provider name")
-        return self.name
+        self._cached_executable = self.name
+        return self._cached_executable
     
     def _test_functionality(self) -> bool:
         """Test provider functionality using validation commands.
