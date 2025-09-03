@@ -12,16 +12,16 @@ provider:
 actions:
   install:
     description: "Install packages via Guix"
-    template: "guix install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "guix install {{sai_packages(saidata, 'guix')}}"
     timeout: 600
     validation:
       command: "guix package -I | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "guix remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "guix remove {{sai_packages(saidata, 'guix')}}"
 
   uninstall:
     description: "Remove packages via Guix"
-    template: "guix remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "guix remove {{sai_packages(saidata, 'guix')}}"
     validation:
       command: "! guix package -I | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -33,46 +33,46 @@ actions:
         command: "guix pull"
         timeout: 300
       - name: "upgrade-packages"
-        command: "guix upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "guix upgrade {{sai_packages(saidata, 'guix')}}"
     timeout: 600
 
   start:
     description: "Start service via herd"
-    template: "herd start {{saidata.services.main.name}}"
+    template: "herd start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
     validation:
-      command: "herd status {{saidata.services.main.name}} | grep started"
+      command: "herd status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}} | grep started"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via herd"
-    template: "herd stop {{saidata.services.main.name}}"
+    template: "herd stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
     validation:
-      command: "herd status {{saidata.services.main.name}} | grep stopped"
+      command: "herd status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}} | grep stopped"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via herd"
-    template: "herd restart {{saidata.services.main.name}}"
+    template: "herd restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "herd enable {{saidata.services.main.name}}"
+    template: "herd enable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "herd disable {{saidata.services.main.name}}"
+    template: "herd disable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
 
   status:
     description: "Check service status"
-    template: "herd status {{saidata.services.main.name}}"
+    template: "herd status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{saidata.files.log.path}}"
+    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "guix show {{saidata.packages.server.name}}"
+    template: "guix show {{sai_package(saidata, 0, 'guix')}}"
 
   search:
     description: "Search for packages"
@@ -81,67 +81,3 @@ actions:
   list:
     description: "List installed packages"
     template: "guix package -I | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "shepherd"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-
-  commands:
-    server:
-      path: "{{guix_profile}}/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "{{guix_profile}}/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "{{guix_profile}}/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    guix_profile: "~/.guix-profile"

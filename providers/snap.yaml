@@ -12,64 +12,64 @@ provider:
 actions:
   install:
     description: "Install snap package"
-    template: "snap install {{saidata.packages.server.name}} {{install_options}}"
+    template: "snap install {{sai_package(saidata, 0, 'snap')}} {{install_options}}"
     timeout: 600
     validation:
       command: "snap list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "snap remove {{saidata.packages.server.name}}"
+    rollback: "snap remove {{sai_package(saidata, 0, 'snap')}}"
     variables:
       install_options: "--classic"
 
   uninstall:
     description: "Remove snap package"
-    template: "snap remove {{saidata.packages.server.name}}"
+    template: "snap remove {{sai_package(saidata, 0, 'snap')}}"
     validation:
       command: "! snap list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Refresh snap package"
-    template: "snap refresh {{saidata.packages.server.name}}"
+    template: "snap refresh {{sai_package(saidata, 0, 'snap')}}"
     timeout: 600
 
   start:
     description: "Start snap service"
-    template: "snap start {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    template: "snap start {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}}"
     validation:
-      command: "snap services | grep {{saidata.packages.server.name}}.{{saidata.services.main.name}} | grep active"
+      command: "snap services | grep {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}} | grep active"
       expected_exit_code: 0
 
   stop:
     description: "Stop snap service"
-    template: "snap stop {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    template: "snap stop {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}}"
     validation:
-      command: "snap services | grep {{saidata.packages.server.name}}.{{saidata.services.main.name}} | grep inactive"
+      command: "snap services | grep {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}} | grep inactive"
       expected_exit_code: 0
 
   restart:
     description: "Restart snap service"
-    template: "snap restart {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    template: "snap restart {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}}"
 
   enable:
     description: "Enable snap service"
-    template: "snap start --enable {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    template: "snap start --enable {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}}"
 
   disable:
     description: "Disable snap service"
-    template: "snap stop --disable {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    template: "snap stop --disable {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}}"
 
   status:
     description: "Check snap service status"
-    template: "snap services {{saidata.packages.server.name}}"
+    template: "snap services {{sai_package(saidata, 0, 'snap')}}"
 
   logs:
     description: "Show snap service logs"
-    template: "snap logs {{saidata.packages.server.name}}.{{saidata.services.main.name}}"
+    template: "snap logs {{sai_package(saidata, 0, 'snap')}}.{{sai_service(saidata, 0, 'service_name') or saidata.metadata.name}}"
 
   info:
     description: "Show snap information"
-    template: "snap info {{saidata.packages.server.name}}"
+    template: "snap info {{sai_package(saidata, 0, 'snap')}}"
 
   search:
     description: "Search for snaps"
@@ -78,66 +78,3 @@ actions:
   list:
     description: "List installed snaps"
     template: "snap list | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "snap"
-
-  files:
-    config:
-      path: "/var/snap/{{saidata.metadata.name}}/common/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/snap/{{saidata.metadata.name}}/common/logs/{{saidata.metadata.name}}.log"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/var/snap/{{saidata.metadata.name}}/common"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/snap/{{saidata.metadata.name}}/common/data"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    logs:
-      path: "/var/snap/{{saidata.metadata.name}}/common/logs"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "/snap/bin/{{saidata.metadata.name}}.server"
-    client:
-      path: "/snap/bin/{{saidata.metadata.name}}.cli"
-    admin:
-      path: "/snap/bin/{{saidata.metadata.name}}.admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

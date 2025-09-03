@@ -12,36 +12,36 @@ provider:
 actions:
   install:
     description: "Install Flatpak application"
-    template: "flatpak install -y flathub {{saidata.packages.server.name}}"
+    template: "flatpak install -y flathub {{sai_package(saidata, 0, 'flatpak')}}"
     timeout: 900
     validation:
       command: "flatpak list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "flatpak uninstall -y {{saidata.packages.server.name}}"
+    rollback: "flatpak uninstall -y {{sai_package(saidata, 0, 'flatpak')}}"
 
   uninstall:
     description: "Remove Flatpak application"
-    template: "flatpak uninstall -y {{saidata.packages.server.name}}"
+    template: "flatpak uninstall -y {{sai_package(saidata, 0, 'flatpak')}}"
     validation:
       command: "! flatpak list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Update Flatpak application"
-    template: "flatpak update -y {{saidata.packages.server.name}}"
+    template: "flatpak update -y {{sai_package(saidata, 0, 'flatpak')}}"
     timeout: 900
 
   start:
     description: "Run Flatpak application"
-    template: "flatpak run {{saidata.packages.server.name}}"
+    template: "flatpak run {{sai_package(saidata, 0, 'flatpak')}}"
 
   stop:
     description: "Kill Flatpak application"
-    template: "flatpak kill {{saidata.packages.server.name}}"
+    template: "flatpak kill {{sai_package(saidata, 0, 'flatpak')}}"
 
   info:
     description: "Show Flatpak application information"
-    template: "flatpak info {{saidata.packages.server.name}}"
+    template: "flatpak info {{sai_package(saidata, 0, 'flatpak')}}"
 
   search:
     description: "Search for Flatpak applications"
@@ -50,66 +50,3 @@ actions:
   list:
     description: "List installed Flatpak applications"
     template: "flatpak list | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.maintainer}}.{{saidata.metadata.name|title}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.maintainer}}.{{saidata.metadata.name|title}}"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.maintainer}}.{{saidata.metadata.name|title}}"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.packages.server.name}}"
-      type: "flatpak"
-
-  files:
-    config:
-      path: "~/.var/app/{{saidata.packages.server.name}}/config/{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "~/.var/app/{{saidata.packages.server.name}}/data/logs/{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "~/.var/app/{{saidata.packages.server.name}}/config"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "~/.var/app/{{saidata.packages.server.name}}/data"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    logs:
-      path: "~/.var/app/{{saidata.packages.server.name}}/data/logs"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "flatpak run {{saidata.packages.server.name}}"
-    client:
-      path: "flatpak run {{saidata.packages.server.name}}"
-    admin:
-      path: "flatpak run {{saidata.packages.server.name}}"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: false
-
-  variables:
-    "*":
-      environment: "{{variable_name|upper}}"

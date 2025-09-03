@@ -7,33 +7,34 @@ provider:
   description: "Package manager for Ruby"
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
+  priority: 30  # Lower priority, more specialized
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
 
 actions:
   install:
     description: "Install packages via Gem"
-    template: "gem install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "gem install {% if saidata.providers.gem.packages %}{% for pkg in saidata.providers.gem.packages %}{{pkg.name}} {% endfor %}{% elif saidata.packages %}{% for pkg in saidata.packages %}{{pkg.name}} {% endfor %}{% else %}{{saidata.metadata.name}}{% endif %}"
     timeout: 300
     validation:
       command: "gem list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "gem uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "gem uninstall {% if saidata.providers.gem.packages %}{% for pkg in saidata.providers.gem.packages %}{{pkg.name}} {% endfor %}{% elif saidata.packages %}{% for pkg in saidata.packages %}{{pkg.name}} {% endfor %}{% else %}{{saidata.metadata.name}}{% endif %}"
 
   uninstall:
     description: "Remove packages via Gem"
-    template: "gem uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "gem uninstall {{sai_packages(saidata, 'gem')}}"
     validation:
       command: "! gem list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Gem"
-    template: "gem update {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "gem update {{sai_packages(saidata, 'gem')}}"
     timeout: 300
 
   start:
     description: "Start Ruby application"
-    template: "{{saidata.commands.server.path}}"
+    template: "{{sai_command(saidata, 'default')}}"
 
   stop:
     description: "Stop Ruby application"
@@ -46,7 +47,7 @@ actions:
         command: "pkill -f {{saidata.metadata.name}}"
         ignore_failure: true
       - name: "start-app"
-        command: "{{saidata.commands.server.path}}"
+        command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
@@ -54,7 +55,7 @@ actions:
 
   info:
     description: "Show package information"
-    template: "gem info {{saidata.packages.server.name}}"
+    template: "gem info {{sai_package(saidata, 0, 'gem')}}"
 
   search:
     description: "Search for packages"
@@ -63,68 +64,3 @@ actions:
   list:
     description: "List installed packages"
     template: "gem list | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "ruby"
-
-  files:
-    config:
-      path: "{{gem_home}}/config/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "{{gem_home}}/config/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{gem_home}}/data/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    logs:
-      path: "/tmp"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{gem_bindir}}/{{saidata.metadata.name}}"
-    client:
-      path: "{{gem_bindir}}/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "{{gem_bindir}}/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    gem_home: "${GEM_HOME:-$(gem env gemhome)}"
-    gem_bindir: "$(gem env bindir)"

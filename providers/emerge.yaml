@@ -17,16 +17,16 @@ actions:
         command: "emerge --sync"
         timeout: 300
       - name: "install-packages"
-        command: "emerge {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "emerge {{sai_packages(saidata, 'emerge')}}"
         timeout: 3600
     validation:
       command: "qlist -I | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "emerge --unmerge {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "emerge --unmerge {{sai_packages(saidata, 'emerge')}}"
 
   uninstall:
     description: "Remove packages via Emerge"
-    template: "emerge --unmerge {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "emerge --unmerge {{sai_packages(saidata, 'emerge')}}"
     validation:
       command: "! qlist -I | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -38,46 +38,46 @@ actions:
         command: "emerge --sync"
         timeout: 300
       - name: "upgrade-packages"
-        command: "emerge -u {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "emerge -u {{sai_packages(saidata, 'emerge')}}"
         timeout: 3600
 
   start:
     description: "Start service via rc-service"
-    template: "rc-service {{saidata.services.main.name}} start"
+    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} start"
     validation:
-      command: "rc-service {{saidata.services.main.name}} status"
+      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} status"
       expected_output: "started"
 
   stop:
     description: "Stop service via rc-service"
-    template: "rc-service {{saidata.services.main.name}} stop"
+    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} stop"
     validation:
-      command: "rc-service {{saidata.services.main.name}} status"
+      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} status"
       expected_output: "stopped"
 
   restart:
     description: "Restart service via rc-service"
-    template: "rc-service {{saidata.services.main.name}} restart"
+    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "rc-update add {{saidata.services.main.name}} default"
+    template: "rc-update add {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} default"
 
   disable:
     description: "Disable service auto-start"
-    template: "rc-update del {{saidata.services.main.name}} default"
+    template: "rc-update del {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} default"
 
   status:
     description: "Check service status"
-    template: "rc-service {{saidata.services.main.name}} status"
+    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} status"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{saidata.files.log.path}}"
+    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "emerge --info {{saidata.packages.server.name}}"
+    template: "emerge --info {{sai_package(saidata, 0, 'emerge')}}"
 
   search:
     description: "Search for packages"
@@ -86,66 +86,3 @@ actions:
   list:
     description: "List installed packages"
     template: "qlist -I | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "openrc"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-
-  commands:
-    server:
-      path: "/usr/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "/usr/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

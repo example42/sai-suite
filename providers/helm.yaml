@@ -19,7 +19,7 @@ actions:
       - name: "update-repo"
         command: "helm repo update"
       - name: "install-chart"
-        command: "helm install {{release_name}} {{chart_repo}}/{{saidata.packages.server.name}} --namespace {{namespace}} --create-namespace"
+        command: "helm install {{release_name}} {{chart_repo}}/{{sai_package(saidata, 0, 'helm')}} --namespace {{namespace}} --create-namespace"
     timeout: 600
     validation:
       command: "helm list -n {{namespace}} | grep {{release_name}}"
@@ -46,7 +46,7 @@ actions:
       - name: "update-repo"
         command: "helm repo update"
       - name: "upgrade-chart"
-        command: "helm upgrade {{release_name}} {{chart_repo}}/{{saidata.packages.server.name}} -n {{namespace}}"
+        command: "helm upgrade {{release_name}} {{chart_repo}}/{{sai_package(saidata, 0, 'helm')}} -n {{namespace}}"
     timeout: 600
     variables:
       release_name: "{{saidata.metadata.name}}-release"
@@ -86,7 +86,7 @@ actions:
 
   info:
     description: "Show Helm chart information"
-    template: "helm show chart {{chart_repo}}/{{saidata.packages.server.name}}"
+    template: "helm show chart {{chart_repo}}/{{sai_package(saidata, 0, 'helm')}}"
     variables:
       chart_repo: "{{saidata.metadata.name}}-repo"
 
@@ -99,63 +99,3 @@ actions:
     template: "helm list -n {{namespace}} | grep {{saidata.metadata.name}}"
     variables:
       namespace: "{{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-      chart: "{{saidata.metadata.name}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-      chart: "{{saidata.metadata.name}}-client"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "kubernetes"
-      namespace: "{{saidata.metadata.name}}"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/config"
-      type: "configmap"
-      name: "{{saidata.metadata.name}}-config"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}"
-      type: "volume"
-      name: "{{saidata.metadata.name}}-logs"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      type: "configmap"
-      name: "{{saidata.metadata.name}}-config"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      type: "persistentvolume"
-      name: "{{saidata.metadata.name}}-data"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      type: "volume"
-      name: "{{saidata.metadata.name}}-logs"
-
-  commands:
-    server:
-      path: "kubectl exec -it deployment/{{saidata.metadata.name}} -n {{namespace}} -- {{saidata.metadata.name}}-server"
-    client:
-      path: "kubectl exec -it deployment/{{saidata.metadata.name}} -n {{namespace}} -- {{saidata.metadata.name}}-cli"
-    admin:
-      path: "kubectl exec -it deployment/{{saidata.metadata.name}} -n {{namespace}} -- {{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      service_type: "ClusterIP"
-      configurable: true
-
-  variables:
-    "*":
-      environment: "{{variable_name|upper}}"
-    namespace: "{{saidata.metadata.name}}"

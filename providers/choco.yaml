@@ -12,58 +12,58 @@ provider:
 actions:
   install:
     description: "Install packages via Chocolatey"
-    template: "choco install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    template: "choco install {{sai_packages(saidata, 'choco')}} -y"
     timeout: 600
     validation:
       command: "choco list --local-only | findstr {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "choco uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    rollback: "choco uninstall {{sai_packages(saidata, 'choco')}} -y"
 
   uninstall:
     description: "Remove packages via Chocolatey"
-    template: "choco uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    template: "choco uninstall {{sai_packages(saidata, 'choco')}} -y"
     validation:
       command: "choco list --local-only | findstr {{saidata.metadata.name}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Chocolatey"
-    template: "choco upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}} -y"
+    template: "choco upgrade {{sai_packages(saidata, 'choco')}} -y"
     timeout: 600
 
   start:
     description: "Start service via sc command"
-    template: "sc start {{saidata.services.main.name}}"
+    template: "sc start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}}"
     validation:
-      command: "sc query {{saidata.services.main.name}} | findstr RUNNING"
+      command: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}} | findstr RUNNING"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via sc command"
-    template: "sc stop {{saidata.services.main.name}}"
+    template: "sc stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}}"
     validation:
-      command: "sc query {{saidata.services.main.name}} | findstr STOPPED"
+      command: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}} | findstr STOPPED"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via sc command"
     steps:
       - name: "stop-service"
-        command: "sc stop {{saidata.services.main.name}}"
+        command: "sc stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}}"
       - name: "start-service"
-        command: "sc start {{saidata.services.main.name}}"
+        command: "sc start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "sc config {{saidata.services.main.name}} start= auto"
+    template: "sc config {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}} start= auto"
 
   disable:
     description: "Disable service auto-start"
-    template: "sc config {{saidata.services.main.name}} start= disabled"
+    template: "sc config {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}} start= disabled"
 
   status:
     description: "Check service status"
-    template: "sc query {{saidata.services.main.name}}"
+    template: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'choco')}}"
 
   logs:
     description: "Show service logs"
@@ -71,7 +71,7 @@ actions:
 
   info:
     description: "Show package information"
-    template: "choco info {{saidata.packages.server.name}}"
+    template: "choco info {{sai_package(saidata, 0, 'choco')}}"
 
   search:
     description: "Search for packages"
@@ -80,66 +80,3 @@ actions:
   list:
     description: "List installed packages"
     template: "choco list --local-only | findstr {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "windows_service"
-
-  files:
-    config:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}.conf"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0644"
-    log:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\logs\\{{saidata.metadata.name}}.log"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0755"
-    data:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\data"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0755"
-    logs:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\logs"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}.exe"
-    client:
-      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}-cli.exe"
-    admin:
-      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}-admin.exe"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

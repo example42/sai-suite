@@ -7,7 +7,7 @@ provider:
   description: "Find files and directories using find command"
   type: "filesystem"
   platforms: ["linux", "macos", "windows"]
-  capabilities: ["search", "list", "info", "uninstall", "upgrade"]
+  capabilities: ["search", "list", "info"]
 
 actions:
   search:
@@ -28,55 +28,3 @@ actions:
     variables:
       search_path: "/usr /etc /var"
       file_type: "f"
-
-  uninstall:
-    description: "Delete found files"
-    template: "find {{search_path}} -name '*{{saidata.metadata.name}}*' -delete"
-    variables:
-      search_path: "/tmp"
-
-  upgrade:
-    description: "Find by size and time"
-    template: "find {{search_path}} -name '*{{saidata.metadata.name}}*' -size +{{min_size}} -mtime -{{days}}"
-    variables:
-      search_path: "/var/log"
-      min_size: "1M"
-      days: "7"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "filesystem_target"
-
-  files:
-    log:
-      path: "/tmp/find-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    search:
-      path: "/tmp/search-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{saidata.directories.data.path}}"
-    config:
-      path: "{{saidata.directories.config.path}}"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    search:
-      path: "find /usr -name '*{{saidata.metadata.name}}*'"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

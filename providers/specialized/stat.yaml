@@ -12,58 +12,20 @@ provider:
 actions:
   info:
     description: "Show file information"
-    template: "stat {{saidata.files.config.path}}"
+    template: "stat {{sai_file(saidata, 0, "path") or \'/etc/config\'}}"
 
   list:
     description: "Custom format output"
-    template: "stat --format='%n %s %y' {{saidata.files.config.path}}"
+    template: "stat --format='%n %s %y' {{sai_file(saidata, 0, "path") or \'/etc/config\'}}"
 
   logs:
     description: "Filesystem information"
-    template: "stat -f {{saidata.directories.data.path}}"
+    template: "stat -f {{sai_file(saidata, 0, "path") or \'/tmp\'}}"
 
   search:
     description: "Dereference symbolic links"
-    template: "stat -L {{saidata.files.config.path}}"
+    template: "stat -L {{sai_file(saidata, 0, "path") or \'/etc/config\'}}"
 
   status:
     description: "Terse format output"
-    template: "stat -t {{saidata.files.config.path}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "filesystem_target"
-
-  files:
-    config:
-      path: "{{saidata.files.config.path}}"
-    log:
-      path: "/tmp/stat-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    filesystem:
-      path: "/tmp/filesystem-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{saidata.directories.data.path}}"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    info:
-      path: "stat {{saidata.files.config.path}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
+    template: "stat -t {{sai_file(saidata, 0, "path") or \'/etc/config\'}}"

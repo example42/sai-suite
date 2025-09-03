@@ -12,15 +12,15 @@ provider:
 actions:
   info:
     description: "TCP socket statistics"
-    template: "ss -t | grep {{saidata.ports.main.default_port}}"
+    template: "ss -t | grep {{sai_port(saidata) or \'80\'}}"
 
   list:
     description: "UDP socket statistics"
-    template: "ss -u | grep {{saidata.ports.main.default_port}}"
+    template: "ss -u | grep {{sai_port(saidata) or \'80\'}}"
 
   status:
     description: "Listening sockets"
-    template: "ss -l | grep {{saidata.ports.main.default_port}}"
+    template: "ss -l | grep {{sai_port(saidata) or \'80\'}}"
 
   search:
     description: "Process information with sockets"
@@ -29,42 +29,3 @@ actions:
   logs:
     description: "Numeric addresses summary"
     template: "ss -n -s"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "network_target"
-
-  files:
-    log:
-      path: "/tmp/ss-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    network:
-      path: "/tmp/network-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "ss -tuln | grep {{saidata.ports.main.default_port}}"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

@@ -12,28 +12,28 @@ provider:
 actions:
   install:
     description: "Install packages via Scoop"
-    template: "scoop install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "scoop install {{sai_packages(saidata, 'scoop')}}"
     timeout: 600
     validation:
       command: "scoop list | findstr {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "scoop uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "scoop uninstall {{sai_packages(saidata, 'scoop')}}"
 
   uninstall:
     description: "Remove packages via Scoop"
-    template: "scoop uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "scoop uninstall {{sai_packages(saidata, 'scoop')}}"
     validation:
       command: "scoop list | findstr {{saidata.metadata.name}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Scoop"
-    template: "scoop update {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "scoop update {{sai_packages(saidata, 'scoop')}}"
     timeout: 600
 
   start:
     description: "Start application"
-    template: "{{saidata.commands.server.path}}"
+    template: "{{sai_command(saidata, 'default')}}"
 
   stop:
     description: "Stop application"
@@ -46,7 +46,7 @@ actions:
         command: "taskkill /F /IM {{saidata.metadata.name}}.exe"
         ignore_failure: true
       - name: "start-app"
-        command: "{{saidata.commands.server.path}}"
+        command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
@@ -54,7 +54,7 @@ actions:
 
   info:
     description: "Show package information"
-    template: "scoop info {{saidata.packages.server.name}}"
+    template: "scoop info {{sai_package(saidata, 0, 'scoop')}}"
 
   search:
     description: "Search for packages"
@@ -63,66 +63,3 @@ actions:
   list:
     description: "List installed packages"
     template: "scoop list | findstr {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "application"
-
-  files:
-    config:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}.conf"
-      owner: "%USERNAME%"
-      group: "Users"
-      mode: "0644"
-    log:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\logs\\{{saidata.metadata.name}}.log"
-      owner: "%USERNAME%"
-      group: "Users"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current"
-      owner: "%USERNAME%"
-      group: "Users"
-      mode: "0755"
-    data:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\data"
-      owner: "%USERNAME%"
-      group: "Users"
-      mode: "0755"
-    logs:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\logs"
-      owner: "%USERNAME%"
-      group: "Users"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}.exe"
-    client:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}-cli.exe"
-    admin:
-      path: "%USERPROFILE%\\scoop\\apps\\{{saidata.metadata.name}}\\current\\{{saidata.metadata.name}}-admin.exe"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

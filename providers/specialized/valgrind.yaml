@@ -12,62 +12,22 @@ provider:
 actions:
   info:
     description: "Memory check analysis"
-    template: "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes {{saidata.commands.server.path}} {{memcheck_args}}"
+    template: "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} {{memcheck_args}}"
     variables:
       memcheck_args: "--log-file=/tmp/valgrind-memcheck-{{saidata.metadata.name}}.log"
 
   logs:
     description: "Call graph profiling"
-    template: "valgrind --tool=callgrind --callgrind-out-file=/tmp/callgrind-{{saidata.metadata.name}}.out {{saidata.commands.server.path}}"
+    template: "valgrind --tool=callgrind --callgrind-out-file=/tmp/callgrind-{{saidata.metadata.name}}.out {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
 
   status:
     description: "Thread error detection"
-    template: "valgrind --tool=helgrind --log-file=/tmp/valgrind-helgrind-{{saidata.metadata.name}}.log {{saidata.commands.server.path}}"
+    template: "valgrind --tool=helgrind --log-file=/tmp/valgrind-helgrind-{{saidata.metadata.name}}.log {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
 
   upgrade:
     description: "Heap profiling"
-    template: "valgrind --tool=massif --massif-out-file=/tmp/massif-{{saidata.metadata.name}}.out {{saidata.commands.server.path}}"
+    template: "valgrind --tool=massif --massif-out-file=/tmp/massif-{{saidata.metadata.name}}.out {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
 
   search:
     description: "Cache profiling"
-    template: "valgrind --tool=cachegrind --cachegrind-out-file=/tmp/cachegrind-{{saidata.metadata.name}}.out {{saidata.commands.server.path}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      debug_symbols: "{{saidata.metadata.name}}-dbg"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "memory_target"
-
-  files:
-    config:
-      path: "~/.valgrindrc"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/valgrind-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    memory:
-      path: "/tmp/memory-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    memcheck:
-      path: "valgrind --tool=memcheck {{saidata.commands.server.path}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
+    template: "valgrind --tool=cachegrind --cachegrind-out-file=/tmp/cachegrind-{{saidata.metadata.name}}.out {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"

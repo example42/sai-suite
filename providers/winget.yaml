@@ -12,58 +12,58 @@ provider:
 actions:
   install:
     description: "Install packages via Winget"
-    template: "winget install --id {{saidata.packages.server.name}} --silent --accept-package-agreements --accept-source-agreements"
+    template: "winget install --id {{sai_package(saidata, 0, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
     timeout: 600
     validation:
       command: "winget list | findstr {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "winget uninstall --id {{saidata.packages.server.name}} --silent"
+    rollback: "winget uninstall --id {{sai_package(saidata, 0, 'winget')}} --silent"
 
   uninstall:
     description: "Remove packages via Winget"
-    template: "winget uninstall --id {{saidata.packages.server.name}} --silent"
+    template: "winget uninstall --id {{sai_package(saidata, 0, 'winget')}} --silent"
     validation:
       command: "winget list | findstr {{saidata.metadata.name}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Winget"
-    template: "winget upgrade --id {{saidata.packages.server.name}} --silent --accept-package-agreements --accept-source-agreements"
+    template: "winget upgrade --id {{sai_package(saidata, 0, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
     timeout: 600
 
   start:
     description: "Start service via sc command"
-    template: "sc start {{saidata.services.main.name}}"
+    template: "sc start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
     validation:
-      command: "sc query {{saidata.services.main.name}} | findstr RUNNING"
+      command: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} | findstr RUNNING"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via sc command"
-    template: "sc stop {{saidata.services.main.name}}"
+    template: "sc stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
     validation:
-      command: "sc query {{saidata.services.main.name}} | findstr STOPPED"
+      command: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} | findstr STOPPED"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via sc command"
     steps:
       - name: "stop-service"
-        command: "sc stop {{saidata.services.main.name}}"
+        command: "sc stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
       - name: "start-service"
-        command: "sc start {{saidata.services.main.name}}"
+        command: "sc start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "sc config {{saidata.services.main.name}} start= auto"
+    template: "sc config {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} start= auto"
 
   disable:
     description: "Disable service auto-start"
-    template: "sc config {{saidata.services.main.name}} start= disabled"
+    template: "sc config {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} start= disabled"
 
   status:
     description: "Check service status"
-    template: "sc query {{saidata.services.main.name}}"
+    template: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
 
   logs:
     description: "Show service logs"
@@ -71,7 +71,7 @@ actions:
 
   info:
     description: "Show package information"
-    template: "winget show --id {{saidata.packages.server.name}}"
+    template: "winget show --id {{sai_package(saidata, 0, 'winget')}}"
 
   search:
     description: "Search for packages"
@@ -80,66 +80,3 @@ actions:
   list:
     description: "List installed packages"
     template: "winget list | findstr {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.maintainer}}.{{saidata.metadata.name|title}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.maintainer}}.{{saidata.metadata.name|title}}.Client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.maintainer}}.{{saidata.metadata.name|title}}.Tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "windows_service"
-
-  files:
-    config:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}.conf"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0644"
-    log:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\logs\\{{saidata.metadata.name}}.log"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0755"
-    data:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\data"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0755"
-    logs:
-      path: "C:\\ProgramData\\{{saidata.metadata.name}}\\logs"
-      owner: "SYSTEM"
-      group: "Administrators"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}.exe"
-    client:
-      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}-cli.exe"
-    admin:
-      path: "C:\\Program Files\\{{saidata.metadata.name}}\\{{saidata.metadata.name}}-admin.exe"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

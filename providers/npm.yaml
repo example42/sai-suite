@@ -12,28 +12,28 @@ provider:
 actions:
   install:
     description: "Install packages via NPM"
-    template: "npm install -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "npm install -g {{sai_packages(saidata, 'npm')}}"
     timeout: 300
     validation:
       command: "npm list -g | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "npm uninstall -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "npm uninstall -g {{sai_packages(saidata, 'npm')}}"
 
   uninstall:
     description: "Remove packages via NPM"
-    template: "npm uninstall -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "npm uninstall -g {{sai_packages(saidata, 'npm')}}"
     validation:
       command: "! npm list -g | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via NPM"
-    template: "npm update -g {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "npm update -g {{sai_packages(saidata, 'npm')}}"
     timeout: 300
 
   start:
     description: "Start Node.js application"
-    template: "{{saidata.commands.server.path}}"
+    template: "{{sai_command(saidata, 'default')}}"
 
   stop:
     description: "Stop Node.js application"
@@ -46,7 +46,7 @@ actions:
         command: "pkill -f {{saidata.metadata.name}}"
         ignore_failure: true
       - name: "start-app"
-        command: "{{saidata.commands.server.path}}"
+        command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
@@ -54,7 +54,7 @@ actions:
 
   info:
     description: "Show package information"
-    template: "npm info {{saidata.packages.server.name}}"
+    template: "npm info {{sai_package(saidata, 0, 'npm')}}"
 
   search:
     description: "Search for packages"
@@ -63,67 +63,3 @@ actions:
   list:
     description: "List installed packages"
     template: "npm list -g | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "nodejs"
-
-  files:
-    config:
-      path: "{{npm_prefix}}/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "{{npm_prefix}}/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "{{npm_prefix}}/etc/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{npm_prefix}}/var/lib/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    logs:
-      path: "{{npm_prefix}}/var/log/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{npm_prefix}}/bin/{{saidata.metadata.name}}"
-    client:
-      path: "{{npm_prefix}}/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "{{npm_prefix}}/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    npm_prefix: "$(npm config get prefix)"

@@ -33,7 +33,7 @@ actions:
         command: "killall -KILL {{saidata.metadata.name}}"
         ignore_failure: true
       - name: "start-process"
-        command: "{{saidata.commands.server.path}} &"
+        command: "{{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} &"
     variables:
       restart_delay: "3"
 
@@ -44,37 +44,3 @@ actions:
   info:
     description: "Show processes that would be killed"
     template: "pgrep -a -f {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "process_target"
-
-  files:
-    log:
-      path: "/tmp/killall-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    process:
-      path: "/tmp/process-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    kill:
-      path: "killall {{saidata.metadata.name}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

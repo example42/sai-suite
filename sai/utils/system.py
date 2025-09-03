@@ -140,6 +140,10 @@ def check_executable_functionality(executable: str, test_command: List[str],
             return False
         
         # Run the test command with security constraints
+        # Use the full environment for compatibility, but this is safe since we're only
+        # running version/test commands from known executables
+        safe_env = os.environ.copy()
+        
         result = subprocess.run(
             test_command,
             capture_output=True,
@@ -147,7 +151,7 @@ def check_executable_functionality(executable: str, test_command: List[str],
             timeout=timeout,
             check=False,  # Don't raise exception on non-zero exit
             shell=False,  # Never use shell=True for security
-            env={'PATH': os.environ.get('PATH', '')},  # Minimal environment
+            env=safe_env,
         )
         
         success = result.returncode == expected_exit_code

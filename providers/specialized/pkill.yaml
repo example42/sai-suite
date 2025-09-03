@@ -26,7 +26,7 @@ actions:
       - name: "wait-termination"
         command: "sleep {{restart_delay}}"
       - name: "start-process"
-        command: "{{saidata.commands.server.path}} &"
+        command: "{{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} &"
     variables:
       restart_delay: "2"
 
@@ -37,37 +37,3 @@ actions:
   info:
     description: "Show processes that would be killed"
     template: "pgrep -a -f {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "process_target"
-
-  files:
-    log:
-      path: "/tmp/pkill-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    process:
-      path: "/tmp/process-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    kill:
-      path: "pkill -f {{saidata.metadata.name}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

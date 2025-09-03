@@ -63,6 +63,9 @@ class SaidataContextBuilder:
         context['ports'] = [self._port_to_dict(port) for port in self.saidata.ports] if self.saidata.ports else []
         context['containers'] = [self._container_to_dict(container) for container in self.saidata.containers] if self.saidata.containers else []
         
+        # Add providers section if it exists
+        context['providers'] = self._build_providers_context() if hasattr(self.saidata, 'providers') and self.saidata.providers else {}
+        
         return context
     
     def _build_metadata_context(self) -> Dict[str, Any]:
@@ -100,6 +103,50 @@ class SaidataContextBuilder:
             }
         
         return context
+    
+    def _build_providers_context(self) -> Dict[str, Any]:
+        """Build providers context from saidata."""
+        if not hasattr(self.saidata, 'providers') or not self.saidata.providers:
+            return {}
+        
+        providers_context = {}
+        
+        # Handle different provider structures
+        if hasattr(self.saidata.providers, '__dict__'):
+            # If providers is an object with attributes
+            for provider_name, provider_data in self.saidata.providers.__dict__.items():
+                if provider_data is not None:
+                    providers_context[provider_name] = self._provider_data_to_dict(provider_data)
+        elif isinstance(self.saidata.providers, dict):
+            # If providers is a dictionary
+            for provider_name, provider_data in self.saidata.providers.items():
+                if provider_data is not None:
+                    providers_context[provider_name] = self._provider_data_to_dict(provider_data)
+        
+        return providers_context
+    
+    def _provider_data_to_dict(self, provider_data) -> Dict[str, Any]:
+        """Convert provider data to dictionary."""
+        if hasattr(provider_data, '__dict__'):
+            # Convert object to dict
+            result = {}
+            for key, value in provider_data.__dict__.items():
+                if isinstance(value, list):
+                    result[key] = [self._convert_to_dict(item) for item in value]
+                else:
+                    result[key] = self._convert_to_dict(value)
+            return result
+        elif isinstance(provider_data, dict):
+            return provider_data
+        else:
+            return {}
+    
+    def _convert_to_dict(self, obj) -> Any:
+        """Convert object to dictionary if possible."""
+        if hasattr(obj, '__dict__'):
+            return obj.__dict__
+        else:
+            return obj
     
     def _package_to_dict(self, package) -> Dict[str, Any]:
         """Convert Package model to dictionary."""
@@ -244,6 +291,15 @@ class TemplateEngine:
         
         # Add custom filters
         self.env.filters['expand_arrays'] = self._expand_arrays_filter
+        self.env.filters['sai_lookup'] = self._sai_lookup_filter
+        
+        # Add global functions for easier template access
+        self.env.globals['sai_packages'] = self._sai_packages_global
+        self.env.globals['sai_package'] = self._sai_package_global
+        self.env.globals['sai_service'] = self._sai_service_global
+        self.env.globals['sai_file'] = self._sai_file_global
+        self.env.globals['sai_port'] = self._sai_port_global
+        self.env.globals['sai_command'] = self._sai_command_global
         
         logger.debug("Template engine initialized")
     
@@ -373,3 +429,141 @@ class TemplateEngine:
                 result.append(str(item[field]))
         
         return result
+    
+    def _sai_lookup_filter(self, saidata_context: Dict[str, Any], resource_type: str, 
+                          field: str = 'name', index: int = 0, provider_name: str = None) -> str:
+        """Smart lookup filter for saidata resources with provider-specific fallbacks.
+        
+        This filter implements the standard SAI lookup pattern:
+        1. Try provider-specific resource (if provider_name specified)
+        2. Fall back to general resource array
+        3. Ultimate fallback to metadata.name
+        
+        Args:
+            saidata_context: The saidata context dictionary
+            resource_type: Type of resource ('packages', 'services', 'files', etc.)
+            field: Field to extract (default: 'name')
+            index: Index for single item lookup (default: 0)
+            provider_name: Provider name for provider-specific lookup
+            
+        Returns:
+            Resolved value or empty string if not found
+            
+        Examples:
+            {{saidata | sai_lookup('packages', 'name')}} -> all package names
+            {{saidata | sai_lookup('packages', 'name', 0, 'brew')}} -> first package name with brew fallback
+            {{saidata | sai_lookup('services', 'service_name', 0)}} -> first service name
+            {{saidata | sai_lookup('files', 'path', 0)}} -> first file path
+        """
+        try:
+            # Helper function to extract field from resource
+            def extract_field(resource, field_name):
+                if isinstance(resource, dict):
+                    return resource.get(field_name, '')
+                elif hasattr(resource, field_name):
+                    return getattr(resource, field_name, '')
+                return ''
+            
+            # Helper function to get names from resource list
+            def get_resource_names(resources, field_name, single_index=None):
+                if not resources:
+                    return ''
+                
+                if single_index is not None:
+                    # Return single item
+                    if len(resources) > single_index:
+                        return extract_field(resources[single_index], field_name)
+                    return ''
+                else:
+                    # Return all items joined with space
+                    names = []
+                    for resource in resources:
+                        name = extract_field(resource, field_name)
+                        if name:
+                            names.append(name)
+                    return ' '.join(names)
+            
+            # 1. Try provider-specific resource first
+            if provider_name and 'providers' in saidata_context:
+                providers = saidata_context['providers']
+                if isinstance(providers, dict) and provider_name in providers:
+                    provider_data = providers[provider_name]
+                    if isinstance(provider_data, dict) and resource_type in provider_data:
+                        provider_resources = provider_data[resource_type]
+                        if provider_resources:
+                            result = get_resource_names(provider_resources, field, 
+                                                     index if index >= 0 else None)
+                            if result:
+                                return result
+            
+            # 2. Fall back to general resource array
+            if resource_type in saidata_context:
+                general_resources = saidata_context[resource_type]
+                if general_resources:
+                    result = get_resource_names(general_resources, field, 
+                                             index if index >= 0 else None)
+                    if result:
+                        return result
+            
+            # 3. Ultimate fallback to metadata.name for 'name' field
+            if field == 'name' and 'metadata' in saidata_context:
+                metadata = saidata_context['metadata']
+                if isinstance(metadata, dict) and 'name' in metadata:
+                    return metadata['name']
+            
+            # 4. Return empty string if nothing found
+            return ''
+            
+        except Exception as e:
+            logger.warning(f"Error in sai_lookup filter: {e}")
+            return ''
+    
+    def _sai_packages_global(self, saidata_context: Dict[str, Any], provider_name: str = None) -> str:
+        """Global function to get all package names with provider fallback.
+        
+        Usage: {{sai_packages(saidata, 'brew')}} or {{sai_packages(saidata)}}
+        """
+        return self._sai_lookup_filter(saidata_context, 'packages', 'name', -1, provider_name)
+    
+    def _sai_package_global(self, saidata_context: Dict[str, Any], index: int = 0, provider_name: str = None) -> str:
+        """Global function to get single package name with provider fallback.
+        
+        Usage: {{sai_package(saidata, 0, 'brew')}} or {{sai_package(saidata)}}
+        """
+        return self._sai_lookup_filter(saidata_context, 'packages', 'name', index, provider_name)
+    
+    def _sai_service_global(self, saidata_context: Dict[str, Any], index: int = 0, field: str = 'name') -> str:
+        """Global function to get service information.
+        
+        Usage: {{sai_service(saidata)}} or {{sai_service(saidata, 0, 'service_name')}}
+        """
+        return self._sai_lookup_filter(saidata_context, 'services', field, index)
+    
+    def _sai_file_global(self, saidata_context: Dict[str, Any], index: int = 0, field: str = 'path') -> str:
+        """Global function to get file information.
+        
+        Usage: {{sai_file(saidata)}} or {{sai_file(saidata, 0, 'path')}}
+        """
+        return self._sai_lookup_filter(saidata_context, 'files', field, index)
+    
+    def _sai_port_global(self, saidata_context: Dict[str, Any], index: int = 0, field: str = 'port') -> str:
+        """Global function to get port information.
+        
+        Usage: {{sai_port(saidata)}} or {{sai_port(saidata, 0, 'port')}}
+        """
+        return self._sai_lookup_filter(saidata_context, 'ports', field, index)
+    
+    def _sai_command_global(self, saidata_context: Dict[str, Any], index: int = 0, field: str = 'path') -> str:
+        """Global function to get command information.
+         
+        Args:
+            saidata_context: Saidata context dictionary
+            index: Index of command to retrieve (default: 0)
+            field: Field to extract (default: 'path')
+            
+        Returns:
+            Command field value as string
+            
+        Usage: {{sai_command(saidata)}} or {{sai_command(saidata, 0, 'path')}}
+        """
+        return self._sai_lookup_filter(saidata_context, 'commands', field, index)

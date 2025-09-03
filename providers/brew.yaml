@@ -7,67 +7,77 @@ provider:
   description: "The missing package manager for macOS"
   type: "package_manager"
   platforms: ["macos"]
+  priority: 90  # High priority on macOS
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test Homebrew availability"
+    template: "brew --version"
+    timeout: 10
+    validation:
+      command: "brew --version"
+      expected_exit_code: 0
+
   install:
     description: "Install packages via Homebrew"
-    template: "brew install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "brew install {{sai_packages(saidata, 'brew')}}"
     timeout: 600
     validation:
       command: "brew list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "brew uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "brew uninstall {{sai_packages(saidata, 'brew')}}"
 
   uninstall:
     description: "Remove packages via Homebrew"
-    template: "brew uninstall {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "brew uninstall {{sai_packages(saidata, 'brew')}}"
     validation:
       command: "! brew list | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Homebrew"
-    template: "brew upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "brew upgrade {{sai_packages(saidata, 'brew')}}"
     timeout: 600
 
   start:
     description: "Start service via brew services"
-    template: "brew services start {{saidata.packages.server.name}}"
+    template: "brew services start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}}"
     validation:
-      command: "brew services list | grep {{saidata.packages.server.name}} | grep started"
+      command: "brew services list | grep {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}} | grep started"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via brew services"
-    template: "brew services stop {{saidata.packages.server.name}}"
+    template: "brew services stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}}"
     validation:
-      command: "brew services list | grep {{saidata.packages.server.name}} | grep stopped"
+      command: "brew services list | grep {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}} | grep stopped"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via brew services"
-    template: "brew services restart {{saidata.packages.server.name}}"
+    template: "brew services restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "brew services start {{saidata.packages.server.name}}"
+    template: "brew services start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "brew services stop {{saidata.packages.server.name}}"
+    template: "brew services stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}}"
 
   status:
     description: "Check service status"
-    template: "brew services list | grep {{saidata.packages.server.name}}"
+    template: "brew services list | grep {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'brew')}}"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{saidata.files.log.path}}"
+    template: "tail -n 50 {{sai_file(saidata) or '/usr/local/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "brew info {{saidata.packages.server.name}}"
+    template: "brew info {{sai_package(saidata, 0, 'brew')}}"
 
   search:
     description: "Search for packages"
@@ -76,66 +86,3 @@ actions:
   list:
     description: "List installed packages"
     template: "brew list | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "launchd"
-
-  files:
-    config:
-      path: "/usr/local/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "staff"
-      mode: "0644"
-    log:
-      path: "/usr/local/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "staff"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/usr/local/etc/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "staff"
-      mode: "0755"
-    data:
-      path: "/usr/local/var/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "staff"
-      mode: "0755"
-    logs:
-      path: "/usr/local/var/log/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "staff"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "/usr/local/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "/usr/local/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/local/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

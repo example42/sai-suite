@@ -7,7 +7,7 @@ provider:
   description: "Filesystem disk space usage analysis using df command"
   type: "filesystem"
   platforms: ["linux", "macos", "windows"]
-  capabilities: ["info", "list", "logs", "search", "upgrade"]
+  capabilities: ["info", "list"]
 
 actions:
   info:
@@ -18,52 +18,4 @@ actions:
     description: "Human readable format"
     template: "df -h {{filesystem_path}}"
     variables:
-      filesystem_path: "{{saidata.directories.data.path}}"
-
-  logs:
-    description: "Show filesystem type"
-    template: "df -T"
-
-  search:
-    description: "Show inode usage"
-    template: "df -i"
-
-  upgrade:
-    description: "Show total usage"
-    template: "df -h --total"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "filesystem_target"
-
-  files:
-    log:
-      path: "/tmp/df-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    filesystem:
-      path: "/tmp/filesystem-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{saidata.directories.data.path}}"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    analyze:
-      path: "df -h {{saidata.directories.data.path}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
+      filesystem_path: "{{sai_file(saidata, 0, "path") or \'/tmp\'}}"

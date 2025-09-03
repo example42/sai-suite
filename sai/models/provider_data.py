@@ -45,6 +45,7 @@ class Provider(BaseModel):
     type: ProviderType
     platforms: Optional[List[str]] = None
     capabilities: Optional[List[str]] = None
+    priority: Optional[int] = None
 
 
 class RetryConfig(BaseModel):

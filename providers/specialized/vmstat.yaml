@@ -36,37 +36,3 @@ actions:
     template: "vmstat -p {{partition_device}}"
     variables:
       partition_device: "/dev/sda1"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "system_target"
-
-  files:
-    log:
-      path: "/tmp/vmstat-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    system:
-      path: "/tmp/system-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "vmstat 2"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

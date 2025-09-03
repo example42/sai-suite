@@ -12,16 +12,16 @@ provider:
 actions:
   install:
     description: "Install packages via Spack"
-    template: "spack install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "spack install {{sai_packages(saidata, 'spack')}}"
     timeout: 3600
     validation:
       command: "spack find | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "spack uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
 
   uninstall:
     description: "Remove packages via Spack"
-    template: "spack uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
     validation:
       command: "! spack find | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -30,15 +30,15 @@ actions:
     description: "Upgrade packages via Spack"
     steps:
       - name: "uninstall-old"
-        command: "spack uninstall -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
         ignore_failure: true
       - name: "install-new"
-        command: "spack install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "spack install {{sai_packages(saidata, 'spack')}}"
     timeout: 3600
 
   start:
     description: "Start application"
-    template: "spack load {{saidata.packages.server.name}} && {{saidata.commands.server.path}}"
+    template: "spack load {{sai_package(saidata, 0, 'spack')}} && {{sai_command(saidata, 'default')}}"
 
   stop:
     description: "Stop application"
@@ -51,7 +51,7 @@ actions:
         command: "pkill -f {{saidata.metadata.name}}"
         ignore_failure: true
       - name: "start-app"
-        command: "spack load {{saidata.packages.server.name}} && {{saidata.commands.server.path}}"
+        command: "spack load {{sai_package(saidata, 0, 'spack')}} && {{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
@@ -59,7 +59,7 @@ actions:
 
   info:
     description: "Show package information"
-    template: "spack info {{saidata.packages.server.name}}"
+    template: "spack info {{sai_package(saidata, 0, 'spack')}}"
 
   search:
     description: "Search for packages"
@@ -68,67 +68,3 @@ actions:
   list:
     description: "List installed packages"
     template: "spack find | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "application"
-
-  files:
-    config:
-      path: "{{spack_prefix}}/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "{{spack_prefix}}/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "{{spack_prefix}}/etc/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{spack_prefix}}/var/lib/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    logs:
-      path: "{{spack_prefix}}/var/log/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{spack_prefix}}/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "{{spack_prefix}}/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "{{spack_prefix}}/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    spack_prefix: "$(spack location -i {{saidata.packages.server.name}})"

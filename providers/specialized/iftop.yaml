@@ -24,7 +24,7 @@ actions:
 
   logs:
     description: "Monitor specific port"
-    template: "iftop -i {{interface}} -f 'port {{saidata.ports.main.default_port}}'"
+    template: "iftop -i {{interface}} -f 'port {{sai_port(saidata) or \'80\'}}'"
     variables:
       interface: "any"
 
@@ -40,43 +40,4 @@ actions:
     template: "iftop -i {{interface}} -f '{{filter_expression}}'"
     variables:
       interface: "any"
-      filter_expression: "port {{saidata.ports.main.default_port}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "network_target"
-
-  files:
-    log:
-      path: "/tmp/iftop-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    network:
-      path: "/tmp/network-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "iftop -i any -f 'port {{saidata.ports.main.default_port}}'"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
+      filter_expression: "port {{sai_port(saidata) or \'80\'}}"

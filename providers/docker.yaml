@@ -14,9 +14,9 @@ actions:
     description: "Pull and create Docker container"
     steps:
       - name: "pull-image"
-        command: "docker pull {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
       - name: "create-container"
-        command: "docker create --name {{container_name}} -p {{saidata.ports.main.default_port}}:{{saidata.ports.main.default_port}} {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or \'80\'}}:{{sai_port(saidata) or \'80\'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
     timeout: 600
     validation:
       command: "docker ps -a | grep {{container_name}}"
@@ -35,7 +35,7 @@ actions:
         command: "docker rm {{container_name}}"
         ignore_failure: true
       - name: "remove-image"
-        command: "docker rmi {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+        command: "docker rmi {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
         ignore_failure: true
     variables:
       container_name: "{{saidata.metadata.name}}-container"
@@ -48,9 +48,9 @@ actions:
       - name: "remove-container"
         command: "docker rm {{container_name}}"
       - name: "pull-new-image"
-        command: "docker pull {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
       - name: "create-new-container"
-        command: "docker create --name {{container_name}} -p {{saidata.ports.main.default_port}}:{{saidata.ports.main.default_port}} {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or \'80\'}}:{{sai_port(saidata) or \'80\'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
       - name: "start-container"
         command: "docker start {{container_name}}"
     timeout: 600
@@ -95,66 +95,8 @@ actions:
 
   info:
     description: "Show Docker image information"
-    template: "docker inspect {{saidata.packages.server.name}}:{{saidata.packages.server.version}}"
+    template: "docker inspect {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
 
   list:
     description: "List Docker containers"
     template: "docker ps -a | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-      image: "{{saidata.metadata.name}}:{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-      image: "{{saidata.metadata.name}}-client:{{saidata.packages.client.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}-container"
-      type: "docker"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      type: "volume"
-      mount: "/etc/{{saidata.metadata.name}}"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      type: "volume"
-      mount: "/var/log/{{saidata.metadata.name}}"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      type: "volume"
-      mount: "/etc/{{saidata.metadata.name}}"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      type: "volume"
-      mount: "/var/lib/{{saidata.metadata.name}}"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      type: "volume"
-      mount: "/var/log/{{saidata.metadata.name}}"
-
-  commands:
-    server:
-      path: "docker exec -it {{saidata.metadata.name}}-container {{saidata.metadata.name}}-server"
-    client:
-      path: "docker exec -it {{saidata.metadata.name}}-container {{saidata.metadata.name}}-cli"
-    admin:
-      path: "docker exec -it {{saidata.metadata.name}}-container {{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      host_port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      environment: "{{variable_name|upper}}"

@@ -39,37 +39,3 @@ actions:
     validation:
       command: "! pgrep -f {{saidata.metadata.name}}"
       expected_exit_code: 0
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "process_target"
-
-  files:
-    log:
-      path: "/tmp/ps-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    process:
-      path: "/tmp/process-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    list:
-      path: "ps aux | grep {{saidata.metadata.name}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

@@ -14,7 +14,7 @@ actions:
     description: "Scan for vulnerabilities"
     template: "grype {{scan_target}} -o {{output_format}} --file {{scan_output}}"
     variables:
-      scan_target: "{{saidata.directories.data.path}}"
+      scan_target: "{{sai_file(saidata, 0, "path") or \'/tmp\'}}"
       output_format: "json"
       scan_output: "/tmp/grype-{{saidata.metadata.name}}.json"
 
@@ -22,14 +22,14 @@ actions:
     description: "Generate vulnerability report"
     template: "grype {{scan_target}} -o table --file {{report_output}}"
     variables:
-      scan_target: "{{saidata.directories.data.path}}"
+      scan_target: "{{sai_file(saidata, 0, "path") or \'/tmp\'}}"
       report_output: "/tmp/grype-report-{{saidata.metadata.name}}.txt"
 
   filter:
     description: "Scan with severity filter"
     template: "grype {{scan_target}} --fail-on {{severity_level}} -o table --file {{filtered_output}}"
     variables:
-      scan_target: "{{saidata.directories.data.path}}"
+      scan_target: "{{sai_file(saidata, 0, "path") or \'/tmp\'}}"
       severity_level: "high"
       filtered_output: "/tmp/grype-filtered-{{saidata.metadata.name}}.txt"
 
@@ -43,7 +43,7 @@ actions:
       - name: "export-table"
         command: "grype {{scan_target}} -o table --file {{export_dir}}/{{saidata.metadata.name}}-vulns.txt"
     variables:
-      scan_target: "{{saidata.directories.data.path}}"
+      scan_target: "{{sai_file(saidata, 0, "path") or \'/tmp\'}}"
       export_dir: "/tmp/grype-export-{{saidata.metadata.name}}"
 
   update:
@@ -54,47 +54,5 @@ actions:
     description: "Check for specific CVE"
     template: "grype {{scan_target}} -o json | jq '.matches[] | select(.vulnerability.id == \"{{cve_id}}\")'"
     variables:
-      scan_target: "{{saidata.directories.data.path}}"
+      scan_target: "{{sai_file(saidata, 0, "path") or \'/tmp\'}}"
       cve_id: "CVE-2023-1234"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      image: "{{saidata.metadata.name}}:{{saidata.packages.server.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "security_target"
-
-  files:
-    config:
-      path: "/tmp/grype-{{saidata.metadata.name}}.yaml"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/grype-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    security:
-      path: "/tmp/security-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{saidata.directories.data.path}}"
-
-  commands:
-    scan:
-      path: "grype {{saidata.directories.data.path}}"
-    check:
-      path: "grype {{saidata.packages.server.image}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

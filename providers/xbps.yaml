@@ -16,16 +16,16 @@ actions:
       - name: "sync-repos"
         command: "xbps-install -S"
       - name: "install-packages"
-        command: "xbps-install -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "xbps-install -y {{sai_packages(saidata, 'xbps')}}"
     timeout: 600
     validation:
       command: "xbps-query -l | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "xbps-remove -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "xbps-remove -y {{sai_packages(saidata, 'xbps')}}"
 
   uninstall:
     description: "Remove packages via XBPS"
-    template: "xbps-remove -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "xbps-remove -y {{sai_packages(saidata, 'xbps')}}"
     validation:
       command: "! xbps-query -l | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -36,46 +36,46 @@ actions:
       - name: "sync-repos"
         command: "xbps-install -S"
       - name: "upgrade-packages"
-        command: "xbps-install -u {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "xbps-install -u {{sai_packages(saidata, 'xbps')}}"
     timeout: 600
 
   start:
     description: "Start service via sv"
-    template: "sv start {{saidata.services.main.name}}"
+    template: "sv start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
     validation:
-      command: "sv status {{saidata.services.main.name}}"
+      command: "sv status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
       expected_output: "run"
 
   stop:
     description: "Stop service via sv"
-    template: "sv stop {{saidata.services.main.name}}"
+    template: "sv stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
     validation:
-      command: "sv status {{saidata.services.main.name}}"
+      command: "sv status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
       expected_output: "down"
 
   restart:
     description: "Restart service via sv"
-    template: "sv restart {{saidata.services.main.name}}"
+    template: "sv restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "ln -sf /etc/sv/{{saidata.services.main.name}} /var/service/"
+    template: "ln -sf /etc/sv/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}} /var/service/"
 
   disable:
     description: "Disable service auto-start"
-    template: "rm -f /var/service/{{saidata.services.main.name}}"
+    template: "rm -f /var/service/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
 
   status:
     description: "Check service status"
-    template: "sv status {{saidata.services.main.name}}"
+    template: "sv status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
 
   logs:
     description: "Show service logs"
-    template: "svlogtail {{saidata.services.main.name}}"
+    template: "svlogtail {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'xbps')}}"
 
   info:
     description: "Show package information"
-    template: "xbps-query -R {{saidata.packages.server.name}}"
+    template: "xbps-query -R {{sai_package(saidata, 0, 'xbps')}}"
 
   search:
     description: "Search for packages"
@@ -84,66 +84,3 @@ actions:
   list:
     description: "List installed packages"
     template: "xbps-query -l | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "runit"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-
-  commands:
-    server:
-      path: "/usr/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "/usr/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

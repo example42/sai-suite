@@ -16,16 +16,16 @@ actions:
       - name: "update-package-list"
         command: "slackpkg update"
       - name: "install-packages"
-        command: "slackpkg install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "slackpkg install {{sai_packages(saidata, 'slackpkg')}}"
     timeout: 600
     validation:
       command: "ls /var/log/packages/ | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "slackpkg remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "slackpkg remove {{sai_packages(saidata, 'slackpkg')}}"
 
   uninstall:
     description: "Remove packages via Slackpkg"
-    template: "slackpkg remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "slackpkg remove {{sai_packages(saidata, 'slackpkg')}}"
     validation:
       command: "! ls /var/log/packages/ | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -36,43 +36,43 @@ actions:
       - name: "update-package-list"
         command: "slackpkg update"
       - name: "upgrade-packages"
-        command: "slackpkg upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "slackpkg upgrade {{sai_packages(saidata, 'slackpkg')}}"
     timeout: 600
 
   start:
     description: "Start service via rc script"
-    template: "/etc/rc.d/rc.{{saidata.services.main.name}} start"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} start"
     validation:
-      command: "pgrep -f {{saidata.services.main.name}}"
+      command: "pgrep -f {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}}"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via rc script"
-    template: "/etc/rc.d/rc.{{saidata.services.main.name}} stop"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} stop"
 
   restart:
     description: "Restart service via rc script"
-    template: "/etc/rc.d/rc.{{saidata.services.main.name}} restart"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "chmod +x /etc/rc.d/rc.{{saidata.services.main.name}}"
+    template: "chmod +x /etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "chmod -x /etc/rc.d/rc.{{saidata.services.main.name}}"
+    template: "chmod -x /etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}}"
 
   status:
     description: "Check service status"
-    template: "/etc/rc.d/rc.{{saidata.services.main.name}} status"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} status"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{saidata.files.log.path}}"
+    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "slackpkg info {{saidata.packages.server.name}}"
+    template: "slackpkg info {{sai_package(saidata, 0, 'slackpkg')}}"
 
   search:
     description: "Search for packages"
@@ -81,66 +81,3 @@ actions:
   list:
     description: "List installed packages"
     template: "ls /var/log/packages/ | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "sysv"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-
-  commands:
-    server:
-      path: "/usr/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "/usr/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

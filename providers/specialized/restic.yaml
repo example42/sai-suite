@@ -20,7 +20,7 @@ actions:
         command: "restic -r {{repository}} backup {{backup_paths}} --tag {{backup_tag}}"
     variables:
       repository: "/tmp/restic-{{saidata.metadata.name}}"
-      backup_paths: "{{saidata.directories.data.path}} {{saidata.directories.config.path}}"
+      backup_paths: "{{sai_file(saidata, 0, "path") or \'/tmp\'}} {{sai_file(saidata, 1, "path") or \'/etc\'}}"
       backup_tag: "{{saidata.metadata.name}}-$(date +%Y%m%d)"
 
   restore:
@@ -66,47 +66,3 @@ actions:
       repository: "/tmp/restic-{{saidata.metadata.name}}"
       snapshot1: "latest"
       snapshot2: "latest~1"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "backup_target"
-
-  files:
-    config:
-      path: "/tmp/restic-{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0600"
-    log:
-      path: "/tmp/restic-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    backup:
-      path: "/tmp/restic-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0700"
-    data:
-      path: "{{saidata.directories.data.path}}"
-    config:
-      path: "{{saidata.directories.config.path}}"
-
-  commands:
-    backup:
-      path: "restic -r /tmp/restic-{{saidata.metadata.name}} backup {{saidata.directories.data.path}}"
-    restore:
-      path: "restic -r /tmp/restic-{{saidata.metadata.name}} restore latest"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    RESTIC_PASSWORD: "{{backup_password}}"

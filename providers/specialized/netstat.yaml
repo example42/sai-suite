@@ -12,13 +12,13 @@ provider:
 actions:
   connections:
     description: "Show all network connections"
-    template: "netstat -an | grep {{saidata.ports.main.default_port}} | tee {{connections_output}}"
+    template: "netstat -an | grep {{sai_port(saidata) or \'80\'}} | tee {{connections_output}}"
     variables:
       connections_output: "/tmp/netstat-connections-{{saidata.metadata.name}}.txt"
 
   listening:
     description: "Show listening ports"
-    template: "netstat -ln | grep {{saidata.ports.main.default_port}} | tee {{listening_output}}"
+    template: "netstat -ln | grep {{sai_port(saidata) or \'80\'}} | tee {{listening_output}}"
     variables:
       listening_output: "/tmp/netstat-listening-{{saidata.metadata.name}}.txt"
 
@@ -45,46 +45,3 @@ actions:
     template: "netstat -p | grep {{saidata.metadata.name}} | tee {{processes_output}}"
     variables:
       processes_output: "/tmp/netstat-processes-{{saidata.metadata.name}}.txt"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "network_target"
-
-  files:
-    config:
-      path: "/tmp/netstat-{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/netstat-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    network:
-      path: "/tmp/network-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    network:
-      path: "netstat -an | grep {{saidata.ports.main.default_port}}"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

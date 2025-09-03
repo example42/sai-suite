@@ -12,21 +12,21 @@ provider:
 actions:
   logs:
     description: "Capture network packets"
-    template: "tcpdump -i {{interface}} port {{saidata.ports.main.default_port}} -c {{packet_count}}"
+    template: "tcpdump -i {{interface}} port {{sai_port(saidata) or \'80\'}} -c {{packet_count}}"
     variables:
       interface: "any"
       packet_count: "100"
 
   info:
     description: "Filter specific traffic"
-    template: "tcpdump -i {{interface}} host {{target_host}} and port {{saidata.ports.main.default_port}}"
+    template: "tcpdump -i {{interface}} host {{target_host}} and port {{sai_port(saidata) or \'80\'}}"
     variables:
       interface: "any"
       target_host: "localhost"
 
   search:
     description: "Capture to file"
-    template: "tcpdump -i {{interface}} -w /tmp/tcpdump-{{saidata.metadata.name}}.pcap port {{saidata.ports.main.default_port}}"
+    template: "tcpdump -i {{interface}} -w /tmp/tcpdump-{{saidata.metadata.name}}.pcap port {{sai_port(saidata) or \'80\'}}"
     variables:
       interface: "any"
 
@@ -36,46 +36,7 @@ actions:
 
   status:
     description: "Verbose packet capture"
-    template: "tcpdump -v -i {{interface}} port {{saidata.ports.main.default_port}} -c {{packet_count}}"
+    template: "tcpdump -v -i {{interface}} port {{sai_port(saidata) or \'80\'}} -c {{packet_count}}"
     variables:
       interface: "any"
       packet_count: "10"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "network_target"
-
-  files:
-    log:
-      path: "/tmp/tcpdump-{{saidata.metadata.name}}.pcap"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    network:
-      path: "/tmp/network-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    capture:
-      path: "tcpdump -i any port {{saidata.ports.main.default_port}}"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

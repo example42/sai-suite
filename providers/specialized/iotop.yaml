@@ -29,37 +29,3 @@ actions:
   search:
     description: "Quiet mode monitoring"
     template: "iotop -q -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "io_target"
-
-  files:
-    log:
-      path: "/tmp/iotop-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    io:
-      path: "/tmp/io-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "iotop -p $(pgrep -f {{saidata.metadata.name}})"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

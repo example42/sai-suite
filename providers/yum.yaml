@@ -12,59 +12,59 @@ provider:
 actions:
   install:
     description: "Install packages via YUM"
-    template: "yum install -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "yum install -y {{sai_packages(saidata, 'yum')}}"
     timeout: 600
     validation:
       command: "rpm -qa | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "yum remove -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "yum remove -y {{sai_packages(saidata, 'yum')}}"
 
   uninstall:
     description: "Remove packages via YUM"
-    template: "yum remove -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "yum remove -y {{sai_packages(saidata, 'yum')}}"
     validation:
       command: "! rpm -qa | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via YUM"
-    template: "yum update -y {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "yum update -y {{sai_packages(saidata, 'yum')}}"
     timeout: 600
 
   start:
     description: "Start service via service command"
-    template: "service {{saidata.services.main.name}} start"
+    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} start"
     validation:
-      command: "service {{saidata.services.main.name}} status"
+      command: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} status"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via service command"
-    template: "service {{saidata.services.main.name}} stop"
+    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} stop"
 
   restart:
     description: "Restart service via service command"
-    template: "service {{saidata.services.main.name}} restart"
+    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "chkconfig {{saidata.services.main.name}} on"
+    template: "chkconfig {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} on"
 
   disable:
     description: "Disable service auto-start"
-    template: "chkconfig {{saidata.services.main.name}} off"
+    template: "chkconfig {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} off"
 
   status:
     description: "Check service status"
-    template: "service {{saidata.services.main.name}} status"
+    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'yum')}} status"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{saidata.files.log.path}}"
+    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "yum info {{saidata.packages.server.name}}"
+    template: "yum info {{sai_package(saidata, 0, 'yum')}}"
 
   search:
     description: "Search for packages"
@@ -73,66 +73,3 @@ actions:
   list:
     description: "List installed packages"
     template: "rpm -qa | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "sysv"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-
-  commands:
-    server:
-      path: "/usr/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "/usr/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

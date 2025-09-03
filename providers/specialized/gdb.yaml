@@ -12,7 +12,7 @@ provider:
 actions:
   debug:
     description: "Start debugging session"
-    template: "gdb {{saidata.commands.server.path}} {{debug_args}}"
+    template: "gdb {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} {{debug_args}}"
     variables:
       debug_args: "--batch --ex run --ex bt --ex quit"
 
@@ -28,7 +28,7 @@ actions:
 
   core_dump:
     description: "Analyze core dump"
-    template: "gdb {{saidata.commands.server.path}} {{core_file}} {{core_args}}"
+    template: "gdb {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} {{core_file}} {{core_args}}"
     variables:
       core_file: "/tmp/core.{{saidata.metadata.name}}"
       core_args: "--batch --ex bt --ex quit"
@@ -39,13 +39,13 @@ actions:
 
   breakpoint:
     description: "Set breakpoint and debug"
-    template: "gdb {{saidata.commands.server.path}} --batch --ex 'break {{breakpoint_location}}' --ex run --ex bt --ex quit"
+    template: "gdb {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} --batch --ex 'break {{breakpoint_location}}' --ex run --ex bt --ex quit"
     variables:
       breakpoint_location: "main"
 
   watch:
     description: "Watch variable changes"
-    template: "gdb {{saidata.commands.server.path}} --batch --ex 'watch {{watch_variable}}' --ex run --ex continue --ex quit"
+    template: "gdb {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} --batch --ex 'watch {{watch_variable}}' --ex run --ex continue --ex quit"
     variables:
       watch_variable: "global_var"
 
@@ -55,50 +55,4 @@ actions:
 
   profile:
     description: "Profile application execution"
-    template: "gdb {{saidata.commands.server.path}} --batch --ex 'set logging on' --ex run --ex bt --ex quit"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      debug_symbols: "{{saidata.metadata.name}}-dbg"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "debug_target"
-
-  files:
-    config:
-      path: "~/.gdbinit"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/gdb-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    debug:
-      path: "/tmp/debug-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    debug:
-      path: "gdb {{saidata.commands.server.path}}"
-
-  ports:
-    debug:
-      port: "{{debug_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    debug_port: "1234"
+    template: "gdb {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} --batch --ex 'set logging on' --ex run --ex bt --ex quit"

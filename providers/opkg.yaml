@@ -16,16 +16,16 @@ actions:
       - name: "update-package-list"
         command: "opkg update"
       - name: "install-packages"
-        command: "opkg install {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "opkg install {{sai_packages(saidata, 'opkg')}}"
     timeout: 300
     validation:
       command: "opkg list-installed | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "opkg remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "opkg remove {{sai_packages(saidata, 'opkg')}}"
 
   uninstall:
     description: "Remove packages via OPKG"
-    template: "opkg remove {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "opkg remove {{sai_packages(saidata, 'opkg')}}"
     validation:
       command: "! opkg list-installed | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -36,43 +36,43 @@ actions:
       - name: "update-package-list"
         command: "opkg update"
       - name: "upgrade-packages"
-        command: "opkg upgrade {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "opkg upgrade {{sai_packages(saidata, 'opkg')}}"
     timeout: 300
 
   start:
     description: "Start service via init script"
-    template: "/etc/init.d/{{saidata.services.main.name}} start"
+    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} start"
     validation:
-      command: "/etc/init.d/{{saidata.services.main.name}} status"
+      command: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} status"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via init script"
-    template: "/etc/init.d/{{saidata.services.main.name}} stop"
+    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} stop"
 
   restart:
     description: "Restart service via init script"
-    template: "/etc/init.d/{{saidata.services.main.name}} restart"
+    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "/etc/init.d/{{saidata.services.main.name}} enable"
+    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} enable"
 
   disable:
     description: "Disable service auto-start"
-    template: "/etc/init.d/{{saidata.services.main.name}} disable"
+    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} disable"
 
   status:
     description: "Check service status"
-    template: "/etc/init.d/{{saidata.services.main.name}} status"
+    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} status"
 
   logs:
     description: "Show service logs"
-    template: "logread | grep {{saidata.services.main.name}}"
+    template: "logread | grep {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}}"
 
   info:
     description: "Show package information"
-    template: "opkg info {{saidata.packages.server.name}}"
+    template: "opkg info {{sai_package(saidata, 0, 'opkg')}}"
 
   search:
     description: "Search for packages"
@@ -81,66 +81,3 @@ actions:
   list:
     description: "List installed packages"
     template: "opkg list-installed | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "procd"
-
-  files:
-    config:
-      path: "/etc/config/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/tmp/{{saidata.metadata.name}}.log"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/tmp/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    logs:
-      path: "/tmp/log"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "/usr/bin/{{saidata.metadata.name}}"
-    client:
-      path: "/usr/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

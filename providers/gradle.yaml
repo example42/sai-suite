@@ -12,7 +12,7 @@ provider:
 actions:
   install:
     description: "Install packages via Gradle"
-    template: "gradle build --include-build {{saidata.packages.server.name}}"
+    template: "gradle build --include-build {{sai_package(saidata, 0, 'gradle')}}"
     timeout: 600
     validation:
       command: "find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
@@ -37,7 +37,7 @@ actions:
 
   start:
     description: "Start Java application"
-    template: "java -jar {{saidata.commands.server.path}}"
+    template: "java -jar {{sai_command(saidata, 'default')}}"
 
   stop:
     description: "Stop Java application"
@@ -50,7 +50,7 @@ actions:
         command: "pkill -f {{saidata.metadata.name}}"
         ignore_failure: true
       - name: "start-app"
-        command: "java -jar {{saidata.commands.server.path}}"
+        command: "java -jar {{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
@@ -69,68 +69,3 @@ actions:
     template: "find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
     variables:
       gradle_cache: "~/.gradle/caches"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.maintainer}}:{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.maintainer}}:{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.maintainer}}:{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "java"
-
-  files:
-    config:
-      path: "{{gradle_home}}/config/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "{{gradle_home}}/config/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    data:
-      path: "{{gradle_home}}/data/{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-    logs:
-      path: "/tmp"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{gradle_home}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}-{{saidata.packages.server.version}}.jar"
-    client:
-      path: "{{gradle_home}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}-client-{{saidata.packages.client.version}}.jar"
-    admin:
-      path: "{{gradle_home}}/{{saidata.metadata.name}}/{{saidata.metadata.name}}-admin-{{saidata.packages.tools.version}}.jar"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
-    gradle_home: "${GRADLE_USER_HOME:-~/.gradle}"
-    gradle_cache: "~/.gradle/caches"

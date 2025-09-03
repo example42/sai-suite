@@ -38,37 +38,3 @@ actions:
   upgrade:
     description: "Show version information"
     template: "nethogs -V"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "network_target"
-
-  files:
-    log:
-      path: "/tmp/nethogs-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    network:
-      path: "/tmp/network-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "nethogs eth0"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

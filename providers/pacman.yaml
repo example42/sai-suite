@@ -12,16 +12,16 @@ provider:
 actions:
   install:
     description: "Install packages via Pacman"
-    template: "pacman -S --noconfirm {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "pacman -S --noconfirm {{sai_packages(saidata, 'pacman')}}"
     timeout: 600
     validation:
       command: "pacman -Q | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
-    rollback: "pacman -R --noconfirm {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    rollback: "pacman -R --noconfirm {{sai_packages(saidata, 'pacman')}}"
 
   uninstall:
     description: "Remove packages via Pacman"
-    template: "pacman -R --noconfirm {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+    template: "pacman -R --noconfirm {{sai_packages(saidata, 'pacman')}}"
     validation:
       command: "! pacman -Q | grep {{saidata.metadata.name}}"
       expected_exit_code: 0
@@ -32,46 +32,46 @@ actions:
       - name: "sync-database"
         command: "pacman -Sy"
       - name: "upgrade-packages"
-        command: "pacman -S --noconfirm {{saidata.packages.server.name}} {{saidata.packages.client.name}} {{saidata.packages.tools.name}}"
+        command: "pacman -S --noconfirm {{sai_packages(saidata, 'pacman')}}"
     timeout: 600
 
   start:
     description: "Start service via systemctl"
-    template: "systemctl start {{saidata.services.main.name}}"
+    template: "systemctl start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
     validation:
-      command: "systemctl is-active {{saidata.services.main.name}}"
+      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
       expected_output: "active"
 
   stop:
     description: "Stop service via systemctl"
-    template: "systemctl stop {{saidata.services.main.name}}"
+    template: "systemctl stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
     validation:
-      command: "systemctl is-active {{saidata.services.main.name}}"
+      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
       expected_output: "inactive"
 
   restart:
     description: "Restart service via systemctl"
-    template: "systemctl restart {{saidata.services.main.name}}"
+    template: "systemctl restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "systemctl enable {{saidata.services.main.name}}"
+    template: "systemctl enable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "systemctl disable {{saidata.services.main.name}}"
+    template: "systemctl disable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
 
   status:
     description: "Check service status"
-    template: "systemctl status {{saidata.services.main.name}}"
+    template: "systemctl status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
 
   logs:
     description: "Show service logs"
-    template: "journalctl -u {{saidata.services.main.name}} --no-pager -n 50"
+    template: "journalctl -u {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "pacman -Si {{saidata.packages.server.name}}"
+    template: "pacman -Si {{sai_package(saidata, 0, 'pacman')}}"
 
   search:
     description: "Search for packages"
@@ -80,66 +80,3 @@ actions:
   list:
     description: "List installed packages"
     template: "pacman -Q | grep {{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-      version: "{{saidata.packages.server.version}}"
-    client:
-      name: "{{saidata.metadata.name}}-client"
-      version: "{{saidata.packages.client.version}}"
-    tools:
-      name: "{{saidata.metadata.name}}-tools"
-      version: "{{saidata.packages.tools.version}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "systemd"
-
-  files:
-    config:
-      path: "/etc/{{saidata.metadata.name}}/{{saidata.metadata.name}}.conf"
-      owner: "root"
-      group: "root"
-      mode: "0644"
-    log:
-      path: "/var/log/{{saidata.metadata.name}}/{{saidata.metadata.name}}.log"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0644"
-
-  directories:
-    config:
-      path: "/etc/{{saidata.metadata.name}}"
-      owner: "root"
-      group: "root"
-      mode: "0755"
-    data:
-      path: "/var/lib/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-    logs:
-      path: "/var/log/{{saidata.metadata.name}}"
-      owner: "{{saidata.metadata.name}}"
-      group: "{{saidata.metadata.name}}"
-      mode: "0750"
-
-  commands:
-    server:
-      path: "/usr/bin/{{saidata.metadata.name}}-server"
-    client:
-      path: "/usr/bin/{{saidata.metadata.name}}-cli"
-    admin:
-      path: "/usr/bin/{{saidata.metadata.name}}-admin"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

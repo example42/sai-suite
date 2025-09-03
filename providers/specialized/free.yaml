@@ -31,37 +31,3 @@ actions:
   upgrade:
     description: "Available memory display"
     template: "free -h --si"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "memory_target"
-
-  files:
-    log:
-      path: "/tmp/free-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    memory:
-      path: "/tmp/memory-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "free -h"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

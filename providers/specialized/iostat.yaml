@@ -39,37 +39,3 @@ actions:
     variables:
       extended_interval: "2"
       extended_count: "5"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "io_target"
-
-  files:
-    log:
-      path: "/tmp/iostat-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    io:
-      path: "/tmp/io-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    monitor:
-      path: "iostat 2"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

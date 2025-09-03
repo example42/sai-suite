@@ -62,8 +62,22 @@ class BaseProvider:
         Returns:
             Provider priority (higher = more preferred), defaults to 50
         """
-        # Priority can be added to the provider data model later
-        # For now, return a default priority
+        # Check if priority is defined in provider data
+        if hasattr(self.provider_data.provider, 'priority') and self.provider_data.provider.priority is not None:
+            return self.provider_data.provider.priority
+        
+        # Platform-specific priority logic
+        from ..utils.system import get_platform
+        current_platform = get_platform()
+        
+        # Give higher priority to platform-specific providers
+        if self.platforms and len(self.platforms) == 1:
+            if current_platform in self.platforms:
+                return 80  # High priority for platform-specific providers
+            else:
+                return 20  # Low priority if not on target platform
+        
+        # Default priority for multi-platform providers
         return 50
     
     def is_available(self, use_cache: bool = True) -> bool:
@@ -229,25 +243,69 @@ class BaseProvider:
         Returns:
             True if functionality test passes or no test is defined
         """
-        # Look for validation commands in actions
+        # Look for simple test actions first (without template variables)
+        priority_actions = ['test', 'version', '--version']
+        
+        for action_name in priority_actions:
+            if action_name in self.provider_data.actions:
+                action = self.provider_data.actions[action_name]
+                if action.validation and action.validation.command:
+                    # Check if command contains template variables
+                    if '{{' not in action.validation.command and '{%' not in action.validation.command:
+                        test_command = action.validation.command.strip().split()
+                        expected_exit_code = action.validation.expected_exit_code
+                        timeout = action.validation.timeout or 30
+                        
+                        logger.debug(f"Testing provider '{self.name}' with validation command: {test_command}")
+                        
+                        return check_executable_functionality(
+                            test_command[0] if test_command else self._get_main_executable(),
+                            test_command,
+                            expected_exit_code,
+                            timeout
+                        )
+        
+        # Look for validation commands in other actions (skip templated ones)
         for action_name, action in self.provider_data.actions.items():
             if action.validation and action.validation.command:
-                test_command = action.validation.command.strip().split()
-                expected_exit_code = action.validation.expected_exit_code
-                timeout = action.validation.timeout
-                
-                logger.debug(f"Testing provider '{self.name}' with validation command: {test_command}")
-                
-                # Use the first validation command we find
-                return check_executable_functionality(
-                    test_command[0] if test_command else self._get_main_executable(),
-                    test_command,
-                    expected_exit_code,
-                    timeout
-                )
+                # Skip commands with template variables during availability check
+                if '{{' not in action.validation.command and '{%' not in action.validation.command:
+                    test_command = action.validation.command.strip().split()
+                    expected_exit_code = action.validation.expected_exit_code
+                    timeout = action.validation.timeout or 30
+                    
+                    logger.debug(f"Testing provider '{self.name}' with validation command: {test_command}")
+                    
+                    return check_executable_functionality(
+                        test_command[0] if test_command else self._get_main_executable(),
+                        test_command,
+                        expected_exit_code,
+                        timeout
+                    )
         
-        # If no validation command is defined, assume functionality is OK
+        # If no simple validation command is found, test basic executable functionality
+        main_executable = self._get_main_executable()
+        if main_executable:
+            # Try common version commands
+            version_commands = [
+                [main_executable, '--version'],
+                [main_executable, '-v'],
+                [main_executable, 'version'],
+                [main_executable, '--help']
+            ]
+            
+            for cmd in version_commands:
+                try:
+                    logger.debug(f"Testing provider '{self.name}' with basic command: {cmd}")
+                    result = check_executable_functionality(main_executable, cmd, expected_exit_code=0, timeout=10)
+                    if result:
+                        return True
+                except Exception:
+                    continue
+        
+        # If no validation command is defined or all fail, assume functionality is OK
         # if the executable exists (which we already checked)
+        logger.debug(f"No suitable validation command found for provider '{self.name}', assuming functional")
         return True
     
     def __str__(self) -> str:

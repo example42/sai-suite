@@ -12,7 +12,7 @@ provider:
 actions:
   trace:
     description: "Trace system calls"
-    template: "strace {{trace_options}} {{saidata.commands.server.path}} 2>&1 | tee {{trace_output}}"
+    template: "strace {{trace_options}} {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{trace_output}}"
     variables:
       trace_options: "-f -t -e trace=all"
       trace_output: "/tmp/strace-{{saidata.metadata.name}}.log"
@@ -26,76 +26,37 @@ actions:
 
   filter:
     description: "Trace specific system calls"
-    template: "strace -e trace={{syscall_filter}} {{saidata.commands.server.path}} 2>&1 | tee {{trace_output}}"
+    template: "strace -e trace={{syscall_filter}} {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{trace_output}}"
     variables:
       syscall_filter: "open,read,write,close"
       trace_output: "/tmp/strace-filtered-{{saidata.metadata.name}}.log"
 
   count:
     description: "Count system calls"
-    template: "strace -c {{saidata.commands.server.path}} 2>&1 | tee {{count_output}}"
+    template: "strace -c {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{count_output}}"
     variables:
       count_output: "/tmp/strace-count-{{saidata.metadata.name}}.log"
 
   time:
     description: "Time system calls"
-    template: "strace -T -tt {{saidata.commands.server.path}} 2>&1 | tee {{time_output}}"
+    template: "strace -T -tt {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{time_output}}"
     variables:
       time_output: "/tmp/strace-time-{{saidata.metadata.name}}.log"
 
   network:
     description: "Trace network-related calls"
-    template: "strace -e trace=network {{saidata.commands.server.path}} 2>&1 | tee {{network_output}}"
+    template: "strace -e trace=network {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{network_output}}"
     variables:
       network_output: "/tmp/strace-network-{{saidata.metadata.name}}.log"
 
   files:
     description: "Trace file operations"
-    template: "strace -e trace=file {{saidata.commands.server.path}} 2>&1 | tee {{files_output}}"
+    template: "strace -e trace=file {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{files_output}}"
     variables:
       files_output: "/tmp/strace-files-{{saidata.metadata.name}}.log"
 
   processes:
     description: "Trace process management"
-    template: "strace -e trace=process {{saidata.commands.server.path}} 2>&1 | tee {{processes_output}}"
+    template: "strace -e trace=process {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} 2>&1 | tee {{processes_output}}"
     variables:
       processes_output: "/tmp/strace-processes-{{saidata.metadata.name}}.log"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "trace_target"
-
-  files:
-    config:
-      path: "/tmp/strace-{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/strace-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    trace:
-      path: "/tmp/trace-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    trace:
-      path: "strace {{saidata.commands.server.path}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

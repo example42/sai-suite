@@ -242,6 +242,9 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             if provider_instance.is_available(use_cache=use_cache):
                 provider_instances.append(provider_instance)
         
+        # Sort provider instances by priority (highest first)
+        provider_instances.sort(key=lambda p: p.get_priority(), reverse=True)
+        
         if not provider_instances:
             click.echo("No available providers found.", err=True)
             ctx.exit(1)
@@ -304,6 +307,9 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                 p for p in provider_instances 
                 if p.has_action(action)
             ]
+            
+            # Sort providers by priority (highest first)
+            suitable_providers.sort(key=lambda p: p.get_priority(), reverse=True)
             
             if not suitable_providers:
                 click.echo(f"No providers support action '{action}'", err=True)

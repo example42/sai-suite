@@ -12,7 +12,7 @@ provider:
 actions:
   search:
     description: "Search network traffic patterns"
-    template: "ngrep -d {{interface}} '{{search_pattern}}' port {{saidata.ports.main.default_port}}"
+    template: "ngrep -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or '80'}}"
     variables:
       interface: "any"
       search_pattern: "{{saidata.metadata.name}}"
@@ -26,60 +26,21 @@ actions:
 
   logs:
     description: "Hex pattern search"
-    template: "ngrep -x -d {{interface}} '{{hex_pattern}}' port {{saidata.ports.main.default_port}}"
+    template: "ngrep -x -d {{interface}} '{{hex_pattern}}' port {{sai_port(saidata) or '80'}}"
     variables:
       interface: "any"
       hex_pattern: "474554"
 
   list:
     description: "List matching packets"
-    template: "ngrep -l -d {{interface}} '{{search_pattern}}' port {{saidata.ports.main.default_port}}"
+    template: "ngrep -l -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or \'80\'}}"
     variables:
       interface: "any"
       search_pattern: "{{saidata.metadata.name}}"
 
   status:
     description: "Quiet mode search"
-    template: "ngrep -q -d {{interface}} '{{search_pattern}}' port {{saidata.ports.main.default_port}}"
+    template: "ngrep -q -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or \'80\'}}"
     variables:
       interface: "any"
       search_pattern: "{{saidata.metadata.name}}"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "network_target"
-
-  files:
-    log:
-      path: "/tmp/ngrep-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    network:
-      path: "/tmp/network-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    search:
-      path: "ngrep -d any '{{saidata.metadata.name}}' port {{saidata.ports.main.default_port}}"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-      configurable: true
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"

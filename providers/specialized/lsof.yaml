@@ -32,7 +32,7 @@ actions:
     description: "Check specific port usage"
     template: "lsof -i :{{port_number}} | tee {{ports_output}}"
     variables:
-      port_number: "{{saidata.ports.main.default_port}}"
+      port_number: "{{sai_port(saidata) or \'80\'}}"
       ports_output: "/tmp/lsof-ports-{{saidata.metadata.name}}.txt"
 
   sockets:
@@ -52,46 +52,3 @@ actions:
     template: "lsof -d mem -p $(pgrep -f {{saidata.metadata.name}}) | tee {{memory_output}}"
     variables:
       memory_output: "/tmp/lsof-memory-{{saidata.metadata.name}}.txt"
-
-mappings:
-  packages:
-    server:
-      name: "{{saidata.metadata.name}}"
-
-  services:
-    main:
-      name: "{{saidata.metadata.name}}"
-      type: "troubleshoot_target"
-
-  files:
-    config:
-      path: "/tmp/lsof-{{saidata.metadata.name}}.conf"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-    log:
-      path: "/tmp/lsof-{{saidata.metadata.name}}.log"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0644"
-
-  directories:
-    troubleshoot:
-      path: "/tmp/troubleshoot-{{saidata.metadata.name}}"
-      owner: "$(whoami)"
-      group: "$(whoami)"
-      mode: "0755"
-
-  commands:
-    server:
-      path: "{{saidata.commands.server.path}}"
-    troubleshoot:
-      path: "lsof -p $(pgrep -f {{saidata.metadata.name}})"
-
-  ports:
-    main:
-      port: "{{saidata.ports.main.default_port}}"
-
-  variables:
-    "*":
-      config_key: "{{variable_name}}"
