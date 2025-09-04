@@ -1,0 +1,59 @@
+---
+# SAI Action File Example
+# This file demonstrates the structure for defining multiple software management actions
+
+config:
+  # Enable verbose output to see detailed execution information
+  verbose: true
+  
+  # Set to true to see what would be executed without actually running commands
+  dry_run: false
+  
+  # Automatically answer yes to all prompts
+  yes: false
+  
+  # Suppress non-essential output
+  quiet: false
+  
+  # Default timeout for all actions (in seconds)
+  timeout: 300
+  
+  # Force a specific provider for all actions (optional)
+  # provider: apt
+  
+  # Execute actions in parallel when possible (experimental)
+  parallel: false
+  
+  # Continue executing remaining actions if one fails
+  continue_on_error: true
+
+actions:
+  # Install software packages
+  install:
+    # Simple software name
+    - nginx
+    - curl
+    - git
+    
+    # Software with specific options
+    - name: docker
+      provider: apt  # Force specific provider for this item
+      timeout: 600   # Override timeout for this specific action
+    
+    - name: nodejs
+      provider: snap
+
+  # Start services after installation
+  start:
+    - nginx
+    - docker
+
+  # You can also define other action types:
+  # uninstall:
+  #   - old-package
+  # 
+  # stop:
+  #   - unnecessary-service
+  # 
+  # restart:
+  #   - updated-service

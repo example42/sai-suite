@@ -72,6 +72,18 @@ sai start nginx
 sai install nginx --dry-run
 ```
 
+2. Execute multiple actions from a file:
+```bash
+# Apply actions from a YAML file
+sai apply actions.yaml
+
+# Apply with parallel execution
+sai apply actions.yaml --parallel
+
+# Apply and continue on errors
+sai apply actions.yaml --continue-on-error
+```
+
 2. View available providers and statistics:
 ```bash
 sai providers list
@@ -120,6 +132,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai list` - List installed software managed through sai
 - `sai logs <software>` - Show software service logs
 - `sai version <software>` - Show software version information
+- `sai apply <action_file>` - Apply multiple actions from a YAML/JSON file
 
 #### Provider Management
 - `sai providers list` - List available providers

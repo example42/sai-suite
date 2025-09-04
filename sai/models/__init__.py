@@ -6,6 +6,7 @@ from .saidata import (
     SaiData, Metadata, Package, Service, File, Directory, 
     Command, Port, Container, ProviderConfig, Compatibility
 )
+from .actions import ActionFile, Actions, ActionConfig, ActionItem
 
 __all__ = [
     # ProviderData models
@@ -29,4 +30,10 @@ __all__ = [
     "Container",
     "ProviderConfig",
     "Compatibility",
+    
+    # Action models
+    "ActionFile",
+    "Actions", 
+    "ActionConfig",
+    "ActionItem",
 ]

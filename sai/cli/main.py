@@ -230,6 +230,208 @@ def version(ctx: click.Context, software: str, timeout: Optional[int], no_cache:
     _execute_software_action(ctx, 'version', software, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
+@cli.command()
+@click.argument('action_file', type=click.Path(exists=True, path_type=Path))
+@click.option('--parallel', is_flag=True, help='Execute actions in parallel when possible')
+@click.option('--continue-on-error', is_flag=True, help='Continue executing remaining actions if one fails')
+@click.option('--timeout', type=int, help='Default timeout for all actions in seconds')
+@click.pass_context
+def apply(ctx: click.Context, action_file: Path, parallel: bool, continue_on_error: bool, timeout: Optional[int]):
+    """Apply multiple actions from an action file.
+    
+    Execute multiple software management actions defined in a YAML or JSON file.
+    The action file should contain a 'config' section for execution options and
+    an 'actions' section defining the operations to perform.
+    
+    Example action file:
+    
+    \b
+    ---
+    config:
+      verbose: true
+      dry_run: false
+    actions:
+      install:
+        - nginx
+        - name: docker
+          provider: apt
+      start:
+        - nginx
+    """
+    try:
+        from ..core.action_loader import ActionLoader, ActionFileError
+        from ..core.action_executor import ActionExecutor
+        from ..providers.loader import ProviderLoader
+        from ..core.saidata_loader import SaidataLoader
+        
+        # Load and validate action file
+        loader = ActionLoader()
+        try:
+            action_file_obj = loader.load_action_file(action_file)
+        except ActionFileError as e:
+            click.echo(f"Error loading action file: {e}", err=True)
+            ctx.exit(1)
+        
+        # Load providers
+        provider_loader = ProviderLoader()
+        providers = provider_loader.load_all_providers()
+        
+        if not providers:
+            click.echo("No providers found. Please install a package manager.", err=True)
+            ctx.exit(1)
+        
+        # Create provider instances
+        provider_instances = []
+        for name, provider_data in providers.items():
+            from ..providers.base import BaseProvider
+            provider_instance = BaseProvider(provider_data)
+            if provider_instance.is_available():
+                provider_instances.append(provider_instance)
+        
+        if not provider_instances:
+            click.echo("No available providers found.", err=True)
+            ctx.exit(1)
+        
+        # Sort provider instances by priority
+        provider_instances.sort(key=lambda p: p.get_priority(), reverse=True)
+        
+        # Create execution engine and saidata loader
+        engine = ExecutionEngine(provider_instances, ctx.obj['sai_config'])
+        saidata_loader = SaidataLoader(ctx.obj['sai_config'])
+        
+        # Create action executor
+        executor = ActionExecutor(engine, saidata_loader)
+        
+        # Prepare global configuration overrides from CLI options
+        global_config = {}
+        
+        # Override with CLI global options
+        if ctx.obj.get('verbose'):
+            global_config['verbose'] = True
+        if ctx.obj.get('dry_run'):
+            global_config['dry_run'] = True
+        if ctx.obj.get('yes'):
+            global_config['yes'] = True
+        if ctx.obj.get('quiet'):
+            global_config['quiet'] = True
+        if ctx.obj.get('provider'):
+            global_config['provider'] = ctx.obj['provider']
+        
+        # Override with command-specific options
+        if parallel:
+            global_config['parallel'] = True
+        if continue_on_error:
+            global_config['continue_on_error'] = True
+        if timeout:
+            global_config['timeout'] = timeout
+        
+        # Show confirmation if not in quiet/yes mode and not dry run
+        if (not ctx.obj['dry_run'] and not ctx.obj['yes'] and not ctx.obj['quiet']):
+            total_actions = len(action_file_obj.actions.get_all_actions())
+            click.echo(f"Will execute {total_actions} actions from {action_file}")
+            
+            # Show summary of actions
+            action_summary = {}
+            for action_type, item in action_file_obj.actions.get_all_actions():
+                if action_type not in action_summary:
+                    action_summary[action_type] = []
+                software_name = item.name if hasattr(item, 'name') else str(item)
+                action_summary[action_type].append(software_name)
+            
+            for action_type, items in action_summary.items():
+                click.echo(f"  {action_type}: {', '.join(items)}")
+            
+            if not click.confirm("Continue?"):
+                click.echo("Cancelled.")
+                ctx.exit(0)
+        
+        # Execute actions
+        result = executor.execute_action_file(action_file_obj, global_config)
+        
+        # Output results
+        if ctx.obj['output_json']:
+            import json
+            output = {
+                'success': result.success,
+                'total_actions': result.total_actions,
+                'successful_actions': result.successful_actions,
+                'failed_actions': result.failed_actions,
+                'success_rate': result.success_rate,
+                'execution_time': result.execution_time,
+                'results': []
+            }
+            
+            for action_result in result.results:
+                action_output = {
+                    'action_type': action_result.action_type,
+                    'software': action_result.software,
+                    'success': action_result.success
+                }
+                
+                if action_result.result:
+                    action_output.update({
+                        'provider_used': action_result.result.provider_used,
+                        'commands_executed': action_result.result.commands_executed,
+                        'execution_time': action_result.result.execution_time
+                    })
+                    
+                    if action_result.result.stdout:
+                        action_output['stdout'] = action_result.result.stdout
+                    if action_result.result.stderr:
+                        action_output['stderr'] = action_result.result.stderr
+                
+                if action_result.error:
+                    action_output['error'] = action_result.error
+                
+                output['results'].append(action_output)
+            
+            click.echo(json.dumps(output, indent=2))
+        else:
+            # Human-readable output
+            if result.success:
+                if not ctx.obj['quiet']:
+                    success_msg = f"✓ Successfully executed {result.successful_actions}/{result.total_actions} actions"
+                    if result.failed_actions > 0:
+                        success_msg += f" ({result.failed_actions} failed)"
+                    click.echo(success_msg)
+                    
+                    if ctx.obj['verbose']:
+                        click.echo(f"Execution time: {result.execution_time:.2f}s")
+                        click.echo(f"Success rate: {result.success_rate:.1f}%")
+                        
+                        # Show individual results
+                        for action_result in result.results:
+                            status = "✓" if action_result.success else "✗"
+                            click.echo(f"  {status} {action_result.action_type} {action_result.software}")
+                            if not action_result.success and action_result.error:
+                                click.echo(f"    Error: {action_result.error}")
+            else:
+                click.echo(f"✗ Action execution failed: {result.failed_actions}/{result.total_actions} actions failed", err=True)
+                
+                if ctx.obj['verbose']:
+                    # Show failed actions
+                    for action_result in result.results:
+                        if not action_result.success:
+                            click.echo(f"  ✗ {action_result.action_type} {action_result.software}: {action_result.error}", err=True)
+                
+                ctx.exit(1)
+        
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {
+                'success': False,
+                'error': str(e),
+                'error_type': e.__class__.__name__
+            }
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error: {error_msg}", err=True)
+        
+        ctx.exit(1)
+
+
 def _get_provider_package_info(provider, saidata):
     """Get package name and version information from a provider.
     

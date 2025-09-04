@@ -1,0 +1,12 @@
+---
+# Simple SAI Action File
+# Minimal example showing basic usage
+
+config:
+  verbose: true
+
+actions:
+  install:
+    - nginx
+    - curl
+    - git

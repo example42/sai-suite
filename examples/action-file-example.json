@@ -1,0 +1,22 @@
+{
+  "config": {
+    "verbose": true,
+    "dry_run": false,
+    "continue_on_error": true
+  },
+  "actions": {
+    "install": [
+      "nginx",
+      "curl",
+      {
+        "name": "docker",
+        "provider": "apt",
+        "timeout": 600
+      }
+    ],
+    "start": [
+      "nginx",
+      "docker"
+    ]
+  }
+}
