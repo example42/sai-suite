@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Enhanced CLI Security**: Added input validation and sanitization for software names in generate command
+- **CLI Command Structure**: Complete CLI command framework with config, generate, and validate commands
 - **Generation Engine Core Implementation**: Complete GenerationEngine class with LLM orchestration, validation, and metrics tracking
 - **Advanced Validation System**: Comprehensive SaidataValidator with JSON schema validation, custom rules, cross-reference checking, and detailed error reporting
 - **LLM Provider Framework**: Extensible provider system with OpenAI integration, async support, and cost estimation
@@ -73,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Generation Architecture**: Implemented async-first generation engine with comprehensive error handling and metrics tracking
+- **CLI Implementation Status**: Generate command currently provides stub implementation pending repository downloader framework (Task 6)
 - **Validation Architecture**: Enhanced validation system with multiple severity levels, detailed error context, and helpful suggestions
 - **LLM Integration**: Added structured LLM provider framework with template-based prompt generation and response validation
 - **CLI Version Command**: Replaced global version command with software-specific version command that shows version information for installed packages

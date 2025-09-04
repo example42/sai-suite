@@ -56,15 +56,30 @@ class ConfigManager:
         # Ensure parent directory exists with secure permissions
         save_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         
-        config_data = config.dict(exclude_none=True)
+        config_data = config.model_dump(exclude_none=True)
+        
+        # Convert objects for serialization
+        def convert_for_serialization(obj):
+            if isinstance(obj, dict):
+                return {k: convert_for_serialization(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_for_serialization(item) for item in obj]
+            elif hasattr(obj, '__fspath__'):  # Path-like objects
+                return str(obj)
+            elif hasattr(obj, 'value'):  # Enum objects
+                return obj.value
+            else:
+                return obj
+        
+        clean_config_data = convert_for_serialization(config_data)
         
         try:
             if save_path.suffix.lower() == '.json':
                 with open(save_path, 'w', encoding='utf-8') as f:
-                    json.dump(config_data, f, indent=2, default=str)
+                    json.dump(clean_config_data, f, indent=2, default=str)
             else:
                 with open(save_path, 'w', encoding='utf-8') as f:
-                    yaml.dump(config_data, f, default_flow_style=False)
+                    yaml.dump(clean_config_data, f, default_flow_style=False)
             
             # Set secure file permissions (readable only by owner)
             save_path.chmod(0o600)

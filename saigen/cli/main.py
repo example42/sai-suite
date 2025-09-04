@@ -3,58 +3,63 @@
 import click
 from pathlib import Path
 from typing import Optional
+import logging
 
-from ..utils.config import get_config
+from ..utils.config import get_config_manager, get_config
 from ..version import get_version
+from .commands import validate, generate, config
 
 
 @click.group()
 @click.option('--config', type=click.Path(exists=True, path_type=Path), 
               help='Configuration file path')
+@click.option('--llm-provider', help='LLM provider to use (openai, anthropic, ollama)')
 @click.option('--verbose', '-v', is_flag=True, help='Enable verbose output')
 @click.option('--dry-run', is_flag=True, help='Show what would be done without executing')
 @click.version_option(version=get_version(), prog_name="saigen")
 @click.pass_context
-def cli(ctx: click.Context, config: Optional[Path], verbose: bool, dry_run: bool):
-    """saigen - AI-powered saidata generation tool."""
+def cli(ctx: click.Context, config: Optional[Path], llm_provider: Optional[str], 
+        verbose: bool, dry_run: bool):
+    """saigen - AI-powered saidata generation tool.
+    
+    Generate, validate, and manage software metadata (saidata) files using AI
+    and repository data. Supports multiple LLM providers and package repositories.
+    """
     ctx.ensure_object(dict)
     ctx.obj['config_path'] = config
+    ctx.obj['llm_provider'] = llm_provider
     ctx.obj['verbose'] = verbose
     ctx.obj['dry_run'] = dry_run
     
+    # Set up logging based on verbose flag
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+    
     # Load configuration
     try:
-        config_obj = get_config()
+        config_manager = get_config_manager(config)
+        config_obj = config_manager.get_config()
         ctx.obj['config'] = config_obj
+        ctx.obj['config_manager'] = config_manager
+        
+        # Validate configuration
+        issues = config_manager.validate_config()
+        if issues and verbose:
+            click.echo("Configuration issues found:", err=True)
+            for issue in issues:
+                click.echo(f"  - {issue}", err=True)
+                
     except Exception as e:
         click.echo(f"Error loading configuration: {e}", err=True)
         ctx.exit(1)
 
 
-@cli.command()
-@click.argument('software_name')
-@click.option('--llm-provider', help='LLM provider to use')
-@click.option('--output', '-o', type=click.Path(path_type=Path), help='Output file path')
-@click.option('--providers', multiple=True, help='Target providers for saidata')
-@click.pass_context
-def generate(ctx: click.Context, software_name: str, llm_provider: Optional[str], 
-             output: Optional[Path], providers: tuple):
-    """Generate saidata for a software package."""
-    click.echo(f"Generating saidata for: {software_name}")
-    # Implementation will be added in later tasks
-
-
-@cli.command()
-@click.option('--show', is_flag=True, help='Show current configuration')
-@click.pass_context
-def config(ctx: click.Context, show: bool):
-    """Manage saigen configuration."""
-    if show:
-        config_obj = ctx.obj['config']
-        masked_config = config_obj.get_masked_config()
-        click.echo("Current configuration:")
-        import yaml
-        click.echo(yaml.dump(masked_config, default_flow_style=False))
+# Add commands to the CLI group
+cli.add_command(validate)
+cli.add_command(generate)
+cli.add_command(config)
 
 
 def main():
