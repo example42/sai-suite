@@ -94,6 +94,13 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 
 ### SAI Commands
 
+#### Recent Updates
+- **Version Action Enhancement**: The `version` action now provides context-aware version detection:
+  - For package managers (apt, brew, etc.): Shows installed package version
+  - For network tools (nmap): Performs service version detection on target hosts
+  - For security tools (grype, syft): Shows tool version and capabilities
+  - For debugging tools (gdb): Shows debugger version and target information
+
 #### Software Management
 - `sai install <software>` - Install software using available providers
 - `sai uninstall <software>` - Uninstall software using available providers
@@ -105,7 +112,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai search <term>` - Search for available software
 - `sai list` - List installed software managed through sai
 - `sai logs <software>` - Show software service logs
-- `sai version <software>` - Show software version information
+- `sai version <software>` - Show software version information (for specialized tools like nmap, performs service version detection)
 
 #### Provider Management
 - `sai providers list` - List available providers
@@ -130,6 +137,23 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 #### Shell Integration
 - `sai completion install` - Install shell completion
 - `sai completion uninstall` - Uninstall shell completion
+
+#### Specialized Tool Actions
+- `sai scan <software>` - Scan for packages/vulnerabilities (syft, grype)
+- `sai generate <software>` - Generate SBOM or reports (syft)
+- `sai debug <software>` - Start debugging session (gdb)
+- `sai attach <software>` - Attach debugger to running process (gdb)
+- `sai report <software>` - Generate vulnerability/security reports (grype)
+- `sai export <software>` - Export data in multiple formats (syft, grype)
+- `sai update <software>` - Update databases/signatures (grype)
+- `sai convert <software>` - Convert between formats (syft)
+- `sai validate <software>` - Validate generated files (syft)
+- `sai filter <software>` - Apply filters to scan results (grype)
+- `sai check <software>` - Check for specific issues/CVEs (grype)
+
+#### Service Management (systemd-based systems)
+- `sai enable <software>` - Enable service auto-start
+- `sai disable <software>` - Disable service auto-start
 
 #### Utilities
 - `sai stats` - Show comprehensive statistics about providers and actions
@@ -274,6 +298,43 @@ validation:
 - Both tools share common schemas and data formats but operate independently
 - SAI focuses on execution and action management
 - SAIGEN focuses on metadata generation and validation
+
+## Specialized Providers
+
+SAI includes specialized providers for security, debugging, and analysis tools:
+
+### Network Security (nmap)
+- **Port scanning**: `sai search <target>` - Scan ports on target hosts
+- **Service discovery**: `sai info <target>` - Detect services and versions
+- **Script scanning**: `sai logs <target>` - Run NSE scripts
+- **Performance tuning**: `sai list <target>` - Optimized timing scans
+- **Version detection**: `sai version <target>` - Detect service versions on target
+
+### SBOM Generation (syft)
+- **Package scanning**: `sai scan <path>` - Scan directories/images for packages
+- **SBOM generation**: `sai generate <image>` - Generate SBOM from container images
+- **Format conversion**: `sai convert <sbom>` - Convert between SBOM formats
+- **Multi-format export**: `sai export <target>` - Export to SPDX, CycloneDX, table formats
+- **SBOM validation**: `sai validate <sbom>` - Validate SBOM format compliance
+- **SBOM comparison**: `sai diff <baseline> <current>` - Compare two SBOMs
+
+### Vulnerability Scanning (grype)
+- **Security scanning**: `sai scan <target>` - Scan for vulnerabilities
+- **Report generation**: `sai report <target>` - Generate vulnerability reports
+- **Severity filtering**: `sai filter <target>` - Filter by vulnerability severity
+- **Multi-format export**: `sai export <target>` - Export to JSON, SARIF, table formats
+- **Database updates**: `sai update` - Update vulnerability database
+- **CVE checking**: `sai check <target>` - Check for specific CVEs
+
+### Debugging (gdb)
+- **Interactive debugging**: `sai debug <binary>` - Start debugging session
+- **Process attachment**: `sai attach <process>` - Attach to running process
+- **Core dump analysis**: `sai core_dump <binary>` - Analyze core dumps
+- **Stack traces**: `sai backtrace <process>` - Get stack trace from running process
+- **Breakpoint debugging**: `sai breakpoint <binary>` - Set breakpoints and debug
+- **Variable watching**: `sai watch <binary>` - Watch variable changes
+- **Memory inspection**: `sai inspect <process>` - Inspect memory and variables
+- **Execution profiling**: `sai profile <binary>` - Profile application execution
 
 ## Use Cases
 
