@@ -14,9 +14,11 @@
         "name": { "type": "string", "description": "Provider name (e.g., 'apt', 'brew', 'docker')" },
         "display_name": { "type": "string" },
         "description": { "type": "string" },
-        "type": { "type": "string", "enum": ["package_manager", "container", "binary", "source", "cloud", "custom", "debug", "trace", "profile", "security", "sbom", "troubleshoot", "network", "audit", "backup"] },
+        "type": { "type": "string", "enum": ["package_manager", "container", "binary", "source", "cloud", "custom", "debug", "trace", "profile", "security", "sbom", "troubleshoot", "network", "audit", "backup", "filesystem", "system", "monitoring", "io", "memory", "monitor", "process"] },
         "platforms": { "type": "array", "items": { "type": "string" } },
-        "capabilities": { "type": "array", "items": { "type": "string" } }
+        "capabilities": { "type": "array", "items": { "type": "string" } },
+        "priority": { "type": "integer", "description": "Provider priority for selection (higher = more preferred)" },
+        "executable": { "type": "string", "description": "Main executable command name for availability detection" }
       },
       "required": ["name", "type"]
     },

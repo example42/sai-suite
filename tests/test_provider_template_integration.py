@@ -33,6 +33,7 @@ class TestProviderTemplateIntegration:
             type=ProviderType.PACKAGE_MANAGER,
             platforms=["debian", "ubuntu"],
             capabilities=["install", "uninstall", "start", "stop"],
+            executable="apt-get"
         )
         
         actions = {

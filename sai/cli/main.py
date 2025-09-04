@@ -25,13 +25,9 @@ from .completion import (
 
 def format_command_execution(provider_name: str, command: str, verbose: bool = False) -> str:
     """Format command execution message with highlighting."""
-    if verbose:
-        return f"[{provider_name}] Executing: {command}"
-    else:
-        # Use click.style for colored output
-        provider_styled = click.style(f"[{provider_name}]", fg='blue', bold=True)
-        command_styled = click.style(command, fg='cyan')
-        return f"{provider_styled} {command_styled}"
+    # Always show "Executing" with command in bold
+    command_styled = click.style(command, bold=True)
+    return f"Executing {command_styled}"
 
 
 def setup_logging(config, verbose: bool = False):
@@ -398,15 +394,10 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             # Human-readable output
             if result.success:
                 if not ctx.obj['quiet']:
-                    # Show command being executed if not already shown
-                    if requires_confirmation or ctx.obj['verbose']:
-                        # Command was already shown during confirmation or in verbose mode
-                        pass
-                    else:
-                        # Show the command that was executed
-                        if result.commands_executed:
-                            command_msg = format_command_execution(result.provider_used, result.commands_executed[0], ctx.obj['verbose'])
-                            click.echo(command_msg)
+                    # Always show the command being executed
+                    if result.commands_executed:
+                        command_msg = format_command_execution(result.provider_used, result.commands_executed[0], ctx.obj['verbose'])
+                        click.echo(command_msg)
                     
                     # Show result output
                     if result.stdout:
@@ -420,6 +411,9 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                         click.echo("Commands executed:")
                         for cmd in result.commands_executed:
                             click.echo(f"  {cmd}")
+                    
+                    # Add empty line at the end of output
+                    click.echo()
             else:
                 click.echo(f"✗ {result.message}", err=True)
                 if result.error_details and ctx.obj['verbose']:
@@ -650,6 +644,10 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
                     click.echo("Commands executed:")
                     for cmd in result.commands_executed:
                         click.echo(f"  {cmd}")
+                
+                # Add empty line at the end of output
+                if not ctx.obj['quiet']:
+                    click.echo()
             elif ctx.obj['verbose'] and result:
                 separator = click.style(f"--- {provider_name} (failed) ---", fg='red', bold=True)
                 click.echo(f"\n{separator}")

@@ -198,8 +198,8 @@ class BaseProvider:
         if hasattr(self, '_cached_executable'):
             return self._cached_executable
         
-        # Check if there's a direct executable field (not in current schema but might be added)
-        if hasattr(self.provider_data.provider, 'executable'):
+        # Check if there's a direct executable field in the provider metadata
+        if hasattr(self.provider_data.provider, 'executable') and self.provider_data.provider.executable:
             self._cached_executable = self.provider_data.provider.executable
             return self._cached_executable
         

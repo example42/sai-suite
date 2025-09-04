@@ -46,6 +46,7 @@ class Provider(BaseModel):
     platforms: Optional[List[str]] = None
     capabilities: Optional[List[str]] = None
     priority: Optional[int] = None
+    executable: Optional[str] = None  # Main executable command name for availability detection
 
 
 class RetryConfig(BaseModel):

@@ -7,6 +7,7 @@ provider:
   description: "Debug applications using GDB"
   type: "debug"
   platforms: ["linux", "macos"]
+  executable: "gdb"  # Main executable for availability detection
   capabilities: ["debug", "attach", "core_dump", "backtrace", "breakpoint", "watch", "inspect", "profile"]
 
 actions:

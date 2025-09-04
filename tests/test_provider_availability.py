@@ -134,7 +134,8 @@ class TestBaseProviderAvailability:
                 description='Test provider',
                 type=ProviderType.PACKAGE_MANAGER,
                 platforms=['linux', 'darwin'],
-                capabilities=['install', 'uninstall']
+                capabilities=['install', 'uninstall'],
+                executable=executable
             ),
             actions={
                 'install': Action(

@@ -869,17 +869,27 @@ class ExecutionEngine:
             return None
         
         def preexec():
-            # Create new process group
-            os.setsid()
-            # Set resource limits if available
             try:
-                import resource
-                # Limit CPU time to prevent runaway processes
-                resource.setrlimit(resource.RLIMIT_CPU, (300, 300))  # 5 minutes
-                # Limit memory usage
-                resource.setrlimit(resource.RLIMIT_AS, (1024*1024*1024, 1024*1024*1024))  # 1GB
-            except (ImportError, OSError):
-                # Resource limits not available on this system
+                # Create new process group (only if not already a session leader)
+                try:
+                    os.setsid()
+                except OSError:
+                    # Already a session leader or permission denied, skip
+                    pass
+                
+                # Set resource limits if available
+                try:
+                    import resource
+                    # Limit CPU time to prevent runaway processes (more generous)
+                    resource.setrlimit(resource.RLIMIT_CPU, (1800, 1800))  # 30 minutes
+                    # Limit memory usage (more generous)
+                    resource.setrlimit(resource.RLIMIT_AS, (4*1024*1024*1024, 4*1024*1024*1024))  # 4GB
+                except (ImportError, OSError, ValueError):
+                    # Resource limits not available or invalid on this system
+                    pass
+            except Exception:
+                # If anything fails in preexec, just continue without security restrictions
+                # This prevents the subprocess from failing to start
                 pass
         
         return preexec

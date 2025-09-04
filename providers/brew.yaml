@@ -8,6 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["macos"]
   priority: 90  # High priority on macOS
+  executable: "brew"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

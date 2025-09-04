@@ -8,6 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   priority: 25  # Lower priority, language-specific
+  executable: "pip"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
 
 actions:

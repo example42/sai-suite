@@ -42,7 +42,8 @@ def sample_provider_data():
             description="A test provider",
             type=ProviderType.PACKAGE_MANAGER,
             platforms=["linux", "darwin"],
-            capabilities=["install", "uninstall"]
+            capabilities=["install", "uninstall"],
+            executable="test-cmd"
         ),
         actions={
             "install": Action(
@@ -327,7 +328,8 @@ class TestExecutionEngine:
             version="0.1",
             provider=Provider(
                 name="unavailable-provider",
-                type=ProviderType.PACKAGE_MANAGER
+                type=ProviderType.PACKAGE_MANAGER,
+                executable="unavailable-cmd"
             ),
             actions={
                 "install": Action(command="unavailable-cmd install")
