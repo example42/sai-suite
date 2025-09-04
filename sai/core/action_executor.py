@@ -168,13 +168,13 @@ class ActionExecutor:
         
         return results
     
-    def _execute_single_action(self, action_type: str, item: Union[str, ActionItem], 
+    def _execute_single_action(self, action_type: str, item: Union[str, ActionItem, Dict[str, Any]], 
                              config: ActionConfig) -> ActionExecutionResult:
         """Execute a single action.
         
         Args:
             action_type: Type of action (install, uninstall, etc.)
-            item: Action item (string or ActionItem object)
+            item: Action item (string, dict, or ActionItem object)
             config: Action configuration
             
         Returns:
@@ -183,6 +183,8 @@ class ActionExecutor:
         # Normalize item to ActionItem
         if isinstance(item, str):
             action_item = ActionItem(name=item)
+        elif isinstance(item, dict):
+            action_item = ActionItem(**item)
         else:
             action_item = item
         
@@ -192,7 +194,10 @@ class ActionExecutor:
             # Load saidata for the software
             saidata = self._load_saidata_for_software(software)
             
-            # Create execution context
+            # Get extra parameters from the action item
+            extra_params = action_item.get_extra_params() if hasattr(action_item, 'get_extra_params') else {}
+            
+            # Create execution context with extra parameters
             execution_context = ExecutionContext(
                 action=action_type,
                 software=software,
@@ -201,7 +206,8 @@ class ActionExecutor:
                 dry_run=config.dry_run,
                 verbose=config.verbose,
                 quiet=config.quiet,
-                timeout=action_item.timeout or config.timeout
+                timeout=action_item.timeout or config.timeout,
+                additional_context=extra_params if extra_params else None
             )
             
             # Execute the action

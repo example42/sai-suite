@@ -27,6 +27,23 @@ class TestActionItem:
         """Test action item with invalid timeout."""
         with pytest.raises(ValidationError):
             ActionItem(name="nginx", timeout=0)
+    
+    def test_action_item_with_extra_params(self):
+        """Test action item with extra parameters."""
+        item = ActionItem(name="nginx", provider="apt", version="1.20", force=True, config_file="/etc/nginx.conf")
+        assert item.name == "nginx"
+        assert item.provider == "apt"
+        
+        # Test extra parameters
+        extra_params = item.get_extra_params()
+        assert extra_params["version"] == "1.20"
+        assert extra_params["force"] is True
+        assert extra_params["config_file"] == "/etc/nginx.conf"
+        
+        # Standard fields should not be in extra params
+        assert "name" not in extra_params
+        assert "provider" not in extra_params
+        assert "timeout" not in extra_params
 
 
 class TestActionConfig:
@@ -94,10 +111,10 @@ class TestActions:
         ])
         assert len(actions.install) == 2
         assert actions.install[0] == "nginx"
-        # Pydantic automatically converts dict to ActionItem
-        assert isinstance(actions.install[1], ActionItem)
-        assert actions.install[1].name == "docker"
-        assert actions.install[1].provider == "apt"
+        # Dict items remain as dicts in the flexible model
+        assert isinstance(actions.install[1], dict)
+        assert actions.install[1]["name"] == "docker"
+        assert actions.install[1]["provider"] == "apt"
         assert actions.has_actions()
     
     def test_multiple_action_types(self):
@@ -181,3 +198,44 @@ class TestActionFile:
         assert effective.verbose is True  # From action file
         assert effective.dry_run is False  # From action file (overrides global)
         assert effective.timeout == 300  # From global (not in action file)
+    
+    def test_flexible_action_types(self):
+        """Test that Actions supports any action type."""
+        # Test with custom action types
+        actions = Actions(
+            install=["nginx"],
+            deploy=["app1", "app2"],
+            backup=["database"],
+            custom_action=["item1"]
+        )
+        
+        assert actions.has_actions()
+        assert "install" in actions.get_action_types()
+        assert "deploy" in actions.get_action_types()
+        assert "backup" in actions.get_action_types()
+        assert "custom_action" in actions.get_action_types()
+        
+        all_actions = actions.get_all_actions()
+        assert len(all_actions) == 5  # 1 + 2 + 1 + 1 = 5 items
+        
+        # Test accessing dynamic fields
+        assert actions.install == ["nginx"]
+        assert actions.deploy == ["app1", "app2"]
+        assert actions.backup == ["database"]
+        assert actions.custom_action == ["item1"]
+    
+    def test_normalize_dict_action_item(self):
+        """Test normalizing dict action items."""
+        action_file = ActionFile(actions=Actions(install=["nginx"]))
+        
+        # Test dict normalization
+        item_dict = {"name": "docker", "provider": "apt", "version": "20.10", "force": True}
+        item = action_file.normalize_action_item(item_dict)
+        assert isinstance(item, ActionItem)
+        assert item.name == "docker"
+        assert item.provider == "apt"
+        
+        # Check extra params
+        extra_params = item.get_extra_params()
+        assert extra_params["version"] == "20.10"
+        assert extra_params["force"] is True

@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAI Apply Schema",
+  "description": "Schema for SAI apply command action files that define multiple software management operations",
+  "type": "object",
+  "properties": {
+    "config": {
+      "type": "object",
+      "description": "Configuration options for the action execution",
+      "properties": {
+        "verbose": {
+          "type": "boolean",
+          "description": "Enable verbose output",
+          "default": false
+        },
+        "dry_run": {
+          "type": "boolean", 
+          "description": "Show what would be done without executing",
+          "default": false
+        },
+        "yes": {
+          "type": "boolean",
+          "description": "Assume yes for all prompts",
+          "default": false
+        },
+        "quiet": {
+          "type": "boolean",
+          "description": "Suppress non-essential output", 
+          "default": false
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Command timeout in seconds",
+          "minimum": 1
+        },
+        "provider": {
+          "type": "string",
+          "description": "Force specific provider for all actions"
+        },
+        "parallel": {
+          "type": "boolean",
+          "description": "Execute actions in parallel when possible",
+          "default": false
+        },
+        "continue_on_error": {
+          "type": "boolean",
+          "description": "Continue executing remaining actions if one fails",
+          "default": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "actions": {
+      "type": "object",
+      "description": "Software management actions to execute",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_-]*$": {
+          "type": "array",
+          "description": "List of items for this action type",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Simple software/service name"
+              },
+              {
+                "type": "object",
+                "description": "Software/service with options and extra parameters",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Software or service name"
+                  },
+                  "provider": {
+                    "type": "string", 
+                    "description": "Specific provider to use"
+                  },
+                  "timeout": {
+                    "type": "integer",
+                    "description": "Timeout for this specific action",
+                    "minimum": 1
+                  }
+                },
+                "required": ["name"],
+                "additionalProperties": true
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    }
+  },
+  "required": ["actions"],
+  "additionalProperties": false
+}

@@ -64,13 +64,20 @@ The `config` section supports the following options:
 
 ### Action Types
 
-The `actions` section supports the following action types:
+The `actions` section supports any action type that follows the naming pattern `^[a-zA-Z][a-zA-Z0-9_-]*$`. Common action types include:
 
 - **install** - Install software packages
 - **uninstall** - Uninstall software packages  
 - **start** - Start services
 - **stop** - Stop services
 - **restart** - Restart services
+- **configure** - Configure software or system settings
+- **deploy** - Deploy applications or services
+- **backup** - Backup data or configurations
+- **monitor** - Set up monitoring
+- **update** - Update software or configurations
+
+You can define any custom action type that your providers support.
 
 ### Action Items
 
@@ -107,6 +114,22 @@ actions:
 | `name` | string | Software or service name (required) |
 | `provider` | string | Specific provider to use for this item |
 | `timeout` | integer | Timeout in seconds for this specific action |
+| `*` | any | Any additional parameters are passed to the action execution context |
+
+**Extra Parameters**: You can include any additional parameters in action items. These will be passed through to the execution context and can be used by providers that support them. Examples:
+
+```yaml
+actions:
+  install:
+    - name: nginx
+      version: ">=1.20"
+      force_reinstall: true
+      config_template: "/etc/nginx/custom.conf"
+    - name: docker
+      provider: apt
+      repository: "docker-ce"
+      gpg_key: "https://download.docker.com/linux/ubuntu/gpg"
+```
 
 ## Examples
 
@@ -195,6 +218,74 @@ actions:
     - postgresql
     - redis
     - docker
+```
+
+### Custom Action Types with Extra Parameters
+
+```yaml
+---
+config:
+  verbose: true
+  continue_on_error: true
+
+actions:
+  # Custom deployment action
+  deploy:
+    - name: web-app
+      environment: production
+      replicas: 3
+      health_check_path: "/health"
+      memory_limit: "512Mi"
+      cpu_limit: "500m"
+    - name: api-service
+      environment: staging
+      port: 8080
+      database_url: "postgresql://localhost/api"
+
+  # Configuration management
+  configure:
+    - name: nginx
+      template_file: "/etc/nginx/nginx.conf.j2"
+      variables:
+        worker_processes: "auto"
+        worker_connections: 1024
+        server_name: "example.com"
+      backup_original: true
+      validate_config: true
+    
+    - name: firewall
+      rules:
+        - port: 80
+          protocol: tcp
+          source: "0.0.0.0/0"
+        - port: 443
+          protocol: tcp
+          source: "0.0.0.0/0"
+
+  # Backup operations
+  backup:
+    - name: database
+      type: postgresql
+      retention_days: 30
+      compression: true
+      destination: "s3://backup-bucket/db"
+    - name: application-files
+      source_path: "/var/www"
+      exclude_patterns: ["*.log", "*.tmp", "node_modules"]
+      encryption: true
+
+  # Monitoring setup
+  monitor:
+    - name: system-metrics
+      interval: 60
+      alerts:
+        cpu_threshold: 80
+        memory_threshold: 90
+        disk_threshold: 85
+    - name: application-logs
+      log_level: "info"
+      retention: "7d"
+      aggregation_service: "elasticsearch"
 ```
 
 ### JSON Format Example

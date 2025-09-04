@@ -1,0 +1,65 @@
+---
+# Example showing extra parameters passed to SAI actions
+# These parameters will be available in the execution context
+
+config:
+  verbose: true
+  dry_run: true  # Safe to test with
+
+actions:
+  install:
+    # Simple package
+    - nginx
+    
+    # Package with version constraint
+    - name: docker
+      provider: apt
+      version: ">=20.10"
+      force_reinstall: true
+      
+    # Package with custom repository
+    - name: nodejs
+      provider: apt
+      repository: "nodesource"
+      keyring: "/usr/share/keyrings/nodesource.gpg"
+      
+    # Package with build options
+    - name: custom-app
+      provider: source
+      build_flags: ["--enable-ssl", "--with-mysql"]
+      make_jobs: 4
+      install_prefix: "/opt/custom-app"
+
+  start:
+    # Service with custom options
+    - name: nginx
+      reload_config: true
+      wait_for_ready: 30
+      
+    # Service with environment variables
+    - name: app-service
+      environment:
+        NODE_ENV: "production"
+        PORT: 3000
+        DATABASE_URL: "postgresql://localhost/myapp"
+      user: "appuser"
+      working_directory: "/opt/app"
+
+  configure:
+    # Configuration with template variables
+    - name: nginx
+      template_file: "/etc/nginx/nginx.conf.j2"
+      variables:
+        worker_processes: "auto"
+        worker_connections: 1024
+        keepalive_timeout: 65
+      backup_original: true
+      validate_config: true
+      
+    # System configuration
+    - name: sysctl
+      parameters:
+        "net.core.somaxconn": 65535
+        "vm.swappiness": 10
+        "fs.file-max": 100000
+      apply_immediately: true

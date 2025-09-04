@@ -1,0 +1,34 @@
+---
+# Test file for flexible action types and extra parameters
+config:
+  verbose: true
+  dry_run: true
+  continue_on_error: true
+
+actions:
+  # Standard actions that should work
+  install:
+    - nginx
+    - name: curl
+      version: "latest"
+      force: true
+
+  # Custom action types
+  deploy:
+    - name: test-app
+      environment: staging
+      replicas: 2
+
+  configure:
+    - name: test-config
+      template: "/tmp/test.conf"
+      variables:
+        key1: "value1"
+        key2: 42
+
+  custom_action:
+    - name: test-item
+      param1: "test"
+      param2: true
+      nested:
+        key: "value"

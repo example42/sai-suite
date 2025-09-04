@@ -1,0 +1,82 @@
+---
+# Flexible SAI Action File Example
+# Demonstrates support for any action type and extra parameters
+
+config:
+  verbose: true
+  dry_run: false
+  continue_on_error: true
+  # Custom config parameters are also supported
+  max_retries: 3
+  notification_webhook: "https://example.com/webhook"
+
+actions:
+  # Standard actions
+  install:
+    - nginx
+    - name: docker
+      provider: apt
+      version: "20.10"
+      force: true
+      config_file: "/etc/docker/daemon.json"
+    - name: nodejs
+      provider: snap
+      channel: "18/stable"
+      classic: true
+
+  # Custom action types are supported
+  deploy:
+    - name: web-app
+      environment: production
+      replicas: 3
+      health_check: "/health"
+    - name: api-service
+      environment: staging
+      port: 8080
+      memory_limit: "512Mi"
+
+  backup:
+    - name: database
+      type: postgresql
+      retention_days: 30
+      compression: true
+    - name: files
+      source: "/var/www"
+      destination: "s3://backup-bucket"
+      exclude_patterns: ["*.log", "*.tmp"]
+
+  configure:
+    - name: nginx
+      template: "/etc/nginx/sites-available/default"
+      variables:
+        server_name: "example.com"
+        root_path: "/var/www/html"
+        ssl_enabled: true
+    - name: firewall
+      rules:
+        - port: 80
+          protocol: tcp
+          source: "0.0.0.0/0"
+        - port: 443
+          protocol: tcp
+          source: "0.0.0.0/0"
+
+  # Even more custom actions
+  monitor:
+    - name: system-metrics
+      interval: 60
+      alerts:
+        cpu_threshold: 80
+        memory_threshold: 90
+    - name: application-logs
+      log_level: "info"
+      retention: "7d"
+
+  # Actions can have any name following the pattern
+  custom_deployment:
+    - name: special-service
+      custom_param1: "value1"
+      custom_param2: 42
+      nested_config:
+        key1: "nested_value1"
+        key2: ["item1", "item2"]

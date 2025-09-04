@@ -208,11 +208,11 @@ class TestActionLoader:
             # Verify actions
             assert len(action_file.actions.install) == 2
             assert action_file.actions.install[0] == "nginx"
-            # Pydantic automatically converts dict to ActionItem
-            assert isinstance(action_file.actions.install[1], ActionItem)
-            assert action_file.actions.install[1].name == "docker"
-            assert action_file.actions.install[1].provider == "apt"
-            assert action_file.actions.install[1].timeout == 600
+            # Dict items remain as dicts in the flexible model
+            assert isinstance(action_file.actions.install[1], dict)
+            assert action_file.actions.install[1]["name"] == "docker"
+            assert action_file.actions.install[1]["provider"] == "apt"
+            assert action_file.actions.install[1]["timeout"] == 600
             
             assert action_file.actions.start == ["nginx", "docker"]
             assert action_file.actions.uninstall == ["old-package"]
