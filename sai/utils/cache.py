@@ -658,15 +658,59 @@ class SaidataCache:
 class CacheManager:
     """Unified cache manager for both provider and saidata caches."""
     
-    def __init__(self, config: SaiConfig):
+    def __init__(self, config: Union[SaiConfig, Path]):
         """Initialize cache manager.
         
         Args:
-            config: SAI configuration object
+            config: SAI configuration object or cache directory path
         """
-        self.config = config
-        self.provider_cache = ProviderCache(config)
-        self.saidata_cache = SaidataCache(config)
+        if isinstance(config, Path):
+            # Handle case where path is passed directly (for tests)
+            from ..models.config import SaiConfig
+            self.config = SaiConfig(cache_directory=config, cache_enabled=True)
+        else:
+            self.config = config
+        self.provider_cache = ProviderCache(self.config)
+        self.saidata_cache = SaidataCache(self.config)
+        
+        # Generic cache interface for tests
+        self._generic_cache = {}
+    
+    def set(self, key: str, data: Any, ttl: Optional[int] = None) -> None:
+        """Set a cache entry (generic interface for tests).
+        
+        Args:
+            key: Cache key
+            data: Data to cache
+            ttl: Time to live in seconds (optional)
+        """
+        self._generic_cache[key] = {
+            'data': data,
+            'cached_at': time.time(),
+            'ttl': ttl or self.config.cache_ttl
+        }
+    
+    def get(self, key: str) -> Optional[Any]:
+        """Get a cache entry (generic interface for tests).
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            Cached data if valid, None otherwise
+        """
+        if key not in self._generic_cache:
+            return None
+        
+        entry = self._generic_cache[key]
+        cached_at = entry['cached_at']
+        ttl = entry['ttl']
+        
+        if time.time() - cached_at > ttl:
+            del self._generic_cache[key]
+            return None
+        
+        return entry['data']
     
     def get_comprehensive_status(self) -> Dict[str, Any]:
         """Get comprehensive status of all caches.

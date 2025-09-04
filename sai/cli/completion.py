@@ -74,10 +74,17 @@ def complete_config_keys(ctx: click.Context, param: click.Parameter, incomplete:
         # Get actual config keys from the SaiConfig model
         from ..models.config import SaiConfig
         config_instance = SaiConfig()
-        config_keys = [
-            attr for attr in dir(config_instance)
-            if not attr.startswith('_') and not callable(getattr(config_instance, attr))
-        ]
+        
+        # Use model_fields instead of deprecated attributes
+        config_keys = []
+        if hasattr(config_instance.__class__, 'model_fields'):
+            config_keys = list(config_instance.__class__.model_fields.keys())
+        else:
+            # Fallback for older pydantic versions
+            config_keys = [
+                attr for attr in dir(config_instance)
+                if not attr.startswith('_') and not callable(getattr(config_instance, attr))
+            ]
         
         return [key for key in config_keys if key.startswith(incomplete)]
     except Exception:

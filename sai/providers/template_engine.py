@@ -1,8 +1,9 @@
 """Template resolution engine for SAI CLI tool."""
 
 import logging
+import os
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Callable
 from jinja2 import Environment, BaseLoader, TemplateSyntaxError, UndefinedError, StrictUndefined
 
 from ..models.provider_data import Action
@@ -15,6 +16,62 @@ logger = logging.getLogger(__name__)
 class TemplateResolutionError(Exception):
     """Exception raised when template resolution fails."""
     pass
+
+
+class TemplateContext:
+    """Template context container for organizing template variables and functions."""
+    
+    def __init__(self, saidata: SaiData, variables: Optional[Dict[str, Any]] = None, 
+                 functions: Optional[Dict[str, Callable]] = None):
+        """Initialize template context.
+        
+        Args:
+            saidata: SaiData object
+            variables: Additional template variables
+            functions: Custom template functions
+        """
+        self.saidata = saidata
+        self.variables = variables or {}
+        self.functions = functions or {}
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert context to dictionary for Jinja2 template rendering.
+        
+        Returns:
+            Dictionary containing all context variables and functions
+        """
+        context = {
+            'saidata': self.saidata,
+            'env': dict(os.environ),  # Environment variables
+        }
+        
+        # Add custom variables
+        context.update(self.variables)
+        
+        # Add custom functions
+        context.update(self.functions)
+        
+        return context
+
+
+class TemplateFunction:
+    """Wrapper for template functions with metadata."""
+    
+    def __init__(self, name: str, function: Callable, description: str = ""):
+        """Initialize template function.
+        
+        Args:
+            name: Function name
+            function: Callable function
+            description: Function description
+        """
+        self.name = name
+        self.function = function
+        self.description = description
+    
+    def __call__(self, *args, **kwargs):
+        """Call the wrapped function."""
+        return self.function(*args, **kwargs)
 
 
 class SaidataContextBuilder:
@@ -34,8 +91,10 @@ class SaidataContextBuilder:
         Returns:
             Dictionary containing template variables
         """
+        saidata_context = self._build_saidata_context()
+        
         context = {
-            'saidata': self._build_saidata_context(),
+            'saidata': saidata_context,
             'metadata': self._build_metadata_context(),
         }
         
@@ -44,6 +103,9 @@ class SaidataContextBuilder:
             context['name'] = self.saidata.metadata.name
             context['version'] = self.saidata.metadata.version
             context['display_name'] = self.saidata.metadata.display_name or self.saidata.metadata.name
+        
+        # Add top-level collections for easier access
+        context.update(saidata_context)
         
         logger.debug(f"Built template context with keys: {list(context.keys())}")
         return context
@@ -64,7 +126,12 @@ class SaidataContextBuilder:
         context['containers'] = [self._container_to_dict(container) for container in self.saidata.containers] if self.saidata.containers else []
         
         # Add providers section if it exists
-        context['providers'] = self._build_providers_context() if hasattr(self.saidata, 'providers') and self.saidata.providers else {}
+        if hasattr(self.saidata, 'providers') and self.saidata.providers:
+            context['providers'] = self._build_providers_context()
+            logger.debug(f"Added providers to context: {list(context['providers'].keys())}")
+        else:
+            context['providers'] = {}
+            logger.debug("No providers found in saidata")
         
         return context
     
@@ -74,32 +141,38 @@ class SaidataContextBuilder:
             return {}
         
         metadata = self.saidata.metadata
+        
+        # Helper function to handle None values for Jinja2 default filter
+        # Don't convert None to empty string - let Jinja2 handle it
+        def safe_value(value):
+            return value
+        
         context = {
-            'name': metadata.name,
-            'display_name': metadata.display_name or metadata.name,
-            'description': metadata.description,
-            'version': metadata.version,
-            'category': metadata.category,
-            'subcategory': metadata.subcategory,
+            'name': safe_value(metadata.name),
+            'display_name': safe_value(metadata.display_name) or safe_value(metadata.name),
+            'description': safe_value(metadata.description),
+            'version': safe_value(metadata.version),
+            'category': safe_value(metadata.category),
+            'subcategory': safe_value(metadata.subcategory),
             'tags': metadata.tags or [],
-            'license': metadata.license,
-            'language': metadata.language,
-            'maintainer': metadata.maintainer,
+            'license': safe_value(metadata.license),
+            'language': safe_value(metadata.language),
+            'maintainer': safe_value(metadata.maintainer),
         }
         
         # Add URLs if present
         if metadata.urls:
             context['urls'] = {
-                'website': metadata.urls.website,
-                'documentation': metadata.urls.documentation,
-                'source': metadata.urls.source,
-                'issues': metadata.urls.issues,
-                'support': metadata.urls.support,
-                'download': metadata.urls.download,
-                'changelog': metadata.urls.changelog,
-                'license': metadata.urls.license,
-                'sbom': metadata.urls.sbom,
-                'icon': metadata.urls.icon,
+                'website': safe_value(metadata.urls.website),
+                'documentation': safe_value(metadata.urls.documentation),
+                'source': safe_value(metadata.urls.source),
+                'issues': safe_value(metadata.urls.issues),
+                'support': safe_value(metadata.urls.support),
+                'download': safe_value(metadata.urls.download),
+                'changelog': safe_value(metadata.urls.changelog),
+                'license': safe_value(metadata.urls.license),
+                'sbom': safe_value(metadata.urls.sbom),
+                'icon': safe_value(metadata.urls.icon),
             }
         
         return context
@@ -244,11 +317,12 @@ class ArrayExpansionFilter:
         Returns:
             Template string with array syntax expanded to Jinja2 loops
         """
-        # Pattern to match array expansion syntax: {{path.*.field}}
-        array_pattern = r'\{\{\s*([^}]+\.\*\.[^}]+)\s*\}\}'
+        # Pattern to match array expansion syntax: {{path.*.field|filter}}
+        array_pattern = r'\{\{\s*([^}]+\.\*\.[^}|]+)(\|[^}]+)?\s*\}\}'
         
         def replace_array_syntax(match):
             full_path = match.group(1).strip()
+            filters = match.group(2) or ''
             
             # Split the path: saidata.packages.*.name -> ['saidata', 'packages', '*', 'name']
             parts = full_path.split('.')
@@ -265,11 +339,23 @@ class ArrayExpansionFilter:
             array_path = '.'.join(parts[:star_index])
             field_path = '.'.join(parts[star_index + 1:])
             
-            # Generate Jinja2 loop syntax
-            loop_var = f"item_{star_index}"
-            jinja_loop = f"{{{{ {array_path} | map(attribute='{field_path}') | join(' ') }}}}"
+            # Generate Jinja2 loop syntax with proper filter handling
+            if filters:
+                # Handle filters like |join(',')
+                if 'join(' in filters:
+                    # Extract separator from join filter
+                    join_match = re.search(r'join\([\'"]([^\'"]*)[\'"]?\)', filters)
+                    if join_match:
+                        separator = join_match.group(1)
+                        jinja_loop = f"{{{{ {array_path} | map(attribute='{field_path}') | join('{separator}') }}}}"
+                    else:
+                        jinja_loop = f"{{{{ {array_path} | map(attribute='{field_path}') | join(' ') }}}}"
+                else:
+                    jinja_loop = f"{{{{ {array_path} | map(attribute='{field_path}'){filters} }}}}"
+            else:
+                jinja_loop = f"{{{{ {array_path} | map(attribute='{field_path}') | join(' ') }}}}"
             
-            logger.debug(f"Expanded array syntax '{full_path}' to '{jinja_loop}'")
+            logger.debug(f"Expanded array syntax '{full_path}{filters}' to '{jinja_loop}'")
             return jinja_loop
         
         expanded = re.sub(array_pattern, replace_array_syntax, template_str)
@@ -289,9 +375,25 @@ class TemplateEngine:
             undefined=StrictUndefined,  # Raise errors for undefined variables
         )
         
+        # Template cache for performance
+        self._template_cache = {}
+        self._max_cache_size = 100
+        
+        # Custom functions registry
+        self._custom_functions = {}
+        
         # Add custom filters
         self.env.filters['expand_arrays'] = self._expand_arrays_filter
         self.env.filters['sai_lookup'] = self._sai_lookup_filter
+        
+        # Override default filter to handle None values properly
+        def default_filter(value, default_value='', boolean=False):
+            """Custom default filter that treats None as undefined."""
+            if value is None or (boolean and not value):
+                return default_value
+            return value
+        
+        self.env.filters['default'] = default_filter
         
         # Add global functions for easier template access
         self.env.globals['sai_packages'] = self._sai_packages_global
@@ -302,6 +404,82 @@ class TemplateEngine:
         self.env.globals['sai_command'] = self._sai_command_global
         
         logger.debug("Template engine initialized")
+    
+    def register_function(self, name: str, function: Callable) -> None:
+        """Register a custom template function.
+        
+        Args:
+            name: Function name to use in templates
+            function: Callable function
+        """
+        self._custom_functions[name] = function
+        self.env.globals[name] = function
+        logger.debug(f"Registered custom template function: {name}")
+    
+    def _create_context(self, saidata: SaiData, variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Create template context from saidata and variables.
+        
+        Args:
+            saidata: SaiData object
+            variables: Additional variables
+            
+        Returns:
+            Template context dictionary
+        """
+        if saidata is None:
+            raise TemplateResolutionError("saidata is required for template resolution")
+        
+        # Build context from saidata
+        context_builder = SaidataContextBuilder(saidata)
+        context = context_builder.build_context()
+        
+        # Add the raw saidata object for direct access
+        context['saidata'] = saidata
+        
+        # Add environment variables
+        context['env'] = dict(os.environ)
+        
+        # Add custom variables
+        if variables:
+            context.update(variables)
+        
+        # Add custom functions
+        context.update(self._custom_functions)
+        
+        # Add built-in global functions that use the current context
+        def sai_packages_wrapper(saidata_obj, provider_name=None):
+            return self._sai_packages_global(context, provider_name)
+        
+        def sai_package_wrapper(saidata_obj, provider_name=None, index=0):
+            return self._sai_package_global(context, provider_name, index)
+        
+        def sai_service_wrapper(saidata_obj, provider_name=None, index=0, field='name'):
+            return self._sai_service_global(context, provider_name, index, field)
+        
+        def sai_file_wrapper(saidata_obj, index=0, field='path'):
+            return self._sai_file_global(context, index, field)
+        
+        def sai_port_wrapper(saidata_obj, index=0, field='port'):
+            return self._sai_port_global(context, index, field)
+        
+        def sai_command_wrapper(saidata_obj, index=0, field='path'):
+            return self._sai_command_global(context, index, field)
+        
+        # Only add built-in functions if they haven't been overridden by custom functions
+        if 'sai_packages' not in context:
+            context['sai_packages'] = sai_packages_wrapper
+        if 'sai_package' not in context:
+            context['sai_package'] = sai_package_wrapper
+        if 'sai_service' not in context:
+            context['sai_service'] = sai_service_wrapper
+        if 'sai_file' not in context:
+            context['sai_file'] = sai_file_wrapper
+        if 'sai_port' not in context:
+            context['sai_port'] = sai_port_wrapper
+        if 'sai_command' not in context:
+            context['sai_command'] = sai_command_wrapper
+        
+        return context
     
     def resolve_template(self, template_str: str, saidata: SaiData, 
                         additional_context: Optional[Dict[str, Any]] = None) -> str:
@@ -319,24 +497,38 @@ class TemplateEngine:
             TemplateResolutionError: If template resolution fails
         """
         try:
-            # Build context from saidata
-            context_builder = SaidataContextBuilder(saidata)
-            context = context_builder.build_context()
+            # Check cache first
+            if template_str in self._template_cache:
+                template = self._template_cache[template_str]
+            else:
+                # Expand array syntax before Jinja2 processing
+                expanded_template = ArrayExpansionFilter.expand_array_syntax(template_str, {})
+                
+                # Create and cache template
+                try:
+                    template = self.env.from_string(expanded_template)
+                except TemplateSyntaxError as e:
+                    raise TemplateResolutionError(f"Template syntax error in '{template_str}': {e}")
+                
+                # Cache management
+                if len(self._template_cache) >= self._max_cache_size:
+                    # Remove oldest entry (simple FIFO)
+                    oldest_key = next(iter(self._template_cache))
+                    del self._template_cache[oldest_key]
+                
+                self._template_cache[template_str] = template
             
-            # Add any additional context
-            if additional_context:
-                context.update(additional_context)
+            # Create context
+            context = self._create_context(saidata, additional_context)
             
-            # Expand array syntax before Jinja2 processing
-            expanded_template = ArrayExpansionFilter.expand_array_syntax(template_str, context)
-            
-            # Create and render template
-            template = self.env.from_string(expanded_template)
+            # Render template
             result = template.render(context)
             
             logger.debug(f"Resolved template: '{template_str}' -> '{result}'")
             return result.strip()
             
+        except TemplateResolutionError:
+            raise
         except (TemplateSyntaxError, UndefinedError) as e:
             error_msg = f"Template resolution failed for '{template_str}': {e}"
             logger.error(error_msg)
@@ -459,9 +651,10 @@ class TemplateEngine:
             # Helper function to extract field from resource
             def extract_field(resource, field_name):
                 if isinstance(resource, dict):
-                    return resource.get(field_name, '')
+                    return str(resource.get(field_name, ''))
                 elif hasattr(resource, field_name):
-                    return getattr(resource, field_name, '')
+                    value = getattr(resource, field_name, '')
+                    return str(value) if value is not None else ''
                 return ''
             
             # Helper function to get names from resource list
@@ -469,7 +662,7 @@ class TemplateEngine:
                 if not resources:
                     return ''
                 
-                if single_index is not None:
+                if single_index is not None and single_index >= 0:
                     # Return single item
                     if len(resources) > single_index:
                         return extract_field(resources[single_index], field_name)
@@ -494,6 +687,7 @@ class TemplateEngine:
                             result = get_resource_names(provider_resources, field, 
                                                      index if index >= 0 else None)
                             if result:
+                                logger.debug(f"Found provider-specific {resource_type}: {result}")
                                 return result
             
             # 2. Fall back to general resource array
@@ -509,7 +703,7 @@ class TemplateEngine:
             if field == 'name' and 'metadata' in saidata_context:
                 metadata = saidata_context['metadata']
                 if isinstance(metadata, dict) and 'name' in metadata:
-                    return metadata['name']
+                    return str(metadata['name'])
             
             # 4. Return empty string if nothing found
             return ''
@@ -523,21 +717,44 @@ class TemplateEngine:
         
         Usage: {{sai_packages(saidata, 'brew')}} or {{sai_packages(saidata)}}
         """
+        # Handle case where saidata_context is the actual SaiData object
+        if hasattr(saidata_context, 'metadata'):
+            # Convert SaiData to context
+            context_builder = SaidataContextBuilder(saidata_context)
+            saidata_context = context_builder.build_context()
+        
         return self._sai_lookup_filter(saidata_context, 'packages', 'name', -1, provider_name)
     
-    def _sai_package_global(self, saidata_context: Dict[str, Any], index: int = 0, provider_name: str = None) -> str:
+    def _sai_package_global(self, saidata_context: Dict[str, Any], provider_name: str = None, index: int = 0) -> str:
         """Global function to get single package name with provider fallback.
         
-        Usage: {{sai_package(saidata, 0, 'brew')}} or {{sai_package(saidata)}}
+        Usage: {{sai_package(saidata, 'brew')}} or {{sai_package(saidata)}}
         """
+        # Handle case where saidata_context is the actual SaiData object
+        if hasattr(saidata_context, 'metadata'):
+            # Convert SaiData to context
+            context_builder = SaidataContextBuilder(saidata_context)
+            saidata_context = context_builder.build_context()
+        
         return self._sai_lookup_filter(saidata_context, 'packages', 'name', index, provider_name)
     
-    def _sai_service_global(self, saidata_context: Dict[str, Any], index: int = 0, field: str = 'name') -> str:
+    def _sai_service_global(self, saidata_context: Dict[str, Any], provider_name: str = None, index: int = 0, field: str = 'name') -> str:
         """Global function to get service information.
         
-        Usage: {{sai_service(saidata)}} or {{sai_service(saidata, 0, 'service_name')}}
+        Usage: {{sai_service(saidata)}} or {{sai_service(saidata, 'systemd', 0, 'service_name')}}
         """
-        return self._sai_lookup_filter(saidata_context, 'services', field, index)
+        # Handle case where saidata_context is the actual SaiData object
+        if hasattr(saidata_context, 'metadata'):
+            # Convert SaiData to context
+            context_builder = SaidataContextBuilder(saidata_context)
+            saidata_context = context_builder.build_context()
+        
+        # For backward compatibility, if provider_name is an int, it's actually the index
+        if isinstance(provider_name, int):
+            index = provider_name
+            provider_name = None
+        
+        return self._sai_lookup_filter(saidata_context, 'services', field, index, provider_name)
     
     def _sai_file_global(self, saidata_context: Dict[str, Any], index: int = 0, field: str = 'path') -> str:
         """Global function to get file information.

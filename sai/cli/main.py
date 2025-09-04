@@ -86,7 +86,8 @@ def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str],
     ctx.obj['verbose'] = verbose
     ctx.obj['dry_run'] = dry_run
     ctx.obj['yes'] = yes
-    ctx.obj['quiet'] = quiet
+    # Enable quiet mode when JSON output is requested to prevent interference
+    ctx.obj['quiet'] = quiet or output_json
     ctx.obj['output_json'] = output_json
     
     # Load configuration
@@ -475,8 +476,8 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                     if result.stdout:
                         click.echo(result.stdout.strip())
                     elif result.message and not result.message.startswith("Command executed successfully"):
-                        # Don't show generic success messages unless verbose
-                        if ctx.obj['verbose']:
+                        # Always show dry run messages, otherwise only if verbose
+                        if ctx.obj['verbose'] or result.dry_run:
                             click.echo(f"✓ {result.message}")
                     
                     if ctx.obj['verbose'] and result.commands_executed:

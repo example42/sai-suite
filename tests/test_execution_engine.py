@@ -66,8 +66,20 @@ def mock_provider(sample_provider_data):
     provider = BaseProvider(sample_provider_data)
     
     # Mock the availability check
-    with patch.object(provider, 'is_available', return_value=True):
-        yield provider
+    provider.is_available = Mock(return_value=True)
+    
+    # Mock template resolution
+    def mock_resolve_templates(action_name, saidata, additional_context=None):
+        if action_name == "install":
+            return {'command': f'test-cmd install {saidata.metadata.name}'}
+        elif action_name == "uninstall":
+            return {'command': f'test-cmd uninstall {saidata.metadata.name}'}
+        else:
+            return {'command': f'test-cmd {action_name}'}
+    
+    provider.resolve_action_templates = Mock(side_effect=mock_resolve_templates)
+    
+    return provider
 
 
 @pytest.fixture

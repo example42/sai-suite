@@ -21,6 +21,97 @@ class LogFormat(str, Enum):
     MINIMAL = "minimal"
 
 
+class ColoredFormatter(logging.Formatter):
+    """Colored console formatter for better readability."""
+    
+    # ANSI color codes
+    COLORS = {
+        logging.DEBUG: '\033[36m',    # Cyan
+        logging.INFO: '\033[32m',     # Green
+        logging.WARNING: '\033[33m',  # Yellow
+        logging.ERROR: '\033[31m',    # Red
+        logging.CRITICAL: '\033[35m', # Magenta
+    }
+    RESET = '\033[0m'
+    
+    def __init__(self, fmt=None, datefmt=None, use_colors=None, *args, **kwargs):
+        """Initialize colored formatter."""
+        # Use a default format if none provided
+        if fmt is None:
+            fmt = '%(levelname)s: %(message)s'
+        super().__init__(fmt, datefmt, *args, **kwargs)
+        # Check if colors are supported
+        if use_colors is not None:
+            self.use_colors = use_colors
+        else:
+            self.use_colors = sys.stdout.isatty() and hasattr(sys.stdout, 'isatty')
+    
+    def format(self, record: logging.LogRecord) -> str:
+        """Format log record with colors if supported.
+        
+        Args:
+            record: Log record to format
+            
+        Returns:
+            Formatted log message with colors
+        """
+        # Make a copy of the record to avoid modifying the original
+        record_copy = logging.makeLogRecord(record.__dict__)
+        
+        if self.use_colors:
+            # Add color to the level name
+            color = self.COLORS.get(record_copy.levelno, '')
+            if color:
+                record_copy.levelname = f"{color}{record_copy.levelname}{self.RESET}"
+        
+        return super().format(record_copy)
+
+
+class StructuredFormatter(logging.Formatter):
+    """Structured JSON formatter for machine-readable logs."""
+    
+    def format(self, record: logging.LogRecord) -> str:
+        """Format log record as structured JSON.
+        
+        Args:
+            record: Log record to format
+            
+        Returns:
+            JSON formatted log message
+        """
+        log_entry = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'level': record.levelname,
+            'message': record.getMessage(),
+            'logger': record.name,
+            'module': record.module,
+            'line': record.lineno,
+        }
+        
+        # Add extra fields from the record
+        for key, value in record.__dict__.items():
+            if key not in ['name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
+                          'filename', 'module', 'lineno', 'funcName', 'created',
+                          'msecs', 'relativeCreated', 'thread', 'threadName',
+                          'processName', 'process', 'getMessage', 'exc_info',
+                          'exc_text', 'stack_info']:
+                log_entry[key] = value
+        
+        # Add exception info if present
+        if record.exc_info:
+            log_entry['exception'] = {
+                'type': record.exc_info[0].__name__ if record.exc_info[0] else None,
+                'message': str(record.exc_info[1]) if record.exc_info[1] else None,
+                'traceback': traceback.format_exception(*record.exc_info)
+            }
+        
+        try:
+            return json.dumps(log_entry, default=str, ensure_ascii=False)
+        except (TypeError, ValueError) as e:
+            # Fallback to simple format if JSON serialization fails
+            return f"JSON_FORMAT_ERROR: {record.getMessage()} (Error: {e})"
+
+
 class SaiLogger:
     """Enhanced logger for SAI CLI tool with structured logging capabilities."""
     
@@ -328,17 +419,95 @@ class JsonFormatter(logging.Formatter):
             return f"JSON_FORMAT_ERROR: {record.getMessage()} (Error: {e})"
 
 
-def get_logger(name: str, config: Optional[SaiConfig] = None) -> SaiLogger:
-    """Get a configured SAI logger instance.
+def get_logger(name: str, config: Optional[SaiConfig] = None) -> Union[SaiLogger, logging.Logger]:
+    """Get a configured logger instance.
     
     Args:
         name: Logger name (typically __name__)
         config: SAI configuration object
         
     Returns:
-        Configured SaiLogger instance
+        Configured logger instance (SaiLogger if config provided, regular Logger otherwise)
     """
-    return SaiLogger(name, config)
+    if config is not None:
+        return SaiLogger(name, config)
+    else:
+        # For backward compatibility, return regular logger when no config provided
+        # Ensure name has sai prefix
+        if not name.startswith('sai.') and name != 'sai':
+            name = f'sai.{name}'
+        return logging.getLogger(name)
+
+
+def get_log_level_from_string(level: Union[str, LogLevel]) -> int:
+    """Convert string or LogLevel enum to logging level constant.
+    
+    Args:
+        level: Log level as string or LogLevel enum
+        
+    Returns:
+        Logging level constant
+        
+    Raises:
+        ValueError: If level string is invalid
+    """
+    if isinstance(level, LogLevel):
+        level = level.value
+    
+    level_str = str(level).upper()
+    
+    level_map = {
+        'DEBUG': logging.DEBUG,
+        'INFO': logging.INFO,
+        'WARNING': logging.WARNING,
+        'WARN': logging.WARNING,
+        'ERROR': logging.ERROR,
+        'CRITICAL': logging.CRITICAL,
+    }
+    
+    if level_str not in level_map:
+        raise ValueError(f"Invalid log level: {level}")
+    
+    return level_map[level_str]
+
+
+def configure_logger(name: str, level: int, add_console_handler: bool = True,
+                    log_file: Optional[Path] = None) -> logging.Logger:
+    """Configure a specific logger with handlers and formatters.
+    
+    Args:
+        name: Logger name
+        level: Logging level
+        add_console_handler: Whether to add console handler
+        log_file: Optional log file path
+        
+    Returns:
+        Configured logger
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    
+    # Clear existing handlers
+    logger.handlers.clear()
+    
+    if add_console_handler:
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level)
+        console_formatter = ColoredFormatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        console_handler.setFormatter(console_formatter)
+        logger.addHandler(console_handler)
+    
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(level)
+        file_formatter = StructuredFormatter()
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
+    
+    return logger
 
 
 def setup_root_logging(config: SaiConfig, verbose: bool = False) -> None:
