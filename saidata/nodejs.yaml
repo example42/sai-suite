@@ -1,0 +1,227 @@
+version: "0.2"
+
+metadata:
+  name: "nodejs"
+  display_name: "Node.js"
+  description: "JavaScript runtime built on Chrome's V8 JavaScript engine"
+  version: "18.17.0"
+  category: "runtime"
+  subcategory: "javascript"
+  tags: ["nodejs", "javascript", "runtime", "v8", "npm", "server-side"]
+  license: "MIT"
+  language: "C++"
+  maintainer: "Node.js Foundation"
+  urls:
+    website: "https://nodejs.org"
+    documentation: "https://nodejs.org/en/docs"
+    source: "https://github.com/nodejs/node"
+    issues: "https://github.com/nodejs/node/issues"
+    support: "https://nodejs.org/en/about/support"
+    download: "https://nodejs.org/en/download"
+    changelog: "https://github.com/nodejs/node/blob/main/CHANGELOG.md"
+    license: "https://github.com/nodejs/node/blob/main/LICENSE"
+  security:
+    security_contact: "security@nodejs.org"
+    vulnerability_disclosure: "https://nodejs.org/en/security"
+
+packages:
+  - name: "nodejs"
+    version: "18.17.0"
+    alternatives: ["node"]
+  - name: "npm"
+    version: "9.6.7"
+    alternatives: ["npm"]
+
+files:
+  - name: "npmrc-global"
+    path: "/etc/npmrc"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "npmrc-user"
+    path: "~/.npmrc"
+    type: "config"
+    owner: "user"
+    group: "user"
+    mode: "0644"
+    backup: true
+
+directories:
+  - name: "global-modules"
+    path: "/usr/lib/node_modules"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "user-modules"
+    path: "~/.npm"
+    owner: "user"
+    group: "user"
+    mode: "0755"
+  - name: "cache"
+    path: "~/.npm/_cacache"
+    owner: "user"
+    group: "user"
+    mode: "0755"
+
+commands:
+  - name: "node"
+    path: "/usr/bin/node"
+    shell_completion: false
+    man_page: "node(1)"
+  - name: "npm"
+    path: "/usr/bin/npm"
+    shell_completion: true
+    man_page: "npm(1)"
+  - name: "npx"
+    path: "/usr/bin/npx"
+    shell_completion: true
+    man_page: "npx(1)"
+
+providers:
+  apt:
+    repositories:
+      - name: "nodesource"
+        url: "https://deb.nodesource.com/node_18.x"
+        key: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nodejs"
+            version: "18.17.0-1nodesource1"
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "nodejs"
+            alternatives: ["nodejs"]
+          - name: "npm"
+            alternatives: ["npm"]
+        notes: "Usually older version"
+
+  dnf:
+    repositories:
+      - name: "nodesource"
+        url: "https://rpm.nodesource.com/pub_18.x/el/8"
+        key: "https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nodejs"
+            version: "18.17.0-1nodesource"
+          - name: "npm"
+            version: "9.6.7-1.18.17.0.1nodesource"
+      - name: "appstream"
+        type: "os-default"
+        packages:
+          - name: "nodejs"
+            alternatives: ["nodejs"]
+          - name: "npm"
+            alternatives: ["npm"]
+
+  brew:
+    packages:
+      - name: "nodejs"
+        alternatives: ["node@18", "node"]
+        recommended: true
+
+  choco:
+    packages:
+      - name: "nodejs"
+        version: "18.17.0"
+        alternatives: ["nodejs.install"]
+
+  winget:
+    packages:
+      - name: "nodejs"
+        id: "OpenJS.NodeJS"
+        version: "18.17.0"
+        recommended: true
+
+  scoop:
+    packages:
+      - name: "nodejs"
+        alternatives: ["nodejs"]
+
+  snap:
+    packages:
+      - name: "nodejs"
+        alternatives: ["node"]
+        channel: "18/stable"
+        confinement: "classic"
+
+  nvm:
+    packages:
+      - name: "nodejs"
+        version: "18.17.0"
+        alternatives: ["18.17.0", "18", "lts/hydrogen"]
+        recommended: true
+        notes: "Node Version Manager for multiple versions"
+
+  docker:
+    containers:
+      - name: "nodejs"
+        image: "node"
+        tag: "18.17.0"
+        registry: "docker.io"
+        volumes: ["/app:/app"]
+        working_dir: "/app"
+        labels:
+          purpose: "javascript-runtime"
+      - name: "nodejs-alpine"
+        image: "node"
+        tag: "18.17.0-alpine"
+        registry: "docker.io"
+        volumes: ["/app:/app"]
+        working_dir: "/app"
+        labels:
+          purpose: "lightweight-runtime"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64", "armhf"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64", "x86"]
+      supported: true
+      recommended: true
+    - provider: "winget"
+      platform: "windows"
+      architecture: ["amd64", "x86", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "scoop"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+    - provider: "snap"
+      platform: ["ubuntu", "fedora", "arch"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+    - provider: "nvm"
+      platform: ["linux", "macos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Best for development with multiple Node.js versions"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Containerized runtime environment"

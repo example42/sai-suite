@@ -1,0 +1,143 @@
+version: "0.2"
+
+metadata:
+  name: "nginx-ingress"
+  display_name: "NGINX Ingress Controller"
+  description: "Kubernetes ingress controller using NGINX as reverse proxy and load balancer"
+  version: "1.8.1"
+  category: "kubernetes"
+  subcategory: "ingress"
+  tags: ["nginx", "ingress", "kubernetes", "load-balancer", "reverse-proxy"]
+  license: "Apache-2.0"
+  language: "Go"
+  maintainer: "Kubernetes Community"
+  urls:
+    website: "https://kubernetes.github.io/ingress-nginx"
+    documentation: "https://kubernetes.github.io/ingress-nginx/user-guide"
+    source: "https://github.com/kubernetes/ingress-nginx"
+    issues: "https://github.com/kubernetes/ingress-nginx/issues"
+    support: "https://kubernetes.slack.com/channels/ingress-nginx"
+    download: "https://github.com/kubernetes/ingress-nginx/releases"
+    changelog: "https://github.com/kubernetes/ingress-nginx/blob/main/Changelog.md"
+    license: "https://github.com/kubernetes/ingress-nginx/blob/main/LICENSE"
+  security:
+    security_contact: "security@kubernetes.io"
+    vulnerability_disclosure: "https://kubernetes.io/docs/reference/issues-security/security"
+
+packages:
+  - name: "controller"
+    version: "1.8.1"
+    alternatives: ["nginx-ingress-controller"]
+
+services:
+  - name: "ingress-controller"
+    service_name: "ingress-nginx-controller"
+    type: "kubernetes"
+    enabled: true
+    config_files: ["/etc/nginx/nginx.conf"]
+
+files:
+  - name: "nginx-config"
+    path: "/etc/nginx/nginx.conf"
+    type: "config"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0644"
+  - name: "controller-log"
+    path: "/var/log/nginx/access.log"
+    type: "log"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0644"
+
+directories:
+  - name: "nginx-config"
+    path: "/etc/nginx"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0755"
+  - name: "ssl-certs"
+    path: "/etc/ingress-controller/ssl"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0700"
+
+commands:
+  - name: "nginx-ingress-controller"
+    path: "/nginx-ingress-controller"
+
+ports:
+  - port: 80
+    protocol: "tcp"
+    service: "http"
+    description: "HTTP ingress traffic"
+  - port: 443
+    protocol: "tcp"
+    service: "https"
+    description: "HTTPS ingress traffic"
+  - port: 8080
+    protocol: "tcp"
+    service: "health"
+    description: "Health check endpoint"
+  - port: 10254
+    protocol: "tcp"
+    service: "metrics"
+    description: "Prometheus metrics"
+
+providers:
+  helm:
+    repositories:
+      - name: "ingress-nginx"
+        url: "https://kubernetes.github.io/ingress-nginx"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "controller"
+            alternatives: ["ingress-nginx"]
+
+  kubectl:
+    manifests:
+      - name: "controller"
+        url: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml"
+        type: "upstream"
+        recommended: true
+
+  docker:
+    containers:
+      - name: "controller"
+        image: "registry.k8s.io/ingress-nginx/controller"
+        tag: "v1.8.1"
+        registry: "registry.k8s.io"
+        ports: ["80:80", "443:443", "8080:8080"]
+        labels:
+          purpose: "ingress-controller"
+
+compatibility:
+  matrix:
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Requires Kubernetes cluster"
+    - provider: "kubectl"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Direct Kubernetes manifest deployment"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Standalone container for testing"
+
+requirements:
+  kubernetes:
+    version_min: "1.20"
+    version_recommended: "1.25+"
+  resources:
+    cpu_min: "100m"
+    memory_min: "90Mi"
+    cpu_recommended: "500m"
+    memory_recommended: "512Mi"

@@ -1,0 +1,239 @@
+version: "0.2"
+
+metadata:
+  name: "postgresql"
+  display_name: "PostgreSQL"
+  description: "Advanced open source relational database system"
+  version: "15.3"
+  category: "database"
+  subcategory: "relational"
+  tags: ["postgresql", "database", "sql", "relational", "acid"]
+  license: "PostgreSQL"
+  language: "C"
+  maintainer: "PostgreSQL Global Development Group"
+  urls:
+    website: "https://www.postgresql.org"
+    documentation: "https://www.postgresql.org/docs"
+    source: "https://git.postgresql.org/gitweb/?p=postgresql.git"
+    issues: "https://www.postgresql.org/account/submitbug"
+    support: "https://www.postgresql.org/support"
+    download: "https://www.postgresql.org/download"
+    changelog: "https://www.postgresql.org/docs/release"
+    license: "https://www.postgresql.org/about/licence"
+  security:
+    security_contact: "security@postgresql.org"
+    vulnerability_disclosure: "https://www.postgresql.org/support/security"
+
+packages:
+  - name: "server"
+    version: "15.3"
+    alternatives: ["postgresql-15", "postgresql-server"]
+  - name: "client"
+    version: "15.3"
+    alternatives: ["postgresql-client-15", "postgresql-client"]
+  - name: "contrib"
+    version: "15.3"
+    alternatives: ["postgresql-contrib-15", "postgresql-contrib"]
+
+services:
+  - name: "postgresql"
+    service_name: "postgresql"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/postgresql/15/main/postgresql.conf", "/etc/postgresql/15/main/pg_hba.conf"]
+
+files:
+  - name: "main-config"
+    path: "/etc/postgresql/15/main/postgresql.conf"
+    type: "config"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0644"
+    backup: true
+  - name: "hba-config"
+    path: "/etc/postgresql/15/main/pg_hba.conf"
+    type: "config"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0640"
+    backup: true
+  - name: "ident-config"
+    path: "/etc/postgresql/15/main/pg_ident.conf"
+    type: "config"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0640"
+    backup: true
+  - name: "log"
+    path: "/var/log/postgresql/postgresql-15-main.log"
+    type: "log"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0640"
+
+directories:
+  - name: "config"
+    path: "/etc/postgresql/15/main"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0755"
+  - name: "data"
+    path: "/var/lib/postgresql/15/main"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0700"
+  - name: "log"
+    path: "/var/log/postgresql"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0755"
+  - name: "run"
+    path: "/var/run/postgresql"
+    owner: "postgres"
+    group: "postgres"
+    mode: "0755"
+
+commands:
+  - name: "psql"
+    path: "/usr/bin/psql"
+    shell_completion: true
+    man_page: "psql(1)"
+  - name: "pg_dump"
+    path: "/usr/bin/pg_dump"
+    man_page: "pg_dump(1)"
+  - name: "pg_restore"
+    path: "/usr/bin/pg_restore"
+    man_page: "pg_restore(1)"
+  - name: "createdb"
+    path: "/usr/bin/createdb"
+    man_page: "createdb(1)"
+  - name: "dropdb"
+    path: "/usr/bin/dropdb"
+    man_page: "dropdb(1)"
+
+ports:
+  - port: 5432
+    protocol: "tcp"
+    service: "postgresql"
+    description: "PostgreSQL database server"
+
+providers:
+  apt:
+    repositories:
+      - name: "postgresql-official"
+        url: "https://apt.postgresql.org/pub/repos/apt"
+        key: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "server"
+            version: "15.3-1.pgdg22.04+1"
+            alternatives: ["postgresql-15"]
+          - name: "client"
+            version: "15.3-1.pgdg22.04+1"
+            alternatives: ["postgresql-client-15"]
+          - name: "contrib"
+            version: "15.3-1.pgdg22.04+1"
+            alternatives: ["postgresql-contrib-15"]
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "server"
+            alternatives: ["postgresql", "postgresql-server"]
+          - name: "client"
+            alternatives: ["postgresql-client"]
+        notes: "May not have latest version"
+
+  dnf:
+    repositories:
+      - name: "postgresql-official"
+        url: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "server"
+            alternatives: ["postgresql15-server"]
+          - name: "client"
+            alternatives: ["postgresql15"]
+          - name: "contrib"
+            alternatives: ["postgresql15-contrib"]
+      - name: "appstream"
+        type: "os-default"
+        packages:
+          - name: "server"
+            alternatives: ["postgresql-server"]
+          - name: "client"
+            alternatives: ["postgresql"]
+
+  brew:
+    packages:
+      - name: "server"
+        alternatives: ["postgresql@15", "postgresql"]
+      - name: "client"
+        alternatives: ["libpq"]
+
+  choco:
+    packages:
+      - name: "server"
+        version: "15.3"
+        alternatives: ["postgresql15"]
+
+  docker:
+    containers:
+      - name: "postgresql"
+        image: "postgres"
+        tag: "15.3"
+        registry: "docker.io"
+        ports: ["5432:5432"]
+        volumes: ["/var/lib/postgresql/data:/var/lib/postgresql/data"]
+        environment:
+          POSTGRES_PASSWORD: "postgres"
+          POSTGRES_DB: "postgres"
+          POSTGRES_USER: "postgres"
+        labels:
+          purpose: "database-server"
+
+  helm:
+    repositories:
+      - name: "bitnami"
+        url: "https://charts.bitnami.com/bitnami"
+        type: "third-party"
+        recommended: true
+        packages:
+          - name: "postgresql"
+            alternatives: ["postgresql"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64", "i386"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      notes: "Windows service configuration and paths differ"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development environments"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes deployment with persistent storage"

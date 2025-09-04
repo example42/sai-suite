@@ -1,0 +1,216 @@
+version: "0.2"
+
+metadata:
+  name: "python"
+  display_name: "Python"
+  description: "High-level programming language for general-purpose programming"
+  version: "3.11.4"
+  category: "runtime"
+  subcategory: "interpreter"
+  tags: ["python", "programming", "interpreter", "scripting", "pip"]
+  license: "PSF-2.0"
+  language: "C"
+  maintainer: "Python Software Foundation"
+  urls:
+    website: "https://www.python.org"
+    documentation: "https://docs.python.org"
+    source: "https://github.com/python/cpython"
+    issues: "https://github.com/python/cpython/issues"
+    support: "https://www.python.org/community"
+    download: "https://www.python.org/downloads"
+    changelog: "https://docs.python.org/3/whatsnew"
+    license: "https://docs.python.org/3/license.html"
+  security:
+    security_contact: "security@python.org"
+    vulnerability_disclosure: "https://www.python.org/dev/security"
+
+packages:
+  - name: "python"
+    version: "3.11.4"
+    alternatives: ["python3", "python3.11"]
+  - name: "pip"
+    version: "23.1.2"
+    alternatives: ["python3-pip", "pip3"]
+  - name: "venv"
+    version: "3.11.4"
+    alternatives: ["python3-venv", "python3.11-venv"]
+
+files:
+  - name: "pip-config"
+    path: "~/.pip/pip.conf"
+    type: "config"
+    owner: "user"
+    group: "user"
+    mode: "0644"
+    backup: true
+  - name: "pip-config-global"
+    path: "/etc/pip.conf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+
+directories:
+  - name: "site-packages"
+    path: "/usr/lib/python3.11/site-packages"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "user-site-packages"
+    path: "~/.local/lib/python3.11/site-packages"
+    owner: "user"
+    group: "user"
+    mode: "0755"
+  - name: "pip-cache"
+    path: "~/.cache/pip"
+    owner: "user"
+    group: "user"
+    mode: "0755"
+
+commands:
+  - name: "python"
+    path: "/usr/bin/python3"
+    shell_completion: false
+    man_page: "python3(1)"
+    aliases: ["python3", "python3.11"]
+  - name: "pip"
+    path: "/usr/bin/pip3"
+    shell_completion: true
+    man_page: "pip3(1)"
+    aliases: ["pip3"]
+
+providers:
+  apt:
+    repositories:
+      - name: "deadsnakes"
+        url: "https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu"
+        key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF23C5A6CF475977595C89F51BA6932366A755776"
+        type: "third-party"
+        packages:
+          - name: "python"
+            version: "3.11.4-1+jammy1"
+            alternatives: ["python3.11"]
+          - name: "pip"
+            alternatives: ["python3.11-pip"]
+          - name: "venv"
+            alternatives: ["python3.11-venv"]
+      - name: "ubuntu-default"
+        type: "os-default"
+        recommended: true
+        packages:
+          - name: "python"
+            alternatives: ["python3", "python3-minimal"]
+          - name: "pip"
+            alternatives: ["python3-pip"]
+          - name: "venv"
+            alternatives: ["python3-venv"]
+
+  dnf:
+    repositories:
+      - name: "fedora-default"
+        type: "os-default"
+        recommended: true
+        packages:
+          - name: "python"
+            alternatives: ["python3", "python3.11"]
+          - name: "pip"
+            alternatives: ["python3-pip"]
+          - name: "venv"
+            alternatives: ["python3-venv"]
+
+  brew:
+    packages:
+      - name: "python"
+        alternatives: ["python@3.11", "python3"]
+        recommended: true
+
+  choco:
+    packages:
+      - name: "python"
+        version: "3.11.4"
+        alternatives: ["python3", "python311"]
+
+  winget:
+    packages:
+      - name: "python"
+        id: "Python.Python.3.11"
+        version: "3.11.4"
+        recommended: true
+
+  scoop:
+    packages:
+      - name: "python"
+        alternatives: ["python311"]
+
+  pyenv:
+    packages:
+      - name: "python"
+        version: "3.11.4"
+        alternatives: ["3.11.4", "3.11"]
+        recommended: true
+        notes: "Python version manager for multiple versions"
+
+  docker:
+    containers:
+      - name: "python"
+        image: "python"
+        tag: "3.11.4"
+        registry: "docker.io"
+        volumes: ["/app:/app"]
+        working_dir: "/app"
+        labels:
+          purpose: "python-runtime"
+      - name: "python-alpine"
+        image: "python"
+        tag: "3.11.4-alpine"
+        registry: "docker.io"
+        volumes: ["/app:/app"]
+        working_dir: "/app"
+        labels:
+          purpose: "lightweight-python"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64", "armhf", "i386"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64", "x86", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "winget"
+      platform: "windows"
+      architecture: ["amd64", "x86", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "scoop"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+    - provider: "pyenv"
+      platform: ["linux", "macos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Best for development with multiple Python versions"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Containerized Python environment"

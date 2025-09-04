@@ -1,0 +1,210 @@
+version: "0.2"
+
+metadata:
+  name: "nginx"
+  display_name: "NGINX"
+  description: "High-performance HTTP server and reverse proxy"
+  version: "1.24.0"
+  category: "web-server"
+  subcategory: "http-server"
+  tags: ["nginx", "web-server", "reverse-proxy", "load-balancer", "http"]
+  license: "BSD-2-Clause"
+  language: "C"
+  maintainer: "NGINX Inc."
+  urls:
+    website: "https://nginx.org"
+    documentation: "https://nginx.org/en/docs"
+    source: "https://github.com/nginx/nginx"
+    issues: "https://trac.nginx.org/nginx"
+    support: "https://nginx.org/en/support.html"
+    download: "https://nginx.org/en/download.html"
+    changelog: "https://nginx.org/en/CHANGES"
+    license: "https://nginx.org/LICENSE"
+  security:
+    security_contact: "security-alert@nginx.org"
+    vulnerability_disclosure: "https://nginx.org/en/security_advisories.html"
+
+packages:
+  - name: "nginx"
+    version: "1.24.0"
+    alternatives: ["nginx-full", "nginx-light", "nginx-extras"]
+
+services:
+  - name: "nginx"
+    service_name: "nginx"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/nginx/nginx.conf"]
+
+files:
+  - name: "main-config"
+    path: "/etc/nginx/nginx.conf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "default-site"
+    path: "/etc/nginx/sites-available/default"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "access-log"
+    path: "/var/log/nginx/access.log"
+    type: "log"
+    owner: "www-data"
+    group: "adm"
+    mode: "0644"
+  - name: "error-log"
+    path: "/var/log/nginx/error.log"
+    type: "log"
+    owner: "www-data"
+    group: "adm"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/nginx"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "sites-available"
+    path: "/etc/nginx/sites-available"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "sites-enabled"
+    path: "/etc/nginx/sites-enabled"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "conf-d"
+    path: "/etc/nginx/conf.d"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "html"
+    path: "/var/www/html"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0755"
+  - name: "log"
+    path: "/var/log/nginx"
+    owner: "www-data"
+    group: "adm"
+    mode: "0755"
+
+commands:
+  - name: "nginx"
+    path: "/usr/sbin/nginx"
+    shell_completion: false
+    man_page: "nginx(8)"
+
+ports:
+  - port: 80
+    protocol: "tcp"
+    service: "http"
+    description: "HTTP web server"
+  - port: 443
+    protocol: "tcp"
+    service: "https"
+    description: "HTTPS web server"
+
+providers:
+  apt:
+    repositories:
+      - name: "nginx-official"
+        url: "https://nginx.org/packages/ubuntu"
+        key: "https://nginx.org/keys/nginx_signing.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nginx"
+            version: "1.24.0-1~jammy"
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "nginx"
+            alternatives: ["nginx-full", "nginx-light", "nginx-extras"]
+        notes: "Ubuntu maintained packages with additional modules"
+
+  dnf:
+    repositories:
+      - name: "nginx-official"
+        url: "https://nginx.org/packages/centos/8"
+        key: "https://nginx.org/keys/nginx_signing.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nginx"
+            version: "1.24.0-1.el8.ngx"
+      - name: "epel"
+        type: "third-party"
+        packages:
+          - name: "nginx"
+
+  brew:
+    packages:
+      - name: "nginx"
+        alternatives: ["nginx"]
+
+  choco:
+    packages:
+      - name: "nginx"
+        version: "1.24.0"
+
+  docker:
+    containers:
+      - name: "nginx"
+        image: "nginx"
+        tag: "1.24.0"
+        registry: "docker.io"
+        ports: ["80:80", "443:443"]
+        volumes: ["/etc/nginx:/etc/nginx", "/var/www/html:/usr/share/nginx/html"]
+        labels:
+          purpose: "web-server"
+
+  helm:
+    repositories:
+      - name: "nginx"
+        url: "https://kubernetes.github.io/ingress-nginx"
+        type: "upstream"
+        packages:
+          - name: "nginx-ingress"
+            alternatives: ["ingress-nginx"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64", "i386"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      notes: "Windows service configuration differs"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes ingress controller"
