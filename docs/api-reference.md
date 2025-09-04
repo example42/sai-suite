@@ -96,17 +96,40 @@ llm_providers:
 
 ```yaml
 repositories:
-  apt:
+  ubuntu-main:
+    name: ubuntu-main
     type: apt
+    platform: linux
+    url: http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz
     enabled: true
-    cache_ttl: 3600
-    priority: 1
+    priority: 10
+    cache_ttl_hours: 24
+    architecture: [amd64]
+    parsing:
+      format: text
+      line_pattern: '^Package:\s*(.+)$'
+      name_group: 1
+    metadata:
+      description: Ubuntu Main Repository
+      maintainer: Ubuntu
   
-  brew:
+  homebrew-core:
+    name: homebrew-core
     type: brew
+    platform: macos
+    url: https://formulae.brew.sh/api/formula.json
     enabled: true
-    cache_ttl: 7200
-    priority: 2
+    priority: 10
+    cache_ttl_hours: 12
+    parsing:
+      format: json
+      field_mapping:
+        name: name
+        version: versions.stable
+        description: desc
+    metadata:
+      description: Homebrew Core Formulae
+      maintainer: Homebrew
 ```
 
 ### Cache Configuration

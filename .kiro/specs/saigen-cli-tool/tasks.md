@@ -30,9 +30,10 @@
   - Implement config command for viewing and setting configuration
   - _Requirements: 1.1, 7.4_
 
--[ ] 6. Create repository downloader framework
+- [x] 6. Create repository downloader framework
   - Implement BaseRepositoryDownloader abstract class
-  - Create APT repository downloader with package list parsing
+  - Evaluate a generic repository downloader with package list parsing
+  - Configure support for different providers repo in yaml data
   - Add repository data caching system with TTL management
   - _Requirements: 2.1, 2.2, 2.3_
 

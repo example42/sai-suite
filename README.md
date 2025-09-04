@@ -187,11 +187,26 @@ saigen validate --show-context --format json nginx.yaml
 - `sai --version` - Show sai version information
 
 ### SAIGEN Commands
+
+#### Generation and Validation
 - `saigen generate <software>` - Generate saidata for software with AI assistance
 - `saigen validate <file>` - Validate saidata file against schema with detailed reporting
-- `saigen config --show` - Display current configuration including LLM providers
-- `saigen config --validate` - Validate configuration file syntax and settings
+
+#### Configuration Management
+- `saigen config show` - Display current configuration including LLM providers
+- `saigen config set <key> <value>` - Set configuration values with dot notation
+- `saigen config validate` - Validate configuration file syntax and settings
+- `saigen config init` - Initialize new configuration file with defaults
+
+#### Repository Management
+- `saigen repo list` - List configured package repositories
+- `saigen repo update` - Update repository package cache
+- `saigen repo stats` - Show repository cache statistics
+- `saigen repo clear` - Clear repository cache
+
+#### Help and Information
 - `saigen --help` - Show all available commands and options
+- `saigen --version` - Show version information
 
 #### Generation Options
 - `--llm-provider` - Choose LLM provider (openai, anthropic, ollama)

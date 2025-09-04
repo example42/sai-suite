@@ -1,0 +1,59 @@
+# Example repository configuration for SAIGEN
+# This demonstrates how to configure different package repositories
+
+repositories:
+  - name: ubuntu-main
+    type: apt
+    platform: linux
+    url: http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz
+    enabled: true
+    priority: 10
+    cache_ttl_hours: 24
+    architecture: [amd64]
+    parsing:
+      format: text
+      line_pattern: '^Package:\s*(.+)$'
+      name_group: 1
+      version_pattern: '^Version:\s*(.+)$'
+      description_pattern: '^Description:\s*(.+)$'
+    metadata:
+      description: Ubuntu Main Repository
+      maintainer: Ubuntu
+
+  - name: homebrew-core
+    type: brew
+    platform: macos
+    url: https://formulae.brew.sh/api/formula.json
+    enabled: true
+    priority: 10
+    cache_ttl_hours: 12
+    parsing:
+      format: json
+      field_mapping:
+        name: name
+        version: versions.stable
+        description: desc
+        homepage: homepage
+    metadata:
+      description: Homebrew Core Formulae
+      maintainer: Homebrew
+
+  - name: custom-json-repo
+    type: generic
+    platform: linux
+    url: https://api.example.com/packages.json
+    enabled: true
+    priority: 5
+    cache_ttl_hours: 6
+    parsing:
+      format: json
+      package_path: [packages]
+      field_mapping:
+        name: package_name
+        version: latest_version
+        description: summary
+        homepage: project_url
+        maintainer: author
+    metadata:
+      description: Custom JSON Package Repository
+      maintainer: Example Corp

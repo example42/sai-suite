@@ -52,23 +52,62 @@ llm_providers:
 
 # Repository Configuration
 repositories:
-  apt:
+  ubuntu-main:
+    name: ubuntu-main
     type: apt
+    platform: linux
+    url: http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz
     enabled: true
-    cache_ttl: 3600  # 1 hour
-    priority: 1
+    priority: 10
+    cache_ttl_hours: 24
+    timeout: 300
+    architecture: [amd64]
+    parsing:
+      format: text
+      line_pattern: '^Package:\s*(.+)$'
+      name_group: 1
+      version_pattern: '^Version:\s*(.+)$'
+      description_pattern: '^Description:\s*(.+)$'
+    metadata:
+      description: Ubuntu Main Repository
+      maintainer: Ubuntu
   
-  brew:
+  homebrew-core:
+    name: homebrew-core
     type: brew
+    platform: macos
+    url: https://formulae.brew.sh/api/formula.json
     enabled: true
-    cache_ttl: 7200  # 2 hours
-    priority: 2
+    priority: 10
+    cache_ttl_hours: 12
+    parsing:
+      format: json
+      field_mapping:
+        name: name
+        version: versions.stable
+        description: desc
+        homepage: homepage
+    metadata:
+      description: Homebrew Core Formulae
+      maintainer: Homebrew
   
-  winget:
-    type: winget
+  custom-generic:
+    name: custom-json-repo
+    type: generic
+    platform: linux
+    url: https://api.example.com/packages.json
     enabled: true
-    cache_ttl: 3600
-    priority: 3
+    priority: 5
+    cache_ttl_hours: 6
+    parsing:
+      format: json
+      package_path: [packages]
+      field_mapping:
+        name: package_name
+        version: latest_version
+        description: summary
+    metadata:
+      description: Custom JSON Package Repository
 
 # Cache Configuration
 cache:
