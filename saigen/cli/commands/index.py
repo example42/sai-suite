@@ -89,9 +89,10 @@ async def rebuild(
                     # This is a placeholder - in a real implementation, we'd iterate through cache entries
                     console.print(f"[yellow]Found {cache_stats['total_packages']} cached packages across {len(cache_stats['repositories'])} repositories[/yellow]")
                     
-                    # TODO: Implement method to extract all packages from cache
-                    # packages = await cache.get_all_packages()
-                    # success = await engine.index_repository_data(packages)
+                    # Note: Repository package extraction from cache requires implementation
+                    # This would involve iterating through cached repository data
+                    # and converting to RepositoryPackage objects for indexing
+                    console.print("[yellow]Repository package indexing requires cache extraction implementation[/yellow]")
                     
                     progress.update(packages_task, description="Repository indexing completed")
                 else:

@@ -7,7 +7,7 @@ import logging
 
 from ..utils.config import get_config_manager, get_config
 from ..version import get_version
-from .commands import validate, generate, config, cache
+from .commands import validate, generate, config, cache, test
 
 
 @click.group()
@@ -61,6 +61,7 @@ cli.add_command(validate)
 cli.add_command(generate)
 cli.add_command(config)
 cli.add_command(cache)
+cli.add_command(test)
 
 # Add repositories command
 from .repositories import repositories

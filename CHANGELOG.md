@@ -158,6 +158,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment Hardening**: Minimal secure environment variables, removal of dangerous PATH entries
 
 ### Fixed
+- **Test Class Naming Conflicts**: Renamed test-related classes to avoid pytest collection conflicts:
+  - `TestResult` → `SaidataTestResult`
+  - `TestSuite` → `SaidataTestSuite` 
+  - `TestType` → `SaidataTestType`
+  - `TestSeverity` → `SaidataTestSeverity`
+- **CLI Test Command**: Fixed remaining class name references in test command implementation
+- **Repository Index Command**: Improved TODO comment with clearer implementation guidance
 - **JSON Serialization**: Fixed datetime serialization issues in repository cache metadata
 - **Cache Corruption Handling**: Enhanced error handling for corrupted cache files with automatic cleanup
 - **Configuration Loading**: Improved error handling for invalid repository configurations
