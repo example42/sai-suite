@@ -1,0 +1,160 @@
+version: "1.0"
+repositories:
+  # Windows Package Manager (winget)
+  - name: "winget-community"
+    type: "winget"
+    platform: "windows"
+    distribution: ["windows"]
+    architecture: ["x64", "x86", "arm64"]
+    endpoints:
+      packages: "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests"
+      search: "https://api.github.com/search/code?q=repo:microsoft/winget-pkgs+{query}+in:file+filename:*.yaml"
+      info: "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/{package}"
+    parsing:
+      format: "yaml"
+      encoding: "utf-8"
+      fields:
+        name: "PackageIdentifier"
+        version: "PackageVersion"
+        description: "ShortDescription"
+        homepage: "PackageUrl"
+        license: "License"
+        maintainer: "Publisher"
+    cache:
+      ttl_hours: 12
+      max_size_mb: 100
+    limits:
+      requests_per_minute: 60  # GitHub API rate limit
+      timeout_seconds: 300
+    auth:
+      type: "bearer"
+      # Token should be provided via environment variable
+    metadata:
+      description: "Windows Package Manager Community Repository"
+      maintainer: "Microsoft"
+      priority: 95
+      enabled: true
+      official: true
+      url: "https://github.com/microsoft/winget-pkgs"
+
+  # Chocolatey
+  - name: "chocolatey-community"
+    type: "choco"
+    platform: "windows"
+    distribution: ["windows"]
+    architecture: ["x64", "x86"]
+    endpoints:
+      packages: "https://community.chocolatey.org/api/v2/Packages"
+      search: "https://community.chocolatey.org/api/v2/Packages?$filter=substringof('{query}',tolower(Id))"
+      info: "https://community.chocolatey.org/api/v2/Packages?$filter=Id%20eq%20'{package}'"
+    parsing:
+      format: "xml"
+      encoding: "utf-8"
+      patterns:
+        package_xpath: ".//entry"
+      fields:
+        name: "title"
+        version: "properties/Version"
+        description: "summary"
+        homepage: "properties/ProjectUrl"
+        license: "properties/LicenseUrl"
+        maintainer: "author/name"
+        tags: "properties/Tags"
+    cache:
+      ttl_hours: 12
+      max_size_mb: 150
+    metadata:
+      description: "Chocolatey Community Repository"
+      maintainer: "Chocolatey Software"
+      priority: 85
+      enabled: true
+      official: true
+      url: "https://community.chocolatey.org"
+
+  # Scoop
+  - name: "scoop-main"
+    type: "scoop"
+    platform: "windows"
+    distribution: ["windows"]
+    architecture: ["x64", "x86", "arm64"]
+    endpoints:
+      packages: "https://api.github.com/repos/ScoopInstaller/Main/contents/bucket"
+      search: "https://api.github.com/search/code?q=repo:ScoopInstaller/Main+{query}+in:file+extension:json"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "name"
+        version: "version"
+        description: "description"
+        homepage: "homepage"
+        license: "license"
+    cache:
+      ttl_hours: 12
+      max_size_mb: 50
+    limits:
+      requests_per_minute: 60  # GitHub API rate limit
+    metadata:
+      description: "Scoop Main Bucket"
+      maintainer: "Scoop Installer"
+      priority: 80
+      enabled: true
+      official: true
+      url: "https://github.com/ScoopInstaller/Main"
+
+  - name: "scoop-extras"
+    type: "scoop"
+    platform: "windows"
+    distribution: ["windows"]
+    architecture: ["x64", "x86", "arm64"]
+    endpoints:
+      packages: "https://api.github.com/repos/ScoopInstaller/Extras/contents/bucket"
+      search: "https://api.github.com/search/code?q=repo:ScoopInstaller/Extras+{query}+in:file+extension:json"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "name"
+        version: "version"
+        description: "description"
+        homepage: "homepage"
+        license: "license"
+    cache:
+      ttl_hours: 12
+      max_size_mb: 100
+    metadata:
+      description: "Scoop Extras Bucket"
+      maintainer: "Scoop Installer"
+      priority: 75
+      enabled: true
+      official: true
+      url: "https://github.com/ScoopInstaller/Extras"
+
+  # Microsoft Store (via winget)
+  - name: "msstore"
+    type: "winget"
+    platform: "windows"
+    distribution: ["windows"]
+    architecture: ["x64", "x86", "arm64"]
+    endpoints:
+      packages: "https://storeedgefd.dsx.mp.microsoft.com/v9.0/manifestSearch"
+      search: "https://storeedgefd.dsx.mp.microsoft.com/v9.0/manifestSearch?query={query}"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "PackageIdentifier"
+        version: "PackageVersion"
+        description: "ShortDescription"
+        homepage: "PackageUrl"
+        maintainer: "Publisher"
+    cache:
+      ttl_hours: 6
+      max_size_mb: 200
+    metadata:
+      description: "Microsoft Store"
+      maintainer: "Microsoft"
+      priority: 70
+      enabled: true
+      official: true
+      url: "https://www.microsoft.com/store"

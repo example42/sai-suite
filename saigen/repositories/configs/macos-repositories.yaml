@@ -1,0 +1,125 @@
+version: "1.0"
+repositories:
+  # Homebrew
+  - name: "homebrew-core"
+    type: "brew"
+    platform: "macos"
+    distribution: ["macos"]
+    architecture: ["x86_64", "arm64"]
+    endpoints:
+      packages: "https://formulae.brew.sh/api/formula.json"
+      search: "https://formulae.brew.sh/api/formula/{query}.json"
+      info: "https://formulae.brew.sh/api/formula/{package}.json"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "name"
+        version: "versions.stable"
+        description: "desc"
+        homepage: "homepage"
+        license: "license"
+        dependencies: "dependencies"
+    cache:
+      ttl_hours: 12
+      max_size_mb: 50
+    limits:
+      requests_per_minute: 120
+      timeout_seconds: 180
+    metadata:
+      description: "Homebrew Core Formulae"
+      maintainer: "Homebrew"
+      priority: 95
+      enabled: true
+      official: true
+      url: "https://formulae.brew.sh"
+
+  - name: "homebrew-cask"
+    type: "brew"
+    platform: "macos"
+    distribution: ["macos"]
+    architecture: ["x86_64", "arm64"]
+    endpoints:
+      packages: "https://formulae.brew.sh/api/cask.json"
+      search: "https://formulae.brew.sh/api/cask/{query}.json"
+      info: "https://formulae.brew.sh/api/cask/{package}.json"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "token"
+        version: "version"
+        description: "desc"
+        homepage: "homepage"
+    cache:
+      ttl_hours: 12
+      max_size_mb: 30
+    metadata:
+      description: "Homebrew Cask Applications"
+      maintainer: "Homebrew"
+      priority: 90
+      enabled: true
+      official: true
+      url: "https://formulae.brew.sh/cask"
+
+  # MacPorts
+  - name: "macports-ports"
+    type: "macports"
+    platform: "macos"
+    distribution: ["macos"]
+    architecture: ["x86_64", "arm64"]
+    endpoints:
+      packages: "https://ports.macports.org/api/v1/ports/"
+      search: "https://ports.macports.org/api/v1/ports/?search={query}"
+      info: "https://ports.macports.org/port/{package}/"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "name"
+        version: "version"
+        description: "description"
+        homepage: "homepage"
+        maintainer: "maintainers"
+        license: "license"
+        category: "categories"
+    cache:
+      ttl_hours: 24
+      max_size_mb: 100
+    metadata:
+      description: "MacPorts Ports Collection"
+      maintainer: "MacPorts"
+      priority: 80
+      enabled: true
+      official: true
+      url: "https://ports.macports.org"
+
+  # Nix for macOS
+  - name: "nixpkgs-macos"
+    type: "nix"
+    platform: "macos"
+    distribution: ["macos"]
+    architecture: ["x86_64", "aarch64"]
+    endpoints:
+      packages: "https://search.nixos.org/packages?channel=23.05&from=0&size=50000&sort=relevance&type=packages&query="
+      search: "https://search.nixos.org/packages?channel=23.05&query={query}"
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "package_attr_name"
+        version: "package_pversion"
+        description: "package_description"
+        homepage: "package_homepage"
+        license: "package_license"
+        maintainer: "package_maintainers"
+    cache:
+      ttl_hours: 24
+      max_size_mb: 200
+    metadata:
+      description: "Nix Packages for macOS"
+      maintainer: "NixOS"
+      priority: 75
+      enabled: true
+      official: true
+      url: "https://search.nixos.org"

@@ -1,9 +1,9 @@
 """Repository downloader implementations."""
 
 from .base import BaseRepositoryDownloader
-from .generic import GenericRepositoryDownloader
+from .universal import UniversalRepositoryDownloader
 
 __all__ = [
     'BaseRepositoryDownloader',
-    'GenericRepositoryDownloader'
+    'UniversalRepositoryDownloader'
 ]

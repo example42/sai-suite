@@ -1,0 +1,251 @@
+version: "1.0"
+repositories:
+  # Example: Ubuntu APT repository with comprehensive configuration
+  - name: "ubuntu-jammy-main"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    endpoints:
+      packages: "http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-{arch}/Packages.gz"
+      search: "https://packages.ubuntu.com/search?keywords={query}"
+      info: "https://packages.ubuntu.com/jammy/{package}"
+      download: "http://archive.ubuntu.com/ubuntu/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+        license: "License"
+        download_url: "Filename"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 100
+      enabled: true
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+      max_response_size_mb: 200
+      concurrent_requests: 5
+    
+    auth:
+      type: "none"
+    
+    metadata:
+      description: "Ubuntu 22.04 LTS (Jammy) Main Repository"
+      maintainer: "Ubuntu"
+      priority: 90
+      enabled: true
+      official: true
+      url: "https://packages.ubuntu.com"
+      documentation: "https://help.ubuntu.com/community/Repositories"
+
+  # Example: NPM registry with JSON API
+  - name: "npm-registry"
+    type: "npm"
+    platform: "universal"
+    distribution: ["universal"]
+    architecture: ["all"]
+    
+    endpoints:
+      packages: "https://registry.npmjs.org/-/all"
+      search: "https://registry.npmjs.org/-/v1/search?text={query}&size=250"
+      info: "https://registry.npmjs.org/{package}"
+    
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      patterns:
+        json_path: ""  # Root level for search results
+      fields:
+        name: "name"
+        version: "dist-tags.latest"
+        description: "description"
+        homepage: "homepage"
+        license: "license"
+        maintainer: "maintainers.0.name"
+        dependencies: "dependencies"
+        tags: "keywords"
+        download_url: "dist.tarball"
+    
+    cache:
+      ttl_hours: 6
+      max_size_mb: 500
+      enabled: true
+    
+    limits:
+      requests_per_minute: 300
+      timeout_seconds: 180
+      max_response_size_mb: 100
+      concurrent_requests: 10
+    
+    auth:
+      type: "none"
+    
+    metadata:
+      description: "NPM JavaScript Package Registry"
+      maintainer: "npm, Inc."
+      priority: 95
+      enabled: true
+      official: true
+      url: "https://www.npmjs.com"
+      documentation: "https://docs.npmjs.com"
+
+  # Example: Custom repository with XML format
+  - name: "custom-xml-repo"
+    type: "generic"
+    platform: "linux"
+    distribution: ["custom"]
+    architecture: ["x86_64"]
+    
+    endpoints:
+      packages: "https://example.com/repo/packages.xml"
+      search: "https://example.com/repo/search?q={query}"
+    
+    parsing:
+      format: "xml"
+      compression: "none"
+      encoding: "utf-8"
+      patterns:
+        package_xpath: ".//package"
+      fields:
+        name: "@name"
+        version: "@version"
+        description: "description"
+        homepage: "homepage"
+        license: "license"
+        maintainer: "maintainer"
+        category: "category"
+        size: "@size"
+    
+    cache:
+      ttl_hours: 12
+      max_size_mb: 50
+      enabled: true
+    
+    limits:
+      requests_per_minute: 30
+      timeout_seconds: 120
+      max_response_size_mb: 50
+      concurrent_requests: 3
+    
+    auth:
+      type: "api_key"
+      api_key: "${CUSTOM_REPO_API_KEY}"  # Environment variable
+      api_key_header: "X-API-Key"
+    
+    metadata:
+      description: "Custom XML Repository Example"
+      maintainer: "Custom Org"
+      priority: 50
+      enabled: false  # Disabled by default
+      official: false
+      url: "https://example.com/repo"
+
+  # Example: Text-based repository with regex parsing
+  - name: "alpine-edge"
+    type: "apk"
+    platform: "linux"
+    distribution: ["alpine"]
+    architecture: ["x86_64", "aarch64"]
+    
+    endpoints:
+      packages: "https://dl-cdn.alpinelinux.org/alpine/edge/main/{arch}/APKINDEX.tar.gz"
+    
+    parsing:
+      format: "text"
+      compression: "gzip"
+      encoding: "utf-8"
+      patterns:
+        line_pattern: "^([A-Z]):(.*)"
+        name_group: 2
+      fields:
+        name: "P"
+        version: "V"
+        description: "T"
+        maintainer: "m"
+        homepage: "U"
+        license: "L"
+        size: "S"
+        dependencies: "D"
+    
+    cache:
+      ttl_hours: 12
+      max_size_mb: 20
+      enabled: true
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 180
+      max_response_size_mb: 50
+      concurrent_requests: 5
+    
+    auth:
+      type: "none"
+    
+    metadata:
+      description: "Alpine Linux Edge Repository"
+      maintainer: "Alpine Linux"
+      priority: 75
+      enabled: true
+      official: true
+      url: "https://pkgs.alpinelinux.org"
+
+  # Example: Repository with authentication
+  - name: "private-repo"
+    type: "generic"
+    platform: "universal"
+    distribution: ["enterprise"]
+    architecture: ["all"]
+    
+    endpoints:
+      packages: "https://private-repo.company.com/api/packages"
+      search: "https://private-repo.company.com/api/search?q={query}"
+      info: "https://private-repo.company.com/api/packages/{package}"
+    
+    parsing:
+      format: "json"
+      encoding: "utf-8"
+      fields:
+        name: "name"
+        version: "latest_version"
+        description: "description"
+        homepage: "homepage"
+        license: "license"
+        maintainer: "owner.name"
+    
+    cache:
+      ttl_hours: 4
+      max_size_mb: 100
+      enabled: true
+    
+    limits:
+      requests_per_minute: 100
+      timeout_seconds: 300
+      max_response_size_mb: 100
+      concurrent_requests: 5
+    
+    auth:
+      type: "bearer"
+      token: "${PRIVATE_REPO_TOKEN}"  # Environment variable
+    
+    metadata:
+      description: "Private Enterprise Repository"
+      maintainer: "Company IT"
+      priority: 100  # Highest priority
+      enabled: false  # Requires authentication setup
+      official: false
+      url: "https://private-repo.company.com"
+      documentation: "https://docs.company.com/private-repo"

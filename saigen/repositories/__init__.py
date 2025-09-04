@@ -1,14 +1,17 @@
 """Repository data management for saigen tool."""
 
 from .cache import RepositoryCache, CacheManager
-from .config import RepositoryConfigManager, RepositoryConfig
-from .downloaders import BaseRepositoryDownloader, GenericRepositoryDownloader
+from .manager import RepositoryManager
+from .universal_manager import UniversalRepositoryManager
+from .etl import RepositoryToSaidataETL
+from .downloaders import BaseRepositoryDownloader, UniversalRepositoryDownloader
 
 __all__ = [
     'RepositoryCache',
     'CacheManager', 
-    'RepositoryConfigManager',
-    'RepositoryConfig',
+    'RepositoryManager',
+    'UniversalRepositoryManager',
+    'RepositoryToSaidataETL',
     'BaseRepositoryDownloader',
-    'GenericRepositoryDownloader'
+    'UniversalRepositoryDownloader'
 ]

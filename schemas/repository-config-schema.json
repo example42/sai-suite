@@ -1,0 +1,449 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Repository Configuration Schema",
+  "description": "Schema for defining package repository configurations",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Configuration schema version",
+      "enum": [
+        "1.0"
+      ]
+    },
+    "repositories": {
+      "type": "array",
+      "description": "List of repository configurations",
+      "items": {
+        "$ref": "#/definitions/Repository"
+      }
+    }
+  },
+  "required": [
+    "version",
+    "repositories"
+  ],
+  "definitions": {
+    "Repository": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique repository name",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Repository type/package manager",
+          "enum": [
+            "apt",
+            "dnf",
+            "yum",
+            "zypper",
+            "pacman",
+            "apk",
+            "emerge",
+            "portage",
+            "xbps",
+            "slackpkg",
+            "opkg",
+            "pkg",
+            "brew",
+            "macports",
+            "winget",
+            "choco",
+            "scoop",
+            "flatpak",
+            "snap",
+            "nix",
+            "nixpkgs",
+            "guix",
+            "npm",
+            "yarn",
+            "pnpm",
+            "pypi",
+            "conda",
+            "pip",
+            "cargo",
+            "gem",
+            "go",
+            "composer",
+            "nuget",
+            "maven",
+            "gradle",
+            "sbt",
+            "docker",
+            "helm",
+            "spack",
+            "vcpkg",
+            "conan",
+            "generic"
+          ]
+        },
+        "platform": {
+          "type": "string",
+          "description": "Target platform",
+          "enum": [
+            "linux",
+            "macos",
+            "windows",
+            "unix",
+            "universal"
+          ]
+        },
+        "distribution": {
+          "type": "array",
+          "description": "Supported distributions",
+          "items": {
+            "type": "string"
+          }
+        },
+        "architecture": {
+          "type": "array",
+          "description": "Supported architectures",
+          "items": {
+            "type": "string",
+            "enum": [
+              "x86_64",
+              "amd64",
+              "i386",
+              "arm64",
+              "armhf",
+              "s390x",
+              "ppc64le",
+              "all"
+            ]
+          }
+        },
+        "endpoints": {
+          "$ref": "#/definitions/Endpoints"
+        },
+        "parsing": {
+          "$ref": "#/definitions/Parsing"
+        },
+        "cache": {
+          "$ref": "#/definitions/Cache"
+        },
+        "limits": {
+          "$ref": "#/definitions/Limits"
+        },
+        "auth": {
+          "$ref": "#/definitions/Auth"
+        },
+        "metadata": {
+          "$ref": "#/definitions/Metadata"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "platform",
+        "endpoints",
+        "parsing"
+      ],
+      "additionalProperties": false
+    },
+    "Endpoints": {
+      "type": "object",
+      "properties": {
+        "packages": {
+          "type": "string",
+          "description": "URL for package list endpoint",
+          "format": "uri"
+        },
+        "search": {
+          "type": "string",
+          "description": "URL for package search endpoint",
+          "format": "uri"
+        },
+        "info": {
+          "type": "string",
+          "description": "URL for package info endpoint",
+          "format": "uri"
+        },
+        "download": {
+          "type": "string",
+          "description": "Base URL for package downloads",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "packages"
+      ],
+      "additionalProperties": false
+    },
+    "Parsing": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "Data format type",
+          "enum": [
+            "debian_packages",
+            "rpm_metadata",
+            "json",
+            "yaml",
+            "xml",
+            "csv",
+            "tsv",
+            "text",
+            "html",
+            "custom"
+          ]
+        },
+        "compression": {
+          "type": "string",
+          "description": "Compression format",
+          "enum": [
+            "none",
+            "gzip",
+            "bzip2",
+            "xz",
+            "lzma",
+            "zstd"
+          ]
+        },
+        "encoding": {
+          "type": "string",
+          "description": "Text encoding",
+          "default": "utf-8"
+        },
+        "fields": {
+          "$ref": "#/definitions/FieldMapping"
+        },
+        "patterns": {
+          "$ref": "#/definitions/Patterns"
+        },
+        "custom_parser": {
+          "type": "string",
+          "description": "Custom parser function name"
+        },
+        "options": {
+          "type": "object",
+          "description": "Parser-specific options",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "format"
+      ],
+      "additionalProperties": false
+    },
+    "FieldMapping": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Package name field"
+        },
+        "version": {
+          "type": "string",
+          "description": "Package version field"
+        },
+        "description": {
+          "type": "string",
+          "description": "Package description field"
+        },
+        "maintainer": {
+          "type": "string",
+          "description": "Package maintainer field"
+        },
+        "homepage": {
+          "type": "string",
+          "description": "Package homepage field"
+        },
+        "license": {
+          "type": "string",
+          "description": "Package license field"
+        },
+        "dependencies": {
+          "type": "string",
+          "description": "Package dependencies field"
+        },
+        "size": {
+          "type": "string",
+          "description": "Package size field"
+        },
+        "category": {
+          "type": "string",
+          "description": "Package category field"
+        },
+        "tags": {
+          "type": "string",
+          "description": "Package tags field"
+        },
+        "download_url": {
+          "type": "string",
+          "description": "Package download URL field"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Patterns": {
+      "type": "object",
+      "properties": {
+        "line_pattern": {
+          "type": "string",
+          "description": "Regex pattern for parsing lines"
+        },
+        "name_group": {
+          "type": "integer",
+          "description": "Regex group number for package name",
+          "minimum": 1
+        },
+        "version_group": {
+          "type": "integer",
+          "description": "Regex group number for version",
+          "minimum": 1
+        },
+        "description_group": {
+          "type": "integer",
+          "description": "Regex group number for description",
+          "minimum": 1
+        },
+        "package_xpath": {
+          "type": "string",
+          "description": "XPath for XML package elements"
+        },
+        "json_path": {
+          "type": "string",
+          "description": "JSONPath for package data"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Cache": {
+      "type": "object",
+      "properties": {
+        "ttl_hours": {
+          "type": "integer",
+          "description": "Cache time-to-live in hours",
+          "minimum": 1,
+          "default": 24
+        },
+        "max_size_mb": {
+          "type": "integer",
+          "description": "Maximum cache size in MB",
+          "minimum": 1,
+          "default": 100
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether caching is enabled",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "Limits": {
+      "type": "object",
+      "properties": {
+        "requests_per_minute": {
+          "type": "integer",
+          "description": "Rate limit for requests",
+          "minimum": 1,
+          "default": 60
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "description": "Request timeout in seconds",
+          "minimum": 1,
+          "default": 300
+        },
+        "max_response_size_mb": {
+          "type": "integer",
+          "description": "Maximum response size in MB",
+          "minimum": 1,
+          "default": 200
+        },
+        "concurrent_requests": {
+          "type": "integer",
+          "description": "Maximum concurrent requests",
+          "minimum": 1,
+          "default": 10
+        }
+      },
+      "additionalProperties": false
+    },
+    "Auth": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Authentication type",
+          "enum": [
+            "none",
+            "basic",
+            "bearer",
+            "api_key",
+            "oauth2"
+          ],
+          "default": "none"
+        },
+        "username": {
+          "type": "string",
+          "description": "Username for basic auth"
+        },
+        "password": {
+          "type": "string",
+          "description": "Password for basic auth"
+        },
+        "token": {
+          "type": "string",
+          "description": "Token for bearer auth"
+        },
+        "api_key": {
+          "type": "string",
+          "description": "API key"
+        },
+        "api_key_header": {
+          "type": "string",
+          "description": "Header name for API key",
+          "default": "X-API-Key"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Repository description"
+        },
+        "maintainer": {
+          "type": "string",
+          "description": "Repository maintainer"
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Repository priority (higher = preferred)",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether repository is enabled",
+          "default": true
+        },
+        "official": {
+          "type": "boolean",
+          "description": "Whether this is an official repository",
+          "default": false
+        },
+        "url": {
+          "type": "string",
+          "description": "Repository website URL",
+          "format": "uri"
+        },
+        "documentation": {
+          "type": "string",
+          "description": "Documentation URL",
+          "format": "uri"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
