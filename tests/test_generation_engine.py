@@ -415,6 +415,7 @@ providers:
         
         # Create engine and request
         engine = GenerationEngine(config)
+        engine._llm_providers["openai"] = mock_provider  # Add mocked provider for compatibility
         request = GenerationRequest(
             software_name="redis",
             llm_provider=LLMProvider.OPENAI

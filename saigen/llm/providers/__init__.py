@@ -20,6 +20,20 @@ except ImportError:
     OPENAI_AVAILABLE = False
     OpenAIProvider = None
 
+try:
+    from .anthropic import AnthropicProvider
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+    AnthropicProvider = None
+
+try:
+    from .ollama import OllamaProvider, AIOHTTP_AVAILABLE
+    OLLAMA_AVAILABLE = AIOHTTP_AVAILABLE
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    OllamaProvider = None
+
 __all__ = [
     "BaseLLMProvider",
     "LLMResponse", 
@@ -32,5 +46,9 @@ __all__ = [
     "RateLimitError",
     "AuthenticationError",
     "OpenAIProvider",
-    "OPENAI_AVAILABLE"
+    "OPENAI_AVAILABLE",
+    "AnthropicProvider", 
+    "ANTHROPIC_AVAILABLE",
+    "OllamaProvider",
+    "OLLAMA_AVAILABLE"
 ]
