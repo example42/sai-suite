@@ -56,6 +56,98 @@ class BaseProvider:
         """
         return action in self.provider_data.actions
     
+    def can_handle_software(self, action: str, saidata: SaiData) -> bool:
+        """Check if provider can handle the software for the given action.
+        
+        This method uses detection commands when available, or falls back to
+        checking if the provider has relevant package data for the software.
+        
+        Args:
+            action: Action name to check (e.g., 'install', 'uninstall')
+            saidata: SaiData object containing software information
+            
+        Returns:
+            True if provider can handle the software, False otherwise
+        """
+        if not self.has_action(action):
+            return False
+        
+        action_def = self.provider_data.actions[action]
+        
+        # Method 1: Use detection command if available
+        if action_def.detection:
+            return self._check_detection_command(action_def.detection, saidata)
+        
+        # Method 2: Check if provider has relevant package data
+        return self._check_package_availability(saidata)
+    
+    def _check_detection_command(self, detection_template: str, saidata: SaiData) -> bool:
+        """Execute detection command to check if software can be managed.
+        
+        Args:
+            detection_template: Template for detection command
+            saidata: SaiData object for template context
+            
+        Returns:
+            True if detection command succeeds, False otherwise
+        """
+        try:
+            # Resolve the detection command template
+            resolved_command = self.template_engine.resolve_template(detection_template, saidata)
+            
+            # Execute the detection command
+            import subprocess
+            result = subprocess.run(
+                resolved_command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=10  # Short timeout for detection
+            )
+            
+            success = result.returncode == 0
+            logger.debug(f"Detection command for '{self.name}': '{resolved_command}' -> {success}")
+            return success
+            
+        except Exception as e:
+            logger.debug(f"Detection command failed for provider '{self.name}': {e}")
+            return False
+    
+    def _check_package_availability(self, saidata: SaiData) -> bool:
+        """Check if provider has relevant package data for the software.
+        
+        This method checks multiple sources in order of preference:
+        1. Provider-specific packages (saidata.providers.{provider}.packages)
+        2. General packages (saidata.packages)
+        3. Metadata name (saidata.metadata.name)
+        
+        Args:
+            saidata: SaiData object containing software information
+            
+        Returns:
+            True if provider has relevant package data, False otherwise
+        """
+        # Check if provider has specific package data
+        if (hasattr(saidata, 'providers') and saidata.providers and 
+            hasattr(saidata.providers, self.name)):
+            provider_data = getattr(saidata.providers, self.name)
+            if hasattr(provider_data, 'packages') and provider_data.packages:
+                logger.debug(f"Provider '{self.name}' has specific packages for '{saidata.metadata.name}'")
+                return True
+        
+        # Check if there are general packages
+        if hasattr(saidata, 'packages') and saidata.packages:
+            logger.debug(f"Provider '{self.name}' can use general packages for '{saidata.metadata.name}'")
+            return True
+        
+        # Check if metadata name exists (fallback)
+        if hasattr(saidata, 'metadata') and saidata.metadata and saidata.metadata.name:
+            logger.debug(f"Provider '{self.name}' can use metadata name for '{saidata.metadata.name}'")
+            return True
+        
+        logger.debug(f"Provider '{self.name}' has no package data for '{saidata.metadata.name}'")
+        return False
+    
     def get_priority(self) -> int:
         """Return provider priority.
         

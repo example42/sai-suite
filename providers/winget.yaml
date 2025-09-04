@@ -12,71 +12,74 @@ provider:
 actions:
   install:
     description: "Install packages via Winget"
-    template: "winget install --id {{sai_package(saidata, 0, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
+    template: "winget install --id {{sai_package(saidata, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
     timeout: 600
+    detection: "winget show {{sai_package(saidata, 'winget')}} >/dev/null 2>&1"
     validation:
-      command: "winget list | findstr {{saidata.metadata.name}}"
+      command: "winget list | findstr {{sai_package(saidata, 'winget')}}"
       expected_exit_code: 0
-    rollback: "winget uninstall --id {{sai_package(saidata, 0, 'winget')}} --silent"
+    rollback: "winget uninstall --id {{sai_package(saidata, 'winget')}} --silent"
 
   uninstall:
     description: "Remove packages via Winget"
-    template: "winget uninstall --id {{sai_package(saidata, 0, 'winget')}} --silent"
+    template: "winget uninstall --id {{sai_package(saidata, 'winget')}} --silent"
+    detection: "winget show {{sai_package(saidata, 'winget')}} >/dev/null 2>&1"
     validation:
-      command: "winget list | findstr {{saidata.metadata.name}} || exit 1"
+      command: "winget list | findstr {{sai_package(saidata, 'winget')}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Winget"
-    template: "winget upgrade --id {{sai_package(saidata, 0, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
+    template: "winget upgrade --id {{sai_package(saidata, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
     timeout: 600
+    detection: "winget show {{sai_package(saidata, 'winget')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via sc command"
-    template: "sc start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
+    template: "sc start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
     validation:
-      command: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} | findstr RUNNING"
+      command: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} | findstr RUNNING"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via sc command"
-    template: "sc stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
+    template: "sc stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
     validation:
-      command: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} | findstr STOPPED"
+      command: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} | findstr STOPPED"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via sc command"
     steps:
       - name: "stop-service"
-        command: "sc stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
+        command: "sc stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
       - name: "start-service"
-        command: "sc start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
+        command: "sc start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "sc config {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} start= auto"
+    template: "sc config {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} start= auto"
 
   disable:
     description: "Disable service auto-start"
-    template: "sc config {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}} start= disabled"
+    template: "sc config {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} start= disabled"
 
   status:
     description: "Check service status"
-    template: "sc query {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'winget')}}"
+    template: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
 
   logs:
     description: "Show service logs"
-    template: "Get-WinEvent -LogName Application | Where-Object {$_.ProviderName -eq '{{saidata.metadata.name}}'} | Select-Object -First 50"
+    template: "Get-WinEvent -LogName Application | Where-Object {$_.ProviderName -eq '{{sai_package(saidata, 'winget')}}'} | Select-Object -First 50"
 
   info:
     description: "Show package information"
-    template: "winget show --id {{sai_package(saidata, 0, 'winget')}}"
+    template: "winget show --id {{sai_package(saidata, 'winget')}}"
 
   search:
     description: "Search for packages"
-    template: "winget search {{saidata.metadata.name}}"
+    template: "winget search {{sai_package(saidata, 'winget')}}"
 
   list:
     description: "List installed packages"
-    template: "winget list | findstr {{saidata.metadata.name}}"
+    template: "winget list | findstr {{sai_package(saidata, 'winget')}}"

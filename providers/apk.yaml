@@ -19,15 +19,16 @@ actions:
         command: "apk add {{sai_packages(saidata, 'apk')}}"
     timeout: 300
     validation:
-      command: "apk info | grep {{saidata.metadata.name}}"
+      command: "apk info | grep {{sai_package(saidata, 'apk')}}"
       expected_exit_code: 0
     rollback: "apk del {{sai_packages(saidata, 'apk')}}"
 
   uninstall:
     description: "Remove packages via APK"
     template: "apk del {{sai_packages(saidata, 'apk')}}"
+    detection: "apk info {{sai_package(saidata, 'apk')}} >/dev/null 2>&1"
     validation:
-      command: "! apk info | grep {{saidata.metadata.name}}"
+      command: "! apk info | grep {{sai_package(saidata, 'apk')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -38,36 +39,37 @@ actions:
       - name: "upgrade-packages"
         command: "apk upgrade {{sai_packages(saidata, 'apk')}}"
     timeout: 300
+    detection: "apk info {{sai_package(saidata, 'apk')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} start"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} start"
     validation:
-      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} status"
+      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} status"
       expected_output: "started"
 
   stop:
     description: "Stop service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} stop"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} stop"
     validation:
-      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} status"
+      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} status"
       expected_output: "stopped"
 
   restart:
     description: "Restart service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} restart"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "rc-update add {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} default"
+    template: "rc-update add {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} default"
 
   disable:
     description: "Disable service auto-start"
-    template: "rc-update del {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} default"
+    template: "rc-update del {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} default"
 
   status:
     description: "Check service status"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apk')}} status"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apk')}} status"
 
   logs:
     description: "Show service logs"
@@ -75,12 +77,12 @@ actions:
 
   info:
     description: "Show package information"
-    template: "apk info {{sai_package(saidata, 0, 'apk')}}"
+    template: "apk info {{sai_package(saidata, 'apk')}}"
 
   search:
     description: "Search for packages"
-    template: "apk search {{saidata.metadata.name}}"
+    template: "apk search {{sai_package(saidata, 'apk')}}"
 
   list:
     description: "List installed packages"
-    template: "apk info | grep {{saidata.metadata.name}}"
+    template: "apk info | grep {{sai_package(saidata, 'apk')}}"

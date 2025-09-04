@@ -14,49 +14,52 @@ actions:
     description: "Install packages via PKG"
     template: "pkg install -y {{sai_packages(saidata, 'pkg')}}"
     timeout: 600
+    detection: "pkg info {{sai_package(saidata, 'pkg')}} >/dev/null 2>&1"
     validation:
-      command: "pkg info | grep {{saidata.metadata.name}}"
+      command: "pkg info | grep {{sai_package(saidata, 'pkg')}}"
       expected_exit_code: 0
     rollback: "pkg delete -y {{sai_packages(saidata, 'pkg')}}"
 
   uninstall:
     description: "Remove packages via PKG"
     template: "pkg delete -y {{sai_packages(saidata, 'pkg')}}"
+    detection: "pkg info {{sai_package(saidata, 'pkg')}} >/dev/null 2>&1"
     validation:
-      command: "! pkg info | grep {{saidata.metadata.name}}"
+      command: "! pkg info | grep {{sai_package(saidata, 'pkg')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via PKG"
     template: "pkg upgrade -y {{sai_packages(saidata, 'pkg')}}"
     timeout: 600
+    detection: "pkg info {{sai_package(saidata, 'pkg')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via service command"
-    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}} start"
+    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} start"
     validation:
-      command: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}} status"
+      command: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} status"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via service command"
-    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}} stop"
+    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} stop"
 
   restart:
     description: "Restart service via service command"
-    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}} restart"
+    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "sysrc {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}}_enable=YES"
+    template: "sysrc {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}}_enable=YES"
 
   disable:
     description: "Disable service auto-start"
-    template: "sysrc {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}}_enable=NO"
+    template: "sysrc {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}}_enable=NO"
 
   status:
     description: "Check service status"
-    template: "service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pkg')}} status"
+    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} status"
 
   logs:
     description: "Show service logs"
@@ -64,12 +67,12 @@ actions:
 
   info:
     description: "Show package information"
-    template: "pkg info {{sai_package(saidata, 0, 'pkg')}}"
+    template: "pkg info {{sai_package(saidata, 'pkg')}}"
 
   search:
     description: "Search for packages"
-    template: "pkg search {{saidata.metadata.name}}"
+    template: "pkg search {{sai_package(saidata, 'pkg')}}"
 
   list:
     description: "List installed packages"
-    template: "pkg info | grep {{saidata.metadata.name}}"
+    template: "pkg info | grep {{sai_package(saidata, 'pkg')}}"

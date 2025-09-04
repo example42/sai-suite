@@ -14,16 +14,18 @@ actions:
     description: "Install packages via Pacman"
     template: "pacman -S --noconfirm {{sai_packages(saidata, 'pacman')}}"
     timeout: 600
+    detection: "pacman -Si {{sai_package(saidata, 'pacman')}} >/dev/null 2>&1"
     validation:
-      command: "pacman -Q | grep {{saidata.metadata.name}}"
+      command: "pacman -Q | grep {{sai_package(saidata, 'pacman')}}"
       expected_exit_code: 0
     rollback: "pacman -R --noconfirm {{sai_packages(saidata, 'pacman')}}"
 
   uninstall:
     description: "Remove packages via Pacman"
     template: "pacman -R --noconfirm {{sai_packages(saidata, 'pacman')}}"
+    detection: "pacman -Si {{sai_package(saidata, 'pacman')}} >/dev/null 2>&1"
     validation:
-      command: "! pacman -Q | grep {{saidata.metadata.name}}"
+      command: "! pacman -Q | grep {{sai_package(saidata, 'pacman')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -37,46 +39,46 @@ actions:
 
   start:
     description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
       expected_output: "active"
 
   stop:
     description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
       expected_output: "inactive"
 
   restart:
     description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
 
   status:
     description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}}"
+    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
 
   logs:
     description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'pacman')}} --no-pager -n 50"
+    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "pacman -Si {{sai_package(saidata, 0, 'pacman')}}"
+    template: "pacman -Si {{sai_package(saidata, 'pacman')}}"
 
   search:
     description: "Search for packages"
-    template: "pacman -Ss {{saidata.metadata.name}}"
+    template: "pacman -Ss {{sai_package(saidata, 'pacman')}}"
 
   list:
     description: "List installed packages"
-    template: "pacman -Q | grep {{saidata.metadata.name}}"
+    template: "pacman -Q | grep {{sai_package(saidata, 'pacman')}}"

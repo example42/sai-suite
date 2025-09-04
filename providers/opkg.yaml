@@ -18,16 +18,18 @@ actions:
       - name: "install-packages"
         command: "opkg install {{sai_packages(saidata, 'opkg')}}"
     timeout: 300
+    detection: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}} >/dev/null 2>&1"
     validation:
-      command: "opkg list-installed | grep {{saidata.metadata.name}}"
+      command: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}}"
       expected_exit_code: 0
     rollback: "opkg remove {{sai_packages(saidata, 'opkg')}}"
 
   uninstall:
     description: "Remove packages via OPKG"
     template: "opkg remove {{sai_packages(saidata, 'opkg')}}"
+    detection: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}} >/dev/null 2>&1"
     validation:
-      command: "! opkg list-installed | grep {{saidata.metadata.name}}"
+      command: "! opkg list-installed | grep {{sai_package(saidata, 'opkg')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -38,46 +40,47 @@ actions:
       - name: "upgrade-packages"
         command: "opkg upgrade {{sai_packages(saidata, 'opkg')}}"
     timeout: 300
+    detection: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via init script"
-    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} start"
+    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} start"
     validation:
-      command: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} status"
+      command: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} status"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via init script"
-    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} stop"
+    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} stop"
 
   restart:
     description: "Restart service via init script"
-    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} restart"
+    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} enable"
+    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} enable"
 
   disable:
     description: "Disable service auto-start"
-    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} disable"
+    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} disable"
 
   status:
     description: "Check service status"
-    template: "/etc/init.d/{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}} status"
+    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} status"
 
   logs:
     description: "Show service logs"
-    template: "logread | grep {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'opkg')}}"
+    template: "logread | grep {{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}}"
 
   info:
     description: "Show package information"
-    template: "opkg info {{sai_package(saidata, 0, 'opkg')}}"
+    template: "opkg info {{sai_package(saidata, 'opkg')}}"
 
   search:
     description: "Search for packages"
-    template: "opkg find {{saidata.metadata.name}}"
+    template: "opkg find {{sai_package(saidata, 'opkg')}}"
 
   list:
     description: "List installed packages"
-    template: "opkg list-installed | grep {{saidata.metadata.name}}"
+    template: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}}"

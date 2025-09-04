@@ -19,16 +19,18 @@ actions:
       - name: "install-packages"
         command: "emerge {{sai_packages(saidata, 'portage')}}"
         timeout: 3600
+    detection: "equery list {{sai_package(saidata, 'portage')}} >/dev/null 2>&1"
     validation:
-      command: "equery list {{saidata.metadata.name}}"
+      command: "equery list {{sai_package(saidata, 'portage')}}"
       expected_exit_code: 0
     rollback: "emerge --depclean {{sai_packages(saidata, 'portage')}}"
 
   uninstall:
     description: "Remove packages via Portage"
     template: "emerge --depclean {{sai_packages(saidata, 'portage')}}"
+    detection: "equery list {{sai_package(saidata, 'portage')}} >/dev/null 2>&1"
     validation:
-      command: "! equery list {{saidata.metadata.name}}"
+      command: "! equery list {{sai_package(saidata, 'portage')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -40,36 +42,37 @@ actions:
       - name: "upgrade-packages"
         command: "emerge -uDN {{sai_packages(saidata, 'portage')}}"
         timeout: 3600
+    detection: "equery list {{sai_package(saidata, 'portage')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} start"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} start"
     validation:
-      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} status"
+      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} status"
       expected_output: "started"
 
   stop:
     description: "Stop service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} stop"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} stop"
     validation:
-      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} status"
+      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} status"
       expected_output: "stopped"
 
   restart:
     description: "Restart service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} restart"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "rc-update add {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} default"
+    template: "rc-update add {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} default"
 
   disable:
     description: "Disable service auto-start"
-    template: "rc-update del {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} default"
+    template: "rc-update del {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} default"
 
   status:
     description: "Check service status"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'portage')}} status"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} status"
 
   logs:
     description: "Show service logs"
@@ -77,12 +80,12 @@ actions:
 
   info:
     description: "Show package information"
-    template: "equery meta {{sai_package(saidata, 0, 'portage')}}"
+    template: "equery meta {{sai_package(saidata, 'portage')}}"
 
   search:
     description: "Search for packages"
-    template: "equery list -p {{saidata.metadata.name}}"
+    template: "equery list -p {{sai_package(saidata, 'portage')}}"
 
   list:
     description: "List installed packages"
-    template: "equery list {{saidata.metadata.name}}"
+    template: "equery list {{sai_package(saidata, 'portage')}}"

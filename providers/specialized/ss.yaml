@@ -12,15 +12,15 @@ provider:
 actions:
   info:
     description: "TCP socket statistics"
-    template: "ss -t | grep {{sai_port(saidata) or \'80\'}}"
+    template: "ss -t | grep {{sai_port(saidata) or '80'}}"
 
   list:
     description: "UDP socket statistics"
-    template: "ss -u | grep {{sai_port(saidata) or \'80\'}}"
+    template: "ss -u | grep {{sai_port(saidata) or '80'}}"
 
   status:
     description: "Listening sockets"
-    template: "ss -l | grep {{sai_port(saidata) or \'80\'}}"
+    template: "ss -l | grep {{sai_port(saidata) or '80'}}"
 
   search:
     description: "Process information with sockets"

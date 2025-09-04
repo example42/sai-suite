@@ -14,16 +14,18 @@ actions:
     description: "Install packages via Guix"
     template: "guix install {{sai_packages(saidata, 'guix')}}"
     timeout: 600
+    detection: "guix package -I | grep {{sai_package(saidata, 'guix')}} >/dev/null 2>&1"
     validation:
-      command: "guix package -I | grep {{saidata.metadata.name}}"
+      command: "guix package -I | grep {{sai_package(saidata, 'guix')}}"
       expected_exit_code: 0
     rollback: "guix remove {{sai_packages(saidata, 'guix')}}"
 
   uninstall:
     description: "Remove packages via Guix"
     template: "guix remove {{sai_packages(saidata, 'guix')}}"
+    detection: "guix package -I | grep {{sai_package(saidata, 'guix')}} >/dev/null 2>&1"
     validation:
-      command: "! guix package -I | grep {{saidata.metadata.name}}"
+      command: "! guix package -I | grep {{sai_package(saidata, 'guix')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -35,36 +37,37 @@ actions:
       - name: "upgrade-packages"
         command: "guix upgrade {{sai_packages(saidata, 'guix')}}"
     timeout: 600
+    detection: "guix package -I | grep {{sai_package(saidata, 'guix')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via herd"
-    template: "herd start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
+    template: "herd start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}}"
     validation:
-      command: "herd status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}} | grep started"
+      command: "herd status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}} | grep started"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via herd"
-    template: "herd stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
+    template: "herd stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}}"
     validation:
-      command: "herd status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}} | grep stopped"
+      command: "herd status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}} | grep stopped"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via herd"
-    template: "herd restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
+    template: "herd restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "herd enable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
+    template: "herd enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "herd disable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
+    template: "herd disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}}"
 
   status:
     description: "Check service status"
-    template: "herd status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'guix')}}"
+    template: "herd status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'guix')}}"
 
   logs:
     description: "Show service logs"
@@ -72,12 +75,12 @@ actions:
 
   info:
     description: "Show package information"
-    template: "guix show {{sai_package(saidata, 0, 'guix')}}"
+    template: "guix show {{sai_package(saidata, 'guix')}}"
 
   search:
     description: "Search for packages"
-    template: "guix search {{saidata.metadata.name}}"
+    template: "guix search {{sai_package(saidata, 'guix')}}"
 
   list:
     description: "List installed packages"
-    template: "guix package -I | grep {{saidata.metadata.name}}"
+    template: "guix package -I | grep {{sai_package(saidata, 'guix')}}"

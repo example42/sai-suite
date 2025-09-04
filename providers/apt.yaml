@@ -18,16 +18,18 @@ actions:
       - name: "install-packages"
         command: "apt-get install -y {{sai_packages(saidata, 'apt')}}"
     timeout: 600
+    detection: "apt-cache show {{sai_package(saidata, 'apt')}} >/dev/null 2>&1"
     validation:
-      command: "dpkg -l | grep {{saidata.metadata.name}}"
+      command: "dpkg -l | grep {{sai_package(saidata, 'apt')}}"
       expected_exit_code: 0
     rollback: "apt-get remove -y {{sai_packages(saidata, 'apt')}}"
 
   uninstall:
     description: "Remove packages via APT"
     template: "apt-get remove -y {{sai_packages(saidata, 'apt')}}"
+    detection: "dpkg -l | grep -q '^ii.*{{sai_package(saidata, 'apt')}}'"
     validation:
-      command: "! dpkg -l | grep {{saidata.metadata.name}}"
+      command: "! dpkg -l | grep {{sai_package(saidata, 'apt')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -38,49 +40,50 @@ actions:
       - name: "upgrade-packages"
         command: "apt-get upgrade -y {{sai_packages(saidata, 'apt')}}"
     timeout: 600
+    detection: "dpkg -l | grep -q '^ii.*{{sai_package(saidata, 'apt')}}'"
 
   start:
     description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
       expected_output: "active"
 
   stop:
     description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
       expected_output: "inactive"
 
   restart:
     description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
 
   status:
     description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}}"
+    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}}"
 
   logs:
     description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'apt')}} --no-pager -n 50"
+    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'apt')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "apt show {{sai_package(saidata, 0, 'apt')}}"
+    template: "apt show {{sai_package(saidata, 'apt')}}"
 
   search:
     description: "Search for packages"
-    template: "apt search {{saidata.metadata.name}}"
+    template: "apt search {{sai_package(saidata, 'apt')}}"
 
   list:
     description: "List installed packages"
-    template: "dpkg -l | grep {{saidata.metadata.name}}"
+    template: "dpkg -l | grep {{sai_package(saidata, 'apt')}}"

@@ -15,22 +15,25 @@ actions:
     description: "Install packages via Composer"
     template: "composer global require {{sai_packages(saidata, 'composer')}}"
     timeout: 300
+    detection: "composer show {{sai_package(saidata, 'composer')}} >/dev/null 2>&1"
     validation:
-      command: "composer global show | grep {{saidata.metadata.name}}"
+      command: "composer global show | grep {{sai_package(saidata, 'composer')}}"
       expected_exit_code: 0
     rollback: "composer global remove {{sai_packages(saidata, 'composer')}}"
 
   uninstall:
     description: "Remove packages via Composer"
     template: "composer global remove {{sai_packages(saidata, 'composer')}}"
+    detection: "composer show {{sai_package(saidata, 'composer')}} >/dev/null 2>&1"
     validation:
-      command: "! composer global show | grep {{saidata.metadata.name}}"
+      command: "! composer global show | grep {{sai_package(saidata, 'composer')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Composer"
     template: "composer global update {{sai_packages(saidata, 'composer')}}"
     timeout: 300
+    detection: "composer show {{sai_package(saidata, 'composer')}} >/dev/null 2>&1"
 
   start:
     description: "Start PHP application"
@@ -38,29 +41,29 @@ actions:
 
   stop:
     description: "Stop PHP application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'composer')}}"
 
   restart:
     description: "Restart PHP application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'composer')}}"
         ignore_failure: true
       - name: "start-app"
         command: "php {{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'composer')}}"
 
   info:
     description: "Show package information"
-    template: "composer global info {{sai_package(saidata, 0, 'composer')}}"
+    template: "composer global info {{sai_package(saidata, 'composer')}}"
 
   search:
     description: "Search for packages"
-    template: "composer search {{saidata.metadata.name}}"
+    template: "composer search {{sai_package(saidata, 'composer')}}"
 
   list:
     description: "List installed packages"
-    template: "composer global show | grep {{saidata.metadata.name}}"
+    template: "composer global show | grep {{sai_package(saidata, 'composer')}}"

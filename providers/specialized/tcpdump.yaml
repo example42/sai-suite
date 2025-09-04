@@ -12,21 +12,21 @@ provider:
 actions:
   logs:
     description: "Capture network packets"
-    template: "tcpdump -i {{interface}} port {{sai_port(saidata) or \'80\'}} -c {{packet_count}}"
+    template: "tcpdump -i {{interface}} port {{sai_port(saidata) or '80'}} -c {{packet_count}}"
     variables:
       interface: "any"
       packet_count: "100"
 
   info:
     description: "Filter specific traffic"
-    template: "tcpdump -i {{interface}} host {{target_host}} and port {{sai_port(saidata) or \'80\'}}"
+    template: "tcpdump -i {{interface}} host {{target_host}} and port {{sai_port(saidata) or '80'}}"
     variables:
       interface: "any"
       target_host: "localhost"
 
   search:
     description: "Capture to file"
-    template: "tcpdump -i {{interface}} -w /tmp/tcpdump-{{saidata.metadata.name}}.pcap port {{sai_port(saidata) or \'80\'}}"
+    template: "tcpdump -i {{interface}} -w /tmp/tcpdump-{{saidata.metadata.name}}.pcap port {{sai_port(saidata) or '80'}}"
     variables:
       interface: "any"
 
@@ -36,7 +36,7 @@ actions:
 
   status:
     description: "Verbose packet capture"
-    template: "tcpdump -v -i {{interface}} port {{sai_port(saidata) or \'80\'}} -c {{packet_count}}"
+    template: "tcpdump -v -i {{interface}} port {{sai_port(saidata) or '80'}} -c {{packet_count}}"
     variables:
       interface: "any"
       packet_count: "10"

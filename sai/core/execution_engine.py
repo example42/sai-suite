@@ -60,6 +60,7 @@ class ExecutionContext:
     provider: Optional[str] = None
     dry_run: bool = False
     verbose: bool = False
+    quiet: bool = False
     timeout: Optional[int] = None
     additional_context: Optional[Dict[str, Any]] = None
 
@@ -393,7 +394,8 @@ class ExecutionEngine:
             cmd_args, 
             timeout=context.timeout or action.timeout,
             requires_root=action.requires_root,
-            verbose=context.verbose
+            verbose=context.verbose,
+            quiet=context.quiet
         )
         cmd_execution_time = self._get_current_time() - cmd_start_time
         
@@ -479,7 +481,8 @@ class ExecutionEngine:
                 cmd_args,
                 timeout=step_timeout,
                 requires_root=action.requires_root,
-                verbose=context.verbose
+                verbose=context.verbose,
+                quiet=context.quiet
             )
             step_execution_time = self._get_current_time() - step_start_time
             
@@ -543,7 +546,8 @@ class ExecutionEngine:
             ['/bin/sh', '-c', script],
             timeout=context.timeout or action.timeout,
             requires_root=action.requires_root,
-            verbose=context.verbose
+            verbose=context.verbose,
+            quiet=context.quiet
         )
         script_execution_time = self._get_current_time() - script_start_time
         
@@ -587,7 +591,7 @@ class ExecutionEngine:
             )
     
     def _run_secure_command(self, cmd_args: List[str], timeout: int, requires_root: bool,
-                           verbose: bool) -> Dict[str, Any]:
+                           verbose: bool, quiet: bool = False) -> Dict[str, Any]:
         """Run a command with enhanced security constraints.
         
         Args:
@@ -617,9 +621,15 @@ class ExecutionEngine:
             # Handle root requirement with enhanced sudo handling
             final_args = self._handle_privilege_escalation(sanitized_args, requires_root)
             
+            # Display command before execution (unless in quiet mode)
+            if not quiet:
+                safe_cmd = ' '.join(arg if not self._is_sensitive_arg(arg) else '[REDACTED]' for arg in final_args)
+                # Use print to ensure it's shown immediately before execution
+                import sys
+                print(f"Executing {safe_cmd}", flush=True)
+            
             if verbose:
                 # Log sanitized command for security
-                safe_cmd = ' '.join(arg if not self._is_sensitive_arg(arg) else '[REDACTED]' for arg in final_args)
                 logger.info(f"Executing: {safe_cmd}")
             
             # Execute with enhanced security constraints

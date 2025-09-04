@@ -14,24 +14,27 @@ provider:
 actions:
   install:
     description: "Install packages via Gem"
-    template: "gem install {% if saidata.providers.gem.packages %}{% for pkg in saidata.providers.gem.packages %}{{pkg.name}} {% endfor %}{% elif saidata.packages %}{% for pkg in saidata.packages %}{{pkg.name}} {% endfor %}{% else %}{{saidata.metadata.name}}{% endif %}"
+    template: "gem install {{sai_packages(saidata, 'gem')}}"
     timeout: 300
+    detection: "gem search '^{{sai_package(saidata, 'gem')}}$' | grep -q '^{{sai_package(saidata, 'gem')}}'"
     validation:
-      command: "gem list | grep {{saidata.metadata.name}}"
+      command: "gem list | grep {{sai_package(saidata, 'gem')}}"
       expected_exit_code: 0
-    rollback: "gem uninstall {% if saidata.providers.gem.packages %}{% for pkg in saidata.providers.gem.packages %}{{pkg.name}} {% endfor %}{% elif saidata.packages %}{% for pkg in saidata.packages %}{{pkg.name}} {% endfor %}{% else %}{{saidata.metadata.name}}{% endif %}"
+    rollback: "gem uninstall {{sai_packages(saidata, 'gem')}}"
 
   uninstall:
     description: "Remove packages via Gem"
     template: "gem uninstall {{sai_packages(saidata, 'gem')}}"
+    detection: "gem list | grep -q '^{{sai_package(saidata, 'gem')}}'"
     validation:
-      command: "! gem list | grep {{saidata.metadata.name}}"
+      command: "! gem list | grep {{sai_package(saidata, 'gem')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Gem"
     template: "gem update {{sai_packages(saidata, 'gem')}}"
     timeout: 300
+    detection: "gem list | grep -q '^{{sai_package(saidata, 'gem')}}'"
 
   start:
     description: "Start Ruby application"
@@ -39,29 +42,29 @@ actions:
 
   stop:
     description: "Stop Ruby application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'gem')}}"
 
   restart:
     description: "Restart Ruby application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'gem')}}"
         ignore_failure: true
       - name: "start-app"
         command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'gem')}}"
 
   info:
     description: "Show package information"
-    template: "gem info {{sai_package(saidata, 0, 'gem')}}"
+    template: "gem info {{sai_package(saidata, 'gem')}}"
 
   search:
     description: "Search for packages"
-    template: "gem search {{saidata.metadata.name}}"
+    template: "gem search {{sai_package(saidata, 'gem')}}"
 
   list:
     description: "List installed packages"
-    template: "gem list | grep {{saidata.metadata.name}}"
+    template: "gem list | grep {{sai_package(saidata, 'gem')}}"

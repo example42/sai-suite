@@ -14,65 +14,68 @@ actions:
     description: "Install packages via Zypper"
     template: "zypper install -y {{sai_packages(saidata, 'zypper')}}"
     timeout: 600
+    detection: "zypper info {{sai_package(saidata, 'zypper')}} >/dev/null 2>&1"
     validation:
-      command: "rpm -qa | grep {{saidata.metadata.name}}"
+      command: "rpm -qa | grep {{sai_package(saidata, 'zypper')}}"
       expected_exit_code: 0
     rollback: "zypper remove -y {{sai_packages(saidata, 'zypper')}}"
 
   uninstall:
     description: "Remove packages via Zypper"
     template: "zypper remove -y {{sai_packages(saidata, 'zypper')}}"
+    detection: "rpm -qa | grep -q {{sai_package(saidata, 'zypper')}}"
     validation:
-      command: "! rpm -qa | grep {{saidata.metadata.name}}"
+      command: "! rpm -qa | grep {{sai_package(saidata, 'zypper')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Zypper"
     template: "zypper update -y {{sai_packages(saidata, 'zypper')}}"
     timeout: 600
+    detection: "zypper info {{sai_package(saidata, 'zypper')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
       expected_output: "active"
 
   stop:
     description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
       expected_output: "inactive"
 
   restart:
     description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
 
   status:
     description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}}"
+    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
 
   logs:
     description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'zypper')}} --no-pager -n 50"
+    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "zypper info {{sai_package(saidata, 0, 'zypper')}}"
+    template: "zypper info {{sai_package(saidata, 'zypper')}}"
 
   search:
     description: "Search for packages"
-    template: "zypper search {{saidata.metadata.name}}"
+    template: "zypper search {{sai_package(saidata, 'zypper')}}"
 
   list:
     description: "List installed packages"
-    template: "rpm -qa | grep {{saidata.metadata.name}}"
+    template: "rpm -qa | grep {{sai_package(saidata, 'zypper')}}"

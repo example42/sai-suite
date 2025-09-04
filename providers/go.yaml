@@ -15,18 +15,20 @@ actions:
     description: "Install packages via Go"
     template: "go install {{sai_packages(saidata, 'go')}}@latest"
     timeout: 300
+    detection: "go list -m {{sai_package(saidata, 'go')}} >/dev/null 2>&1"
     validation:
-      command: "ls {{gopath}}/bin/ | grep {{saidata.metadata.name}}"
+      command: "ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
       expected_exit_code: 0
-    rollback: "rm -f {{gopath}}/bin/{{saidata.metadata.name}}*"
+    rollback: "rm -f {{gopath}}/bin/{{sai_package(saidata, 'go')}}*"
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"
 
   uninstall:
     description: "Remove packages via Go"
-    template: "rm -f {{gopath}}/bin/{{saidata.metadata.name}}*"
+    template: "rm -f {{gopath}}/bin/{{sai_package(saidata, 'go')}}*"
+    detection: "go list -m {{sai_package(saidata, 'go')}} >/dev/null 2>&1"
     validation:
-      command: "! ls {{gopath}}/bin/ | grep {{saidata.metadata.name}}"
+      command: "! ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
       expected_exit_code: 0
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"
@@ -35,6 +37,7 @@ actions:
     description: "Upgrade packages via Go"
     template: "go install {{sai_packages(saidata, 'go')}}@latest"
     timeout: 300
+    detection: "go list -m {{sai_package(saidata, 'go')}} >/dev/null 2>&1"
 
   start:
     description: "Start Go application"
@@ -42,31 +45,31 @@ actions:
 
   stop:
     description: "Stop Go application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'go')}}"
 
   restart:
     description: "Restart Go application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'go')}}"
         ignore_failure: true
       - name: "start-app"
         command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'go')}}"
 
   info:
     description: "Show package information"
-    template: "go list -m {{sai_package(saidata, 0, 'go')}}"
+    template: "go list -m {{sai_package(saidata, 'go')}}"
 
   search:
     description: "Search for packages"
-    template: "go list -m {{saidata.metadata.name}}"
+    template: "go list -m {{sai_package(saidata, 'go')}}"
 
   list:
     description: "List installed packages"
-    template: "ls {{gopath}}/bin/ | grep {{saidata.metadata.name}}"
+    template: "ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"

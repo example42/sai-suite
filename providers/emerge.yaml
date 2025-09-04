@@ -20,15 +20,16 @@ actions:
         command: "emerge {{sai_packages(saidata, 'emerge')}}"
         timeout: 3600
     validation:
-      command: "qlist -I | grep {{saidata.metadata.name}}"
+      command: "qlist -I | grep {{sai_package(saidata, 'emerge')}}"
       expected_exit_code: 0
     rollback: "emerge --unmerge {{sai_packages(saidata, 'emerge')}}"
 
   uninstall:
     description: "Remove packages via Emerge"
     template: "emerge --unmerge {{sai_packages(saidata, 'emerge')}}"
+    detection: "emerge --search {{sai_package(saidata, 'emerge')}} >/dev/null 2>&1"
     validation:
-      command: "! qlist -I | grep {{saidata.metadata.name}}"
+      command: "! qlist -I | grep {{sai_package(saidata, 'emerge')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -40,36 +41,37 @@ actions:
       - name: "upgrade-packages"
         command: "emerge -u {{sai_packages(saidata, 'emerge')}}"
         timeout: 3600
+    detection: "emerge --search {{sai_package(saidata, 'emerge')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} start"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} start"
     validation:
-      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} status"
+      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} status"
       expected_output: "started"
 
   stop:
     description: "Stop service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} stop"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} stop"
     validation:
-      command: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} status"
+      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} status"
       expected_output: "stopped"
 
   restart:
     description: "Restart service via rc-service"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} restart"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "rc-update add {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} default"
+    template: "rc-update add {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} default"
 
   disable:
     description: "Disable service auto-start"
-    template: "rc-update del {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} default"
+    template: "rc-update del {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} default"
 
   status:
     description: "Check service status"
-    template: "rc-service {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'emerge')}} status"
+    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} status"
 
   logs:
     description: "Show service logs"
@@ -77,12 +79,12 @@ actions:
 
   info:
     description: "Show package information"
-    template: "emerge --info {{sai_package(saidata, 0, 'emerge')}}"
+    template: "emerge --info {{sai_package(saidata, 'emerge')}}"
 
   search:
     description: "Search for packages"
-    template: "emerge --search {{saidata.metadata.name}}"
+    template: "emerge --search {{sai_package(saidata, 'emerge')}}"
 
   list:
     description: "List installed packages"
-    template: "qlist -I | grep {{saidata.metadata.name}}"
+    template: "qlist -I | grep {{sai_package(saidata, 'emerge')}}"

@@ -13,20 +13,22 @@ provider:
 actions:
   install:
     description: "Install packages via Gradle"
-    template: "gradle build --include-build {{sai_package(saidata, 0, 'gradle')}}"
+    template: "gradle build --include-build {{sai_packages(saidata, 'gradle')}}"
     timeout: 600
+    detection: "gradle dependencies | grep {{sai_package(saidata, 'gradle')}} >/dev/null 2>&1"
     validation:
-      command: "find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
+      command: "find {{gradle_cache}} -name '*{{sai_package(saidata, 'gradle')}}*' -type f"
       expected_exit_code: 0
-    rollback: "rm -rf {{gradle_cache}}/{{saidata.metadata.name}}"
+    rollback: "rm -rf {{gradle_cache}}/{{sai_packages(saidata, 'gradle')}}"
     variables:
       gradle_cache: "~/.gradle/caches"
 
   uninstall:
     description: "Remove packages via Gradle"
-    template: "rm -rf {{gradle_cache}}/{{saidata.metadata.name}}"
+    template: "rm -rf {{gradle_cache}}/{{sai_packages(saidata, 'gradle')}}"
+    detection: "gradle dependencies | grep {{sai_package(saidata, 'gradle')}} >/dev/null 2>&1"
     validation:
-      command: "! find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
+      command: "! find {{gradle_cache}} -name '*{{sai_package(saidata, 'gradle')}}*' -type f"
       expected_exit_code: 0
     variables:
       gradle_cache: "~/.gradle/caches"
@@ -35,6 +37,7 @@ actions:
     description: "Upgrade packages via Gradle"
     template: "gradle build --refresh-dependencies"
     timeout: 600
+    detection: "gradle dependencies | grep {{sai_package(saidata, 'gradle')}} >/dev/null 2>&1"
 
   start:
     description: "Start Java application"
@@ -42,31 +45,31 @@ actions:
 
   stop:
     description: "Stop Java application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'gradle')}}"
 
   restart:
     description: "Restart Java application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'gradle')}}"
         ignore_failure: true
       - name: "start-app"
         command: "java -jar {{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'gradle')}}"
 
   info:
     description: "Show package information"
-    template: "gradle dependencies | grep {{saidata.metadata.name}}"
+    template: "gradle dependencies | grep {{sai_package(saidata, 'gradle')}}"
 
   search:
     description: "Search for packages"
-    template: "gradle dependencies --configuration compileClasspath | grep {{saidata.metadata.name}}"
+    template: "gradle dependencies --configuration compileClasspath | grep {{sai_package(saidata, 'gradle')}}"
 
   list:
     description: "List installed packages"
-    template: "find {{gradle_cache}} -name '*{{saidata.metadata.name}}*' -type f"
+    template: "find {{gradle_cache}} -name '*{{sai_package(saidata, 'gradle')}}*' -type f"
     variables:
       gradle_cache: "~/.gradle/caches"

@@ -18,16 +18,18 @@ actions:
       - name: "install-packages"
         command: "slackpkg install {{sai_packages(saidata, 'slackpkg')}}"
     timeout: 600
+    detection: "ls /var/log/packages/ | grep {{sai_package(saidata, 'slackpkg')}} >/dev/null 2>&1"
     validation:
-      command: "ls /var/log/packages/ | grep {{saidata.metadata.name}}"
+      command: "ls /var/log/packages/ | grep {{sai_package(saidata, 'slackpkg')}}"
       expected_exit_code: 0
     rollback: "slackpkg remove {{sai_packages(saidata, 'slackpkg')}}"
 
   uninstall:
     description: "Remove packages via Slackpkg"
     template: "slackpkg remove {{sai_packages(saidata, 'slackpkg')}}"
+    detection: "ls /var/log/packages/ | grep {{sai_package(saidata, 'slackpkg')}} >/dev/null 2>&1"
     validation:
-      command: "! ls /var/log/packages/ | grep {{saidata.metadata.name}}"
+      command: "! ls /var/log/packages/ | grep {{sai_package(saidata, 'slackpkg')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -38,33 +40,34 @@ actions:
       - name: "upgrade-packages"
         command: "slackpkg upgrade {{sai_packages(saidata, 'slackpkg')}}"
     timeout: 600
+    detection: "ls /var/log/packages/ | grep {{sai_package(saidata, 'slackpkg')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via rc script"
-    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} start"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}} start"
     validation:
-      command: "pgrep -f {{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}}"
+      command: "pgrep -f {{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}}"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via rc script"
-    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} stop"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}} stop"
 
   restart:
     description: "Restart service via rc script"
-    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} restart"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "chmod +x /etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}}"
+    template: "chmod +x /etc/rc.d/rc.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "chmod -x /etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}}"
+    template: "chmod -x /etc/rc.d/rc.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}}"
 
   status:
     description: "Check service status"
-    template: "/etc/rc.d/rc.{{sai_service(saidata, 0, 'service_name') or sai_package(saidata, 0, 'slackpkg')}} status"
+    template: "/etc/rc.d/rc.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'slackpkg')}} status"
 
   logs:
     description: "Show service logs"
@@ -72,12 +75,12 @@ actions:
 
   info:
     description: "Show package information"
-    template: "slackpkg info {{sai_package(saidata, 0, 'slackpkg')}}"
+    template: "slackpkg info {{sai_package(saidata, 'slackpkg')}}"
 
   search:
     description: "Search for packages"
-    template: "slackpkg search {{saidata.metadata.name}}"
+    template: "slackpkg search {{sai_package(saidata, 'slackpkg')}}"
 
   list:
     description: "List installed packages"
-    template: "ls /var/log/packages/ | grep {{saidata.metadata.name}}"
+    template: "ls /var/log/packages/ | grep {{sai_package(saidata, 'slackpkg')}}"

@@ -92,6 +92,10 @@
           "type": "object",
           "description": "Action-specific variable defaults",
           "additionalProperties": { "type": "string" }
+        },
+        "detection": { 
+          "type": "string", 
+          "description": "Command template to detect if software can be managed by this action" 
         }
       },
       "oneOf": [

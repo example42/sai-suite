@@ -32,7 +32,7 @@ actions:
     description: "Check specific port usage"
     template: "lsof -i :{{port_number}} | tee {{ports_output}}"
     variables:
-      port_number: "{{sai_port(saidata) or \'80\'}}"
+      port_number: "{{sai_port(saidata) or '80'}}"
       ports_output: "/tmp/lsof-ports-{{saidata.metadata.name}}.txt"
 
   sockets:

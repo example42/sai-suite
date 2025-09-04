@@ -15,22 +15,25 @@ actions:
     description: "Install packages via NuGet"
     template: "dotnet tool install -g {{sai_packages(saidata, 'nuget')}}"
     timeout: 300
+    detection: "nuget list {{sai_package(saidata, 'nuget')}} >/dev/null 2>&1"
     validation:
-      command: "dotnet tool list -g | grep {{saidata.metadata.name}}"
+      command: "dotnet tool list -g | grep {{sai_package(saidata, 'nuget')}}"
       expected_exit_code: 0
     rollback: "dotnet tool uninstall -g {{sai_packages(saidata, 'nuget')}}"
 
   uninstall:
     description: "Remove packages via NuGet"
     template: "dotnet tool uninstall -g {{sai_packages(saidata, 'nuget')}}"
+    detection: "nuget list {{sai_package(saidata, 'nuget')}} >/dev/null 2>&1"
     validation:
-      command: "! dotnet tool list -g | grep {{saidata.metadata.name}}"
+      command: "! dotnet tool list -g | grep {{sai_package(saidata, 'nuget')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via NuGet"
     template: "dotnet tool update -g {{sai_packages(saidata, 'nuget')}}"
     timeout: 300
+    detection: "nuget list {{sai_package(saidata, 'nuget')}} >/dev/null 2>&1"
 
   start:
     description: "Start .NET application"
@@ -38,29 +41,29 @@ actions:
 
   stop:
     description: "Stop .NET application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'nuget')}}"
 
   restart:
     description: "Restart .NET application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'nuget')}}"
         ignore_failure: true
       - name: "start-app"
         command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'nuget')}}"
 
   info:
     description: "Show package information"
-    template: "dotnet tool list -g | grep {{sai_package(saidata, 0, 'nuget')}}"
+    template: "dotnet tool list -g | grep {{sai_package(saidata, 'nuget')}}"
 
   search:
     description: "Search for packages"
-    template: "dotnet package search {{saidata.metadata.name}}"
+    template: "dotnet package search {{sai_package(saidata, 'nuget')}}"
 
   list:
     description: "List installed packages"
-    template: "dotnet tool list -g | grep {{saidata.metadata.name}}"
+    template: "dotnet tool list -g | grep {{sai_package(saidata, 'nuget')}}"

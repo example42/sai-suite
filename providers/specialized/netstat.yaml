@@ -12,13 +12,13 @@ provider:
 actions:
   connections:
     description: "Show all network connections"
-    template: "netstat -an | grep {{sai_port(saidata) or \'80\'}} | tee {{connections_output}}"
+    template: "netstat -an | grep {{sai_port(saidata) or '80'}} | tee {{connections_output}}"
     variables:
       connections_output: "/tmp/netstat-connections-{{saidata.metadata.name}}.txt"
 
   listening:
     description: "Show listening ports"
-    template: "netstat -ln | grep {{sai_port(saidata) or \'80\'}} | tee {{listening_output}}"
+    template: "netstat -ln | grep {{sai_port(saidata) or '80'}} | tee {{listening_output}}"
     variables:
       listening_output: "/tmp/netstat-listening-{{saidata.metadata.name}}.txt"
 

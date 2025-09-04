@@ -15,22 +15,25 @@ actions:
     description: "Install packages via NPM"
     template: "npm install -g {{sai_packages(saidata, 'npm')}}"
     timeout: 300
+    detection: "npm view {{sai_package(saidata, 'npm')}} >/dev/null 2>&1"
     validation:
-      command: "npm list -g | grep {{saidata.metadata.name}}"
+      command: "npm list -g | grep {{sai_package(saidata, 'npm')}}"
       expected_exit_code: 0
     rollback: "npm uninstall -g {{sai_packages(saidata, 'npm')}}"
 
   uninstall:
     description: "Remove packages via NPM"
     template: "npm uninstall -g {{sai_packages(saidata, 'npm')}}"
+    detection: "npm list -g | grep -q {{sai_package(saidata, 'npm')}}"
     validation:
-      command: "! npm list -g | grep {{saidata.metadata.name}}"
+      command: "! npm list -g | grep {{sai_package(saidata, 'npm')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via NPM"
     template: "npm update -g {{sai_packages(saidata, 'npm')}}"
     timeout: 300
+    detection: "npm list -g | grep -q {{sai_package(saidata, 'npm')}}"
 
   start:
     description: "Start Node.js application"
@@ -38,29 +41,29 @@ actions:
 
   stop:
     description: "Stop Node.js application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'npm')}}"
 
   restart:
     description: "Restart Node.js application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'npm')}}"
         ignore_failure: true
       - name: "start-app"
         command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'npm')}}"
 
   info:
     description: "Show package information"
-    template: "npm info {{sai_package(saidata, 0, 'npm')}}"
+    template: "npm info {{sai_package(saidata, 'npm')}}"
 
   search:
     description: "Search for packages"
-    template: "npm search {{saidata.metadata.name}}"
+    template: "npm search {{sai_package(saidata, 'npm')}}"
 
   list:
     description: "List installed packages"
-    template: "npm list -g | grep {{saidata.metadata.name}}"
+    template: "npm list -g | grep {{sai_package(saidata, 'npm')}}"

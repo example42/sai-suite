@@ -86,6 +86,7 @@ class Action(BaseModel):
     validation: Optional[Validation] = None
     rollback: Optional[str] = None
     variables: Optional[Dict[str, str]] = None
+    detection: Optional[str] = None  # Command to detect if software can be managed by this action
 
     model_config = ConfigDict(validate_assignment=True)
 

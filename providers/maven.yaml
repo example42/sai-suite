@@ -13,28 +13,31 @@ provider:
 actions:
   install:
     description: "Install packages via Maven"
-    template: "mvn dependency:get -Dartifact={{sai_package(saidata, 0, 'maven')}}:{{saidata.packages.default.version}}"
+    template: "mvn dependency:get -Dartifact={{sai_packages(saidata, 'maven')}}:{{saidata.packages.default.version}}"
     timeout: 300
+    detection: "mvn dependency:get -Dartifact={{sai_package(saidata, 'maven')}} >/dev/null 2>&1"
     validation:
-      command: "find {{maven_repo}} -name '*{{saidata.metadata.name}}*' -type f"
+      command: "find {{maven_repo}} -name '*{{sai_package(saidata, 'maven')}}*' -type f"
       expected_exit_code: 0
-    rollback: "rm -rf {{maven_repo}}/{{saidata.metadata.name}}"
+    rollback: "rm -rf {{maven_repo}}/{{sai_packages(saidata, 'maven')}}"
     variables:
       maven_repo: "~/.m2/repository"
 
   uninstall:
     description: "Remove packages via Maven"
-    template: "rm -rf {{maven_repo}}/{{saidata.metadata.name}}"
+    template: "rm -rf {{maven_repo}}/{{sai_packages(saidata, 'maven')}}"
+    detection: "mvn dependency:get -Dartifact={{sai_package(saidata, 'maven')}} >/dev/null 2>&1"
     validation:
-      command: "! find {{maven_repo}} -name '*{{saidata.metadata.name}}*' -type f"
+      command: "! find {{maven_repo}} -name '*{{sai_package(saidata, 'maven')}}*' -type f"
       expected_exit_code: 0
     variables:
       maven_repo: "~/.m2/repository"
 
   upgrade:
     description: "Upgrade packages via Maven"
-    template: "mvn dependency:get -Dartifact={{sai_package(saidata, 0, 'maven')}}:LATEST"
+    template: "mvn dependency:get -Dartifact={{sai_packages(saidata, 'maven')}}:LATEST"
     timeout: 300
+    detection: "mvn dependency:get -Dartifact={{sai_package(saidata, 'maven')}} >/dev/null 2>&1"
 
   start:
     description: "Start Java application"
@@ -42,31 +45,31 @@ actions:
 
   stop:
     description: "Stop Java application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'maven')}}"
 
   restart:
     description: "Restart Java application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'maven')}}"
         ignore_failure: true
       - name: "start-app"
         command: "java -jar {{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'maven')}}"
 
   info:
     description: "Show package information"
-    template: "mvn dependency:tree | grep {{saidata.metadata.name}}"
+    template: "mvn dependency:tree | grep {{sai_package(saidata, 'maven')}}"
 
   search:
     description: "Search for packages"
-    template: "mvn dependency:resolve-sources | grep {{saidata.metadata.name}}"
+    template: "mvn dependency:resolve-sources | grep {{sai_package(saidata, 'maven')}}"
 
   list:
     description: "List installed packages"
-    template: "find {{maven_repo}} -name '*{{saidata.metadata.name}}*' -type f"
+    template: "find {{maven_repo}} -name '*{{sai_package(saidata, 'maven')}}*' -type f"
     variables:
       maven_repo: "~/.m2/repository"

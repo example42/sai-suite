@@ -14,22 +14,25 @@ actions:
     description: "Install packages via Scoop"
     template: "scoop install {{sai_packages(saidata, 'scoop')}}"
     timeout: 600
+    detection: "scoop info {{sai_package(saidata, 'scoop')}} >/dev/null 2>&1"
     validation:
-      command: "scoop list | findstr {{saidata.metadata.name}}"
+      command: "scoop list | findstr {{sai_package(saidata, 'scoop')}}"
       expected_exit_code: 0
     rollback: "scoop uninstall {{sai_packages(saidata, 'scoop')}}"
 
   uninstall:
     description: "Remove packages via Scoop"
     template: "scoop uninstall {{sai_packages(saidata, 'scoop')}}"
+    detection: "scoop info {{sai_package(saidata, 'scoop')}} >/dev/null 2>&1"
     validation:
-      command: "scoop list | findstr {{saidata.metadata.name}} || exit 1"
+      command: "scoop list | findstr {{sai_package(saidata, 'scoop')}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Scoop"
     template: "scoop update {{sai_packages(saidata, 'scoop')}}"
     timeout: 600
+    detection: "scoop info {{sai_package(saidata, 'scoop')}} >/dev/null 2>&1"
 
   start:
     description: "Start application"
@@ -37,29 +40,29 @@ actions:
 
   stop:
     description: "Stop application"
-    template: "taskkill /F /IM {{saidata.metadata.name}}.exe"
+    template: "taskkill /F /IM {{sai_package(saidata, 'scoop')}}.exe"
 
   restart:
     description: "Restart application"
     steps:
       - name: "stop-app"
-        command: "taskkill /F /IM {{saidata.metadata.name}}.exe"
+        command: "taskkill /F /IM {{sai_package(saidata, 'scoop')}}.exe"
         ignore_failure: true
       - name: "start-app"
         command: "{{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "tasklist | findstr {{saidata.metadata.name}}.exe"
+    template: "tasklist | findstr {{sai_package(saidata, 'scoop')}}.exe"
 
   info:
     description: "Show package information"
-    template: "scoop info {{sai_package(saidata, 0, 'scoop')}}"
+    template: "scoop info {{sai_package(saidata, 'scoop')}}"
 
   search:
     description: "Search for packages"
-    template: "scoop search {{saidata.metadata.name}}"
+    template: "scoop search {{sai_package(saidata, 'scoop')}}"
 
   list:
     description: "List installed packages"
-    template: "scoop list | findstr {{saidata.metadata.name}}"
+    template: "scoop list | findstr {{sai_package(saidata, 'scoop')}}"

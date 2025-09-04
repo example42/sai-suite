@@ -291,6 +291,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             provider=ctx.obj.get('provider'),
             dry_run=ctx.obj['dry_run'],
             verbose=ctx.obj['verbose'],
+            quiet=ctx.obj['quiet'],
             timeout=timeout
         )
         
@@ -299,16 +300,24 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             not ctx.obj['yes'] and not ctx.obj['quiet']):
             
             # Find suitable providers to show user
+            # First filter by action support, then by ability to handle the software
             suitable_providers = [
                 p for p in provider_instances 
-                if p.has_action(action)
+                if p.has_action(action) and p.can_handle_software(action, saidata)
             ]
             
             # Sort providers by priority (highest first)
             suitable_providers.sort(key=lambda p: p.get_priority(), reverse=True)
             
             if not suitable_providers:
-                click.echo(f"No providers support action '{action}'", err=True)
+                # Check if any providers support the action at all
+                action_providers = [p for p in provider_instances if p.has_action(action)]
+                if action_providers:
+                    click.echo(f"No providers can handle '{software}' for action '{action}'", err=True)
+                    click.echo(f"Available providers for '{action}': {', '.join(p.name for p in action_providers)}", err=True)
+                    click.echo(f"Hint: Check if '{software}' has packages available for these providers", err=True)
+                else:
+                    click.echo(f"No providers support action '{action}'", err=True)
                 ctx.exit(1)
             
             if len(suitable_providers) == 1 or ctx.obj.get('provider'):
@@ -317,7 +326,16 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                     (p for p in suitable_providers if p.name == ctx.obj['provider']), None
                 )
                 if not selected:
-                    click.echo(f"Requested provider '{ctx.obj['provider']}' not available", err=True)
+                    # Check if the provider exists but can't handle the software
+                    requested_provider = next((p for p in provider_instances if p.name == ctx.obj['provider']), None)
+                    if requested_provider:
+                        if requested_provider.has_action(action):
+                            click.echo(f"Provider '{ctx.obj['provider']}' cannot handle '{software}' for action '{action}'", err=True)
+                            click.echo(f"Hint: Check if '{software}' has packages available for '{ctx.obj['provider']}'", err=True)
+                        else:
+                            click.echo(f"Provider '{ctx.obj['provider']}' does not support action '{action}'", err=True)
+                    else:
+                        click.echo(f"Requested provider '{ctx.obj['provider']}' not available", err=True)
                     ctx.exit(1)
                 
                 # Show what command will be executed
@@ -394,11 +412,6 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             # Human-readable output
             if result.success:
                 if not ctx.obj['quiet']:
-                    # Always show the command being executed
-                    if result.commands_executed:
-                        command_msg = format_command_execution(result.provider_used, result.commands_executed[0], ctx.obj['verbose'])
-                        click.echo(command_msg)
-                    
                     # Show result output
                     if result.stdout:
                         click.echo(result.stdout.strip())
@@ -535,26 +548,7 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
     results = []
     for provider in supporting_providers:
         try:
-            # Show what command will be executed (unless quiet mode)
-            if not ctx.obj['quiet']:
-                try:
-                    # Get the resolved command to show user what will be executed
-                    resolved = provider.resolve_action_templates(action, saidata, {})
-                    if 'command' in resolved:
-                        command_msg = format_command_execution(provider.name, resolved['command'], ctx.obj['verbose'])
-                        click.echo(command_msg)
-                    elif 'steps' in resolved and resolved['steps']:
-                        # Show first step for multi-step actions
-                        first_step = resolved['steps'][0]
-                        if 'command' in first_step:
-                            command_msg = format_command_execution(provider.name, first_step['command'], ctx.obj['verbose'])
-                            click.echo(command_msg)
-                except Exception:
-                    # If template resolution fails, just show the action
-                    if not ctx.obj['verbose']:
-                        provider_styled = click.style(f"[{provider.name}]", fg='blue', bold=True)
-                        action_styled = click.style(f"{action} {software}".strip(), fg='cyan')
-                        click.echo(f"{provider_styled} {action_styled}")
+            # Commands will be shown by the execution engine before execution
             
             # Create execution engine with single provider
             engine = ExecutionEngine([provider], ctx.obj['sai_config'])
@@ -567,6 +561,7 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
                 provider=provider.name,  # Force this specific provider
                 dry_run=ctx.obj['dry_run'],
                 verbose=ctx.obj['verbose'],
+                quiet=ctx.obj['quiet'],
                 timeout=timeout
             )
             

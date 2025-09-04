@@ -14,16 +14,16 @@ actions:
     description: "Pull and create Docker container"
     steps:
       - name: "pull-image"
-        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
+        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
       - name: "create-container"
-        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or \'80\'}}:{{sai_port(saidata) or \'80\'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
+        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or '80'}}:{{sai_port(saidata) or '80'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
     timeout: 600
     validation:
       command: "docker ps -a | grep {{container_name}}"
       expected_exit_code: 0
     rollback: "docker rm -f {{container_name}}"
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   uninstall:
     description: "Remove Docker container and image"
@@ -35,10 +35,10 @@ actions:
         command: "docker rm {{container_name}}"
         ignore_failure: true
       - name: "remove-image"
-        command: "docker rmi {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
+        command: "docker rmi {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
         ignore_failure: true
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   upgrade:
     description: "Upgrade Docker container"
@@ -48,23 +48,24 @@ actions:
       - name: "remove-container"
         command: "docker rm {{container_name}}"
       - name: "pull-new-image"
-        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
+        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
       - name: "create-new-container"
-        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or \'80\'}}:{{sai_port(saidata) or \'80\'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
+        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or '80'}}:{{sai_port(saidata) or '80'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
       - name: "start-container"
         command: "docker start {{container_name}}"
     timeout: 600
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   start:
     description: "Start Docker container"
     template: "docker start {{container_name}}"
+    detection: "PLACEHOLDER_DETECTION"
     validation:
       command: "docker ps | grep {{container_name}}"
       expected_exit_code: 0
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   stop:
     description: "Stop Docker container"
@@ -73,30 +74,30 @@ actions:
       command: "docker ps | grep {{container_name}} || exit 0"
       expected_exit_code: 0
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   restart:
     description: "Restart Docker container"
     template: "docker restart {{container_name}}"
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   status:
     description: "Check Docker container status"
     template: "docker ps -a | grep {{container_name}}"
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   logs:
     description: "Show Docker container logs"
     template: "docker logs --tail 50 {{container_name}}"
     variables:
-      container_name: "{{saidata.metadata.name}}-container"
+      container_name: "{{sai_package(saidata, 'docker')}}-container"
 
   info:
     description: "Show Docker image information"
-    template: "docker inspect {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or \'latest\'}}"
+    template: "docker inspect {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
 
   list:
     description: "List Docker containers"
-    template: "docker ps -a | grep {{saidata.metadata.name}}"
+    template: "docker ps -a | grep {{sai_package(saidata, 'docker')}}"

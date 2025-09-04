@@ -33,14 +33,14 @@ actions:
 
   list:
     description: "List matching packets"
-    template: "ngrep -l -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or \'80\'}}"
+    template: "ngrep -l -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or '80'}}"
     variables:
       interface: "any"
       search_pattern: "{{saidata.metadata.name}}"
 
   status:
     description: "Quiet mode search"
-    template: "ngrep -q -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or \'80\'}}"
+    template: "ngrep -q -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or '80'}}"
     variables:
       interface: "any"
       search_pattern: "{{saidata.metadata.name}}"

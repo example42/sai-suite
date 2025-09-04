@@ -16,52 +16,55 @@ actions:
     description: "Install packages via pip"
     template: "pip install {{sai_packages(saidata, 'pypi')}}"
     timeout: 300
+    detection: "pip index versions {{sai_package(saidata, 'pypi')}} >/dev/null 2>&1"
     validation:
-      command: "pip list | grep {{saidata.metadata.name}}"
+      command: "pip list | grep {{sai_package(saidata, 'pypi')}}"
       expected_exit_code: 0
     rollback: "pip uninstall -y {{sai_packages(saidata, 'pypi')}}"
 
   uninstall:
     description: "Remove packages via pip"
     template: "pip uninstall -y {{sai_packages(saidata, 'pypi')}}"
+    detection: "pip list | grep -q '^{{sai_package(saidata, 'pypi')}}'"
     validation:
-      command: "! pip list | grep {{saidata.metadata.name}}"
+      command: "! pip list | grep {{sai_package(saidata, 'pypi')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via pip"
     template: "pip install --upgrade {{sai_packages(saidata, 'pypi')}}"
     timeout: 300
+    detection: "pip list | grep -q '^{{sai_package(saidata, 'pypi')}}'"
 
   start:
     description: "Start Python application"
-    template: "python -m {{sai_package(saidata, 0, 'pypi')}}"
+    template: "python -m {{sai_package(saidata, 'pypi')}}"
 
   stop:
     description: "Stop Python application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'pypi')}}"
 
   restart:
     description: "Restart Python application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'pypi')}}"
         ignore_failure: true
       - name: "start-app"
-        command: "python -m {{sai_package(saidata, 0, 'pypi')}}"
+        command: "python -m {{sai_package(saidata, 'pypi')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'pypi')}}"
 
   info:
     description: "Show package information"
-    template: "pip show {{sai_package(saidata, 0, 'pypi')}}"
+    template: "pip show {{sai_package(saidata, 'pypi')}}"
 
   search:
     description: "Search for packages"
-    template: "pip search {{saidata.metadata.name}}"
+    template: "pip search {{sai_package(saidata, 'pypi')}}"
 
   list:
     description: "List installed packages"
-    template: "pip list | grep {{saidata.metadata.name}}"
+    template: "pip list | grep {{sai_package(saidata, 'pypi')}}"

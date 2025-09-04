@@ -14,16 +14,18 @@ actions:
     description: "Install packages via Spack"
     template: "spack install {{sai_packages(saidata, 'spack')}}"
     timeout: 3600
+    detection: "spack find | grep {{sai_package(saidata, 'spack')}} >/dev/null 2>&1"
     validation:
-      command: "spack find | grep {{saidata.metadata.name}}"
+      command: "spack find | grep {{sai_package(saidata, 'spack')}}"
       expected_exit_code: 0
     rollback: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
 
   uninstall:
     description: "Remove packages via Spack"
     template: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
+    detection: "spack find | grep {{sai_package(saidata, 'spack')}} >/dev/null 2>&1"
     validation:
-      command: "! spack find | grep {{saidata.metadata.name}}"
+      command: "! spack find | grep {{sai_package(saidata, 'spack')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -38,33 +40,33 @@ actions:
 
   start:
     description: "Start application"
-    template: "spack load {{sai_package(saidata, 0, 'spack')}} && {{sai_command(saidata, 'default')}}"
+    template: "spack load {{sai_package(saidata, 'spack')}} && {{sai_command(saidata, 'default')}}"
 
   stop:
     description: "Stop application"
-    template: "pkill -f {{saidata.metadata.name}}"
+    template: "pkill -f {{sai_package(saidata, 'spack')}}"
 
   restart:
     description: "Restart application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{saidata.metadata.name}}"
+        command: "pkill -f {{sai_package(saidata, 'spack')}}"
         ignore_failure: true
       - name: "start-app"
-        command: "spack load {{sai_package(saidata, 0, 'spack')}} && {{sai_command(saidata, 'default')}}"
+        command: "spack load {{sai_package(saidata, 'spack')}} && {{sai_command(saidata, 'default')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{saidata.metadata.name}}"
+    template: "pgrep -f {{sai_package(saidata, 'spack')}}"
 
   info:
     description: "Show package information"
-    template: "spack info {{sai_package(saidata, 0, 'spack')}}"
+    template: "spack info {{sai_package(saidata, 'spack')}}"
 
   search:
     description: "Search for packages"
-    template: "spack list | grep {{saidata.metadata.name}}"
+    template: "spack list | grep {{sai_package(saidata, 'spack')}}"
 
   list:
     description: "List installed packages"
-    template: "spack find | grep {{saidata.metadata.name}}"
+    template: "spack find | grep {{sai_package(saidata, 'spack')}}"
