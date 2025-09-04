@@ -1,61 +1,101 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "sai"
-version = "0.1.0"
+dynamic = ["version"]
 description = "SAI Software Management Suite: CLI tool (sai) and AI-powered generation tool (saigen)"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "SAI Team", email = "team@sai.software"}
 ]
+maintainers = [
+    {name = "SAI Team", email = "team@sai.software"}
+]
+keywords = [
+    "software-management",
+    "package-manager",
+    "cli-tool",
+    "devops",
+    "automation",
+    "cross-platform",
+    "ai-generation",
+    "metadata"
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
+
     "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Systems Administration",
     "Topic :: System :: Software Distribution",
+    "Topic :: System :: Installation/Setup",
     "Topic :: Utilities",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "pydantic>=2.0.0",
-    "click>=8.0.0",
-    "pyyaml>=6.0",
-    "httpx>=0.24.0",
-    "rich>=13.0.0",
-    "jsonschema>=4.0.0",
-    "jinja2>=3.0.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "click>=8.0.0,<9.0.0",
+    "pyyaml>=6.0,<7.0",
+    "httpx>=0.24.0,<1.0.0",
+    "rich>=13.0.0,<14.0.0",
+    "jsonschema>=4.0.0,<5.0.0",
+    "jinja2>=3.0.0,<4.0.0",
+    "packaging>=21.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0",
+    "pytest>=7.0.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "black>=23.0.0,<24.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "flake8>=6.0.0,<7.0.0",
+    "mypy>=1.0.0,<2.0.0",
+    "pre-commit>=3.0.0,<4.0.0",
+    "tox>=4.0.0,<5.0.0",
+]
+test = [
+    "pytest>=7.0.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+]
+lint = [
+    "black>=23.0.0,<24.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "flake8>=6.0.0,<7.0.0",
+    "mypy>=1.0.0,<2.0.0",
 ]
 llm = [
-    "openai>=1.0.0",
-    "anthropic>=0.3.0",
+    "openai>=1.0.0,<2.0.0",
+    "anthropic>=0.3.0,<1.0.0",
 ]
 rag = [
-    "sentence-transformers>=2.2.0",
-    "faiss-cpu>=1.7.0",
-    "numpy>=1.21.0",
+    "sentence-transformers>=2.2.0,<3.0.0",
+    "faiss-cpu>=1.7.0,<2.0.0",
+    "numpy>=1.21.0,<2.0.0",
+]
+all = [
+    "sai[dev,llm,rag]",
 ]
 
 [project.urls]
@@ -63,24 +103,193 @@ Homepage = "https://sai.software"
 Documentation = "https://sai.software/docs"
 Repository = "https://github.com/example42/sai"
 Issues = "https://github.com/example42/sai/issues"
+Changelog = "https://github.com/example42/sai/blob/main/CHANGELOG.md"
+"Bug Reports" = "https://github.com/example42/sai/issues"
+"Feature Requests" = "https://github.com/example42/sai/issues/new?template=feature_request.md"
+"Source Code" = "https://github.com/example42/sai"
+"Download" = "https://pypi.org/project/sai/"
 
 [project.scripts]
-saigen = "saigen.cli.main:main"
 sai = "sai.cli.main:main"
+saigen = "saigen.cli.main:main"
+
+[project.entry-points."sai.providers"]
+# Entry point for provider plugins (future extensibility)
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["saigen*", "sai*"]
+include = ["sai*", "saigen*"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.setuptools.package-data]
+sai = ["py.typed"]
+saigen = ["py.typed"]
+"*" = ["*.yaml", "*.yml", "*.json", "*.md", "*.txt"]
+
+[tool.setuptools-scm]
+write_to = "sai/_version.py"
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
 
 [tool.black]
 line-length = 100
-target-version = ['py38']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
 
 [tool.isort]
 profile = "black"
 line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+src_paths = ["sai", "saigen", "tests"]
 
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "yaml.*",
+    "rich.*",
+    "click.*",
+    "httpx.*",
+    "jsonschema.*",
+    "jinja2.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=sai",
+    "--cov=saigen",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["sai", "saigen"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/_version.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503", "E501"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".tox",
+    "*.egg-info",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "build", "dist"]
+skips = ["B101", "B601"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py38,py39,py310,py311,py312,lint,type-check
+isolated_build = true
+
+[testenv]
+deps = 
+    pytest
+    pytest-cov
+    pytest-mock
+commands = pytest {posargs}
+
+[testenv:lint]
+deps = 
+    black
+    isort
+    flake8
+commands = 
+    black --check --diff sai saigen tests
+    isort --check-only --diff sai saigen tests
+    flake8 sai saigen tests
+
+[testenv:type-check]
+deps = 
+    mypy
+    types-PyYAML
+    types-requests
+commands = mypy sai saigen
+
+[testenv:format]
+deps = 
+    black
+    isort
+commands = 
+    black sai saigen tests
+    isort sai saigen tests
+"""

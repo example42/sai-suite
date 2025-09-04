@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..utils.config import get_config
+from ..version import get_version
 
 
 @click.group()
@@ -12,6 +13,7 @@ from ..utils.config import get_config
               help='Configuration file path')
 @click.option('--verbose', '-v', is_flag=True, help='Enable verbose output')
 @click.option('--dry-run', is_flag=True, help='Show what would be done without executing')
+@click.version_option(version=get_version(), prog_name="saigen")
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[Path], verbose: bool, dry_run: bool):
     """saigen - AI-powered saidata generation tool."""

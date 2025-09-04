@@ -17,6 +17,7 @@ from ..utils.errors import (
     is_user_error, is_system_error
 )
 from ..utils.logging import get_logger
+from ..version import get_version
 from .completion import (
     complete_software_names, complete_provider_names, complete_action_names,
     complete_config_keys, complete_log_levels, complete_saidata_files
@@ -67,7 +68,7 @@ def setup_logging(config, verbose: bool = False):
 @click.option('--yes', '-y', is_flag=True, help='Assume yes for all prompts')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress non-essential output')
 @click.option('--json', 'output_json', is_flag=True, help='Output in JSON format')
-@click.version_option(version="0.1.0", prog_name="sai")
+@click.version_option(version=get_version(), prog_name="sai")
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str], 
         verbose: bool, dry_run: bool, yes: bool, quiet: bool, output_json: bool):

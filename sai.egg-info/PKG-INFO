@@ -1,51 +1,82 @@
 Metadata-Version: 2.4
 Name: sai
-Version: 0.1.0
+Version: 0.0.0
 Summary: SAI Software Management Suite: CLI tool (sai) and AI-powered generation tool (saigen)
 Author-email: SAI Team <team@sai.software>
+Maintainer-email: SAI Team <team@sai.software>
 License: MIT
 Project-URL: Homepage, https://sai.software
 Project-URL: Documentation, https://sai.software/docs
 Project-URL: Repository, https://github.com/example42/sai
 Project-URL: Issues, https://github.com/example42/sai/issues
-Classifier: Development Status :: 3 - Alpha
+Project-URL: Changelog, https://github.com/example42/sai/blob/main/CHANGELOG.md
+Project-URL: Bug Reports, https://github.com/example42/sai/issues
+Project-URL: Feature Requests, https://github.com/example42/sai/issues/new?template=feature_request.md
+Project-URL: Source Code, https://github.com/example42/sai
+Project-URL: Download, https://pypi.org/project/sai/
+Keywords: software-management,package-manager,cli-tool,devops,automation,cross-platform,ai-generation,metadata
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: System Administrators
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: Microsoft :: Windows
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3 :: Only
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Classifier: Topic :: System :: Systems Administration
 Classifier: Topic :: System :: Software Distribution
+Classifier: Topic :: System :: Installation/Setup
 Classifier: Topic :: Utilities
+Classifier: Typing :: Typed
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
-Requires-Dist: pydantic>=2.0.0
-Requires-Dist: click>=8.0.0
-Requires-Dist: pyyaml>=6.0
-Requires-Dist: httpx>=0.24.0
-Requires-Dist: rich>=13.0.0
-Requires-Dist: jsonschema>=4.0.0
-Requires-Dist: jinja2>=3.0.0
+Requires-Dist: pydantic<3.0.0,>=2.0.0
+Requires-Dist: click<9.0.0,>=8.0.0
+Requires-Dist: pyyaml<7.0,>=6.0
+Requires-Dist: httpx<1.0.0,>=0.24.0
+Requires-Dist: rich<14.0.0,>=13.0.0
+Requires-Dist: jsonschema<5.0.0,>=4.0.0
+Requires-Dist: jinja2<4.0.0,>=3.0.0
+Requires-Dist: packaging>=21.0
 Provides-Extra: dev
-Requires-Dist: pytest>=7.0.0; extra == "dev"
-Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
-Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
-Requires-Dist: black>=23.0.0; extra == "dev"
-Requires-Dist: isort>=5.12.0; extra == "dev"
-Requires-Dist: flake8>=6.0.0; extra == "dev"
-Requires-Dist: mypy>=1.0.0; extra == "dev"
+Requires-Dist: pytest<8.0.0,>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio<1.0.0,>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov<5.0.0,>=4.0.0; extra == "dev"
+Requires-Dist: pytest-mock<4.0.0,>=3.10.0; extra == "dev"
+Requires-Dist: black<24.0.0,>=23.0.0; extra == "dev"
+Requires-Dist: isort<6.0.0,>=5.12.0; extra == "dev"
+Requires-Dist: flake8<7.0.0,>=6.0.0; extra == "dev"
+Requires-Dist: mypy<2.0.0,>=1.0.0; extra == "dev"
+Requires-Dist: pre-commit<4.0.0,>=3.0.0; extra == "dev"
+Requires-Dist: tox<5.0.0,>=4.0.0; extra == "dev"
+Provides-Extra: test
+Requires-Dist: pytest<8.0.0,>=7.0.0; extra == "test"
+Requires-Dist: pytest-asyncio<1.0.0,>=0.21.0; extra == "test"
+Requires-Dist: pytest-cov<5.0.0,>=4.0.0; extra == "test"
+Requires-Dist: pytest-mock<4.0.0,>=3.10.0; extra == "test"
+Provides-Extra: lint
+Requires-Dist: black<24.0.0,>=23.0.0; extra == "lint"
+Requires-Dist: isort<6.0.0,>=5.12.0; extra == "lint"
+Requires-Dist: flake8<7.0.0,>=6.0.0; extra == "lint"
+Requires-Dist: mypy<2.0.0,>=1.0.0; extra == "lint"
 Provides-Extra: llm
-Requires-Dist: openai>=1.0.0; extra == "llm"
-Requires-Dist: anthropic>=0.3.0; extra == "llm"
+Requires-Dist: openai<2.0.0,>=1.0.0; extra == "llm"
+Requires-Dist: anthropic<1.0.0,>=0.3.0; extra == "llm"
 Provides-Extra: rag
-Requires-Dist: sentence-transformers>=2.2.0; extra == "rag"
-Requires-Dist: faiss-cpu>=1.7.0; extra == "rag"
-Requires-Dist: numpy>=1.21.0; extra == "rag"
+Requires-Dist: sentence-transformers<3.0.0,>=2.2.0; extra == "rag"
+Requires-Dist: faiss-cpu<2.0.0,>=1.7.0; extra == "rag"
+Requires-Dist: numpy<2.0.0,>=1.21.0; extra == "rag"
+Provides-Extra: all
+Requires-Dist: sai[dev,llm,rag]; extra == "all"
 
 # SAI Software Management Suite
 
@@ -121,6 +152,18 @@ sai start nginx
 sai install nginx --dry-run
 ```
 
+2. Execute multiple actions from a file:
+```bash
+# Apply actions from a YAML file
+sai apply actions.yaml
+
+# Apply with parallel execution
+sai apply actions.yaml --parallel
+
+# Apply and continue on errors
+sai apply actions.yaml --continue-on-error
+```
+
 2. View available providers and statistics:
 ```bash
 sai providers list
@@ -169,6 +212,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai list` - List installed software managed through sai
 - `sai logs <software>` - Show software service logs
 - `sai version <software>` - Show software version information
+- `sai apply <action_file>` - Apply multiple actions from a YAML/JSON file
 
 #### Provider Management
 - `sai providers list` - List available providers

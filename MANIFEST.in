@@ -1,0 +1,48 @@
+# Include documentation
+include README.md
+include CHANGELOG.md
+include LICENSE
+
+# Include configuration files
+include pyproject.toml
+include .pre-commit-config.yaml
+
+# Include schemas
+recursive-include schemas *.json
+
+# Include provider data
+recursive-include providers *.yaml *.yml
+
+# Include saidata
+recursive-include saidata *.yaml *.yml
+
+# Include examples
+recursive-include examples *.yaml *.yml *.json *.py
+
+# Include documentation
+recursive-include docs *.md *.txt
+
+# Include scripts
+recursive-include scripts *.sh *.py *.ps1
+
+# Include type information
+include sai/py.typed
+include saigen/py.typed
+
+# Exclude development and build files
+exclude .gitignore
+exclude .coverage
+exclude tox.ini
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * *.orig
+recursive-exclude * *.rej
+recursive-exclude * .DS_Store
+recursive-exclude .git *
+recursive-exclude .github *
+recursive-exclude .venv *
+recursive-exclude .pytest_cache *
+recursive-exclude build *
+recursive-exclude dist *
+recursive-exclude *.egg-info *
+recursive-exclude tests *
