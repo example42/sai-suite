@@ -18,7 +18,7 @@
   - Add validation error reporting with helpful messages
   - _Requirements: 1.4, 4.1, 4.2_
 
-- [ ] 4. Build core generation engine
+- [x] 4. Build core generation engine
   - Create GenerationEngine class to orchestrate saidata creation
   - Implement basic generation workflow: LLM query → validation → output
   - Add generation result tracking and error handling
@@ -28,8 +28,9 @@
   - Create Click-based CLI with generate command
   - Add global options (--llm-provider, --verbose, --dry-run)
   - Implement config command for viewing and setting configuration
-  - _Requirements: 1.1, 7.4_- [ ] 6. 
-Create repository downloader framework
+  - _Requirements: 1.1, 7.4_
+
+-[ ] 6. Create repository downloader framework
   - Implement BaseRepositoryDownloader abstract class
   - Create APT repository downloader with package list parsing
   - Add repository data caching system with TTL management
@@ -57,8 +58,9 @@ Create repository downloader framework
   - Implement SaidataTester class with dry-run testing
   - Create provider compatibility testing
   - Add MCP server integration for extended testing
-  - _Requirements: 4.3, 4.4, 4.5_-
- [ ] 11. Implement batch processing capabilities
+  - _Requirements: 4.3, 4.4, 4.5_
+  
+- [ ] 11. Implement batch processing capabilities
   - Create batch generation engine with parallel processing
   - Add progress reporting and error aggregation for batch operations
   - Implement category filtering and software list processing

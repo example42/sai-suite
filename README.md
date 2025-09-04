@@ -187,10 +187,23 @@ saigen validate --show-context --format json nginx.yaml
 - `sai --version` - Show sai version information
 
 ### SAIGEN Commands
-- `saigen generate <software>` - Generate saidata for software
-- `saigen validate <file>` - Validate saidata file against schema
-- `saigen config --show` - Display current configuration
+- `saigen generate <software>` - Generate saidata for software with AI assistance
+- `saigen validate <file>` - Validate saidata file against schema with detailed reporting
+- `saigen config --show` - Display current configuration including LLM providers
+- `saigen config --validate` - Validate configuration file syntax and settings
 - `saigen --help` - Show all available commands and options
+
+#### Generation Options
+- `--llm-provider` - Choose LLM provider (openai, anthropic, ollama)
+- `--providers` - Target package providers (apt, brew, winget, etc.)
+- `--output` - Output file path
+- `--dry-run` - Preview generation without making API calls
+- `--verbose` - Enable detailed logging
+
+#### Validation Options  
+- `--format` - Output format (text, json, yaml)
+- `--show-context` - Include detailed error context
+- `--strict` - Enable strict validation mode
 
 ## Troubleshooting
 

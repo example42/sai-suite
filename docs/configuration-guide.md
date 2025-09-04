@@ -88,10 +88,12 @@ rag:
 
 # Validation Configuration
 validation:
-  schema_path: null  # Use built-in schema
-  strict_mode: true
-  auto_fix_common_issues: true
-  validate_repository_accuracy: true
+  schema_path: null  # Use built-in schema or path to custom schema
+  strict_mode: true  # Enable strict validation rules
+  auto_fix_common_issues: true  # Automatically fix minor issues
+  validate_repository_accuracy: true  # Check against repository data
+  show_suggestions: true  # Include helpful suggestions in error reports
+  max_errors: 50  # Maximum number of errors to report
 
 # Generation Configuration
 generation:

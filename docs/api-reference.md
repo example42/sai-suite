@@ -161,8 +161,49 @@ except ValidationError as e:
 - Configuration files are saved with secure permissions (0o600)
 - YAML loading uses `safe_load` to prevent code execution
 - Input validation prevents injection attacks
-## Valid
-ation API
+## Generation Engine API
+
+### GenerationEngine
+
+Core engine for orchestrating saidata creation with LLM providers.
+
+```python
+from saigen.core.generation_engine import GenerationEngine
+from saigen.models.generation import GenerationRequest, LLMProvider
+
+# Initialize with configuration
+config = {
+    "llm_providers": {
+        "openai": {
+            "api_key": "sk-...",
+            "model": "gpt-3.5-turbo",
+            "max_tokens": 4000,
+            "temperature": 0.1
+        }
+    }
+}
+engine = GenerationEngine(config)
+
+# Generate saidata
+request = GenerationRequest(
+    software_name="nginx",
+    target_providers=["apt", "brew"],
+    llm_provider=LLMProvider.OPENAI,
+    use_rag=True
+)
+result = await engine.generate_saidata(request)
+
+# Check results
+if result.success:
+    print(f"Generated saidata for {result.saidata.metadata.name}")
+    print(f"Tokens used: {result.tokens_used}")
+    print(f"Cost: ${result.cost_estimate:.4f}")
+    
+    # Save to file
+    await engine.save_saidata(result.saidata, Path("nginx.yaml"))
+```
+
+## Validation API
 
 ### SaidataValidator
 
