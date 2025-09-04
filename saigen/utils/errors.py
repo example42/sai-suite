@@ -34,3 +34,8 @@ class GenerationError(SaigenError):
 class LLMProviderError(SaigenError):
     """LLM provider communication failed."""
     pass
+
+
+class RAGError(SaigenError):
+    """RAG (Retrieval-Augmented Generation) operation failed."""
+    pass

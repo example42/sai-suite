@@ -66,6 +66,10 @@ cli.add_command(cache)
 from .repositories import repositories
 cli.add_command(repositories)
 
+# Add index command for RAG management
+from .commands.index import index
+cli.add_command(index)
+
 
 def main():
     """Main entry point."""

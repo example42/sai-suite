@@ -20,6 +20,9 @@ from ..llm.providers.base import BaseLLMProvider, LLMProviderError
 from ..llm.provider_manager import LLMProviderManager
 from ..llm.providers.openai import OpenAIProvider
 from .validator import SaidataValidator, ValidationResult, ValidationSeverity
+from ..repositories.indexer import RAGIndexer, RAGContextBuilder
+from ..repositories.cache import RepositoryCache
+from ..utils.errors import RAGError
 
 
 logger = logging.getLogger(__name__)
@@ -55,6 +58,12 @@ class GenerationEngine:
         # Initialize LLM provider manager
         llm_config = self.config.get("llm_providers", {})
         self.provider_manager = LLMProviderManager(llm_config)
+        
+        # Initialize RAG components
+        self.rag_indexer: Optional[RAGIndexer] = None
+        self.rag_context_builder: Optional[RAGContextBuilder] = None
+        self.repository_cache: Optional[RepositoryCache] = None
+        self._initialize_rag_components()
         
         # Backward compatibility: expose providers dict for tests
         self._llm_providers = {}
@@ -192,11 +201,25 @@ class GenerationEngine:
             existing_saidata=request.existing_saidata
         )
         
-        # Repository data integration will be added when repository system is implemented
-        # Future: RAG integration for enhanced context
-        # if request.use_rag:
-        #     context.repository_data = await self._get_repository_data(request.software_name)
-        #     context.similar_saidata = await self._get_similar_saidata(request.software_name)
+        # RAG integration for enhanced context
+        if request.use_rag and self.rag_context_builder:
+            try:
+                rag_context = await self.rag_context_builder.build_context(
+                    software_name=request.software_name,
+                    target_providers=request.target_providers,
+                    max_packages=5,
+                    max_saidata=3
+                )
+                
+                # Inject RAG data into context
+                context.repository_data = rag_context.get('similar_packages', [])
+                context.similar_saidata = rag_context.get('similar_saidata', [])
+                
+                logger.debug(f"RAG context built: {len(context.repository_data)} packages, {len(context.similar_saidata)} saidata examples")
+                
+            except Exception as e:
+                logger.warning(f"Failed to build RAG context for {request.software_name}: {e}")
+                # Continue without RAG context
         
         return context
     
@@ -418,9 +441,144 @@ class GenerationEngine:
         
         return result
     
+    async def index_repository_data(self, packages: List[RepositoryPackage]) -> bool:
+        """Index repository data for RAG.
+        
+        Args:
+            packages: List of repository packages to index
+            
+        Returns:
+            True if indexing succeeded, False otherwise
+        """
+        if not self.rag_indexer:
+            logger.warning("RAG indexer not available")
+            return False
+        
+        try:
+            await self.rag_indexer.index_repository_data(packages)
+            logger.info(f"Successfully indexed {len(packages)} repository packages")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to index repository data: {e}")
+            return False
+    
+    async def index_saidata_files(self, saidata_files: List[Path]) -> bool:
+        """Index existing saidata files for RAG.
+        
+        Args:
+            saidata_files: List of paths to saidata files
+            
+        Returns:
+            True if indexing succeeded, False otherwise
+        """
+        if not self.rag_indexer:
+            logger.warning("RAG indexer not available")
+            return False
+        
+        try:
+            await self.rag_indexer.index_existing_saidata(saidata_files)
+            logger.info(f"Successfully indexed {len(saidata_files)} saidata files")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to index saidata files: {e}")
+            return False
+    
+    async def get_rag_stats(self) -> Optional[Dict[str, Any]]:
+        """Get RAG indexing statistics.
+        
+        Returns:
+            RAG statistics dictionary or None if RAG not available
+        """
+        if not self.rag_indexer:
+            return None
+        
+        try:
+            return await self.rag_indexer.get_index_stats()
+        except Exception as e:
+            logger.error(f"Failed to get RAG stats: {e}")
+            return None
+    
+    async def rebuild_rag_indices(
+        self,
+        packages: Optional[List[RepositoryPackage]] = None,
+        saidata_files: Optional[List[Path]] = None
+    ) -> Dict[str, bool]:
+        """Rebuild RAG indices.
+        
+        Args:
+            packages: Repository packages to index (if None, skip package index)
+            saidata_files: Saidata files to index (if None, skip saidata index)
+            
+        Returns:
+            Dictionary with rebuild results
+        """
+        if not self.rag_indexer:
+            return {'package_index_rebuilt': False, 'saidata_index_rebuilt': False}
+        
+        try:
+            return await self.rag_indexer.rebuild_indices(packages, saidata_files)
+        except Exception as e:
+            logger.error(f"Failed to rebuild RAG indices: {e}")
+            return {'package_index_rebuilt': False, 'saidata_index_rebuilt': False}
+    
+    async def clear_rag_indices(self) -> bool:
+        """Clear all RAG indices.
+        
+        Returns:
+            True if clearing succeeded, False otherwise
+        """
+        if not self.rag_indexer:
+            return False
+        
+        try:
+            await self.rag_indexer.clear_indices()
+            logger.info("RAG indices cleared")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to clear RAG indices: {e}")
+            return False
+    
+    def is_rag_available(self) -> bool:
+        """Check if RAG functionality is available.
+        
+        Returns:
+            True if RAG is available, False otherwise
+        """
+        return self.rag_indexer is not None and self.rag_context_builder is not None
+    
     async def cleanup(self) -> None:
         """Cleanup engine resources."""
         await self.provider_manager.cleanup()
+    
+    def _initialize_rag_components(self) -> None:
+        """Initialize RAG components if available."""
+        try:
+            # Get RAG configuration
+            rag_config = self.config.get("rag", {})
+            
+            if rag_config.get("enabled", True):
+                # Initialize RAG indexer
+                index_dir = rag_config.get("index_dir", "~/.saigen/rag_index")
+                model_name = rag_config.get("model_name", "all-MiniLM-L6-v2")
+                
+                # Expand user path
+                index_path = Path(index_dir).expanduser()
+                
+                self.rag_indexer = RAGIndexer(
+                    index_dir=index_path,
+                    model_name=model_name
+                )
+                
+                self.rag_context_builder = RAGContextBuilder(self.rag_indexer)
+                
+                logger.info(f"RAG components initialized with model: {model_name}")
+            else:
+                logger.info("RAG components disabled in configuration")
+                
+        except Exception as e:
+            logger.warning(f"Failed to initialize RAG components: {e}")
+            self.rag_indexer = None
+            self.rag_context_builder = None
     
     def _initialize_providers(self) -> None:
         """Initialize providers for backward compatibility with tests."""

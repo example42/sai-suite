@@ -56,6 +56,19 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
             click.echo(f"[DRY RUN] Would save to: {output}")
         else:
             click.echo(f"[DRY RUN] Would save to: {software_name}.yaml")
+        
+        # Show RAG status in dry run
+        if not no_rag:
+            try:
+                from ...core.generation_engine import GenerationEngine
+                engine = GenerationEngine(config)
+                if engine.is_rag_available():
+                    click.echo("[DRY RUN] RAG context would be used for enhanced generation")
+                else:
+                    click.echo("[DRY RUN] RAG not available - would use basic generation")
+            except Exception:
+                click.echo("[DRY RUN] Could not check RAG availability")
+        
         return
     
     # Implementation will be added in later tasks

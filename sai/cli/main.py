@@ -26,9 +26,9 @@ from .completion import (
 
 def format_command_execution(provider_name: str, command: str, verbose: bool = False) -> str:
     """Format command execution message with highlighting."""
-    # Always show "Executing" with command in bold
-    command_styled = click.style(command, bold=True)
-    return f"Executing {command_styled}"
+    from ..utils.output_formatter import OutputFormatter
+    formatter = OutputFormatter(quiet=False, verbose=verbose)
+    return f"Executing: {formatter.format_command(command, provider_name if verbose else None)}"
 
 
 def setup_logging(config, verbose: bool = False):
@@ -388,33 +388,31 @@ def apply(ctx: click.Context, action_file: Path, parallel: bool, continue_on_err
             
             click.echo(json.dumps(output, indent=2))
         else:
-            # Human-readable output
-            if result.success:
-                if not ctx.obj['quiet']:
-                    success_msg = f"✓ Successfully executed {result.successful_actions}/{result.total_actions} actions"
-                    if result.failed_actions > 0:
-                        success_msg += f" ({result.failed_actions} failed)"
-                    click.echo(success_msg)
+            # Human-readable output with consistent formatting
+            from ..utils.output_formatter import create_output_formatter
+            formatter = create_output_formatter(ctx)
+            
+            # Print execution summary
+            formatter.print_execution_summary(
+                result.total_actions,
+                result.successful_actions,
+                result.execution_time
+            )
+            
+            # Show individual results in verbose mode
+            if ctx.obj['verbose']:
+                for action_result in result.results:
+                    status_symbol = "✓" if action_result.success else "✗"
+                    status_color = 'green' if action_result.success else 'red'
+                    status_msg = click.style(f"{status_symbol} {action_result.action_type} {action_result.software}", fg=status_color)
+                    click.echo(f"  {status_msg}")
                     
-                    if ctx.obj['verbose']:
-                        click.echo(f"Execution time: {result.execution_time:.2f}s")
-                        click.echo(f"Success rate: {result.success_rate:.1f}%")
-                        
-                        # Show individual results
-                        for action_result in result.results:
-                            status = "✓" if action_result.success else "✗"
-                            click.echo(f"  {status} {action_result.action_type} {action_result.software}")
-                            if not action_result.success and action_result.error:
-                                click.echo(f"    Error: {action_result.error}")
-            else:
-                click.echo(f"✗ Action execution failed: {result.failed_actions}/{result.total_actions} actions failed", err=True)
-                
-                if ctx.obj['verbose']:
-                    # Show failed actions
-                    for action_result in result.results:
-                        if not action_result.success:
-                            click.echo(f"  ✗ {action_result.action_type} {action_result.software}: {action_result.error}", err=True)
-                
+                    if not action_result.success and action_result.error:
+                        error_msg = click.style(f"    Error: {action_result.error}", fg='red', dim=True)
+                        click.echo(error_msg)
+            
+            # Exit with error code if any actions failed
+            if not result.success:
                 ctx.exit(1)
         
     except Exception as e:
@@ -707,28 +705,45 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             
             click.echo(json.dumps(output, indent=2))
         else:
-            # Human-readable output
+            # Human-readable output with consistent formatting
+            from ..utils.output_formatter import create_output_formatter
+            formatter = create_output_formatter(ctx)
+            
             if result.success:
-                if not ctx.obj['quiet']:
-                    # Show result output
-                    if result.stdout:
-                        click.echo(result.stdout.strip())
-                    elif result.message and not result.message.startswith("Command executed successfully"):
-                        # Always show dry run messages, otherwise only if verbose
-                        if ctx.obj['verbose'] or result.dry_run:
-                            click.echo(f"✓ {result.message}")
-                    
-                    if ctx.obj['verbose'] and result.commands_executed:
-                        click.echo("Commands executed:")
-                        for cmd in result.commands_executed:
-                            click.echo(f"  {cmd}")
-                    
-                    # Add empty line at the end of output
-                    click.echo()
+                # Get the command that was executed
+                command = result.commands_executed[0] if result.commands_executed else f"{action} {software}"
+                
+                # Show result using consistent formatting
+                formatter.print_single_provider_output(
+                    provider_name=result.provider_used,
+                    command=command,
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    success=True,
+                    show_provider=ctx.obj['verbose']
+                )
+                
+                # Show dry run messages
+                if result.dry_run and result.message:
+                    formatter.print_info_message(result.message)
+                
+                # Show executed commands in verbose mode
+                if ctx.obj['verbose'] and result.commands_executed and len(result.commands_executed) > 1:
+                    formatter.print_commands_list(result.commands_executed)
             else:
-                click.echo(f"✗ {result.message}", err=True)
-                if result.error_details and ctx.obj['verbose']:
-                    click.echo(f"Error details: {result.error_details}", err=True)
+                # Handle failed execution
+                command = result.commands_executed[0] if result.commands_executed else f"{action} {software}"
+                
+                formatter.print_single_provider_output(
+                    provider_name=result.provider_used,
+                    command=command,
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    success=False,
+                    show_provider=True
+                )
+                
+                formatter.print_error_message(result.message, result.error_details)
                 ctx.exit(1)
         
     except Exception as e:
@@ -822,6 +837,7 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
                                                   provider_instances: List, saidata, use_cache: bool = True):
     """Execute an informational action on all providers that support it."""
     from ..core.execution_engine import ExecutionEngine, ExecutionContext
+    from ..utils.output_formatter import create_output_formatter
     
     # Find providers that support this action
     supporting_providers = [
@@ -901,47 +917,71 @@ def _execute_informational_action_on_all_providers(ctx: click.Context, action: s
         
         click.echo(json.dumps(output, indent=2))
     else:
-        # Human-readable output
+        # Human-readable output with consistent formatting
+        formatter = create_output_formatter(ctx)
         successful_results = [r for _, r in results if r and r.success]
         
         if not successful_results:
-            click.echo(f"No providers successfully executed action '{action}'", err=True)
+            formatter.print_error_message(f"No providers successfully executed action '{action}'")
             ctx.exit(1)
         
         # Display results from all successful providers
+        multiple_providers = len(supporting_providers) > 1
+        
         for provider_name, result in results:
             if result and result.success:
-                if len(supporting_providers) > 1 and not ctx.obj['quiet']:
-                    # Use styled separator for multiple providers
-                    separator = click.style(f"--- {provider_name} ---", fg='green', bold=True)
-                    click.echo(f"\n{separator}")
+                # Get the command that was executed
+                command = result.commands_executed[0] if result.commands_executed else f"{action} {software}"
                 
-                if not ctx.obj['quiet']:
-                    if result.stdout:
-                        click.echo(result.stdout.strip())
-                    elif result.message and result.message != f"Command executed successfully: {result.commands_executed[0] if result.commands_executed else ''}":
-                        # Don't show generic success messages unless verbose
-                        if ctx.obj['verbose'] or not result.message.startswith("Command executed successfully"):
-                            click.echo(result.message)
+                if multiple_providers:
+                    # Use provider sections for multiple providers
+                    formatter.print_provider_section(
+                        provider_name=provider_name,
+                        command=command,
+                        stdout=result.stdout,
+                        stderr=result.stderr,
+                        success=True,
+                        show_command=ctx.obj['verbose']
+                    )
+                else:
+                    # Single provider - simpler output
+                    formatter.print_single_provider_output(
+                        provider_name=provider_name,
+                        command=command,
+                        stdout=result.stdout,
+                        stderr=result.stderr,
+                        success=True,
+                        show_provider=False
+                    )
                 
-                if ctx.obj['verbose'] and result.commands_executed:
-                    click.echo("Commands executed:")
-                    for cmd in result.commands_executed:
-                        click.echo(f"  {cmd}")
+                # Show executed commands in verbose mode
+                if ctx.obj['verbose'] and result.commands_executed and len(result.commands_executed) > 1:
+                    formatter.print_commands_list(result.commands_executed)
                 
-                # Add empty line at the end of output
-                if not ctx.obj['quiet']:
-                    click.echo()
-            elif ctx.obj['verbose'] and result:
-                separator = click.style(f"--- {provider_name} (failed) ---", fg='red', bold=True)
-                click.echo(f"\n{separator}")
-                click.echo(f"✗ {result.message}", err=True)
-                if result.error_details:
-                    click.echo(f"Error details: {result.error_details}", err=True)
-            elif not result and not ctx.obj['verbose']:
-                # Show minimal error for failed providers when not verbose
-                error_msg = click.style(f"✗ [{provider_name}] Failed", fg='red')
-                click.echo(error_msg, err=True)
+            elif result and not result.success:
+                # Handle failed results
+                command = result.commands_executed[0] if result.commands_executed else f"{action} {software}"
+                
+                if multiple_providers:
+                    formatter.print_provider_section(
+                        provider_name=provider_name,
+                        command=command,
+                        stdout=result.stdout,
+                        stderr=result.stderr,
+                        success=False,
+                        show_command=True
+                    )
+                    if result.error_details:
+                        formatter.print_error_message("", result.error_details)
+                else:
+                    formatter.print_error_message(f"[{provider_name}] {result.message}", result.error_details)
+            
+            elif not result:
+                # Handle completely failed executions
+                if ctx.obj['verbose']:
+                    formatter.print_error_message(f"[{provider_name}] Execution failed")
+                else:
+                    formatter.print_error_message(f"[{provider_name}] Failed")
 
 
 # Execution history and metrics commands
@@ -2504,10 +2544,11 @@ def cache_clear(ctx: click.Context, provider: Optional[str], saidata: Optional[s
             else:
                 total_cleared = results['total_cleared']
                 if total_cleared > 0:
-                    if not ctx.obj['quiet']:
-                        click.echo(f"✓ Cleared {results['provider_cache_cleared']} provider cache entries")
-                        click.echo(f"✓ Cleared {results['saidata_cache_cleared']} saidata cache entries")
-                        click.echo(f"✓ Total cleared: {total_cleared} entries")
+                    from ..utils.output_formatter import create_output_formatter
+                    formatter = create_output_formatter(ctx)
+                    formatter.print_success_message(f"Cleared {results['provider_cache_cleared']} provider cache entries")
+                    formatter.print_success_message(f"Cleared {results['saidata_cache_cleared']} saidata cache entries")
+                    formatter.print_success_message(f"Total cleared: {total_cleared} entries")
                 else:
                     click.echo("No cache data found to clear")
         
@@ -2576,10 +2617,11 @@ def cache_cleanup(ctx: click.Context):
         else:
             total_cleaned = results['total_cleaned']
             if total_cleaned > 0:
-                if not ctx.obj['quiet']:
-                    click.echo(f"✓ Cleaned up {results['provider_cache_cleaned']} expired provider cache entries")
-                    click.echo(f"✓ Cleaned up {results['saidata_cache_cleaned']} expired saidata cache entries")
-                    click.echo(f"✓ Total cleaned: {total_cleaned} entries")
+                from ..utils.output_formatter import create_output_formatter
+                formatter = create_output_formatter(ctx)
+                formatter.print_success_message(f"Cleaned up {results['provider_cache_cleaned']} expired provider cache entries")
+                formatter.print_success_message(f"Cleaned up {results['saidata_cache_cleaned']} expired saidata cache entries")
+                formatter.print_success_message(f"Total cleaned: {total_cleaned} entries")
             else:
                 if not ctx.obj['quiet']:
                     click.echo("No expired cache entries found")

@@ -129,18 +129,45 @@ class PromptTemplate:
         if not packages:
             return "No repository data available."
         
-        formatted_packages = []
-        for pkg in packages[:5]:  # Limit to first 5 packages
-            pkg_info = f"- {pkg.name} ({pkg.repository_name})"
-            if pkg.version:
-                pkg_info += f" v{pkg.version}"
-            if pkg.description:
-                pkg_info += f": {pkg.description[:100]}..."
-            formatted_packages.append(pkg_info)
+        # Group packages by repository for better organization
+        from collections import defaultdict
+        repo_groups = defaultdict(list)
+        for pkg in packages:
+            repo_groups[pkg.repository_name].append(pkg)
         
-        result = "Repository packages found:\n" + "\n".join(formatted_packages)
-        if len(packages) > 5:
-            result += f"\n... and {len(packages) - 5} more packages"
+        formatted_sections = []
+        total_shown = 0
+        max_packages = 8  # Show more packages for better context
+        
+        for repo_name, repo_packages in repo_groups.items():
+            if total_shown >= max_packages:
+                break
+                
+            section_packages = []
+            for pkg in repo_packages[:3]:  # Max 3 per repository
+                if total_shown >= max_packages:
+                    break
+                    
+                pkg_info = f"  - {pkg.name}"
+                if pkg.version:
+                    pkg_info += f" (v{pkg.version})"
+                if pkg.description:
+                    pkg_info += f": {pkg.description[:80]}..."
+                if pkg.homepage:
+                    pkg_info += f" [Homepage: {pkg.homepage}]"
+                    
+                section_packages.append(pkg_info)
+                total_shown += 1
+            
+            if section_packages:
+                formatted_sections.append(f"{repo_name} repository:")
+                formatted_sections.extend(section_packages)
+        
+        result = "Repository packages found:\n" + "\n".join(formatted_sections)
+        
+        total_packages = len(packages)
+        if total_shown < total_packages:
+            result += f"\n... and {total_packages - total_shown} more packages across {len(repo_groups)} repositories"
         
         return result
     
@@ -157,16 +184,33 @@ class PromptTemplate:
             return "No similar saidata examples available."
         
         examples = []
-        for saidata in similar_saidata[:3]:  # Limit to 3 examples
-            example = f"Example: {saidata.metadata.name}"
+        for i, saidata in enumerate(similar_saidata[:3], 1):  # Limit to 3 examples
+            example_parts = [f"Example {i}: {saidata.metadata.name}"]
+            
             if saidata.metadata.description:
-                example += f" - {saidata.metadata.description[:80]}..."
+                example_parts.append(f"  Description: {saidata.metadata.description[:100]}...")
+            
+            if saidata.metadata.category:
+                example_parts.append(f"  Category: {saidata.metadata.category}")
+            
             if saidata.providers:
-                providers = list(saidata.providers.keys())[:3]
-                example += f" (Providers: {', '.join(providers)})"
-            examples.append(example)
+                providers = list(saidata.providers.keys())
+                example_parts.append(f"  Providers: {', '.join(providers)}")
+                
+                # Show sample package names from providers
+                sample_packages = []
+                for provider_name, provider_config in list(saidata.providers.items())[:2]:
+                    if provider_config.packages:
+                        pkg_names = [pkg.name for pkg in provider_config.packages[:2]]
+                        if pkg_names:
+                            sample_packages.append(f"{provider_name}: {', '.join(pkg_names)}")
+                
+                if sample_packages:
+                    example_parts.append(f"  Sample packages: {'; '.join(sample_packages)}")
+            
+            examples.append("\n".join(example_parts))
         
-        return "Similar software examples:\n" + "\n".join(examples)
+        return "Similar software examples:\n\n" + "\n\n".join(examples)
     
     def _format_user_hints(self, user_hints: Optional[Dict[str, Any]]) -> str:
         """Format user hints for prompt inclusion.
@@ -239,7 +283,7 @@ Generate saidata that supports the specified providers with accurate package nam
             template="""REPOSITORY DATA CONTEXT:
 $repository_context
 
-Use this repository information to ensure accurate package names, versions, and availability across different platforms.""",
+IMPORTANT: Use this repository information to ensure accurate package names, versions, and availability across different platforms. The package names shown here are verified to exist in the respective repositories.""",
             condition="has_repository_data"
         ),
         PromptSection(
@@ -247,7 +291,7 @@ Use this repository information to ensure accurate package names, versions, and 
             template="""SIMILAR SOFTWARE EXAMPLES:
 $similar_saidata_examples
 
-Use these examples as reference for structure and best practices, but ensure the generated saidata is specific to the requested software.""",
+Use these examples as reference for structure, provider configurations, and best practices. Pay attention to how similar software is configured across different providers, but ensure the generated saidata is specific to the requested software.""",
             condition="has_similar_saidata"
         ),
         PromptSection(
