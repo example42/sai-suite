@@ -30,6 +30,7 @@ Requires-Dist: pyyaml>=6.0
 Requires-Dist: httpx>=0.24.0
 Requires-Dist: rich>=13.0.0
 Requires-Dist: jsonschema>=4.0.0
+Requires-Dist: jinja2>=3.0.0
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
@@ -81,10 +82,27 @@ pip install sai  # Installs both sai and saigen
 ```
 
 ### Development Installation
+
+It's recommended to use a virtual environment for development:
+
 ```bash
 git clone https://github.com/example42/sai.git
 cd sai
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Upgrade pip to latest version (required for pyproject.toml editable installs)
+pip install --upgrade pip
+
+# Install in development mode with all dependencies
 pip install -e ".[dev,llm,rag]"
+```
+
+To deactivate the virtual environment when done:
+```bash
+deactivate
 ```
 
 ## Quick Start
@@ -99,17 +117,16 @@ sai install nginx
 # Start a service
 sai start nginx
 
-# Configure with specific provider
-sai configure nginx --provider apt
-
 # Dry run to preview actions
 sai install nginx --dry-run
 ```
 
-2. View available providers and actions:
+2. View available providers and statistics:
 ```bash
 sai providers list
 sai actions nginx
+sai stats --detailed
+sai config-show
 ```
 
 ### SAIGEN AI Generation Tool
@@ -139,17 +156,74 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 ## Commands
 
 ### SAI Commands
+
+#### Software Management
 - `sai install <software>` - Install software using available providers
-- `sai configure <software>` - Configure software
+- `sai uninstall <software>` - Uninstall software using available providers
 - `sai start <software>` - Start software/service
 - `sai stop <software>` - Stop software/service
+- `sai restart <software>` - Restart software/service
+- `sai status <software>` - Show software service status
+- `sai info <software>` - Show software information
+- `sai search <term>` - Search for available software
+- `sai list` - List installed software managed through sai
+- `sai logs <software>` - Show software service logs
+- `sai version <software>` - Show software version information
+
+#### Provider Management
 - `sai providers list` - List available providers
-- `sai actions <software>` - Show available actions for software
+- `sai providers detect` - Detect and refresh provider availability
+- `sai providers info <provider>` - Show detailed provider information
+- `sai providers clear-cache` - Clear provider detection cache
+- `sai providers cache-status` - Show provider cache status
+- `sai providers refresh-cache` - Refresh provider detection cache
+
+#### Configuration Management
+- `sai config show` - Display current SAI configuration
+- `sai config set <key> <value>` - Set configuration value
+- `sai config reset [key]` - Reset configuration to defaults
+- `sai config validate` - Validate configuration file
+- `sai config paths` - Show configuration file search paths
+
+#### History and Analytics
+- `sai history list` - Show execution history
+- `sai history metrics` - Show execution metrics and statistics
+- `sai history clear` - Clear execution history
+
+#### Shell Integration
+- `sai completion install` - Install shell completion
+- `sai completion uninstall` - Uninstall shell completion
+
+#### Specialized Tool Actions
+- `sai scan <software>` - Scan for packages/vulnerabilities (syft, grype)
+- `sai generate <software>` - Generate SBOM or reports (syft)
+- `sai debug <software>` - Start debugging session (gdb)
+- `sai attach <software>` - Attach debugger to running process (gdb)
+- `sai report <software>` - Generate vulnerability/security reports (grype)
+- `sai export <software>` - Export data in multiple formats (syft, grype)
+- `sai update <software>` - Update databases/signatures (grype)
+- `sai convert <software>` - Convert between formats (syft)
+- `sai validate <software>` - Validate generated files (syft)
+- `sai filter <software>` - Apply filters to scan results (grype)
+- `sai check <software>` - Check for specific issues/CVEs (grype)
+
+#### Service Management (systemd-based systems)
+- `sai enable <software>` - Enable service auto-start
+- `sai disable <software>` - Disable service auto-start
+
+#### Utilities
+- `sai stats` - Show comprehensive statistics about providers and actions
+- `sai validate <saidata-file>` - Validate a saidata file against the schema
+- `sai --version` - Show sai version information
 
 ### SAIGEN Commands
 - `saigen generate <software>` - Generate saidata for software
 - `saigen config --show` - Display current configuration
 - `saigen --help` - Show all available commands and options
+
+## Troubleshooting
+
+For common issues and solutions, see the [Troubleshooting Guide](docs/troubleshooting.md).
 
 ## Configuration
 
@@ -280,6 +354,43 @@ validation:
 - Both tools share common schemas and data formats but operate independently
 - SAI focuses on execution and action management
 - SAIGEN focuses on metadata generation and validation
+
+## Specialized Providers
+
+SAI includes specialized providers for security, debugging, and analysis tools:
+
+### Network Security (nmap)
+- **Port scanning**: `sai search <target>` - Scan ports on target hosts
+- **Service discovery**: `sai info <target>` - Detect services and versions
+- **Script scanning**: `sai logs <target>` - Run NSE scripts
+- **Performance tuning**: `sai list <target>` - Optimized timing scans
+- **Version detection**: `sai version <target>` - Detect service versions on target
+
+### SBOM Generation (syft)
+- **Package scanning**: `sai scan <path>` - Scan directories/images for packages
+- **SBOM generation**: `sai generate <image>` - Generate SBOM from container images
+- **Format conversion**: `sai convert <sbom>` - Convert between SBOM formats
+- **Multi-format export**: `sai export <target>` - Export to SPDX, CycloneDX, table formats
+- **SBOM validation**: `sai validate <sbom>` - Validate SBOM format compliance
+- **SBOM comparison**: `sai diff <baseline> <current>` - Compare two SBOMs
+
+### Vulnerability Scanning (grype)
+- **Security scanning**: `sai scan <target>` - Scan for vulnerabilities
+- **Report generation**: `sai report <target>` - Generate vulnerability reports
+- **Severity filtering**: `sai filter <target>` - Filter by vulnerability severity
+- **Multi-format export**: `sai export <target>` - Export to JSON, SARIF, table formats
+- **Database updates**: `sai update` - Update vulnerability database
+- **CVE checking**: `sai check <target>` - Check for specific CVEs
+
+### Debugging (gdb)
+- **Interactive debugging**: `sai debug <binary>` - Start debugging session
+- **Process attachment**: `sai attach <process>` - Attach to running process
+- **Core dump analysis**: `sai core_dump <binary>` - Analyze core dumps
+- **Stack traces**: `sai backtrace <process>` - Get stack trace from running process
+- **Breakpoint debugging**: `sai breakpoint <binary>` - Set breakpoints and debug
+- **Variable watching**: `sai watch <binary>` - Watch variable changes
+- **Memory inspection**: `sai inspect <process>` - Inspect memory and variables
+- **Execution profiling**: `sai profile <binary>` - Profile application execution
 
 ## Use Cases
 

@@ -33,10 +33,27 @@ pip install sai  # Installs both sai and saigen
 ```
 
 ### Development Installation
+
+It's recommended to use a virtual environment for development:
+
 ```bash
 git clone https://github.com/example42/sai.git
 cd sai
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Upgrade pip to latest version (required for pyproject.toml editable installs)
+pip install --upgrade pip
+
+# Install in development mode with all dependencies
 pip install -e ".[dev,llm,rag]"
+```
+
+To deactivate the virtual environment when done:
+```bash
+deactivate
 ```
 
 ## Quick Start
@@ -50,9 +67,6 @@ sai install nginx
 
 # Start a service
 sai start nginx
-
-# Configure with specific provider
-sai configure nginx --provider apt
 
 # Dry run to preview actions
 sai install nginx --dry-run
@@ -94,13 +108,6 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 
 ### SAI Commands
 
-#### Recent Updates
-- **Version Action Enhancement**: The `version` action now provides context-aware version detection:
-  - For package managers (apt, brew, etc.): Shows installed package version
-  - For network tools (nmap): Performs service version detection on target hosts
-  - For security tools (grype, syft): Shows tool version and capabilities
-  - For debugging tools (gdb): Shows debugger version and target information
-
 #### Software Management
 - `sai install <software>` - Install software using available providers
 - `sai uninstall <software>` - Uninstall software using available providers
@@ -112,7 +119,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai search <term>` - Search for available software
 - `sai list` - List installed software managed through sai
 - `sai logs <software>` - Show software service logs
-- `sai version <software>` - Show software version information (for specialized tools like nmap, performs service version detection)
+- `sai version <software>` - Show software version information
 
 #### Provider Management
 - `sai providers list` - List available providers
@@ -158,7 +165,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 #### Utilities
 - `sai stats` - Show comprehensive statistics about providers and actions
 - `sai validate <saidata-file>` - Validate a saidata file against the schema
-- `sai version` - Show version information
+- `sai --version` - Show sai version information
 
 ### SAIGEN Commands
 - `saigen generate <software>` - Generate saidata for software
