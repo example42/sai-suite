@@ -15,15 +15,17 @@ A lightweight CLI tool for executing software management actions using provider-
 
 ## 🤖 SAIGEN - AI-Powered Saidata Generation Tool
 
-An AI-enhanced tool for generating, validating, and managing software metadata in YAML format.
+An AI-enhanced tool for generating, validating, and managing software metadata in YAML format with universal repository support.
 
 **Key Features:**
-- **Multi-provider Integration**: Supports apt, dnf, brew, winget, and other package repositories
+- **Universal Repository Support**: 50+ package managers including apt, dnf, brew, winget, npm, pypi, cargo, and more
+- **YAML-Driven Configuration**: Add new repositories without code changes using simple YAML configs
 - **AI-Enhanced Generation**: Uses LLMs (OpenAI, Anthropic, Ollama) for intelligent metadata creation
+- **Advanced Repository Management**: Concurrent operations, intelligent caching, and real-time statistics
 - **Schema Validation**: Validates generated files against official saidata schema
 - **RAG Support**: Retrieval-Augmented Generation for improved accuracy
 - **Batch Processing**: Generate metadata for multiple software packages efficiently
-- **Extensible Architecture**: Modular design for easy extension and customization
+- **Comprehensive CLI**: Full-featured repository management and package search capabilities
 
 ## Installation
 
@@ -55,6 +57,44 @@ To deactivate the virtual environment when done:
 ```bash
 deactivate
 ```
+
+## Supported Package Managers
+
+SAIGEN now supports 50+ package managers across all major platforms:
+
+### Linux Package Managers
+- **Debian/Ubuntu**: apt
+- **Red Hat/Fedora**: dnf, yum
+- **SUSE**: zypper
+- **Arch Linux**: pacman
+- **Alpine**: apk
+- **Gentoo**: emerge, portage
+- **Void Linux**: xbps
+- **Universal**: flatpak, snap
+
+### macOS Package Managers
+- **Homebrew**: brew (formulae and casks)
+- **MacPorts**: macports
+- **Nix**: nix, nixpkgs
+
+### Windows Package Managers
+- **Microsoft**: winget
+- **Community**: chocolatey, scoop
+
+### Language Ecosystems
+- **JavaScript**: npm, yarn, pnpm
+- **Python**: pypi, conda
+- **Rust**: cargo (crates.io)
+- **Ruby**: gem (rubygems)
+- **Go**: go modules
+- **PHP**: composer (packagist)
+- **Java**: maven, gradle
+- **C#/.NET**: nuget
+
+### Container & Cloud
+- **Containers**: docker hub
+- **Kubernetes**: helm charts
+- **Scientific**: spack, conda-forge
 
 ## Quick Start
 
@@ -94,29 +134,62 @@ sai config-show
 
 ### SAIGEN AI Generation Tool
 
-1. Configure your LLM provider:
+1. **Explore Available Repositories** (50+ supported):
+```bash
+# List all repositories
+saigen repositories list-repos
+
+# Filter by platform
+saigen repositories list-repos --platform linux
+
+# Filter by type
+saigen repositories list-repos --type npm
+```
+
+2. **Search Packages Across All Repositories**:
+```bash
+# Search across all 50+ repositories
+saigen repositories search "redis"
+
+# Search with platform filter
+saigen repositories search "nginx" --platform linux --limit 10
+
+# Get detailed package information
+saigen repositories info "docker" --platform linux
+```
+
+3. **Repository Statistics and Management**:
+```bash
+# Show comprehensive statistics
+saigen repositories stats
+
+# Update repository caches (concurrent operations)
+saigen repositories update-cache
+
+# JSON output for automation
+saigen repositories stats --format json
+```
+
+4. **Configure LLM Provider**:
 ```bash
 export OPENAI_API_KEY="your-api-key"
 # or
 export ANTHROPIC_API_KEY="your-api-key"
 ```
 
-2. Generate saidata for a software package:
+5. **Generate Saidata with Repository Data**:
 ```bash
+# Generate using repository data + AI
 saigen generate nginx
-```
 
-3. View current configuration:
-```bash
+# Generate with specific providers
+saigen generate nginx --llm-provider openai --providers apt brew --output nginx.yaml
+
+# View current configuration
 saigen config --show
 ```
 
-4. Generate with specific options:
-```bash
-saigen generate nginx --llm-provider openai --providers apt brew --output nginx.yaml
-```
-
-5. Validate existing saidata files:
+6. **Validate Generated Files**:
 ```bash
 saigen validate nginx.yaml
 saigen validate --show-context --format json nginx.yaml
@@ -198,11 +271,18 @@ saigen validate --show-context --format json nginx.yaml
 - `saigen config validate` - Validate configuration file syntax and settings
 - `saigen config init` - Initialize new configuration file with defaults
 
-#### Repository Management
-- `saigen repo list` - List configured package repositories
-- `saigen repo update` - Update repository package cache
-- `saigen repo stats` - Show repository cache statistics
-- `saigen repo clear` - Clear repository cache
+#### Universal Repository Management
+- `saigen repositories list-repos` - List all 50+ supported repositories with filtering
+- `saigen repositories search <query>` - Search packages across all repositories
+- `saigen repositories info <package>` - Get detailed package information
+- `saigen repositories stats` - Show comprehensive repository statistics and health
+- `saigen repositories update-cache` - Update repository caches with concurrent operations
+
+#### Repository Filtering and Search
+- `--platform <linux|macos|windows|universal>` - Filter by platform
+- `--type <apt|brew|npm|pypi|cargo|...>` - Filter by repository type
+- `--limit <number>` - Limit search results
+- `--format <table|json|yaml>` - Choose output format
 
 #### Help and Information
 - `saigen --help` - Show all available commands and options
@@ -210,7 +290,7 @@ saigen validate --show-context --format json nginx.yaml
 
 #### Generation Options
 - `--llm-provider` - Choose LLM provider (openai, anthropic, ollama)
-- `--providers` - Target package providers (apt, brew, winget, etc.)
+- `--providers` - Target package providers (50+ supported)
 - `--output` - Output file path
 - `--dry-run` - Preview generation without making API calls
 - `--verbose` - Enable detailed logging

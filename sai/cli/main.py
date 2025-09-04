@@ -441,32 +441,58 @@ def _get_provider_package_info(provider, saidata):
         saidata: SaiData object
         
     Returns:
-        Tuple of (package_name, version_info) or (None, None) if not available
+        Tuple of (package_name, version_info, is_available) where:
+        - package_name: The provider-specific package name
+        - version_info: Version information if available
+        - is_available: True if the package is actually available for this provider
     """
     try:
         # Try to resolve package name using template engine
         template_str = "{{sai_package(saidata, '" + provider.name + "')}}"
         package_name = provider.template_engine.resolve_template(template_str, saidata)
-        if not package_name:
-            package_name = saidata.metadata.name if saidata.metadata else None
         
-        # Try to get version information if provider supports version action
+        # Check if this provider actually has package data for this software
+        is_available = False
         version_info = None
-        if provider.has_action('version') and package_name:
-            try:
-                version_action = provider.get_action('version')
-                if version_action and version_action.template:
-                    version_command = provider.template_engine.resolve_template(version_action.template, saidata)
-                    # For display purposes, we'll show a simplified version
-                    version_info = f"version cmd available"
-            except Exception:
-                pass
         
-        return package_name, version_info
+        # Check provider-specific packages first
+        if (hasattr(saidata, 'providers') and saidata.providers and 
+            provider.name in saidata.providers):
+            provider_data = saidata.providers[provider.name]
+            if hasattr(provider_data, 'packages') and provider_data.packages:
+                is_available = True
+                # Get version from first package if available
+                first_package = provider_data.packages[0]
+                if hasattr(first_package, 'version') and first_package.version:
+                    version_info = first_package.version
+                if hasattr(first_package, 'name') and first_package.name:
+                    package_name = first_package.name
+        
+        # Fall back to general packages if no provider-specific data
+        elif hasattr(saidata, 'packages') and saidata.packages and package_name:
+            is_available = True
+            # Get version from first package if available
+            first_package = saidata.packages[0]
+            if hasattr(first_package, 'version') and first_package.version:
+                version_info = first_package.version
+        
+        # Ultimate fallback to metadata name
+        elif hasattr(saidata, 'metadata') and saidata.metadata and saidata.metadata.name:
+            package_name = saidata.metadata.name
+            is_available = True  # Assume available if we have metadata
+            if hasattr(saidata.metadata, 'version') and saidata.metadata.version:
+                version_info = saidata.metadata.version
+        
+        # If we still don't have a package name, this provider can't handle it
+        if not package_name:
+            return None, None, False
+        
+        return package_name, version_info, is_available
+        
     except Exception as e:
         # Return basic info even if template resolution fails
         package_name = saidata.metadata.name if saidata and saidata.metadata else None
-        return package_name, None
+        return package_name, None, False
 
 
 def _execute_software_action(ctx: click.Context, action: str, software: str, 
@@ -611,24 +637,33 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                     click.echo("Cancelled.")
                     ctx.exit(0)
             else:
+                # Filter providers to only show those with available packages
+                available_providers = []
+                for provider in suitable_providers:
+                    package_name, version_info, is_available = _get_provider_package_info(provider, saidata)
+                    if is_available and package_name:
+                        available_providers.append((provider, package_name, version_info))
+                
+                if not available_providers:
+                    click.echo(f"No providers have packages available for '{software}'.", err=True)
+                    ctx.exit(1)
+                
                 # Multiple providers available
                 click.echo(f"Multiple providers available for action '{action}':")
-                for i, provider in enumerate(suitable_providers, 1):
+                for i, (provider, package_name, version_info) in enumerate(available_providers, 1):
                     priority = provider.get_priority()
                     default_marker = " (default)" if i == 1 else ""
                     
-                    # Get package information
-                    package_name, version_info = _get_provider_package_info(provider, saidata)
-                    
                     # Build display line
-                    display_line = f"  {i}. {provider.name} (priority: {priority})"
-                    if package_name:
-                        display_line += f" - package: {package_name}"
-                        if version_info:
-                            display_line += f" ({version_info})"
+                    display_line = f"  {i}. {provider.name} (priority: {priority}) - package: {package_name}"
+                    if version_info:
+                        display_line += f" (version: {version_info})"
                     display_line += default_marker
                     
                     click.echo(display_line)
+                
+                # Update suitable_providers to only include available ones
+                suitable_providers = [provider for provider, _, _ in available_providers]
                 
                 choice = click.prompt(
                     "Select provider (enter for default, number to choose)",

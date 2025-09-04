@@ -65,13 +65,24 @@ logger = logging.getLogger(__name__)
 
 @click.group()
 def repositories():
-    """Manage package repositories."""
+    """Manage 50+ package repositories across all platforms.
+    
+    SAIGEN supports universal repository management with 50+ package managers
+    including apt, brew, npm, pypi, cargo, winget, and many more. Search packages,
+    get statistics, and manage repository caches with concurrent operations.
+    
+    Examples:
+      saigen repositories list-repos --platform linux
+      saigen repositories search "redis" --limit 10
+      saigen repositories info "nginx" --platform linux
+      saigen repositories stats --format json
+    """
     pass
 
 
 @repositories.command()
 @click.option('--platform', help='Filter by platform (linux, macos, windows, universal)')
-@click.option('--type', 'repo_type', help='Filter by repository type (apt, brew, npm, etc.)')
+@click.option('--type', 'repo_type', help='Filter by repository type (apt, brew, npm, pypi, cargo, etc.)')
 @click.option('--format', 'output_format', default='table', 
               type=click.Choice(['table', 'json', 'yaml']), 
               help='Output format')
@@ -79,7 +90,16 @@ def repositories():
 @click.option('--config-dir', help='Configuration directory path')
 def list_repos(platform: Optional[str], repo_type: Optional[str], output_format: str,
                cache_dir: Optional[str], config_dir: Optional[str]):
-    """List available repositories."""
+    """List available repositories from 50+ supported package managers.
+    
+    Shows all configured repositories with their status, priority, and metadata.
+    Supports filtering by platform and repository type.
+    
+    Examples:
+      saigen repositories list-repos
+      saigen repositories list-repos --platform linux
+      saigen repositories list-repos --type npm --format json
+    """
     asyncio.run(_list_repositories(platform, repo_type, output_format, cache_dir, config_dir))
 
 
@@ -135,8 +155,8 @@ async def _list_repositories(platform: Optional[str], repo_type: Optional[str],
 
 @repositories.command()
 @click.argument('query')
-@click.option('--platform', help='Filter by platform')
-@click.option('--type', 'repo_type', help='Filter by repository type')
+@click.option('--platform', help='Filter by platform (linux, macos, windows, universal)')
+@click.option('--type', 'repo_type', help='Filter by repository type (apt, brew, npm, pypi, etc.)')
 @click.option('--limit', type=int, default=20, help='Maximum number of results')
 @click.option('--format', 'output_format', default='table', 
               type=click.Choice(['table', 'json', 'yaml']), 
@@ -146,7 +166,17 @@ async def _list_repositories(platform: Optional[str], repo_type: Optional[str],
 def search(query: str, platform: Optional[str], repo_type: Optional[str], 
            limit: int, output_format: str, cache_dir: Optional[str], 
            config_dir: Optional[str]):
-    """Search for packages across repositories."""
+    """Search for packages across all 50+ repositories concurrently.
+    
+    Performs concurrent searches across multiple package repositories including
+    apt, brew, npm, pypi, cargo, winget, and many more. Results include package
+    name, version, repository, platform, and description.
+    
+    Examples:
+      saigen repositories search "redis"
+      saigen repositories search "nginx" --platform linux --limit 10
+      saigen repositories search "react" --type npm --format json
+    """
     asyncio.run(_search_packages(query, platform, repo_type, limit, output_format, 
                                cache_dir, config_dir))
 
@@ -223,8 +253,8 @@ async def _search_packages(query: str, platform: Optional[str], repo_type: Optio
 
 
 @repositories.command()
-@click.option('--platform', help='Filter by platform')
-@click.option('--type', 'repo_type', help='Filter by repository type')
+@click.option('--platform', help='Filter by platform (linux, macos, windows, universal)')
+@click.option('--type', 'repo_type', help='Filter by repository type (apt, brew, npm, etc.)')
 @click.option('--format', 'output_format', default='table', 
               type=click.Choice(['table', 'json', 'yaml']), 
               help='Output format')
@@ -232,7 +262,16 @@ async def _search_packages(query: str, platform: Optional[str], repo_type: Optio
 @click.option('--config-dir', help='Configuration directory path')
 def stats(platform: Optional[str], repo_type: Optional[str], output_format: str,
           cache_dir: Optional[str], config_dir: Optional[str]):
-    """Show repository statistics."""
+    """Show comprehensive repository statistics and health information.
+    
+    Displays statistics for all repositories including package counts, cache status,
+    hit rates, and per-repository health. Shows supported platforms and types.
+    
+    Examples:
+      saigen repositories stats
+      saigen repositories stats --platform linux
+      saigen repositories stats --format json
+    """
     asyncio.run(_show_statistics(platform, repo_type, output_format, cache_dir, config_dir))
 
 

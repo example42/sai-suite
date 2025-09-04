@@ -1,0 +1,37 @@
+version: "0.2"
+
+metadata:
+  name: "vault"
+  display_name: "HashiCorp Vault"
+  description: "A tool for secrets management, encryption as a service, and privileged access management"
+  version: "1.15.2"
+  category: "security"
+  subcategory: "secrets-management"
+  tags: ["vault", "secrets", "security", "hashicorp"]
+  license: "MPL-2.0"
+  maintainer: "HashiCorp"
+  urls:
+    website: "https://www.vaultproject.io"
+    documentation: "https://www.vaultproject.io/docs"
+    source: "https://github.com/hashicorp/vault"
+
+packages:
+  - name: "vault"
+    version: "1.15.2"
+
+providers:
+  brew:
+    packages:
+      - name: "vault"
+        version: "1.15.2"
+  
+  gem:
+    packages:
+      - name: "vault"
+        version: "0.18.2"
+        
+  pypi:
+    packages:
+      - name: "hvac"
+        version: "2.1.0"
+        alternatives: ["vault"]
