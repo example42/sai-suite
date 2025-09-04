@@ -46,13 +46,22 @@ class ValidationFailedError(GenerationEngineError):
 class GenerationEngine:
     """Core engine for orchestrating saidata creation."""
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config = None):
         """Initialize generation engine.
         
         Args:
-            config: Engine configuration dictionary
+            config: Engine configuration (SaigenConfig instance or dict)
         """
-        self.config = config or {}
+        # Handle both Pydantic model and dict config
+        if hasattr(config, 'model_dump'):
+            # Pydantic model
+            self.config = config.model_dump()
+            self.config_obj = config
+        else:
+            # Dictionary or None
+            self.config = config or {}
+            self.config_obj = None
+        
         self.validator = SaidataValidator()
         
         # Initialize LLM provider manager

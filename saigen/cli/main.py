@@ -4,6 +4,10 @@ import click
 from pathlib import Path
 from typing import Optional
 import logging
+import warnings
+
+# Suppress urllib3 SSL warnings on macOS
+warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.1+')
 
 from ..utils.config import get_config_manager, get_config
 from ..version import get_version
@@ -62,6 +66,10 @@ cli.add_command(generate)
 cli.add_command(config)
 cli.add_command(cache)
 cli.add_command(test)
+
+# Add batch command
+from .commands.batch import batch
+cli.add_command(batch)
 
 # Add repositories command
 from .repositories import repositories
