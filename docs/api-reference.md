@@ -161,3 +161,85 @@ except ValidationError as e:
 - Configuration files are saved with secure permissions (0o600)
 - YAML loading uses `safe_load` to prevent code execution
 - Input validation prevents injection attacks
+## Valid
+ation API
+
+### SaidataValidator
+
+Comprehensive validation system for saidata files.
+
+```python
+from saigen.core.validator import SaidataValidator
+
+# Create validator
+validator = SaidataValidator()
+
+# Validate file
+result = validator.validate_file(Path("nginx.yaml"))
+
+# Validate data dictionary
+result = validator.validate_data(saidata_dict)
+
+# Format validation report
+report = validator.format_validation_report(result, show_context=True)
+print(report)
+```
+
+### ValidationResult
+
+```python
+from saigen.core.validator import ValidationResult, ValidationError
+
+# Check validation results
+if result.is_valid:
+    print("✅ Validation passed")
+else:
+    print(f"❌ Validation failed with {len(result.errors)} errors")
+    
+# Access specific issues
+for error in result.errors:
+    print(f"Error: {error.message}")
+    print(f"Path: {error.path}")
+    print(f"Suggestion: {error.suggestion}")
+```
+
+## LLM Provider API
+
+### OpenAI Provider
+
+```python
+from saigen.llm.providers.openai import OpenAIProvider
+from saigen.models.generation import GenerationContext
+
+# Initialize provider
+config = {
+    "api_key": "sk-...",
+    "model": "gpt-3.5-turbo",
+    "max_tokens": 4000,
+    "temperature": 0.1
+}
+provider = OpenAIProvider(config)
+
+# Generate saidata
+context = GenerationContext(
+    software_name="nginx",
+    target_providers=["apt", "brew"]
+)
+response = await provider.generate_saidata(context)
+```
+
+### Prompt Templates
+
+```python
+from saigen.llm.prompts import PromptManager, PromptTemplate
+
+# Get template manager
+manager = PromptManager()
+
+# Get generation template
+template = manager.get_template("generation")
+
+# Render prompt
+context = GenerationContext(software_name="nginx")
+prompt = template.render(context)
+```

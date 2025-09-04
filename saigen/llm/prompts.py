@@ -88,8 +88,10 @@ class PromptTemplate:
         template_vars = self._build_template_variables(context)
         
         try:
-            template = Template(section.template)
-            return template.safe_substitute(template_vars)
+            # Cache compiled templates for better performance
+            if not hasattr(section, '_compiled_template'):
+                section._compiled_template = Template(section.template)
+            return section._compiled_template.safe_substitute(template_vars)
         except Exception as e:
             if section.required:
                 raise ValueError(f"Failed to render required section '{section.name}': {e}")

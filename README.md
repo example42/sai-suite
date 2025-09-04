@@ -116,6 +116,12 @@ saigen config --show
 saigen generate nginx --llm-provider openai --providers apt brew --output nginx.yaml
 ```
 
+5. Validate existing saidata files:
+```bash
+saigen validate nginx.yaml
+saigen validate --show-context --format json nginx.yaml
+```
+
 ## Commands
 
 ### SAI Commands
@@ -182,6 +188,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 
 ### SAIGEN Commands
 - `saigen generate <software>` - Generate saidata for software
+- `saigen validate <file>` - Validate saidata file against schema
 - `saigen config --show` - Display current configuration
 - `saigen --help` - Show all available commands and options
 
