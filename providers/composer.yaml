@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   executable: "composer"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
 
 actions:
   install:
@@ -67,3 +67,7 @@ actions:
   list:
     description: "List installed packages"
     template: "composer global show | grep {{sai_package(saidata, 'composer')}}"
+
+  version:
+    description: "Show package version"
+    template: "composer global show {{sai_package(saidata, 'composer')}} | grep 'versions'"

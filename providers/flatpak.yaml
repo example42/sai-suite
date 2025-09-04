@@ -7,7 +7,7 @@ provider:
   description: "Universal application distribution framework for Linux"
   type: "package_manager"
   platforms: ["linux"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop"]
 
 actions:
   install:
@@ -53,3 +53,7 @@ actions:
   list:
     description: "List installed Flatpak applications"
     template: "flatpak list | grep {{sai_package(saidata, 'flatpak')}}"
+
+  version:
+    description: "Show package version"
+    template: "flatpak list --app {{sai_package(saidata, 'flatpak')}} --columns=version"

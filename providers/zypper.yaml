@@ -7,7 +7,7 @@ provider:
   description: "Command-line package manager for openSUSE and SUSE Linux Enterprise"
   type: "package_manager"
   platforms: ["opensuse", "sles"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -79,3 +79,7 @@ actions:
   list:
     description: "List installed packages"
     template: "rpm -qa | grep {{sai_package(saidata, 'zypper')}}"
+
+  version:
+    description: "Show package version"
+    template: "rpm -q {{sai_package(saidata, 'zypper')}} --queryformat '%{NAME} %{VERSION}-%{RELEASE}'"

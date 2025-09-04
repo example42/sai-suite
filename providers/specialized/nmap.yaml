@@ -7,18 +7,18 @@ provider:
   description: "Network discovery and security auditing using nmap"
   type: "network"
   platforms: ["linux", "macos", "windows"]
-  capabilities: ["search", "info", "logs", "list", "upgrade"]
+  capabilities: ["search", "info", "logs", "list", "upgrade", "version"]
 
 actions:
   search:
     description: "Port scan target"
-    template: "nmap -p {{sai_port(saidata) or '80'}} {{target_host}}"
+    template: "nmap -p {{sai_port(saidata)}} {{target_host}}"
     variables:
       target_host: "localhost"
 
   info:
     description: "Service discovery"
-    template: "nmap -sV -p {{sai_port(saidata) or '80'}} {{target_host}}"
+    template: "nmap -sV -p {{sai_port(saidata)}} {{target_host}}"
     variables:
       target_host: "localhost"
 
@@ -34,8 +34,9 @@ actions:
     variables:
       target_host: "localhost"
 
-  upgrade:
-    description: "Output to file"
-    template: "nmap -oN /tmp/nmap-{{saidata.metadata.name}}.txt -p {{sai_port(saidata) or '80'}} {{target_host}}"
+  version:
+    description: "Detect service versions on target"
+    template: "nmap -sV -p {{sai_port(saidata) or '80'}} {{target_host}}"
     variables:
       target_host: "localhost"
+

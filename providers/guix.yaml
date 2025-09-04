@@ -7,7 +7,7 @@ provider:
   description: "Transactional package manager and system configuration tool"
   type: "package_manager"
   platforms: ["guix", "linux"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -84,3 +84,7 @@ actions:
   list:
     description: "List installed packages"
     template: "guix package -I | grep {{sai_package(saidata, 'guix')}}"
+
+  version:
+    description: "Show package version"
+    template: "guix package -I | grep {{sai_package(saidata, 'guix')}} | awk '{print $1\"@\"$2}'"

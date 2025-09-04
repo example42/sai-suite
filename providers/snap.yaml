@@ -7,7 +7,7 @@ provider:
   description: "Universal Linux package manager with sandboxing"
   type: "package_manager"
   platforms: ["ubuntu", "fedora", "debian", "opensuse", "arch"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -81,3 +81,7 @@ actions:
   list:
     description: "List installed snaps"
     template: "snap list | grep {{sai_package(saidata, 'snap')}}"
+
+  version:
+    description: "Show package version"
+    template: "snap list {{sai_package(saidata, 'snap')}}"

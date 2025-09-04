@@ -7,7 +7,7 @@ provider:
   description: "The Nix packages collection"
   type: "package_manager"
   platforms: ["nixos", "linux", "macos"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -83,3 +83,7 @@ actions:
   list:
     description: "List installed packages"
     template: "nix-env -q | grep {{sai_package(saidata, 'nixpkgs')}}"
+
+  version:
+    description: "Show package version"
+    template: "nix-env -q {{sai_package(saidata, 'nixpkgs')}}"

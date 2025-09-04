@@ -7,7 +7,7 @@ provider:
   description: "Package manager for Void Linux"
   type: "package_manager"
   platforms: ["void"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -87,3 +87,7 @@ actions:
   list:
     description: "List installed packages"
     template: "xbps-query -l | grep {{sai_package(saidata, 'xbps')}}"
+
+  version:
+    description: "Show package version"
+    template: "xbps-query {{sai_package(saidata, 'xbps')}} | grep pkgver"

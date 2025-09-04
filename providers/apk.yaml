@@ -7,7 +7,7 @@ provider:
   description: "Package manager for Alpine Linux"
   type: "package_manager"
   platforms: ["alpine"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -86,3 +86,7 @@ actions:
   list:
     description: "List installed packages"
     template: "apk info | grep {{sai_package(saidata, 'apk')}}"
+
+  version:
+    description: "Show package version"
+    template: "apk info {{sai_package(saidata, 'apk')}} | grep '^{{sai_package(saidata, 'apk')}}-' | head -1"

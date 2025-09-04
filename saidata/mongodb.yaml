@@ -58,7 +58,7 @@ files:
     mode: "0644"
   - name: "pid"
     path: "/var/run/mongodb/mongod.pid"
-    type: "runtime"
+    type: "temp"
     owner: "mongodb"
     group: "mongodb"
     mode: "0644"

@@ -7,7 +7,7 @@ provider:
   description: "Legacy package manager for RPM-based systems"
   type: "package_manager"
   platforms: ["rhel", "centos", "scientific"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -76,3 +76,7 @@ actions:
   list:
     description: "List installed packages"
     template: "rpm -qa | grep {{sai_package(saidata, 'yum')}}"
+
+  version:
+    description: "Show package version"
+    template: "rpm -q {{sai_package(saidata, 'yum')}} --queryformat '%{NAME} %{VERSION}-%{RELEASE}'"

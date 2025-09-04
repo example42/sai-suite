@@ -7,7 +7,7 @@ provider:
   description: "Generate Software Bill of Materials (SBOM)"
   type: "sbom"
   platforms: ["linux", "macos", "windows"]
-  capabilities: ["scan", "generate", "convert", "validate", "diff", "export"]
+  capabilities: ["scan", "generate", "convert", "validate", "diff", "export", "version"]
 
 actions:
   scan:
@@ -59,3 +59,7 @@ actions:
     variables:
       scan_target: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
       export_dir: "/tmp/sbom-export-{{saidata.metadata.name}}"
+
+  version:
+    description: "Show Syft version"
+    template: "syft version"

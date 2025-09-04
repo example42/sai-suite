@@ -52,7 +52,7 @@ files:
     mode: "0644"
   - name: "pid"
     path: "/var/run/redis/redis-server.pid"
-    type: "runtime"
+    type: "temp"
     owner: "redis"
     group: "redis"
     mode: "0644"

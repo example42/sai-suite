@@ -7,7 +7,7 @@ provider:
   description: "The package manager for Kubernetes"
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status", "logs"]
 
 actions:
   install:
@@ -100,4 +100,11 @@ actions:
     description: "List Helm releases"
     template: "helm list -n {{namespace}} | grep {{sai_package(saidata, 'helm')}}"
     variables:
+      namespace: "{{sai_package(saidata, 'helm')}}"
+
+  version:
+    description: "Show Helm release version"
+    template: "helm list -n {{namespace}} -o json | jq '.[] | select(.name==\"{{release_name}}\") | .app_version'"
+    variables:
+      release_name: "{{sai_package(saidata, 'helm')}}-release"
       namespace: "{{sai_package(saidata, 'helm')}}"

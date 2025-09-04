@@ -7,7 +7,7 @@ provider:
   description: "Purely functional package manager"
   type: "package_manager"
   platforms: ["nixos", "linux", "macos"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:

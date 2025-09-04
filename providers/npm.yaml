@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   executable: "npm"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
 
 actions:
   install:
@@ -67,3 +67,7 @@ actions:
   list:
     description: "List installed packages"
     template: "npm list -g | grep {{sai_package(saidata, 'npm')}}"
+
+  version:
+    description: "Show package version"
+    template: "npm list -g {{sai_package(saidata, 'npm')}} --depth=0"

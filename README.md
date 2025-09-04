@@ -105,6 +105,7 @@ saigen generate nginx --llm-provider openai --providers apt brew --output nginx.
 - `sai search <term>` - Search for available software
 - `sai list` - List installed software managed through sai
 - `sai logs <software>` - Show software service logs
+- `sai version <software>` - Show software version information
 
 #### Provider Management
 - `sai providers list` - List available providers

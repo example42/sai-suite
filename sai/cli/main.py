@@ -67,6 +67,7 @@ def setup_logging(config, verbose: bool = False):
 @click.option('--yes', '-y', is_flag=True, help='Assume yes for all prompts')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress non-essential output')
 @click.option('--json', 'output_json', is_flag=True, help='Output in JSON format')
+@click.version_option(version="0.1.0", prog_name="sai")
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str], 
         verbose: bool, dry_run: bool, yes: bool, quiet: bool, output_json: bool):
@@ -218,6 +219,52 @@ def logs(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bo
     _execute_software_action(ctx, 'logs', software, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
+@cli.command()
+@click.argument('software', required=True)
+@click.option('--timeout', type=int, help='Command timeout in seconds')
+@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
+@click.pass_context
+def version(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
+    """Show software version information."""
+    _execute_software_action(ctx, 'version', software, timeout, requires_confirmation=False, use_cache=not no_cache)
+
+
+def _get_provider_package_info(provider, saidata):
+    """Get package name and version information from a provider.
+    
+    Args:
+        provider: Provider instance
+        saidata: SaiData object
+        
+    Returns:
+        Tuple of (package_name, version_info) or (None, None) if not available
+    """
+    try:
+        # Try to resolve package name using template engine
+        template_str = "{{sai_package(saidata, '" + provider.name + "')}}"
+        package_name = provider.template_engine.resolve_template(template_str, saidata)
+        if not package_name:
+            package_name = saidata.metadata.name if saidata.metadata else None
+        
+        # Try to get version information if provider supports version action
+        version_info = None
+        if provider.has_action('version') and package_name:
+            try:
+                version_action = provider.get_action('version')
+                if version_action and version_action.template:
+                    version_command = provider.template_engine.resolve_template(version_action.template, saidata)
+                    # For display purposes, we'll show a simplified version
+                    version_info = f"version cmd available"
+            except Exception:
+                pass
+        
+        return package_name, version_info
+    except Exception as e:
+        # Return basic info even if template resolution fails
+        package_name = saidata.metadata.name if saidata and saidata.metadata else None
+        return package_name, None
+
+
 def _execute_software_action(ctx: click.Context, action: str, software: str, 
                            timeout: Optional[int], requires_confirmation: bool = True, use_cache: bool = True):
     """Execute a software management action."""
@@ -365,7 +412,19 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
                 for i, provider in enumerate(suitable_providers, 1):
                     priority = provider.get_priority()
                     default_marker = " (default)" if i == 1 else ""
-                    click.echo(f"  {i}. {provider.name} (priority: {priority}){default_marker}")
+                    
+                    # Get package information
+                    package_name, version_info = _get_provider_package_info(provider, saidata)
+                    
+                    # Build display line
+                    display_line = f"  {i}. {provider.name} (priority: {priority})"
+                    if package_name:
+                        display_line += f" - package: {package_name}"
+                        if version_info:
+                            display_line += f" ({version_info})"
+                    display_line += default_marker
+                    
+                    click.echo(display_line)
                 
                 choice = click.prompt(
                     "Select provider (enter for default, number to choose)",
@@ -471,16 +530,7 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
             ctx.exit(1)  # General error
 
 
-@cli.command()
-@click.pass_context
-def version(ctx: click.Context):
-    """Show version information."""
-    from .. import __version__
-    if ctx.obj['output_json']:
-        import json
-        click.echo(json.dumps({'version': __version__}))
-    else:
-        click.echo(f"sai version {__version__}")
+
 
 
 

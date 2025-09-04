@@ -7,7 +7,7 @@ provider:
   description: "Network protocol analysis using Wireshark/tshark"
   type: "network"
   platforms: ["linux", "macos", "windows"]
-  capabilities: ["logs", "info", "search", "list", "upgrade"]
+  capabilities: ["logs", "info", "search", "list", "upgrade", "version"]
 
 actions:
   logs:
@@ -37,3 +37,7 @@ actions:
     template: "tshark -i {{interface}} -w /tmp/capture-{{saidata.metadata.name}}.pcap -f 'port {{sai_port(saidata) or '80'}}'"
     variables:
       interface: "any"
+
+  version:
+    description: "Show Wireshark/tshark version"
+    template: "tshark --version"

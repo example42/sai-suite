@@ -7,7 +7,7 @@ provider:
   description: "The package manager for Windows"
   type: "package_manager"
   platforms: ["windows"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -83,3 +83,7 @@ actions:
   list:
     description: "List installed packages"
     template: "choco list --local-only | findstr {{sai_package(saidata, 'choco')}}"
+
+  version:
+    description: "Show package version"
+    template: "choco list --local-only --exact {{sai_package(saidata, 'choco')}}"

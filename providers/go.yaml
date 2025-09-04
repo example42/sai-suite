@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   executable: "go"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
 
 actions:
   install:
@@ -73,3 +73,7 @@ actions:
     template: "ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"
+
+  version:
+    description: "Show package version"
+    template: "go list -m {{sai_package(saidata, 'go')}}"

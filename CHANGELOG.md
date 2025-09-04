@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Version Command**: New `sai version <software>` command to show software version information
+- **Enhanced Provider Selection UI**: Provider selection now displays package names and version availability for better user experience
+- **Version Action Support**: Added version action support to multiple providers (apt, brew, gem, npm, pypi)
 - **Complete SAI CLI Implementation**: Full-featured CLI tool with all planned commands implemented
 - **Execution History Tracking**: Complete execution history system with metrics, filtering, and cleanup commands
 - **Shell Completion**: Auto-completion support for bash, zsh, and fish shells with install/uninstall commands
@@ -57,6 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **CLI Version Command**: Replaced global version command with software-specific version command that shows version information for installed packages
+- **Provider Selection Interface**: Enhanced provider selection UI to show package names and version command availability
 - Project structure follows modular architecture principles
 - Configuration system supports multiple file locations and formats
 - Optimized environment variable loading with mapping-based approach

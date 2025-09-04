@@ -7,7 +7,7 @@ provider:
   description: "Official package manager for Windows"
   type: "package_manager"
   platforms: ["windows"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   install:
@@ -83,3 +83,7 @@ actions:
   list:
     description: "List installed packages"
     template: "winget list | findstr {{sai_package(saidata, 'winget')}}"
+
+  version:
+    description: "Show package version"
+    template: "winget list --id {{sai_package(saidata, 'winget')}} --exact"

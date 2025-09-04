@@ -9,7 +9,7 @@ provider:
   platforms: ["macos"]
   priority: 90  # High priority on macOS
   executable: "brew"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
   # Simple availability test action (used for provider detection)
@@ -90,3 +90,7 @@ actions:
   list:
     description: "List installed packages"
     template: "brew list | grep {{sai_package(saidata, 'brew')}}"
+
+  version:
+    description: "Show package version"
+    template: "brew list --versions {{sai_package(saidata, 'brew')}}"

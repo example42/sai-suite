@@ -7,7 +7,7 @@ provider:
   description: "A flexible package manager for scientific computing"
   type: "package_manager"
   platforms: ["linux", "macos"]
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
 
 actions:
   install:
@@ -70,3 +70,7 @@ actions:
   list:
     description: "List installed packages"
     template: "spack find | grep {{sai_package(saidata, 'spack')}}"
+
+  version:
+    description: "Show package version"
+    template: "spack find --format '{name}@{version}' {{sai_package(saidata, 'spack')}}"
