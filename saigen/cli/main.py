@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.
 
 from ..utils.config import get_config_manager, get_config
 from ..version import get_version
-from .commands import validate, generate, config, cache, test
+from .commands import validate, generate, config, cache, test, update
 
 
 @click.group()
@@ -66,6 +66,7 @@ cli.add_command(generate)
 cli.add_command(config)
 cli.add_command(cache)
 cli.add_command(test)
+cli.add_command(update)
 
 # Add batch command
 from .commands.batch import batch

@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saidata Update System**: Complete implementation of intelligent saidata updating and merging
+  - UpdateEngine class with multiple merge strategies (preserve, enhance, replace)
+  - Smart conflict resolution with interactive and automated modes
+  - Backup creation and rollback capabilities for safe updates
+  - Comprehensive merge statistics and tracking
+  - Support for user hints and existing saidata enhancement
+- **Batch Processing System**: Comprehensive batch generation capabilities
+  - BatchGenerationEngine for parallel processing of multiple software packages
+  - SoftwareListParser with category filtering and validation
+  - Progress reporting with real-time statistics and callbacks
+  - Concurrent generation with configurable limits and error handling
+  - Support for file-based and command-line software lists
+- **Enhanced CLI Commands**: New update and batch commands for SAIGEN
+  - `saigen update` command with merge strategies and backup management
+  - `saigen batch` command with parallel processing and progress tracking
+  - Interactive conflict resolution and force update modes
+  - Comprehensive error handling and recovery options
 - **RAG (Retrieval-Augmented Generation) System**: Complete implementation of semantic search and context building
   - RAGIndexer class with vector embedding support using sentence-transformers and FAISS
   - RAGContextBuilder for intelligent prompt context injection

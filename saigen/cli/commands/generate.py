@@ -33,7 +33,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
     
     # Sanitize software name (allow only alphanumeric, hyphens, underscores, dots)
     import re
-    if not re.match(r'^[a-zA-Z0-9._-]+$', software_name):
+    if not re.match(r'^[a-zA-Z0-9._-]+$', software_name):$', software_name):
         raise click.BadParameter("Software name contains invalid characters")
     
     config = ctx.obj['config']

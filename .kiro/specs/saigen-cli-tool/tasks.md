@@ -71,7 +71,7 @@
   - Implement category filtering and software list processing
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 12. Add saidata update and merge functionality
+- [x] 12. Add saidata update and merge functionality
   - Implement update command to enhance existing saidata files
   - Create intelligent merge strategies for conflicting data
   - Add backup creation and rollback capabilities

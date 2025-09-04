@@ -264,6 +264,8 @@ saigen validate --show-context --format json nginx.yaml
 #### Generation and Validation
 - `saigen generate <software>` - Generate saidata for software with AI assistance
 - `saigen validate <file>` - Validate saidata file against schema with detailed reporting
+- `saigen update <file>` - Update existing saidata with new information using intelligent merging
+- `saigen batch` - Generate saidata for multiple software packages in parallel
 
 #### Configuration Management
 - `saigen config show` - Display current configuration including LLM providers
@@ -294,6 +296,19 @@ saigen validate --show-context --format json nginx.yaml
 - `--output` - Output file path
 - `--dry-run` - Preview generation without making API calls
 - `--verbose` - Enable detailed logging
+
+#### Update Options
+- `--merge-strategy` - Choose merge strategy (preserve, enhance, replace)
+- `--backup/--no-backup` - Control backup creation (default: enabled)
+- `--interactive` - Enable interactive conflict resolution
+- `--force-update` - Regenerate completely ignoring existing content
+
+#### Batch Options
+- `--input-file` - Input file containing software names
+- `--software-list` - Software names from command line
+- `--max-concurrent` - Maximum concurrent generations (default: 3)
+- `--category-filter` - Filter by category using regex patterns
+- `--preview` - Preview what would be processed without generating
 
 #### Validation Options  
 - `--format` - Output format (text, json, yaml)

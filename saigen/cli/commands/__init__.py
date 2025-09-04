@@ -6,6 +6,7 @@ from .config import config
 from .cache import cache
 from .test import test
 from .batch import batch
+from .update import update
 
 __all__ = [
     "validate",
@@ -13,5 +14,6 @@ __all__ = [
     "config",
     "cache",
     "test",
-    "batch"
+    "batch",
+    "update"
 ]
