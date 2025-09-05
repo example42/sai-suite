@@ -1,4 +1,4 @@
-# Generation Process Logging
+git ad# Generation Process Logging
 
 The saigen generate command now supports comprehensive logging of the generation process through the `--log-file` option. This feature captures detailed information about every aspect of saidata generation, making it invaluable for debugging, optimization, and monitoring.
 
@@ -27,6 +27,7 @@ cat ~/.saigen/logs/saigen_generate_nginx_*.json | jq '.final_result'
 - **Complete Responses**: Full text received from LLM providers  
 - **Usage Metrics**: Token counts, cost estimates, response times
 - **Provider Details**: Which provider and model was used
+- **Retry Attempts**: Automatic retry attempts with validation feedback are marked with `retry_attempt: true` metadata
 
 ### Generation Context
 - **Repository Data**: Summary of packages found in repositories
@@ -37,6 +38,44 @@ cat ~/.saigen/logs/saigen_generate_nginx_*.json | jq '.final_result'
 - **Final Saidata**: Summary of generated saidata structure
 - **Validation Results**: Schema validation details and any errors
 - **File Operations**: Details about saving the output file
+
+## Automatic Retry Mechanism
+
+When the first LLM generation attempt fails validation, saigen automatically retries with enhanced feedback:
+
+### Retry Process Logging
+- **Validation Errors**: Detailed capture of what went wrong in the first attempt
+- **Enhanced Context**: The retry prompt includes specific validation feedback
+- **Retry Identification**: All retry attempts are clearly marked in logs
+- **Success Tracking**: Whether the retry succeeded or also failed
+
+### Example Retry Log Entry
+```json
+{
+  "process_steps": [
+    {
+      "step_name": "retry_generation",
+      "description": "Retrying generation with validation feedback",
+      "status": "completed",
+      "duration_seconds": 2.1
+    }
+  ],
+  "llm_interactions": [
+    {
+      "timestamp": "2025-01-09T14:30:15",
+      "provider": "openai",
+      "success": true,
+      "metadata": {}
+    },
+    {
+      "timestamp": "2025-01-09T14:30:45", 
+      "provider": "openai",
+      "success": true,
+      "metadata": {"retry_attempt": true}
+    }
+  ]
+}
+```
 
 ## Log File Structure
 

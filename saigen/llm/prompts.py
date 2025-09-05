@@ -3,10 +3,36 @@
 from typing import Dict, List, Optional, Any
 from string import Template
 from dataclasses import dataclass
+import json
+from pathlib import Path
 
 from ..models.generation import GenerationContext
 from ..models.repository import RepositoryPackage
 from ..models.saidata import SaiData
+
+
+def load_saidata_schema() -> str:
+    """Load the saidata JSON schema for inclusion in prompts.
+    
+    Returns:
+        JSON schema as formatted string, or fallback text if schema not found
+    """
+    try:
+        # Try to find the schema file relative to this module
+        current_dir = Path(__file__).parent
+        schema_path = current_dir.parent.parent / "schemas" / "saidata-0.2-schema.json"
+        
+        if schema_path.exists():
+            with open(schema_path, 'r', encoding='utf-8') as f:
+                schema_data = json.load(f)
+            
+            # Format the schema for better readability in prompts
+            return json.dumps(schema_data, indent=2)
+        else:
+            return "Schema file not found - using basic requirements"
+    except Exception:
+        return "Schema loading failed - using basic requirements"
+from pathlib import Path
 
 
 @dataclass
@@ -74,6 +100,10 @@ class PromptTemplate:
             return bool(context.user_hints)
         elif section.condition == "has_existing_saidata":
             return bool(context.existing_saidata)
+        elif section.condition == "has_validation_feedback":
+            return bool(context.user_hints and context.user_hints.get("validation_feedback"))
+        elif section.condition == "include_json_schema":
+            return True  # Always include when requested
         
         return True
     
@@ -121,6 +151,8 @@ class PromptTemplate:
             "sample_saidata_examples": self._format_sample_saidata(getattr(context, 'sample_saidata', [])),
             "user_hints": self._format_user_hints(context.user_hints),
             "existing_saidata": self._format_existing_saidata(context.existing_saidata),
+            "validation_feedback": self._format_validation_feedback(context.user_hints),
+            "json_schema": self._format_json_schema(context),
         }
         
         return variables
@@ -314,6 +346,61 @@ class PromptTemplate:
             info += f" (Current providers: {', '.join(providers)})"
         
         return info
+    
+    def _format_validation_feedback(self, user_hints: Optional[Dict[str, Any]]) -> str:
+        """Format validation feedback for retry prompts.
+        
+        Args:
+            user_hints: User hints that may contain validation feedback
+            
+        Returns:
+            Formatted validation feedback string
+        """
+        if not user_hints or "validation_feedback" not in user_hints:
+            return "No validation feedback available."
+        
+        feedback = user_hints["validation_feedback"]
+        
+        formatted_parts = []
+        
+        # Add main validation error
+        if "validation_error" in feedback:
+            formatted_parts.append(f"VALIDATION ERROR: {feedback['validation_error']}")
+        
+        # Add specific errors
+        if "specific_errors" in feedback and feedback["specific_errors"]:
+            formatted_parts.append("SPECIFIC ERRORS:")
+            for i, error in enumerate(feedback["specific_errors"], 1):
+                formatted_parts.append(f"  {i}. {error}")
+        
+        # Add failed YAML excerpt
+        if "failed_yaml_excerpt" in feedback:
+            formatted_parts.append("FAILED YAML EXCERPT:")
+            formatted_parts.append(f"```yaml\n{feedback['failed_yaml_excerpt']}\n```")
+        
+        # Add retry instructions
+        if "retry_instructions" in feedback and feedback["retry_instructions"]:
+            formatted_parts.append("RETRY INSTRUCTIONS:")
+            for instruction in feedback["retry_instructions"]:
+                formatted_parts.append(f"- {instruction}")
+        
+        return "\n\n".join(formatted_parts)
+    
+    def _format_json_schema(self, context: GenerationContext) -> str:
+        """Format JSON schema for prompt inclusion.
+        
+        Args:
+            context: Generation context (unused but kept for consistency)
+            
+        Returns:
+            Formatted JSON schema string
+        """
+        schema_content = load_saidata_schema()
+        
+        if "Schema file not found" in schema_content or "Schema loading failed" in schema_content:
+            return schema_content
+        
+        return f"COMPLETE JSON SCHEMA:\n```json\n{schema_content}\n```\n\nThis is the exact schema your YAML output must validate against."
 
 
 # Predefined prompt templates
@@ -377,23 +464,68 @@ Incorporate these user preferences and hints into the generated saidata.""",
         PromptSection(
             name="schema_requirements",
             template="""SAIDATA SCHEMA REQUIREMENTS:
-- version: Must be semantic version (e.g., "0.2")
-- metadata: Required section with name, description, category, etc.
-- providers: Dictionary of provider-specific configurations
-- packages: List of packages for each provider
-- services: Optional service definitions
-- files/directories: Optional file system resources
-- commands: Optional command definitions
-- ports: Optional network port definitions
-- compatibility: Optional compatibility matrix
 
-EXAMPLE STRUCTURE:
+The saidata YAML must follow this exact JSON schema structure:
+
+**Root Level (Required):**
+- version: string (semantic version like "0.2")
+- metadata: object (required)
+- providers: object (provider configurations)
+
+**Metadata Object (Required):**
+- name: string (required)
+- description: string (optional but recommended)
+- category: string (optional but recommended)
+- version: string (optional)
+- license: string (optional)
+- tags: array of strings (optional)
+
+**Providers Object:**
+Each provider (apt, brew, winget, etc.) can contain:
+- packages: array of package objects
+- services: array of service objects  
+- files: array of file objects
+- directories: array of directory objects
+- commands: array of command objects
+- ports: array of port objects
+
+**Package Object:**
+- name: string (required)
+- version: string (optional)
+- alternatives: array of strings (optional)
+
+**Service Object:**
+- name: string (required)
+- service_name: string (optional)
+- type: string (systemd, init, launchd, windows_service, docker, kubernetes)
+- enabled: boolean (optional)
+
+**Port Object:**
+- port: integer (required)
+- protocol: string (tcp, udp, sctp)
+- service: string (optional)
+- description: string (optional)
+
+**CRITICAL DATA TYPE REQUIREMENTS:**
+- packages, services, files, directories, commands, ports must be ARRAYS, not objects
+- Each item in these arrays must be an OBJECT with the required fields
+- version must be a STRING, not a number
+- port numbers must be INTEGERS, not strings
+- enabled must be a BOOLEAN (true/false), not a string
+
+**EXAMPLE STRUCTURE:**
 ```yaml
 version: "0.2"
-metadata:`
+metadata:
+  name: "example-software"
+  description: "Example software description"
+  category: "web-server"
+providers:
+  apt:
+
 ```
 
-Generate complete, valid YAML following this structure.""",
+Generate complete, valid YAML following this structure exactly.""",
             required=True
         ),
         PromptSection(
@@ -470,6 +602,194 @@ Generate the updated saidata YAML now:""",
     ]
 )
 
+RETRY_SAIDATA_TEMPLATE = PromptTemplate(
+    name="saidata_retry",
+    sections=[
+        PromptSection(
+            name="system_instruction",
+            template="""You are an expert system administrator and software metadata specialist. Your previous attempt to generate saidata YAML failed validation. You must now fix the validation errors and generate a corrected version.
+
+CRITICAL REQUIREMENTS:
+1. Generate ONLY valid YAML content that follows the saidata schema exactly
+2. Fix all validation errors from the previous attempt
+3. Use accurate package names from repository data when available
+4. Ensure all required fields are present and properly formatted
+5. Follow semantic versioning for the saidata version field
+6. Pay special attention to data types and field requirements""",
+            required=True
+        ),
+        PromptSection(
+            name="validation_feedback",
+            template="""VALIDATION ERRORS FROM PREVIOUS ATTEMPT:
+$validation_feedback
+
+CRITICAL: You must fix ALL of these validation errors in your corrected output. Pay close attention to:
+- Required fields that may be missing
+- Incorrect data types (strings vs numbers vs booleans vs arrays)
+- Invalid field names or structure
+- YAML syntax errors
+- Schema compliance issues""",
+            condition="has_validation_feedback",
+            required=True
+        ),
+        PromptSection(
+            name="software_specification",
+            template="""SOFTWARE TO GENERATE SAIDATA FOR: $software_name
+
+TARGET PROVIDERS: $target_providers
+
+Generate corrected saidata that supports the specified providers with accurate package names, installation commands, and configuration details.""",
+            required=True
+        ),
+        PromptSection(
+            name="repository_context",
+            template="""REPOSITORY DATA CONTEXT:
+$repository_context
+
+IMPORTANT: Use this repository information to ensure accurate package names, versions, and availability across different platforms. The package names shown here are verified to exist in the respective repositories.""",
+            condition="has_repository_data"
+        ),
+        PromptSection(
+            name="similar_examples",
+            template="""SIMILAR SOFTWARE EXAMPLES:
+$similar_saidata_examples
+
+Use these examples as reference for structure, provider configurations, and best practices. Pay attention to how similar software is configured across different providers, but ensure the generated saidata is specific to the requested software.""",
+            condition="has_similar_saidata"
+        ),
+        PromptSection(
+            name="sample_examples",
+            template="""REFERENCE SAIDATA SAMPLES:
+$sample_saidata_examples
+
+These are high-quality reference examples showing proper saidata structure, formatting, and best practices. Use these as templates for structure and formatting, adapting the content for the specific software being generated.""",
+            condition="has_sample_saidata"
+        ),
+        PromptSection(
+            name="json_schema_reference",
+            template="""JSON SCHEMA REFERENCE:
+$json_schema
+
+This is the complete JSON schema that your YAML output must validate against. Pay special attention to data types and required fields.""",
+            condition="include_json_schema"
+        ),
+        PromptSection(
+            name="schema_requirements",
+            template="""SAIDATA SCHEMA REQUIREMENTS:
+
+The saidata YAML must follow this exact JSON schema structure:
+
+**Root Level (Required):**
+- version: string (semantic version like "0.2")
+- metadata: object (required)
+- providers: object (provider configurations)
+
+**Metadata Object (Required):**
+- name: string (required)
+- description: string (optional but recommended)
+- category: string (optional but recommended)
+- version: string (optional)
+- license: string (optional)
+- tags: array of strings (optional)
+
+**Providers Object:**
+Each provider (apt, brew, winget, etc.) can contain:
+- packages: array of package objects
+- services: array of service objects  
+- files: array of file objects
+- directories: array of directory objects
+- commands: array of command objects
+- ports: array of port objects
+
+**Package Object:**
+- name: string (required)
+- version: string (optional)
+- alternatives: array of strings (optional)
+
+**Service Object:**
+- name: string (required)
+- service_name: string (optional)
+- type: string (systemd, init, launchd, windows_service, docker, kubernetes)
+- enabled: boolean (optional)
+
+**Port Object:**
+- port: integer (required)
+- protocol: string (tcp, udp, sctp)
+- service: string (optional)
+- description: string (optional)
+
+**CRITICAL DATA TYPE REQUIREMENTS:**
+- packages, services, files, directories, commands, ports must be ARRAYS, not objects or strings
+- Each item in these arrays must be an OBJECT with the required fields
+- version must be a STRING, not a number
+- port numbers must be INTEGERS, not strings
+- enabled must be a BOOLEAN (true/false), not a string
+- DO NOT use shorthand syntax like "packages: [redis-server]" - use full object syntax
+
+**CORRECT EXAMPLE:**
+```yaml
+version: "0.2"
+metadata:
+  name: "example-software"
+  description: "Example software description"
+  category: "web-server"
+providers:
+  apt:
+    packages:
+      - name: "example-package"
+        version: "latest"
+    services:
+      - name: "example-service"
+        type: "systemd"
+        enabled: true
+    ports:
+      - port: 8080
+        protocol: "tcp"
+        description: "HTTP port"
+```
+
+**INCORRECT EXAMPLES TO AVOID:**
+```yaml
+# WRONG - packages as strings instead of objects
+providers:
+  apt:
+    packages:
+      - redis-server  # WRONG - should be object with name field
+
+# WRONG - services as object instead of array
+providers:
+  apt:
+    services:
+      redis:  # WRONG - should be array of service objects
+        enabled: true
+
+# WRONG - ports as strings instead of integers
+providers:
+  apt:
+    ports:
+      - port: "6379"  # WRONG - should be integer 6379
+```
+
+Generate complete, valid YAML following this structure exactly and fixing all validation errors.""",
+            required=True
+        ),
+        PromptSection(
+            name="output_instruction",
+            template="""OUTPUT INSTRUCTIONS:
+1. Generate ONLY the corrected YAML content - no explanations or markdown formatting
+2. Start directly with the YAML (version: "0.2")
+3. Fix ALL validation errors from the previous attempt
+4. Ensure all YAML syntax is correct and properly indented
+5. Include all required fields with correct data types
+6. Use accurate package names from repository data
+7. Ensure the output passes schema validation
+
+Generate the corrected saidata YAML now:""",
+            required=True
+        )
+    ]
+)
+
 
 class PromptManager:
     """Manager for prompt templates."""
@@ -479,6 +799,7 @@ class PromptManager:
         self.templates = {
             "generation": SAIDATA_GENERATION_TEMPLATE,
             "update": UPDATE_SAIDATA_TEMPLATE,
+            "retry": RETRY_SAIDATA_TEMPLATE,
         }
     
     def get_template(self, template_name: str) -> PromptTemplate:

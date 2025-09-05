@@ -389,11 +389,20 @@ saigen generate --force --verbose docker
 saigen generate --log-file ./nginx-generation.json nginx
 ```
 
+**Automatic Retry Mechanism:**
+The generate command includes an intelligent retry system that automatically attempts a second LLM query when the first generation fails validation:
+- Captures detailed validation errors from the first attempt
+- Provides specific feedback to the LLM about what needs to be fixed
+- Uses enhanced prompts designed for error correction
+- Significantly improves success rates for complex saidata generation
+- All retry attempts are logged for monitoring and debugging
+
 **Generation Logging:**
 The `--log-file` option enables comprehensive logging of the generation process, capturing:
 - All LLM interactions (prompts sent and responses received)
 - Repository data operations and RAG queries
 - Validation steps and results
+- Retry attempts with validation feedback
 - File operations and timing information
 - Error details and debugging information
 

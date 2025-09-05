@@ -37,15 +37,28 @@ class OpenAIProvider(BaseLLMProvider):
     
     # Model configurations
     MODELS = {
-        "gpt-4": {
-            "max_tokens": 8192,
-            "context_window": 8192,
-            "cost_per_1k_tokens": 0.03,
+        "gpt-4o": {
+            "max_tokens": 16384,
+            "context_window": 128000,
+            "cost_per_1k_tokens": 0.005,
             "capabilities": [
                 ModelCapability.TEXT_GENERATION,
                 ModelCapability.CODE_GENERATION,
                 ModelCapability.STRUCTURED_OUTPUT,
-                ModelCapability.FUNCTION_CALLING
+                ModelCapability.FUNCTION_CALLING,
+                ModelCapability.LARGE_CONTEXT
+            ]
+        },
+        "gpt-4o-mini": {
+            "max_tokens": 16384,
+            "context_window": 128000,
+            "cost_per_1k_tokens": 0.00015,
+            "capabilities": [
+                ModelCapability.TEXT_GENERATION,
+                ModelCapability.CODE_GENERATION,
+                ModelCapability.STRUCTURED_OUTPUT,
+                ModelCapability.FUNCTION_CALLING,
+                ModelCapability.LARGE_CONTEXT
             ]
         },
         "gpt-4-turbo": {
@@ -58,6 +71,17 @@ class OpenAIProvider(BaseLLMProvider):
                 ModelCapability.STRUCTURED_OUTPUT,
                 ModelCapability.FUNCTION_CALLING,
                 ModelCapability.LARGE_CONTEXT
+            ]
+        },
+        "gpt-4": {
+            "max_tokens": 8192,
+            "context_window": 8192,
+            "cost_per_1k_tokens": 0.03,
+            "capabilities": [
+                ModelCapability.TEXT_GENERATION,
+                ModelCapability.CODE_GENERATION,
+                ModelCapability.STRUCTURED_OUTPUT,
+                ModelCapability.FUNCTION_CALLING
             ]
         },
         "gpt-3.5-turbo": {

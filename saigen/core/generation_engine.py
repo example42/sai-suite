@@ -154,12 +154,16 @@ class GenerationEngine:
                 with self.logger.log_step("parse_validate", "Parsing and validating generated YAML"):
                     saidata = await self._parse_and_validate_yaml(
                         llm_response.content, 
-                        request.software_name
+                        request.software_name,
+                        context,
+                        provider_name
                     )
             else:
                 saidata = await self._parse_and_validate_yaml(
                     llm_response.content, 
-                    request.software_name
+                    request.software_name,
+                    context,
+                    provider_name
                 )
             
             # Track generation metrics
@@ -289,12 +293,15 @@ class GenerationEngine:
         
         return context
     
-    async def _parse_and_validate_yaml(self, yaml_content: str, software_name: str) -> SaiData:
+    async def _parse_and_validate_yaml(self, yaml_content: str, software_name: str, context: Optional[GenerationContext] = None, provider_name: Optional[str] = None, is_retry: bool = False) -> SaiData:
         """Parse and validate generated YAML content.
         
         Args:
             yaml_content: Generated YAML content
             software_name: Software name for error reporting
+            context: Generation context (for retry attempts)
+            provider_name: LLM provider name (for retry attempts)
+            is_retry: Whether this is a retry attempt
             
         Returns:
             Validated SaiData instance
@@ -316,7 +323,8 @@ class GenerationEngine:
                     log_output({
                         "original_length": len(yaml_content),
                         "cleaned_length": len(cleaned_yaml),
-                        "parsed_keys": list(data.keys()) if isinstance(data, dict) else []
+                        "parsed_keys": list(data.keys()) if isinstance(data, dict) else [],
+                        "is_retry": is_retry
                     })
             else:
                 # Clean YAML content (remove markdown code blocks if present)
@@ -335,19 +343,36 @@ class GenerationEngine:
                     log_output({
                         "is_valid": validation_result.is_valid,
                         "error_count": len(validation_result.errors),
-                        "warning_count": len(validation_result.warnings)
+                        "warning_count": len(validation_result.warnings),
+                        "is_retry": is_retry
                     })
                     
                     if not validation_result.is_valid:
                         error_messages = [error.message for error in validation_result.errors]
-                        raise ValidationFailedError(f"Schema validation failed: {'; '.join(error_messages)}")
+                        validation_error = f"Schema validation failed: {'; '.join(error_messages)}"
+                        
+                        # If this is not a retry and we have context, attempt a second query
+                        if not is_retry and context and provider_name:
+                            return await self._retry_generation_with_validation_feedback(
+                                context, provider_name, yaml_content, validation_error, error_messages
+                            )
+                        
+                        raise ValidationFailedError(validation_error)
             else:
                 # Validate against schema
                 validation_result = self.validator.validate_data(data, f"generated:{software_name}")
                 
                 if not validation_result.is_valid:
                     error_messages = [error.message for error in validation_result.errors]
-                    raise ValidationFailedError(f"Schema validation failed: {'; '.join(error_messages)}")
+                    validation_error = f"Schema validation failed: {'; '.join(error_messages)}"
+                    
+                    # If this is not a retry and we have context, attempt a second query
+                    if not is_retry and context and provider_name:
+                        return await self._retry_generation_with_validation_feedback(
+                            context, provider_name, yaml_content, validation_error, error_messages
+                        )
+                    
+                    raise ValidationFailedError(validation_error)
             
             if self.logger:
                 with self.logger.log_data_op("model_validation", "Validating Pydantic model") as log_output:
@@ -360,12 +385,21 @@ class GenerationEngine:
                     log_output({
                         "model_created": True,
                         "model_validation_valid": model_validation.is_valid,
-                        "model_error_count": len(model_validation.errors)
+                        "model_error_count": len(model_validation.errors),
+                        "is_retry": is_retry
                     })
                     
                     if not model_validation.is_valid:
                         error_messages = [error.message for error in model_validation.errors]
-                        raise ValidationFailedError(f"Model validation failed: {'; '.join(error_messages)}")
+                        validation_error = f"Model validation failed: {'; '.join(error_messages)}"
+                        
+                        # If this is not a retry and we have context, attempt a second query
+                        if not is_retry and context and provider_name:
+                            return await self._retry_generation_with_validation_feedback(
+                                context, provider_name, yaml_content, validation_error, error_messages
+                            )
+                        
+                        raise ValidationFailedError(validation_error)
             else:
                 # Convert to Pydantic model
                 saidata = SaiData(**data)
@@ -374,14 +408,30 @@ class GenerationEngine:
                 model_validation = self.validator.validate_pydantic_model(saidata)
                 if not model_validation.is_valid:
                     error_messages = [error.message for error in model_validation.errors]
-                    raise ValidationFailedError(f"Model validation failed: {'; '.join(error_messages)}")
+                    validation_error = f"Model validation failed: {'; '.join(error_messages)}"
+                    
+                    # If this is not a retry and we have context, attempt a second query
+                    if not is_retry and context and provider_name:
+                        return await self._retry_generation_with_validation_feedback(
+                            context, provider_name, yaml_content, validation_error, error_messages
+                        )
+                    
+                    raise ValidationFailedError(validation_error)
             
             return saidata
             
         except yaml.YAMLError as e:
+            yaml_error = f"Invalid YAML syntax: {e}"
             if self.logger:
                 self.logger.log_error(f"YAML parsing error: {e}")
-            raise ValidationFailedError(f"Invalid YAML syntax: {e}")
+            
+            # If this is not a retry and we have context, attempt a second query
+            if not is_retry and context and provider_name:
+                return await self._retry_generation_with_validation_feedback(
+                    context, provider_name, yaml_content, yaml_error, [str(e)]
+                )
+            
+            raise ValidationFailedError(yaml_error)
         except Exception as e:
             if isinstance(e, ValidationFailedError):
                 if self.logger:
@@ -390,6 +440,189 @@ class GenerationEngine:
             if self.logger:
                 self.logger.log_error(f"Validation error: {e}")
             raise ValidationFailedError(f"Validation error: {e}")
+    
+    async def _retry_generation_with_validation_feedback(
+        self, 
+        context: GenerationContext, 
+        provider_name: str, 
+        failed_yaml: str, 
+        validation_error: str, 
+        error_messages: List[str]
+    ) -> SaiData:
+        """Retry generation with validation feedback from the first attempt.
+        
+        Args:
+            context: Original generation context
+            provider_name: LLM provider name
+            failed_yaml: The YAML that failed validation
+            validation_error: Summary of validation error
+            error_messages: Detailed error messages
+            
+        Returns:
+            Validated SaiData instance
+            
+        Raises:
+            ValidationFailedError: If retry also fails
+        """
+        logger.info(f"First generation attempt failed validation for '{context.software_name}', retrying with feedback")
+        
+        if self.logger:
+            self.logger.log_error(f"First attempt validation failed: {validation_error}")
+            with self.logger.log_step("retry_generation", "Retrying generation with validation feedback"):
+                # Create enhanced context with validation feedback
+                retry_context = self._create_retry_context(context, failed_yaml, validation_error, error_messages)
+                
+                # Generate with retry context
+                retry_response = await self._generate_with_logged_llm_retry(retry_context, provider_name)
+                
+                # Parse and validate the retry response (mark as retry to prevent infinite loop)
+                return await self._parse_and_validate_yaml(
+                    retry_response.content,
+                    context.software_name,
+                    is_retry=True
+                )
+        else:
+            # Create enhanced context with validation feedback
+            retry_context = self._create_retry_context(context, failed_yaml, validation_error, error_messages)
+            
+            # Generate with retry context
+            if provider_name in self._llm_providers:
+                mock_provider = self._llm_providers[provider_name]
+                retry_response = await mock_provider.generate_saidata(retry_context)
+            else:
+                retry_response = await self.provider_manager.generate_with_fallback(
+                    context=retry_context,
+                    preferred_provider=provider_name
+                )
+            
+            # Parse and validate the retry response (mark as retry to prevent infinite loop)
+            return await self._parse_and_validate_yaml(
+                retry_response.content,
+                context.software_name,
+                is_retry=True
+            )
+    
+    def _create_retry_context(
+        self, 
+        original_context: GenerationContext, 
+        failed_yaml: str, 
+        validation_error: str, 
+        error_messages: List[str]
+    ) -> GenerationContext:
+        """Create an enhanced context for retry generation with validation feedback.
+        
+        Args:
+            original_context: Original generation context
+            failed_yaml: The YAML that failed validation
+            validation_error: Summary of validation error
+            error_messages: Detailed error messages
+            
+        Returns:
+            Enhanced GenerationContext with validation feedback
+        """
+        # Create validation feedback hints
+        validation_feedback = {
+            "validation_error": validation_error,
+            "specific_errors": error_messages,
+            "failed_yaml_excerpt": failed_yaml[:500] + "..." if len(failed_yaml) > 500 else failed_yaml,
+            "retry_instructions": [
+                "The previous generation attempt failed validation",
+                "Please fix the specific validation errors mentioned above",
+                "Ensure the YAML follows the exact saidata schema requirements",
+                "Pay special attention to required fields and proper data types",
+                "Generate only valid YAML without any markdown formatting"
+            ]
+        }
+        
+        # Combine original user hints with validation feedback
+        enhanced_hints = original_context.user_hints.copy() if original_context.user_hints else {}
+        enhanced_hints["validation_feedback"] = validation_feedback
+        
+        # Create new context with enhanced hints
+        retry_context = GenerationContext(
+            software_name=original_context.software_name,
+            target_providers=original_context.target_providers,
+            user_hints=enhanced_hints,
+            existing_saidata=original_context.existing_saidata,
+            repository_data=original_context.repository_data,
+            similar_saidata=original_context.similar_saidata
+        )
+        
+        # Copy sample_saidata if it exists
+        if hasattr(original_context, 'sample_saidata'):
+            retry_context.sample_saidata = original_context.sample_saidata
+        
+        return retry_context
+    
+    async def _generate_with_logged_llm_retry(self, context: GenerationContext, provider_name: str):
+        """Generate saidata with LLM for retry attempt and log the interaction.
+        
+        Args:
+            context: Enhanced generation context with validation feedback
+            provider_name: Name of the LLM provider
+            
+        Returns:
+            LLM response
+        """
+        # Get the retry prompt template
+        from ..llm.prompts import PromptManager
+        prompt_manager = PromptManager()
+        
+        # Use the retry template if available, otherwise use generation template
+        try:
+            template = prompt_manager.get_template("retry")
+        except KeyError:
+            template = prompt_manager.get_template("generation")
+        
+        prompt = template.render(context)
+        
+        # Record start time for LLM interaction
+        llm_start_time = time.time()
+        
+        try:
+            # Generate with provider manager
+            llm_response = await self.provider_manager.generate_with_fallback(
+                context=context,
+                preferred_provider=provider_name
+            )
+            
+            # Calculate duration
+            llm_duration = time.time() - llm_start_time
+            
+            # Log the successful retry interaction
+            if self.logger:
+                self.logger.log_llm_interaction(
+                    provider=provider_name,
+                    model=getattr(llm_response, 'model', 'unknown'),
+                    prompt=prompt,
+                    response=llm_response.content,
+                    tokens_used=llm_response.tokens_used,
+                    cost_estimate=llm_response.cost_estimate,
+                    duration_seconds=llm_duration,
+                    success=True,
+                    metadata={"retry_attempt": True}
+                )
+            
+            return llm_response
+            
+        except Exception as e:
+            # Calculate duration
+            llm_duration = time.time() - llm_start_time
+            
+            # Log the failed retry interaction
+            if self.logger:
+                self.logger.log_llm_interaction(
+                    provider=provider_name,
+                    model='unknown',
+                    prompt=prompt,
+                    response='',
+                    duration_seconds=llm_duration,
+                    success=False,
+                    error=str(e),
+                    metadata={"retry_attempt": True}
+                )
+            
+            raise
     
     async def _generate_with_logged_llm(self, context: GenerationContext, provider_name: str):
         """Generate saidata with LLM and log the interaction.

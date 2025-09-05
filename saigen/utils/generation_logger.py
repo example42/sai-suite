@@ -211,7 +211,7 @@ class GenerationLogger:
     def log_llm_interaction(self, provider: str, model: str, prompt: str, response: str,
                            tokens_used: Optional[int] = None, cost_estimate: Optional[float] = None,
                            duration_seconds: float = 0.0, success: bool = True, 
-                           error: Optional[str] = None) -> None:
+                           error: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> None:
         """Log an LLM interaction.
         
         Args:
@@ -224,21 +224,23 @@ class GenerationLogger:
             duration_seconds: Duration of the interaction
             success: Whether the interaction was successful
             error: Error message if failed
+            metadata: Additional metadata (e.g., retry_attempt flag)
         """
-        interaction = LLMInteraction(
-            timestamp=datetime.now().isoformat(),
-            provider=provider,
-            model=model,
-            prompt=prompt,
-            response=response,
-            tokens_used=tokens_used,
-            cost_estimate=cost_estimate,
-            duration_seconds=duration_seconds,
-            success=success,
-            error=error
-        )
+        interaction_data = {
+            "timestamp": datetime.now().isoformat(),
+            "provider": provider,
+            "model": model,
+            "prompt": prompt,
+            "response": response,
+            "tokens_used": tokens_used,
+            "cost_estimate": cost_estimate,
+            "duration_seconds": duration_seconds,
+            "success": success,
+            "error": error,
+            "metadata": metadata or {}
+        }
         
-        self.log_data["llm_interactions"].append(asdict(interaction))
+        self.log_data["llm_interactions"].append(interaction_data)
         self._write_log()
     
     def log_data_operation(self, operation_type: str, description: str,

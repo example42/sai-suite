@@ -186,6 +186,80 @@ metadata:
         assert result.saidata is None
         assert len(result.validation_errors) > 0
     
+    @pytest.mark.asyncio
+    async def test_generate_saidata_retry_on_validation_failure(self, generation_engine, sample_request, sample_saidata_yaml):
+        """Test retry mechanism when first generation fails validation."""
+        # Mock first LLM response with invalid schema
+        invalid_yaml = """
+version: "invalid-version"
+metadata:
+  name: "nginx"
+"""
+        
+        # Mock second LLM response with valid YAML (retry succeeds)
+        valid_yaml = sample_saidata_yaml
+        
+        mock_provider = generation_engine._llm_providers["openai"]
+        
+        # Set up mock to return invalid YAML first, then valid YAML on retry
+        mock_provider.generate_saidata = AsyncMock(side_effect=[
+            LLMResponse(content=invalid_yaml, tokens_used=300, cost_estimate=0.0006),
+            LLMResponse(content=valid_yaml, tokens_used=400, cost_estimate=0.0008)
+        ])
+        
+        result = await generation_engine.generate_saidata(sample_request)
+        
+        # Should succeed after retry
+        assert result.success is True
+        assert result.saidata is not None
+        assert result.saidata.metadata.name == "nginx"
+        assert len(result.validation_errors) == 0
+        
+        # Verify that generate_saidata was called twice (original + retry)
+        assert mock_provider.generate_saidata.call_count == 2
+        
+        # Check that the second call had enhanced context with validation feedback
+        second_call_args = mock_provider.generate_saidata.call_args_list[1]
+        retry_context = second_call_args[0][0]  # First positional argument
+        assert retry_context.user_hints is not None
+        assert "validation_feedback" in retry_context.user_hints
+        assert "validation_error" in retry_context.user_hints["validation_feedback"]
+    
+    @pytest.mark.asyncio
+    async def test_generate_saidata_retry_also_fails(self, generation_engine, sample_request):
+        """Test when both original and retry attempts fail validation."""
+        # Mock both responses with invalid YAML
+        invalid_yaml1 = """
+version: "invalid-version"
+metadata:
+  name: "nginx"
+"""
+        
+        invalid_yaml2 = """
+version: "0.2"
+metadata:
+  # Missing required name field
+  description: "Web server"
+"""
+        
+        mock_provider = generation_engine._llm_providers["openai"]
+        
+        # Set up mock to return invalid YAML for both attempts
+        mock_provider.generate_saidata = AsyncMock(side_effect=[
+            LLMResponse(content=invalid_yaml1, tokens_used=300, cost_estimate=0.0006),
+            LLMResponse(content=invalid_yaml2, tokens_used=350, cost_estimate=0.0007)
+        ])
+        
+        result = await generation_engine.generate_saidata(sample_request)
+        
+        # Should fail even after retry
+        assert result.success is False
+        assert result.saidata is None
+        assert len(result.validation_errors) > 0
+        
+        # Verify that generate_saidata was called twice (original + retry)
+        assert mock_provider.generate_saidata.call_count == 2
+    
     def test_validate_request_empty_software_name(self, generation_engine):
         """Test request validation with empty software name."""
         request = GenerationRequest(
