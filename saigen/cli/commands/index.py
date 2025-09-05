@@ -83,18 +83,35 @@ async def rebuild(
                 # Get cached repository data
                 cache_stats = await cache.get_cache_stats()
                 if cache_stats["total_packages"] > 0:
-                    progress.update(packages_task, description="Indexing repository packages...")
+                    progress.update(packages_task, description="Extracting cached packages...")
                     
-                    # For now, we'll need to implement a way to get all cached packages
-                    # This is a placeholder - in a real implementation, we'd iterate through cache entries
-                    console.print(f"[yellow]Found {cache_stats['total_packages']} cached packages across {len(cache_stats['repositories'])} repositories[/yellow]")
+                    # Extract all cached packages
+                    if repositories:
+                        # Index specific repositories
+                        all_packages = []
+                        for repo_name in repositories:
+                            repo_packages = await cache.get_packages_by_repository(repo_name)
+                            all_packages.extend(repo_packages)
+                            console.print(f"[blue]Loaded {len(repo_packages)} packages from {repo_name}[/blue]")
+                    else:
+                        # Index all cached repositories
+                        all_packages = await cache.get_all_packages(include_expired=False)
                     
-                    # Note: Repository package extraction from cache requires implementation
-                    # This would involve iterating through cached repository data
-                    # and converting to RepositoryPackage objects for indexing
-                    console.print("[yellow]Repository package indexing requires cache extraction implementation[/yellow]")
-                    
-                    progress.update(packages_task, description="Repository indexing completed")
+                    if all_packages:
+                        progress.update(packages_task, description=f"Indexing {len(all_packages)} repository packages...")
+                        
+                        # Index the packages
+                        success = await engine.index_repository_data(all_packages)
+                        
+                        if success:
+                            progress.update(packages_task, description=f"Successfully indexed {len(all_packages)} packages")
+                            console.print(f"[green]Indexed {len(all_packages)} repository packages[/green]")
+                        else:
+                            progress.update(packages_task, description="Repository indexing failed")
+                            console.print("[red]Failed to index repository packages[/red]")
+                    else:
+                        progress.update(packages_task, description="No packages found in cache")
+                        console.print("[yellow]No packages found in cache[/yellow]")
                 else:
                     progress.update(packages_task, description="No repository data found in cache")
                     console.print("[yellow]No repository data found. Run 'saigen repositories update' first.[/yellow]")
@@ -327,7 +344,7 @@ async def search(
             task = progress.add_task("Searching...", total=None)
             
             # Perform semantic search
-            similar_packages = await engine.rag_indexer.search_similar_packages(
+            similar_packages = await engine.search_similar_packages(
                 query=query,
                 limit=limit,
                 min_score=min_score
@@ -364,6 +381,213 @@ async def search(
         logger.error(f"Package search failed: {e}")
 
 
+@index.command()
+@click.argument("software_name")
+@click.option(
+    "--config-file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Configuration file path"
+)
+@click.option(
+    "--limit",
+    default=3,
+    help="Maximum number of results to show"
+)
+@click.option(
+    "--min-score",
+    default=0.4,
+    help="Minimum similarity score (0.0-1.0)"
+)
+async def find_saidata(
+    software_name: str,
+    config_file: Optional[Path],
+    limit: int,
+    min_score: float
+):
+    """Find similar existing saidata files for a software name."""
+    try:
+        # Load configuration
+        config = get_config()
+        
+        # Initialize generation engine
+        engine = GenerationEngine(config.model_dump())
+        
+        if not engine.is_rag_available():
+            console.print("[red]RAG functionality is not available. Install with: pip install sai[rag][/red]")
+            return
+        
+        console.print(f"[blue]Finding similar saidata for: {software_name}[/blue]")
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            task = progress.add_task("Searching...", total=None)
+            
+            # Find similar saidata
+            similar_saidata = await engine.find_similar_saidata(
+                software_name=software_name,
+                limit=limit,
+                min_score=min_score
+            )
+            
+            progress.update(task, description=f"Found {len(similar_saidata)} results")
+        
+        if not similar_saidata:
+            console.print("[yellow]No similar saidata found[/yellow]")
+            return
+        
+        # Display results
+        table = Table(title=f"Similar Saidata for '{software_name}'")
+        table.add_column("Name", style="cyan")
+        table.add_column("Category", style="green")
+        table.add_column("Providers")
+        table.add_column("Description")
+        
+        for saidata in similar_saidata:
+            providers = ", ".join(saidata.providers.keys()) if saidata.providers else "None"
+            description = saidata.metadata.description[:60] + "..." if saidata.metadata.description and len(saidata.metadata.description) > 60 else saidata.metadata.description or ""
+            table.add_row(
+                saidata.metadata.name,
+                saidata.metadata.category or "Unknown",
+                providers,
+                description
+            )
+        
+        console.print(table)
+        
+        await engine.cleanup()
+        
+    except Exception as e:
+        console.print(f"[red]Error finding similar saidata: {e}[/red]")
+        logger.error(f"Saidata search failed: {e}")
+
+
+@index.command()
+@click.argument("software_name")
+@click.option(
+    "--config-file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Configuration file path"
+)
+@click.option(
+    "--providers",
+    multiple=True,
+    help="Target providers to focus on"
+)
+@click.option(
+    "--max-packages",
+    default=5,
+    help="Maximum number of similar packages to include"
+)
+@click.option(
+    "--max-saidata",
+    default=3,
+    help="Maximum number of similar saidata to include"
+)
+async def context(
+    software_name: str,
+    config_file: Optional[Path],
+    providers: tuple,
+    max_packages: int,
+    max_saidata: int
+):
+    """Build and display RAG context for a software name."""
+    try:
+        # Load configuration
+        config = get_config()
+        
+        # Initialize generation engine
+        engine = GenerationEngine(config.model_dump())
+        
+        if not engine.is_rag_available():
+            console.print("[red]RAG functionality is not available. Install with: pip install sai[rag][/red]")
+            return
+        
+        console.print(f"[blue]Building RAG context for: {software_name}[/blue]")
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            task = progress.add_task("Building context...", total=None)
+            
+            # Build RAG context
+            context_data = await engine.build_rag_context(
+                software_name=software_name,
+                target_providers=list(providers) if providers else None,
+                max_packages=max_packages,
+                max_saidata=max_saidata
+            )
+            
+            progress.update(task, description="Context built successfully")
+        
+        # Display context summary
+        console.print(f"\n[bold]Context Summary:[/bold]")
+        console.print(context_data['context_summary'])
+        
+        # Display similar packages
+        if context_data['similar_packages']:
+            console.print(f"\n[bold]Similar Packages ({len(context_data['similar_packages'])}):[/bold]")
+            pkg_table = Table()
+            pkg_table.add_column("Package", style="cyan")
+            pkg_table.add_column("Repository", style="green")
+            pkg_table.add_column("Description")
+            
+            for pkg in context_data['similar_packages']:
+                description = pkg.description[:50] + "..." if pkg.description and len(pkg.description) > 50 else pkg.description or ""
+                pkg_table.add_row(pkg.name, pkg.repository_name, description)
+            
+            console.print(pkg_table)
+        
+        # Display similar saidata
+        if context_data['similar_saidata']:
+            console.print(f"\n[bold]Similar Saidata ({len(context_data['similar_saidata'])}):[/bold]")
+            sai_table = Table()
+            sai_table.add_column("Name", style="cyan")
+            sai_table.add_column("Category", style="green")
+            sai_table.add_column("Providers")
+            
+            for saidata in context_data['similar_saidata']:
+                providers_str = ", ".join(saidata.providers.keys()) if saidata.providers else "None"
+                sai_table.add_row(
+                    saidata.metadata.name,
+                    saidata.metadata.category or "Unknown",
+                    providers_str
+                )
+            
+            console.print(sai_table)
+        
+        # Display sample saidata
+        if context_data['sample_saidata']:
+            console.print(f"\n[bold]Sample Saidata ({len(context_data['sample_saidata'])}):[/bold]")
+            sample_table = Table()
+            sample_table.add_column("Name", style="cyan")
+            sample_table.add_column("Category", style="green")
+            
+            for saidata in context_data['sample_saidata']:
+                sample_table.add_row(
+                    saidata.metadata.name,
+                    saidata.metadata.category or "Unknown"
+                )
+            
+            console.print(sample_table)
+        
+        # Display provider-specific packages
+        if context_data['provider_specific_packages']:
+            console.print(f"\n[bold]Provider-Specific Packages:[/bold]")
+            for provider, packages in context_data['provider_specific_packages'].items():
+                console.print(f"[green]{provider}:[/green] {len(packages)} packages")
+        
+        await engine.cleanup()
+        
+    except Exception as e:
+        console.print(f"[red]Error building RAG context: {e}[/red]")
+        logger.error(f"RAG context build failed: {e}")
+
+
 # Async command wrapper
 def run_async_command(coro):
     """Run async command in event loop."""
@@ -381,9 +605,13 @@ _rebuild_callback = rebuild.callback
 _status_callback = status.callback
 _clear_callback = clear.callback
 _search_callback = search.callback
+_find_saidata_callback = find_saidata.callback
+_context_callback = context.callback
 
 # Wrap async commands
 rebuild.callback = lambda *args, **kwargs: run_async_command(_rebuild_callback(*args, **kwargs))
 status.callback = lambda *args, **kwargs: run_async_command(_status_callback(*args, **kwargs))
 clear.callback = lambda *args, **kwargs: run_async_command(_clear_callback(*args, **kwargs))
 search.callback = lambda *args, **kwargs: run_async_command(_search_callback(*args, **kwargs))
+find_saidata.callback = lambda *args, **kwargs: run_async_command(_find_saidata_callback(*args, **kwargs))
+context.callback = lambda *args, **kwargs: run_async_command(_context_callback(*args, **kwargs))

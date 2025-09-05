@@ -283,12 +283,141 @@ def reset_logging():
     logging.root.setLevel(original_level)
     logging.root.handlers = original_handlers
     
-    # Clear SAI loggers
+    # Clear SAI and SAIGEN loggers
     for logger_name in list(logging.Logger.manager.loggerDict.keys()):
-        if logger_name.startswith('sai'):
+        if logger_name.startswith(('sai', 'saigen')):
             logger = logging.getLogger(logger_name)
             logger.handlers.clear()
             logger.setLevel(logging.NOTSET)
+
+
+# Saigen-specific fixtures
+@pytest.fixture
+def sample_saigen_config(temp_dir):
+    """Create sample saigen configuration."""
+    from saigen.models.config import SaigenConfig, LLMConfig
+    
+    return SaigenConfig(
+        llm_providers={
+            "openai": LLMConfig(
+                api_key="test-key",
+                model="gpt-3.5-turbo",
+                max_tokens=2000,
+                temperature=0.1
+            )
+        },
+        output_directory=str(temp_dir / "output"),
+        cache_directory=str(temp_dir / "cache"),
+        generation={
+            "retry_attempts": 2,
+            "timeout": 60,
+            "use_rag": True
+        }
+    )
+
+
+@pytest.fixture
+def mock_llm_response():
+    """Create mock LLM response."""
+    from saigen.llm.providers.base import LLMResponse
+    
+    return LLMResponse(
+        content="""version: "0.2"
+metadata:
+  name: "test-software"
+  display_name: "Test Software"
+  description: "A test software package"
+  category: "development"
+
+providers:
+  apt:
+    packages:
+      - name: "test-software"
+        version: "latest"
+""",
+        tokens_used=150,
+        cost_estimate=0.003,
+        model_used="gpt-3.5-turbo",
+        finish_reason="stop"
+    )
+
+
+@pytest.fixture
+def sample_generation_request():
+    """Create sample generation request."""
+    from saigen.models.generation import GenerationRequest, LLMProvider
+    
+    return GenerationRequest(
+        software_name="nginx",
+        target_providers=["apt", "brew"],
+        llm_provider=LLMProvider.OPENAI,
+        use_rag=True
+    )
+
+
+@pytest.fixture
+def sample_repository_packages():
+    """Create sample repository packages."""
+    from saigen.models.repository import RepositoryPackage
+    
+    return [
+        RepositoryPackage(
+            name="nginx",
+            version="1.20.1",
+            description="High-performance HTTP server and reverse proxy",
+            repository_name="apt",
+            platform="linux",
+            category="web-server",
+            tags=["http", "server", "proxy"],
+            homepage="https://nginx.org",
+            maintainer="nginx team"
+        ),
+        RepositoryPackage(
+            name="nginx",
+            version="1.21.0",
+            description="HTTP and reverse proxy server",
+            repository_name="brew",
+            platform="macos",
+            category="web-server",
+            tags=["http", "server"],
+            homepage="https://nginx.org"
+        )
+    ]
+
+
+@pytest.fixture
+def mock_generation_engine():
+    """Create mock generation engine."""
+    from unittest.mock import Mock, AsyncMock
+    from saigen.models.generation import GenerationResult
+    from saigen.models.saidata import SaiData, Metadata
+    
+    engine = Mock()
+    
+    async def mock_generate(request):
+        return GenerationResult(
+            success=True,
+            saidata=SaiData(
+                version="0.2",
+                metadata=Metadata(name=request.software_name)
+            ),
+            validation_errors=[],
+            warnings=[],
+            generation_time=1.0,
+            llm_provider_used="openai",
+            tokens_used=100,
+            cost_estimate=0.001
+        )
+    
+    engine.generate_saidata = mock_generate
+    engine.get_available_providers.return_value = ["openai"]
+    engine.get_provider_info.return_value = {
+        "name": "openai",
+        "model": "gpt-3.5-turbo",
+        "available": True
+    }
+    
+    return engine
 
 
 @pytest.fixture
@@ -320,6 +449,15 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "requires_system: mark test as requiring system dependencies"
     )
+    config.addinivalue_line(
+        "markers", "performance: mark test as performance benchmark"
+    )
+    config.addinivalue_line(
+        "markers", "unit: mark test as unit test"
+    )
+    config.addinivalue_line(
+        "markers", "llm_integration: mark test as requiring LLM API access"
+    )
 
 
 # Skip markers for CI/CD
@@ -340,6 +478,20 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "requires_system" in item.keywords:
                 item.add_marker(skip_system)
+    
+    # Skip performance tests if --no-performance flag is used
+    if config.getoption("--no-performance", default=False):
+        skip_performance = pytest.mark.skip(reason="Performance tests disabled")
+        for item in items:
+            if "performance" in item.keywords:
+                item.add_marker(skip_performance)
+    
+    # Skip LLM tests if --no-llm flag is used
+    if config.getoption("--no-llm", default=False):
+        skip_llm = pytest.mark.skip(reason="LLM integration tests disabled")
+        for item in items:
+            if "llm_integration" in item.keywords:
+                item.add_marker(skip_llm)
 
 
 def pytest_addoption(parser):
@@ -355,4 +507,16 @@ def pytest_addoption(parser):
         action="store_true",
         default=False,
         help="Skip tests that require system dependencies"
+    )
+    parser.addoption(
+        "--no-performance",
+        action="store_true",
+        default=False,
+        help="Skip performance tests"
+    )
+    parser.addoption(
+        "--no-llm",
+        action="store_true",
+        default=False,
+        help="Skip tests that require LLM API access"
     )

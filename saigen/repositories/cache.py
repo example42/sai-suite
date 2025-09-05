@@ -354,6 +354,117 @@ class RepositoryCache:
         
         return stats
     
+    async def get_all_packages(self, include_expired: bool = False) -> List[RepositoryPackage]:
+        """Get all cached packages from all repositories.
+        
+        Args:
+            include_expired: Whether to include packages from expired cache entries
+            
+        Returns:
+            List of all cached repository packages
+        """
+        all_packages = []
+        now = datetime.utcnow()
+        
+        for meta_file in self.cache_dir.glob("*.meta"):
+            try:
+                with open(meta_file, 'r') as f:
+                    content = f.read()
+                    metadata = json.loads(content)
+                
+                # Check if expired
+                expires_at = datetime.fromisoformat(metadata['expires_at'])
+                if not include_expired and now > expires_at:
+                    continue
+                
+                # Load cache entry
+                cache_key = meta_file.stem
+                cache_entry = await self.get(cache_key)
+                
+                if cache_entry and cache_entry.packages:
+                    all_packages.extend(cache_entry.packages)
+                    
+            except Exception as e:
+                # Log error but continue with other entries
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to load packages from cache entry {meta_file}: {e}")
+                continue
+        
+        return all_packages
+    
+    async def get_packages_by_repository(self, repository_name: str) -> List[RepositoryPackage]:
+        """Get all cached packages from a specific repository.
+        
+        Args:
+            repository_name: Name of the repository
+            
+        Returns:
+            List of cached packages from the specified repository
+        """
+        packages = []
+        
+        for meta_file in self.cache_dir.glob("*.meta"):
+            try:
+                with open(meta_file, 'r') as f:
+                    content = f.read()
+                    metadata = json.loads(content)
+                
+                # Check if this is the repository we want
+                if metadata.get('repository_name') != repository_name:
+                    continue
+                
+                # Check if expired
+                now = datetime.utcnow()
+                expires_at = datetime.fromisoformat(metadata['expires_at'])
+                if now > expires_at:
+                    continue
+                
+                # Load cache entry
+                cache_key = meta_file.stem
+                cache_entry = await self.get(cache_key)
+                
+                if cache_entry and cache_entry.packages:
+                    packages.extend(cache_entry.packages)
+                    
+            except Exception as e:
+                # Log error but continue with other entries
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to load packages from cache entry {meta_file}: {e}")
+                continue
+        
+        return packages
+    
+    async def list_cached_repositories(self) -> List[str]:
+        """List all repositories that have cached data.
+        
+        Returns:
+            List of repository names with cached data
+        """
+        repositories = set()
+        now = datetime.utcnow()
+        
+        for meta_file in self.cache_dir.glob("*.meta"):
+            try:
+                with open(meta_file, 'r') as f:
+                    content = f.read()
+                    metadata = json.loads(content)
+                
+                # Check if expired
+                expires_at = datetime.fromisoformat(metadata['expires_at'])
+                if now > expires_at:
+                    continue
+                
+                repo_name = metadata.get('repository_name')
+                if repo_name:
+                    repositories.add(repo_name)
+                    
+            except Exception:
+                continue
+        
+        return sorted(list(repositories))
+    
     async def clear_all(self) -> int:
         """Clear all cache entries.
         

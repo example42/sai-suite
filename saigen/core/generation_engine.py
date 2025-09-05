@@ -1007,6 +1007,100 @@ class GenerationEngine:
         """
         return self.rag_indexer is not None and self.rag_context_builder is not None
     
+    async def search_similar_packages(
+        self,
+        query: str,
+        limit: int = 5,
+        min_score: float = 0.3
+    ) -> List[RepositoryPackage]:
+        """Search for similar packages using semantic search.
+        
+        Args:
+            query: Search query
+            limit: Maximum number of results
+            min_score: Minimum similarity score (0-1)
+            
+        Returns:
+            List of similar repository packages
+        """
+        if not self.rag_indexer:
+            logger.warning("RAG indexer not available")
+            return []
+        
+        try:
+            return await self.rag_indexer.search_similar_packages(query, limit, min_score)
+        except Exception as e:
+            logger.error(f"Failed to search similar packages: {e}")
+            return []
+    
+    async def find_similar_saidata(
+        self,
+        software_name: str,
+        limit: int = 3,
+        min_score: float = 0.4
+    ) -> List[SaiData]:
+        """Find similar existing saidata files.
+        
+        Args:
+            software_name: Software name to find similar saidata for
+            limit: Maximum number of results
+            min_score: Minimum similarity score (0-1)
+            
+        Returns:
+            List of similar SaiData objects
+        """
+        if not self.rag_indexer:
+            logger.warning("RAG indexer not available")
+            return []
+        
+        try:
+            return await self.rag_indexer.find_similar_saidata(software_name, limit, min_score)
+        except Exception as e:
+            logger.error(f"Failed to find similar saidata: {e}")
+            return []
+    
+    async def build_rag_context(
+        self,
+        software_name: str,
+        target_providers: Optional[List[str]] = None,
+        max_packages: int = 5,
+        max_saidata: int = 3
+    ) -> Dict[str, Any]:
+        """Build RAG context for LLM prompt injection.
+        
+        Args:
+            software_name: Software name to build context for
+            target_providers: Target providers to focus on
+            max_packages: Maximum number of similar packages to include
+            max_saidata: Maximum number of similar saidata to include
+            
+        Returns:
+            Dictionary with RAG context data
+        """
+        if not self.rag_context_builder:
+            logger.warning("RAG context builder not available")
+            return {
+                'similar_packages': [],
+                'similar_saidata': [],
+                'sample_saidata': [],
+                'provider_specific_packages': {},
+                'context_summary': f'No RAG context available for {software_name}'
+            }
+        
+        try:
+            return await self.rag_context_builder.build_context(
+                software_name, target_providers, max_packages, max_saidata
+            )
+        except Exception as e:
+            logger.error(f"Failed to build RAG context: {e}")
+            return {
+                'similar_packages': [],
+                'similar_saidata': [],
+                'sample_saidata': [],
+                'provider_specific_packages': {},
+                'context_summary': f'Failed to build RAG context for {software_name}: {e}'
+            }
+    
     async def cleanup(self) -> None:
         """Cleanup engine resources."""
         await self.provider_manager.cleanup()

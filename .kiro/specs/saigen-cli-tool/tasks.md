@@ -83,13 +83,13 @@
   - Create quality scoring system for generated saidata
   - _Requirements: 4.2, 5.4_
 
-- [ ] 14. Add RAG indexing and similarity search
+- [x] 14. Add RAG indexing and similarity search
   - Implement existing saidata indexing for example-based generation
   - Create similarity search for finding related software
   - Add index rebuild and management commands
   - _Requirements: 5.4, 5.5_
 
-- [ ] 15. Create comprehensive test suite and documentation
+- [x] 15. Create comprehensive test suite and documentation
   - Write unit tests for all core components with mocked dependencies
   - Create integration tests with real LLM providers (using test accounts)
   - Add performance benchmarks and memory usage tests

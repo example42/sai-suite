@@ -100,3 +100,32 @@ class BatchGenerationResult(BaseModel):
     average_time_per_item: float
     
     model_config = ConfigDict(validate_assignment=True)
+
+
+# Backward compatibility aliases for tests
+BatchResult = BatchGenerationResult
+
+
+class BatchProgress(BaseModel):
+    """Progress tracking for batch operations."""
+    total: int
+    completed: int
+    successful: int
+    failed: int
+    current_item: Optional[str] = None
+    elapsed_time: float = 0.0
+    estimated_remaining: Optional[float] = None
+    
+    model_config = ConfigDict(validate_assignment=True)
+
+
+class BatchError(Exception):
+    """Base exception for batch processing errors."""
+    pass
+
+
+class BatchProcessingError(BatchError):
+    """Error during batch processing."""
+    def __init__(self, message: str, software_name: Optional[str] = None):
+        super().__init__(message)
+        self.software_name = software_name

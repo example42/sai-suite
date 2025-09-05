@@ -187,9 +187,25 @@ class SoftwareListParser:
 class BatchGenerationEngine:
     """Engine for batch processing of saidata generation."""
     
-    def __init__(self, generation_engine: GenerationEngine):
-        self.generation_engine = generation_engine
-        self.executor = ThreadPoolExecutor(max_workers=10)
+    def __init__(self, generation_engine_or_config, generation_engine=None):
+        # Handle backward compatibility - if first arg is dict, it's config
+        if isinstance(generation_engine_or_config, dict):
+            config = generation_engine_or_config
+            self.generation_engine = generation_engine
+            batch_config = config.get("batch", {})
+            self.max_concurrent = batch_config.get("max_concurrent", 3)
+            self.retry_attempts = batch_config.get("retry_attempts", 2)
+            self.timeout = batch_config.get("timeout", 300)
+            max_workers = self.max_concurrent
+        else:
+            # New style - first arg is generation engine
+            self.generation_engine = generation_engine_or_config
+            self.max_concurrent = 3
+            self.retry_attempts = 2
+            self.timeout = 300
+            max_workers = 3
+        
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
     
     async def generate_batch(
         self,
@@ -269,7 +285,7 @@ class BatchGenerationEngine:
                         validation_errors=[],
                         warnings=[f"Generation failed: {str(e)}"],
                         generation_time=0.0,
-                        llm_provider_used=request.llm_provider.value,
+                        llm_provider_used=request.llm_provider if isinstance(request.llm_provider, str) else request.llm_provider.value,
                         repository_sources_used=[]
                     )
                     
@@ -297,7 +313,7 @@ class BatchGenerationEngine:
                         validation_errors=[],
                         warnings=[f"Task failed: {str(result)}"],
                         generation_time=0.0,
-                        llm_provider_used=request.llm_provider.value,
+                        llm_provider_used=request.llm_provider if isinstance(request.llm_provider, str) else request.llm_provider.value,
                         repository_sources_used=[]
                     )
                     results.append(error_result)
@@ -480,3 +496,26 @@ Average Time per Item: {result.average_time_per_item:.2f}s
     async def cleanup(self) -> None:
         """Cleanup batch engine resources."""
         self.executor.shutdown(wait=True)
+
+
+    async def process_batch(self, software_list, **kwargs):
+        """Backward compatibility method for process_batch."""
+        from ..models.generation import BatchGenerationRequest, LLMProvider
+        
+        # Convert old-style arguments to new BatchGenerationRequest
+        request = BatchGenerationRequest(
+            software_list=software_list,
+            target_providers=kwargs.get('target_providers', []),
+            llm_provider=kwargs.get('llm_provider', LLMProvider.OPENAI),
+            use_rag=kwargs.get('use_rag', True),
+            output_directory=kwargs.get('output_directory'),
+            max_concurrent=kwargs.get('max_concurrent', self.max_concurrent),
+            continue_on_error=kwargs.get('continue_on_error', True),
+            category_filter=kwargs.get('category_filter')
+        )
+        
+        return await self.generate_batch(request, kwargs.get('progress_callback'))
+
+
+# Backward compatibility alias for tests
+BatchEngine = BatchGenerationEngine

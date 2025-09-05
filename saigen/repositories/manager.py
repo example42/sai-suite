@@ -19,20 +19,40 @@ class RepositoryManager:
     the universal system that supports 50+ package managers through YAML configuration.
     """
     
-    def __init__(self, cache_dir: Union[str, Path], config_dir: Union[str, Path]):
+    def __init__(self, cache_dir: Union[str, Path, Dict[str, Any], None] = None, 
+                 config_dir: Union[str, Path, None] = None):
         """Initialize repository manager.
         
         Args:
-            cache_dir: Directory for caching repository data
+            cache_dir: Directory for caching repository data, or config dict for backward compatibility
             config_dir: Directory containing repository configurations
         """
+        # Handle backward compatibility - if first arg is dict, it's old-style config
+        if isinstance(cache_dir, dict):
+            config = cache_dir
+            cache_directory = Path(config.get("cache_directory", "cache"))
+            config_directory = Path(config.get("config_directory", Path(__file__).parent / "configs"))
+        elif cache_dir is None:
+            # Default configuration
+            cache_directory = Path("cache")
+            config_directory = Path(__file__).parent / "configs"
+        else:
+            # New-style constructor
+            cache_directory = Path(cache_dir)
+            config_directory = Path(config_dir) if config_dir else Path(__file__).parent / "configs"
+        
         # Initialize universal manager with config directories
         config_dirs = [
-            Path(config_dir),
+            config_directory,
             Path(__file__).parent / "configs"  # Built-in configs
         ]
-        self.universal_manager = UniversalRepositoryManager(cache_dir, config_dirs)
+        self.universal_manager = UniversalRepositoryManager(cache_directory, config_dirs)
         self._initialized = False
+        
+        # Backward compatibility attributes
+        self.cache_directory = cache_directory
+        if isinstance(cache_dir, dict):
+            self.enabled_repositories = list(cache_dir.get("repositories", {}).keys())
     
     async def initialize(self) -> None:
         """Initialize the repository manager."""
@@ -268,6 +288,25 @@ class RepositoryManager:
     async def close(self):
         """Explicitly close all connections."""
         await self.universal_manager.close()
+    
+    # Backward compatibility methods
+    async def get_package_info(self, package_name: str, repository_name: Optional[str] = None):
+        """Get package info - backward compatibility method."""
+        return await self.get_package_details(package_name, repository_names=[repository_name] if repository_name else None)
+    
+    def get_enabled_repositories(self) -> List[str]:
+        """Get enabled repositories - backward compatibility method."""
+        if hasattr(self, 'enabled_repositories'):
+            return self.enabled_repositories
+        return [info.name for info in self.get_all_repository_info()]
+    
+    def get_repository_priority(self, repository_name: str) -> int:
+        """Get repository priority - backward compatibility method."""
+        return 1  # Default priority
+    
+    def is_repository_enabled(self, repository_name: str) -> bool:
+        """Check if repository is enabled - backward compatibility method."""
+        return repository_name in self.get_enabled_repositories()
 
 
 # Alias for backward compatibility
