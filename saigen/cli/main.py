@@ -80,6 +80,10 @@ cli.add_command(repositories)
 from .commands.index import index
 cli.add_command(index)
 
+# Add quality command for advanced validation
+from .commands.quality import quality
+cli.add_command(quality)
+
 
 def main():
     """Main entry point."""

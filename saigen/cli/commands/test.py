@@ -74,6 +74,16 @@ def test(
         saigen test --show-details --format json software.yaml
         saigen test --no-dry-run software.yaml  # WARNING: May perform actual operations
     """
+    exit_code = 0
+    
+    # Handle dry-run confirmation outside try-catch to avoid catching SystemExit
+    dry_run = not no_dry_run
+    if not dry_run:
+        click.echo("⚠️  WARNING: Dry-run mode disabled. Tests may perform actual operations!", err=True)
+        if not click.confirm("Do you want to continue?"):
+            # User declined, exit gracefully
+            ctx.exit(0)
+    
     try:
         # Get configuration
         config = (ctx.obj and ctx.obj.get('config')) or get_config()
@@ -89,23 +99,17 @@ def test(
         # Create tester
         tester = SaidataTester(config)
         
-        # Determine dry-run mode
-        dry_run = not no_dry_run
-        
-        if not dry_run:
-            click.echo("⚠️  WARNING: Dry-run mode disabled. Tests may perform actual operations!", err=True)
-            if not click.confirm("Do you want to continue?"):
-                ctx.exit(0)
-        
         # Run tests with timeout
-        click.echo(f"🧪 Testing saidata file: {file_path}")
-        if selected_providers:
-            click.echo(f"📦 Testing providers: {', '.join(selected_providers)}")
-        if selected_test_types:
-            click.echo(f"🔍 Running test types: {', '.join(t.value for t in selected_test_types)}")
-        
-        click.echo(f"⏱️  Timeout: {timeout}s")
-        click.echo("")
+        # Only show informational messages in text mode to keep JSON output clean
+        if output_format != 'json':
+            click.echo(f"🧪 Testing saidata file: {file_path}")
+            if selected_providers:
+                click.echo(f"📦 Testing providers: {', '.join(selected_providers)}")
+            if selected_test_types:
+                click.echo(f"🔍 Running test types: {', '.join(t.value for t in selected_test_types)}")
+            
+            click.echo(f"⏱️  Timeout: {timeout}s")
+            click.echo("")
         
         # Run the async test function
         try:
@@ -157,13 +161,11 @@ def test(
             report = tester.format_test_report(test_suite, show_details=show_details)
             click.echo(report)
         
-        # Exit with appropriate code
+        # Determine exit code
         if test_suite.has_failures:
-            ctx.exit(1)
+            exit_code = 1
         elif test_suite.warnings > 0:
-            ctx.exit(2)  # Exit code 2 for warnings
-        else:
-            ctx.exit(0)
+            exit_code = 2  # Exit code 2 for warnings
     
     except FileNotFoundError as e:
         raise click.ClickException(f"File not found: {e}")
@@ -172,6 +174,9 @@ def test(
             import traceback
             click.echo(f"Error details:\n{traceback.format_exc()}", err=True)
         raise click.ClickException(f"Test execution error: {e}")
+    
+    # Exit with the determined code
+    ctx.exit(exit_code)
 
 
 @click.group()
