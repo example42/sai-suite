@@ -1,0 +1,214 @@
+version: "0.2"
+
+metadata:
+  name: "elasticsearch"
+  display_name: "Elasticsearch"
+  description: "Distributed search and analytics engine built on Apache Lucene"
+  version: "8.9.0"
+  category: "search"
+  subcategory: "analytics"
+  tags: ["elasticsearch", "search", "analytics", "lucene", "elk", "observability"]
+  license: "Elastic-2.0"
+  language: "Java"
+  maintainer: "Elastic N.V."
+  urls:
+    website: "https://www.elastic.co/elasticsearch"
+    documentation: "https://www.elastic.co/guide/en/elasticsearch/reference/current"
+    source: "https://github.com/elastic/elasticsearch"
+    issues: "https://github.com/elastic/elasticsearch/issues"
+    support: "https://www.elastic.co/support"
+    download: "https://www.elastic.co/downloads/elasticsearch"
+    changelog: "https://www.elastic.co/guide/en/elasticsearch/reference/current/release-notes.html"
+    license: "https://github.com/elastic/elasticsearch/blob/main/LICENSE.txt"
+  security:
+    security_contact: "security@elastic.co"
+    vulnerability_disclosure: "https://www.elastic.co/community/security"
+
+packages:
+  - name: "elasticsearch"
+    version: "8.9.0"
+    alternatives: ["elasticsearch"]
+
+services:
+  - name: "elasticsearch"
+    service_name: "elasticsearch"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/elasticsearch/elasticsearch.yml", "/etc/elasticsearch/jvm.options"]
+
+files:
+  - name: "main-config"
+    path: "/etc/elasticsearch/elasticsearch.yml"
+    type: "config"
+    owner: "root"
+    group: "elasticsearch"
+    mode: "0660"
+    backup: true
+  - name: "jvm-config"
+    path: "/etc/elasticsearch/jvm.options"
+    type: "config"
+    owner: "root"
+    group: "elasticsearch"
+    mode: "0660"
+    backup: true
+  - name: "log4j-config"
+    path: "/etc/elasticsearch/log4j2.properties"
+    type: "config"
+    owner: "root"
+    group: "elasticsearch"
+    mode: "0660"
+    backup: true
+  - name: "log"
+    path: "/var/log/elasticsearch/elasticsearch.log"
+    type: "log"
+    owner: "elasticsearch"
+    group: "elasticsearch"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/elasticsearch"
+    owner: "root"
+    group: "elasticsearch"
+    mode: "0750"
+  - name: "data"
+    path: "/var/lib/elasticsearch"
+    owner: "elasticsearch"
+    group: "elasticsearch"
+    mode: "0750"
+  - name: "log"
+    path: "/var/log/elasticsearch"
+    owner: "elasticsearch"
+    group: "elasticsearch"
+    mode: "0750"
+  - name: "plugins"
+    path: "/usr/share/elasticsearch/plugins"
+    owner: "root"
+    group: "elasticsearch"
+    mode: "0755"
+
+commands:
+  - name: "elasticsearch"
+    path: "/usr/share/elasticsearch/bin/elasticsearch"
+  - name: "elasticsearch-plugin"
+    path: "/usr/share/elasticsearch/bin/elasticsearch-plugin"
+  - name: "elasticsearch-keystore"
+    path: "/usr/share/elasticsearch/bin/elasticsearch-keystore"
+
+ports:
+  - port: 9200
+    protocol: "tcp"
+    service: "elasticsearch-http"
+    description: "Elasticsearch HTTP API"
+  - port: 9300
+    protocol: "tcp"
+    service: "elasticsearch-transport"
+    description: "Elasticsearch transport (cluster communication)"
+
+providers:
+  apt:
+    repositories:
+      - name: "elastic-official"
+        url: "https://artifacts.elastic.co/packages/8.x/apt"
+        key: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "elasticsearch"
+            version: "8.9.0"
+
+  dnf:
+    repositories:
+      - name: "elastic-official"
+        url: "https://artifacts.elastic.co/packages/8.x/yum"
+        key: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "elasticsearch"
+            version: "8.9.0"
+
+  brew:
+    packages:
+      - name: "elasticsearch"
+        alternatives: ["elasticsearch@8"]
+
+  docker:
+    containers:
+      - name: "elasticsearch"
+        image: "docker.elastic.co/elasticsearch/elasticsearch"
+        tag: "8.9.0"
+        registry: "docker.elastic.co"
+        ports: ["9200:9200", "9300:9300"]
+        volumes: ["/usr/share/elasticsearch/data:/usr/share/elasticsearch/data"]
+        environment:
+          discovery.type: "single-node"
+          ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+          xpack.security.enabled: "false"
+        labels:
+          purpose: "search-analytics"
+      - name: "elasticsearch-oss"
+        image: "elasticsearch"
+        tag: "7.17.12"
+        registry: "docker.io"
+        ports: ["9200:9200", "9300:9300"]
+        volumes: ["/usr/share/elasticsearch/data:/usr/share/elasticsearch/data"]
+        environment:
+          discovery.type: "single-node"
+          ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+        labels:
+          purpose: "oss-search-engine"
+
+  helm:
+    repositories:
+      - name: "elastic"
+        url: "https://helm.elastic.co"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "elasticsearch"
+            alternatives: ["elasticsearch"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Requires Java 11 or higher"
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Requires Java 11 or higher"
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Includes bundled JDK"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development and containerized deployments"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes deployment with clustering and persistence"
+
+requirements:
+  system:
+    memory_min: "2GB"
+    memory_recommended: "8GB"
+    disk_space: "10GB"
+    java_version: "11+"
+  performance:
+    heap_size: "50% of available RAM (max 32GB)"
+    file_descriptors: "65536"
+    virtual_memory: "unlimited"

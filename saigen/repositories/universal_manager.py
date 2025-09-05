@@ -177,12 +177,24 @@ class UniversalRepositoryManager:
                 parser_registry=self.parser_registry
             )
             
-            # Test availability if configured
+            # Test availability if configured (with timeout)
             metadata = config.get('metadata', {})
-            if metadata.get('test_availability', True):
-                is_available = await downloader.is_available()
-                if not is_available:
-                    logger.warning(f"Repository {config['name']} is not available")
+            # Default to False for test_availability to prevent connection issues during initialization
+            if metadata.get('test_availability', False):
+                try:
+                    # Use asyncio.wait_for to add a timeout to availability check
+                    is_available = await asyncio.wait_for(
+                        downloader.is_available(), 
+                        timeout=5.0  # 5 second timeout for availability check
+                    )
+                    if not is_available:
+                        logger.warning(f"Repository {config['name']} is not available")
+                        return None
+                except asyncio.TimeoutError:
+                    logger.warning(f"Repository {config['name']} availability check timed out")
+                    return None
+                except Exception as e:
+                    logger.warning(f"Repository {config['name']} availability check failed: {e}")
                     return None
             
             return downloader
@@ -527,4 +539,11 @@ class UniversalRepositoryManager:
         # Close any open connections in downloaders
         for downloader in self._downloaders.values():
             if hasattr(downloader, '__aexit__'):
-                await downloader.__aexit__(exc_type, exc_val, exc_tb)
+                try:
+                    await downloader.__aexit__(exc_type, exc_val, exc_tb)
+                except Exception as e:
+                    logger.debug(f"Error closing downloader: {e}")
+    
+    async def close(self):
+        """Explicitly close all connections."""
+        await self.__aexit__(None, None, None)

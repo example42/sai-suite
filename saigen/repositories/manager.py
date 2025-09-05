@@ -166,6 +166,54 @@ class RepositoryManager:
             await self.initialize()
         return await self.universal_manager.get_repository_statistics()
     
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics.
+        
+        Returns:
+            Dictionary with cache statistics
+        """
+        if not self._initialized:
+            await self.initialize()
+        return await self.universal_manager.cache.get_cache_stats()
+    
+    async def clear_cache(self, repository_names: Optional[List[str]] = None) -> int:
+        """Clear repository cache.
+        
+        Args:
+            repository_names: Specific repositories to clear (optional)
+            
+        Returns:
+            Number of cache entries removed
+        """
+        if not self._initialized:
+            await self.initialize()
+        
+        if repository_names is None:
+            # Clear all cache
+            return await self.universal_manager.cache.clear_all()
+        else:
+            # Clear specific repositories
+            removed_count = 0
+            for repo_name in repository_names:
+                # Clear cache entries for this repository
+                cache_key = f"{repo_name}_packages"
+                if await self.universal_manager.cache.has_key(cache_key):
+                    await self.universal_manager.cache.delete(cache_key)
+                    removed_count += 1
+            return removed_count
+    
+    async def cleanup_cache(self) -> Dict[str, int]:
+        """Clean up expired cache entries.
+        
+        Returns:
+            Dictionary with cleanup statistics
+        """
+        if not self._initialized:
+            await self.initialize()
+        
+        expired_removed = await self.universal_manager.cache.cleanup_expired()
+        return {'expired_removed': expired_removed}
+    
     def get_supported_platforms(self) -> List[str]:
         """Get list of supported platforms.
         
@@ -216,6 +264,10 @@ class RepositoryManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.universal_manager.__aexit__(exc_type, exc_val, exc_tb)
+    
+    async def close(self):
+        """Explicitly close all connections."""
+        await self.universal_manager.close()
 
 
 # Alias for backward compatibility

@@ -1,0 +1,187 @@
+version: "0.2"
+
+metadata:
+  name: "jenkins"
+  display_name: "Jenkins"
+  description: "Open source automation server for building, deploying and automating projects"
+  version: "2.414.0"
+  category: "ci-cd"
+  subcategory: "automation-server"
+  tags: ["jenkins", "ci", "cd", "automation", "devops", "build"]
+  license: "MIT"
+  language: "Java"
+  maintainer: "Jenkins Community"
+  urls:
+    website: "https://www.jenkins.io"
+    documentation: "https://www.jenkins.io/doc"
+    source: "https://github.com/jenkinsci/jenkins"
+    issues: "https://issues.jenkins.io"
+    support: "https://www.jenkins.io/participate"
+    download: "https://www.jenkins.io/download"
+    changelog: "https://www.jenkins.io/changelog"
+    license: "https://github.com/jenkinsci/jenkins/blob/master/LICENSE.txt"
+  security:
+    security_contact: "security@jenkins.io"
+    vulnerability_disclosure: "https://www.jenkins.io/security"
+
+packages:
+  - name: "jenkins"
+    version: "2.414.0"
+    alternatives: ["jenkins"]
+
+services:
+  - name: "jenkins"
+    service_name: "jenkins"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/default/jenkins", "/etc/jenkins/jenkins.yaml"]
+
+files:
+  - name: "config"
+    path: "/etc/default/jenkins"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "casc-config"
+    path: "/etc/jenkins/jenkins.yaml"
+    type: "config"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0644"
+    backup: true
+  - name: "log"
+    path: "/var/log/jenkins/jenkins.log"
+    type: "log"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0644"
+
+directories:
+  - name: "home"
+    path: "/var/lib/jenkins"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0755"
+  - name: "config"
+    path: "/etc/jenkins"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0755"
+  - name: "log"
+    path: "/var/log/jenkins"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0755"
+  - name: "plugins"
+    path: "/var/lib/jenkins/plugins"
+    owner: "jenkins"
+    group: "jenkins"
+    mode: "0755"
+
+commands:
+  - name: "jenkins-cli"
+    path: "/var/lib/jenkins/jenkins-cli.jar"
+    aliases: ["java -jar /var/lib/jenkins/jenkins-cli.jar"]
+
+ports:
+  - port: 8080
+    protocol: "tcp"
+    service: "jenkins-web"
+    description: "Jenkins web interface"
+  - port: 50000
+    protocol: "tcp"
+    service: "jenkins-agent"
+    description: "Jenkins agent communication"
+
+containers:
+  - name: "jenkins"
+    image: "jenkins/jenkins"
+    tag: "2.414.0-lts"
+    registry: "docker.io"
+    ports: ["8080:8080", "50000:50000"]
+    volumes: ["/var/jenkins_home:/var/jenkins_home"]
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+    labels:
+      purpose: "ci-cd-server"
+
+providers:
+  apt:
+    repositories:
+      - name: "jenkins-official"
+        url: "https://pkg.jenkins.io/debian-stable"
+        key: "https://pkg.jenkins.io/debian-stable/jenkins.io.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "jenkins"
+            version: "2.414.0"
+
+  dnf:
+    repositories:
+      - name: "jenkins-official"
+        url: "https://pkg.jenkins.io/redhat-stable"
+        key: "https://pkg.jenkins.io/redhat-stable/jenkins.io.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "jenkins"
+            version: "2.414.0"
+
+  brew:
+    packages:
+      - name: "jenkins"
+        alternatives: ["jenkins-lts"]
+
+  docker:
+    containers:
+      - name: "jenkins"
+        image: "jenkins/jenkins"
+        tag: "2.414.0-lts"
+        registry: "docker.io"
+        ports: ["8080:8080", "50000:50000"]
+        volumes: ["/var/jenkins_home:/var/jenkins_home"]
+        environment:
+          JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+
+  helm:
+    repositories:
+      - name: "jenkins"
+        url: "https://charts.jenkins.io"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "jenkins"
+            alternatives: ["jenkins"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development and testing"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes deployment"

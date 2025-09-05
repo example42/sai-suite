@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 
 import click
 
@@ -14,18 +15,26 @@ import click
               help='Target providers for saidata (e.g., apt, brew, winget)')
 @click.option('--no-rag', is_flag=True, help='Disable RAG context injection')
 @click.option('--force', is_flag=True, help='Overwrite existing files')
+@click.option('--log-file', type=click.Path(path_type=Path),
+              help='Log file path for detailed generation process logging (default: auto-generated)')
 @click.pass_context
 def generate(ctx: click.Context, software_name: str, output: Optional[Path], 
-             providers: tuple, no_rag: bool, force: bool):
+             providers: tuple, no_rag: bool, force: bool, log_file: Optional[Path]):
     """Generate saidata for a software package.
     
     Creates a comprehensive saidata YAML file by combining LLM knowledge
     with repository data and existing saidata examples.
     
+    The --log-file option enables detailed logging of the entire generation
+    process, including all LLM interactions, data operations, and timing
+    information. This is useful for debugging, cost monitoring, and quality
+    assurance.
+    
     Examples:
         saigen generate nginx
         saigen generate --providers apt,brew --output custom.yaml nginx
         saigen generate --no-rag --dry-run postgresql
+        saigen generate --log-file ./nginx-gen.json --verbose nginx
     """
     # Input validation for security
     if not software_name or not software_name.strip():
@@ -33,7 +42,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
     
     # Sanitize software name (allow only alphanumeric, hyphens, underscores, dots)
     import re
-    if not re.match(r'^[a-zA-Z0-9._-]+$', software_name):$', software_name):
+    if not re.match(r'^[a-zA-Z0-9._-]+$', software_name):
         raise click.BadParameter("Software name contains invalid characters")
     
     config = ctx.obj['config']
@@ -43,12 +52,43 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
     # Use global LLM provider if specified, otherwise use config default
     llm_provider = ctx.obj['llm_provider']
     
+    # Set up generation logging if requested
+    generation_logger = None
+    if log_file or not dry_run:  # Always log for actual generation
+        if not log_file:
+            # Auto-generate log filename
+            from ...utils.generation_logger import create_generation_log_filename
+            log_dir = Path.home() / '.saigen' / 'logs'
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_filename = create_generation_log_filename(software_name)
+            log_file = log_dir / log_filename
+        
+        if not dry_run:  # Only create logger for actual generation
+            from ...utils.generation_logger import GenerationLogger
+            generation_logger = GenerationLogger(log_file, software_name)
+    
     if verbose:
         click.echo(f"Generating saidata for: {software_name}")
         click.echo(f"LLM Provider: {llm_provider or 'default'}")
         click.echo(f"Target providers: {list(providers) if providers else 'default'}")
         click.echo(f"RAG enabled: {not no_rag}")
+        
+        # Show sample data configuration
+        if not no_rag and config.rag.use_default_samples:
+            sample_dir = config.rag.default_samples_directory
+            if sample_dir and Path(sample_dir).exists():
+                yaml_files = list(Path(sample_dir).glob("*.yaml")) + list(Path(sample_dir).glob("*.yml"))
+                click.echo(f"Sample data: {len(yaml_files)} files from {sample_dir}")
+            else:
+                click.echo("Sample data: Configured but directory not found")
+        elif not no_rag:
+            click.echo("Sample data: Not configured (use 'saigen config samples --auto-detect')")
+        
         click.echo(f"Dry run: {dry_run}")
+        
+        # Show log file path
+        if log_file:
+            click.echo(f"Generation log: {log_file}")
     
     if dry_run:
         click.echo(f"[DRY RUN] Would generate saidata for '{software_name}'")
@@ -57,6 +97,9 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         else:
             click.echo(f"[DRY RUN] Would save to: {software_name}.yaml")
         
+        if log_file:
+            click.echo(f"[DRY RUN] Would log generation process to: {log_file}")
+        
         # Show RAG status in dry run
         if not no_rag:
             try:
@@ -64,6 +107,17 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
                 engine = GenerationEngine(config)
                 if engine.is_rag_available():
                     click.echo("[DRY RUN] RAG context would be used for enhanced generation")
+                    
+                    # Show sample data status
+                    if config.rag.use_default_samples:
+                        sample_dir = config.rag.default_samples_directory
+                        if sample_dir and Path(sample_dir).exists():
+                            yaml_files = list(Path(sample_dir).glob("*.yaml")) + list(Path(sample_dir).glob("*.yml"))
+                            click.echo(f"[DRY RUN] Would use {len(yaml_files)} sample saidata files as examples")
+                        else:
+                            click.echo("[DRY RUN] Sample data configured but directory not found")
+                    else:
+                        click.echo("[DRY RUN] Sample data disabled - would use only repository data")
                 else:
                     click.echo("[DRY RUN] RAG not available - would use basic generation")
             except Exception:
@@ -76,8 +130,10 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         from ...core.generation_engine import GenerationEngine
         from ...models.generation import GenerationRequest, LLMProvider
         
-        # Initialize generation engine
+        # Initialize generation engine with logger
         engine = GenerationEngine(config)
+        if generation_logger:
+            engine.set_logger(generation_logger)
         
         # Determine output path
         if not output:
@@ -85,7 +141,10 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         
         # Check if file exists and force flag
         if output.exists() and not force:
-            click.echo(f"Error: Output file '{output}' already exists. Use --force to overwrite.", err=True)
+            error_msg = f"Output file '{output}' already exists. Use --force to overwrite."
+            if generation_logger:
+                generation_logger.log_error(error_msg)
+            click.echo(f"Error: {error_msg}", err=True)
             ctx.exit(1)
         
         # Determine LLM provider
@@ -93,7 +152,10 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
             try:
                 provider_enum = LLMProvider(llm_provider)
             except ValueError:
-                click.echo(f"Error: Invalid LLM provider '{llm_provider}'. Available: {[p.value for p in LLMProvider]}", err=True)
+                error_msg = f"Invalid LLM provider '{llm_provider}'. Available: {[p.value for p in LLMProvider]}"
+                if generation_logger:
+                    generation_logger.log_error(error_msg)
+                click.echo(f"Error: {error_msg}", err=True)
                 ctx.exit(1)
         else:
             # Use default from config or fallback
@@ -118,6 +180,10 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
             existing_saidata=None
         )
         
+        # Log the generation request
+        if generation_logger:
+            generation_logger.log_generation_request(request)
+        
         if verbose:
             click.echo(f"Generating saidata for: {software_name}")
             click.echo(f"LLM Provider: {provider_enum.value}")
@@ -136,8 +202,16 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         
         result = asyncio.run(run_generation())
         
+        # Log final result
+        if generation_logger:
+            generation_logger.log_final_result(
+                success=result.success,
+                saidata=result.saidata if result.success else None,
+                validation_errors=[f"{e.field}: {e.message}" for e in result.validation_errors] if result.validation_errors else None,
+                output_file=output if result.success else None
+            )
+        
         if result.success:
-            
             click.echo(f"✓ Successfully generated saidata for '{software_name}'")
             click.echo(f"✓ Saved to: {output}")
             
@@ -151,11 +225,22 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
                 if result.repository_sources_used:
                     click.echo(f"Repository sources: {', '.join(result.repository_sources_used)}")
             
+            # Show log file location
+            if generation_logger:
+                click.echo(f"✓ Generation log saved to: {generation_logger.log_file_path}")
+                if verbose:
+                    summary = generation_logger.get_summary()
+                    click.echo(f"Log summary: {summary['llm_interactions_count']} LLM interactions, "
+                              f"{summary['data_operations_count']} data operations, "
+                              f"{summary['process_steps_count']} process steps")
+            
             # Show warnings if any
             if result.warnings:
                 click.echo("\nWarnings:")
                 for warning in result.warnings:
                     click.echo(f"  - {warning}")
+                    if generation_logger:
+                        generation_logger.log_warning(warning)
         
         else:
             click.echo(f"✗ Failed to generate saidata for '{software_name}'", err=True)
@@ -164,14 +249,29 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
                 click.echo("Validation errors:", err=True)
                 for error in result.validation_errors:
                     click.echo(f"  - {error.field}: {error.message}", err=True)
+                    if generation_logger:
+                        generation_logger.log_error(f"{error.field}: {error.message}")
+            
+            # Show log file location even on failure
+            if generation_logger:
+                click.echo(f"Generation log saved to: {generation_logger.log_file_path}", err=True)
             
             ctx.exit(1)
             
     except Exception as e:
+        if generation_logger:
+            generation_logger.log_error(f"Generation failed: {e}")
+            generation_logger.log_final_result(success=False, validation_errors=[str(e)])
+        
         click.echo(f"✗ Generation failed: {e}", err=True)
         if verbose:
             import traceback
             traceback.print_exc()
+        
+        # Show log file location even on exception
+        if generation_logger:
+            click.echo(f"Generation log saved to: {generation_logger.log_file_path}", err=True)
+        
         ctx.exit(1)
 
 

@@ -279,6 +279,7 @@ async def _show_statistics(platform: Optional[str], repo_type: Optional[str],
                          output_format: str, cache_dir: Optional[str], 
                          config_dir: Optional[str]):
     """Async implementation of show statistics."""
+    manager = None
     try:
         # Initialize repository manager
         manager = get_repository_manager(cache_dir, config_dir)
@@ -342,6 +343,13 @@ async def _show_statistics(platform: Optional[str], repo_type: Optional[str],
     except Exception as e:
         logger.error(f"Failed to get statistics: {e}")
         click.echo(f"Error: {e}", err=True)
+    finally:
+        # Ensure cleanup
+        if manager:
+            try:
+                await manager.close()
+            except Exception as e:
+                logger.debug(f"Error during cleanup: {e}")
 
 
 @repositories.command()

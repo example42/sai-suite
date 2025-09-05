@@ -68,6 +68,8 @@ class ConfigManager:
                 return str(obj)
             elif hasattr(obj, 'value'):  # Enum objects
                 return obj.value
+            elif hasattr(obj, 'get_secret_value'):  # SecretStr objects
+                return obj.get_secret_value()
             else:
                 return obj
         
@@ -104,12 +106,90 @@ class ConfigManager:
                 if path.suffix.lower() == '.json':
                     return json.load(f)
                 else:
-                    # Use safe_load to prevent code execution
-                    return yaml.safe_load(f) or {}
+                    # First try safe_load
+                    try:
+                        data = yaml.safe_load(f) or {}
+                        return self._fix_secret_str_values(data)
+                    except yaml.constructor.ConstructorError as e:
+                        # If safe_load fails due to Python objects, try to fix the file content
+                        if 'SecretStr' in str(e):
+                            f.seek(0)
+                            content = f.read()
+                            fixed_content = self._fix_secret_str_yaml(content)
+                            data = yaml.safe_load(fixed_content) or {}
+                            return self._fix_secret_str_values(data)
+                        else:
+                            raise
         except (json.JSONDecodeError, yaml.YAMLError) as e:
             raise ValueError(f"Invalid configuration file format in {path}: {e}")
         except UnicodeDecodeError as e:
             raise ValueError(f"Configuration file encoding error in {path}: {e}")
+    
+    def _fix_secret_str_yaml(self, content: str) -> str:
+        """Fix SecretStr YAML serialization in file content.
+        
+        Args:
+            content: YAML file content with SecretStr objects
+            
+        Returns:
+            Fixed YAML content
+        """
+        import re
+        
+        # Pattern to match SecretStr YAML objects and extract the secret value
+        pattern = r'!!python/object:pydantic\.types\.SecretStr\s*\n\s*_secret_value:\s*(.+)'
+        
+        def replace_secret_str(match):
+            secret_value = match.group(1).strip()
+            return secret_value
+        
+        return re.sub(pattern, replace_secret_str, content)
+    
+    def _fix_secret_str_values(self, data: Any) -> Any:
+        """Fix SecretStr serialization issues in loaded data.
+        
+        Args:
+            data: Configuration data that may contain SecretStr objects
+            
+        Returns:
+            Fixed configuration data
+        """
+        if isinstance(data, dict):
+            # Check for SecretStr object patterns
+            if '_secret_value' in data and len(data) == 1:
+                # This looks like a serialized SecretStr, extract the value
+                return data['_secret_value']
+            else:
+                # Recursively fix nested dictionaries
+                return {k: self._fix_secret_str_values(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            # Recursively fix list items
+            return [self._fix_secret_str_values(item) for item in data]
+        else:
+            return data
+    
+    def _fix_secret_str_values(self, data: Any) -> Any:
+        """Fix SecretStr serialization issues in loaded data.
+        
+        Args:
+            data: Configuration data that may contain SecretStr objects
+            
+        Returns:
+            Fixed configuration data
+        """
+        if isinstance(data, dict):
+            # Check for SecretStr object patterns
+            if '_secret_value' in data and len(data) == 1:
+                # This looks like a serialized SecretStr, extract the value
+                return data['_secret_value']
+            else:
+                # Recursively fix nested dictionaries
+                return {k: self._fix_secret_str_values(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            # Recursively fix list items
+            return [self._fix_secret_str_values(item) for item in data]
+        else:
+            return data
     
     def _create_default_config(self) -> SaigenConfig:
         """Create default configuration."""
@@ -196,3 +276,57 @@ def get_config_manager(config_path: Optional[Path] = None) -> ConfigManager:
 def get_config() -> SaigenConfig:
     """Get current configuration."""
     return get_config_manager().get_config()
+
+
+def setup_default_sample_directory(config: Optional[SaigenConfig] = None) -> Path:
+    """Set up and return the default sample directory path.
+    
+    Args:
+        config: Optional configuration to update
+        
+    Returns:
+        Path to the default sample directory
+    """
+    if config is None:
+        config = get_config()
+    
+    # If already configured, return it
+    if config.rag.default_samples_directory:
+        return Path(config.rag.default_samples_directory)
+    
+    # Try to find docs/saidata_samples relative to current working directory
+    import os
+    cwd = Path(os.getcwd())
+    potential_paths = [
+        cwd / "docs" / "saidata_samples",
+        cwd.parent / "docs" / "saidata_samples",
+        Path(__file__).parent.parent.parent / "docs" / "saidata_samples"
+    ]
+    
+    for path in potential_paths:
+        if path.exists() and path.is_dir():
+            # Update configuration
+            config.rag.default_samples_directory = path
+            return path
+    
+    # Default fallback - create in user's config directory
+    default_path = Path.home() / ".saigen" / "samples"
+    config.rag.default_samples_directory = default_path
+    return default_path
+
+
+def configure_sample_directory(sample_dir: Path, config: Optional[SaigenConfig] = None) -> None:
+    """Configure the sample directory in the configuration.
+    
+    Args:
+        sample_dir: Path to the sample directory
+        config: Optional configuration to update
+    """
+    if config is None:
+        config = get_config()
+    
+    config.rag.default_samples_directory = sample_dir
+    
+    # Save the updated configuration
+    config_manager = get_config_manager()
+    config_manager.save_config(config)

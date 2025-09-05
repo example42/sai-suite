@@ -655,13 +655,16 @@ class RAGIndexer:
 class RAGContextBuilder:
     """Builder for RAG context injection into LLM prompts."""
     
-    def __init__(self, indexer: RAGIndexer):
+    def __init__(self, indexer: RAGIndexer, config: Optional[Dict[str, Any]] = None):
         """Initialize context builder.
         
         Args:
             indexer: RAG indexer instance
+            config: RAG configuration dictionary
         """
         self.indexer = indexer
+        self.config = config or {}
+        self._sample_saidata_cache: Optional[List[SaiData]] = None
     
     async def build_context(
         self,
@@ -684,6 +687,7 @@ class RAGContextBuilder:
         context = {
             'similar_packages': [],
             'similar_saidata': [],
+            'sample_saidata': [],
             'provider_specific_packages': {},
             'context_summary': ''
         }
@@ -706,18 +710,24 @@ class RAGContextBuilder:
                     if provider_packages:
                         context['provider_specific_packages'][provider] = provider_packages
             
-            # Find similar saidata
+            # Find similar saidata from indexed files
             similar_saidata = await self.indexer.find_similar_saidata(
                 software_name,
                 limit=max_saidata
             )
             context['similar_saidata'] = similar_saidata
             
+            # Load default sample saidata if enabled and no similar saidata found
+            if self.config.get('use_default_samples', True) and len(similar_saidata) < max_saidata:
+                sample_saidata = await self._load_default_sample_saidata()
+                remaining_slots = max_saidata - len(similar_saidata)
+                context['sample_saidata'] = sample_saidata[:remaining_slots]
+            
             # Build context summary
             context['context_summary'] = self._build_context_summary(
                 software_name,
                 similar_packages,
-                similar_saidata,
+                similar_saidata + context['sample_saidata'],
                 target_providers
             )
             
@@ -770,3 +780,68 @@ class RAGContextBuilder:
             summary_parts.append(f"Targeting providers: {', '.join(target_providers)}")
         
         return ". ".join(summary_parts) if summary_parts else f"Building context for {software_name}"
+    
+    async def _load_default_sample_saidata(self) -> List[SaiData]:
+        """Load default sample saidata files for use as examples.
+        
+        Returns:
+            List of SaiData objects from sample files
+        """
+        if self._sample_saidata_cache is not None:
+            return self._sample_saidata_cache
+        
+        sample_saidata = []
+        
+        # Determine sample directory
+        sample_dir = self.config.get('default_samples_directory')
+        if not sample_dir:
+            # Try to find docs/saidata_samples relative to current working directory
+            import os
+            cwd = Path(os.getcwd())
+            potential_paths = [
+                cwd / "docs" / "saidata_samples",
+                cwd.parent / "docs" / "saidata_samples",
+                Path(__file__).parent.parent.parent / "docs" / "saidata_samples"
+            ]
+            
+            for path in potential_paths:
+                if path.exists() and path.is_dir():
+                    sample_dir = path
+                    break
+        
+        if not sample_dir or not Path(sample_dir).exists():
+            logger.debug("No default sample saidata directory found")
+            self._sample_saidata_cache = []
+            return self._sample_saidata_cache
+        
+        sample_dir = Path(sample_dir)
+        max_samples = self.config.get('max_sample_examples', 3)
+        
+        try:
+            # Load YAML files from sample directory
+            yaml_files = list(sample_dir.glob("*.yaml")) + list(sample_dir.glob("*.yml"))
+            
+            for yaml_file in yaml_files[:max_samples]:
+                try:
+                    import yaml
+                    with open(yaml_file, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f)
+                    
+                    # Parse as SaiData
+                    saidata = SaiData(**data)
+                    sample_saidata.append(saidata)
+                    
+                    logger.debug(f"Loaded sample saidata: {saidata.metadata.name}")
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to load sample saidata from {yaml_file}: {e}")
+                    continue
+            
+            logger.info(f"Loaded {len(sample_saidata)} default sample saidata files from {sample_dir}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to load default sample saidata: {e}")
+        
+        # Cache the results
+        self._sample_saidata_cache = sample_saidata
+        return sample_saidata

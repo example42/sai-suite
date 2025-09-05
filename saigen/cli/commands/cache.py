@@ -53,8 +53,10 @@ def update(ctx: click.Context, repository: tuple, force: bool, platform: Optiona
         return
     
     async def _update_cache():
-        cache_dir = config.cache_dir
-        config_dir = config.repository_config_dir
+        cache_dir = config.cache.directory
+        # Use a default config directory - repositories have built-in configs
+        config_dir = Path.home() / ".saigen" / "repository_configs"
+        config_dir.mkdir(parents=True, exist_ok=True)
         
         async with RepositoryManager(cache_dir, config_dir) as repo_manager:
             # Filter repositories if specified
@@ -129,8 +131,10 @@ def clear(ctx: click.Context, repository: tuple, clear_all: bool):
         return
     
     async def _clear_cache():
-        cache_dir = config.cache_dir
-        config_dir = config.repository_config_dir
+        cache_dir = config.cache.directory
+        # Use a default config directory - repositories have built-in configs
+        config_dir = Path.home() / ".saigen" / "repository_configs"
+        config_dir.mkdir(parents=True, exist_ok=True)
         
         async with RepositoryManager(cache_dir, config_dir) as repo_manager:
             if clear_all:
@@ -172,8 +176,10 @@ def cleanup(ctx: click.Context):
         return
     
     async def _cleanup_cache():
-        cache_dir = config.cache_dir
-        config_dir = config.repository_config_dir
+        cache_dir = config.cache.directory
+        # Use a default config directory - repositories have built-in configs
+        config_dir = Path.home() / ".saigen" / "repository_configs"
+        config_dir.mkdir(parents=True, exist_ok=True)
         
         async with RepositoryManager(cache_dir, config_dir) as repo_manager:
             stats = await repo_manager.cleanup_cache()
@@ -203,8 +209,10 @@ def status(ctx: click.Context, detailed: bool):
         ctx.exit(1)
     
     async def _show_status():
-        cache_dir = config.cache_dir
-        config_dir = config.repository_config_dir
+        cache_dir = config.cache.directory
+        # Use a default config directory - repositories have built-in configs
+        config_dir = Path.home() / ".saigen" / "repository_configs"
+        config_dir.mkdir(parents=True, exist_ok=True)
         
         async with RepositoryManager(cache_dir, config_dir) as repo_manager:
             stats = await repo_manager.get_cache_stats()

@@ -1,0 +1,91 @@
+# SAI Configuration Sample
+# This file contains all available configuration options with their default values
+# Copy this file to one of the following locations and customize as needed:
+#   - ~/.sai/config.yaml (recommended)
+#   - ~/.sai/config.json
+#   - ./.sai.yaml
+#   - ./.sai.json
+#   - ./sai.yaml
+#   - ./sai.json
+
+# Core Configuration
+config_version: "0.1.0"
+log_level: "info"  # debug, info, warning, error
+log_file: "~/.sai/logs/sai.log"  # Path to log file
+
+# Provider Priority Configuration
+# Higher numbers indicate higher priority
+provider_priorities: {}
+  # Example provider priorities:
+  # apt: 10
+  # brew: 8
+  # winget: 6
+  # dnf: 5
+
+# Saidata Search Paths
+# Directories to search for saidata files (in order of priority)
+saidata_paths:
+  - "."  # Current directory
+  - "~/.sai/saidata"  # User saidata directory
+  - "/usr/local/share/sai/saidata"  # System-wide saidata (macOS/Linux)
+  - "/usr/share/sai/saidata"  # System-wide saidata (Linux)
+
+# Provider Search Paths
+# Directories to search for provider implementations (in order of priority)
+provider_paths:
+  - "providers"  # Local providers directory
+  - "~/.sai/providers"  # User providers directory
+  - "/usr/local/share/sai/providers"  # System-wide providers (macOS/Linux)
+  - "/usr/share/sai/providers"  # System-wide providers (Linux)
+
+# Cache Configuration
+cache_enabled: true
+cache_directory: "~/.sai/cache"
+cache_ttl: 3600  # Cache TTL in seconds (1 hour)
+
+# Default Provider
+# If set, this provider will be used when no specific provider is requested
+default_provider: null  # e.g., "apt", "brew", "winget"
+
+# Advanced Settings
+max_concurrent_actions: 3  # Maximum number of concurrent actions
+action_timeout: 300  # Action timeout in seconds (5 minutes)
+require_confirmation: true  # Require user confirmation for destructive actions
+dry_run_default: false  # Default to dry-run mode
+
+# Example Complete Configuration
+# Uncomment and customize the sections below as needed:
+
+# provider_priorities:
+#   apt: 10      # Highest priority for apt (Debian/Ubuntu)
+#   brew: 8      # High priority for Homebrew (macOS/Linux)
+#   winget: 6    # Medium priority for winget (Windows)
+#   dnf: 5       # Lower priority for dnf (Fedora/RHEL)
+#   pacman: 4    # Lower priority for pacman (Arch Linux)
+#   zypper: 3    # Lowest priority for zypper (openSUSE)
+
+# default_provider: "apt"  # Use apt as default provider
+
+# Custom saidata and provider paths:
+# saidata_paths:
+#   - "./custom-saidata"
+#   - "~/.sai/saidata"
+#   - "/opt/company/sai/saidata"
+#   - "/usr/local/share/sai/saidata"
+#   - "/usr/share/sai/saidata"
+
+# provider_paths:
+#   - "./custom-providers"
+#   - "~/.sai/providers"
+#   - "/opt/company/sai/providers"
+#   - "/usr/local/share/sai/providers"
+#   - "/usr/share/sai/providers"
+
+# Performance tuning:
+# max_concurrent_actions: 5  # Increase for faster parallel execution
+# action_timeout: 600        # Increase for slow operations
+# cache_ttl: 7200           # Increase cache duration (2 hours)
+
+# Security settings:
+# require_confirmation: true  # Always require confirmation
+# dry_run_default: true      # Default to dry-run for safety

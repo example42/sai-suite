@@ -1,0 +1,193 @@
+version: "0.2"
+
+metadata:
+  name: "grafana"
+  display_name: "Grafana"
+  description: "Open source analytics and interactive visualization web application"
+  version: "10.0.0"
+  category: "monitoring"
+  subcategory: "visualization"
+  tags: ["grafana", "monitoring", "visualization", "dashboard", "observability"]
+  license: "AGPL-3.0"
+  language: "Go"
+  maintainer: "Grafana Labs"
+  urls:
+    website: "https://grafana.com"
+    documentation: "https://grafana.com/docs"
+    source: "https://github.com/grafana/grafana"
+    issues: "https://github.com/grafana/grafana/issues"
+    support: "https://grafana.com/support"
+    download: "https://grafana.com/grafana/download"
+    changelog: "https://github.com/grafana/grafana/blob/main/CHANGELOG.md"
+    license: "https://github.com/grafana/grafana/blob/main/LICENSE"
+  security:
+    security_contact: "security@grafana.com"
+    vulnerability_disclosure: "https://grafana.com/security"
+
+packages:
+  - name: "grafana"
+    version: "10.0.0"
+    alternatives: ["grafana"]
+
+services:
+  - name: "grafana"
+    service_name: "grafana-server"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/grafana/grafana.ini"]
+
+files:
+  - name: "config"
+    path: "/etc/grafana/grafana.ini"
+    type: "config"
+    owner: "root"
+    group: "grafana"
+    mode: "0640"
+    backup: true
+  - name: "ldap-config"
+    path: "/etc/grafana/ldap.toml"
+    type: "config"
+    owner: "root"
+    group: "grafana"
+    mode: "0640"
+    backup: true
+  - name: "log"
+    path: "/var/log/grafana/grafana.log"
+    type: "log"
+    owner: "grafana"
+    group: "grafana"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/grafana"
+    owner: "root"
+    group: "grafana"
+    mode: "0755"
+  - name: "data"
+    path: "/var/lib/grafana"
+    owner: "grafana"
+    group: "grafana"
+    mode: "0755"
+  - name: "log"
+    path: "/var/log/grafana"
+    owner: "grafana"
+    group: "grafana"
+    mode: "0755"
+  - name: "plugins"
+    path: "/var/lib/grafana/plugins"
+    owner: "grafana"
+    group: "grafana"
+    mode: "0755"
+  - name: "dashboards"
+    path: "/var/lib/grafana/dashboards"
+    owner: "grafana"
+    group: "grafana"
+    mode: "0755"
+
+commands:
+  - name: "grafana-server"
+    path: "/usr/sbin/grafana-server"
+    man_page: "grafana-server(1)"
+  - name: "grafana-cli"
+    path: "/usr/sbin/grafana-cli"
+    shell_completion: true
+    man_page: "grafana-cli(1)"
+
+ports:
+  - port: 3000
+    protocol: "tcp"
+    service: "grafana-web"
+    description: "Grafana web interface"
+
+containers:
+  - name: "grafana"
+    image: "grafana/grafana"
+    tag: "10.0.0"
+    registry: "docker.io"
+    ports: ["3000:3000"]
+    volumes: ["/var/lib/grafana:/var/lib/grafana"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    labels:
+      purpose: "visualization-platform"
+
+providers:
+  apt:
+    repositories:
+      - name: "grafana-official"
+        url: "https://packages.grafana.com/oss/deb"
+        key: "https://packages.grafana.com/gpg.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "grafana"
+            version: "10.0.0"
+
+  dnf:
+    repositories:
+      - name: "grafana-official"
+        url: "https://packages.grafana.com/oss/rpm"
+        key: "https://packages.grafana.com/gpg.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "grafana"
+            version: "10.0.0"
+
+  brew:
+    packages:
+      - name: "grafana"
+        alternatives: ["grafana"]
+
+  docker:
+    containers:
+      - name: "grafana"
+        image: "grafana/grafana"
+        tag: "10.0.0"
+        registry: "docker.io"
+        ports: ["3000:3000"]
+        volumes: ["/var/lib/grafana:/var/lib/grafana"]
+        environment:
+          GF_SECURITY_ADMIN_PASSWORD: "admin"
+
+  helm:
+    repositories:
+      - name: "grafana"
+        url: "https://grafana.github.io/helm-charts"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "grafana"
+            alternatives: ["grafana"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development and testing"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Kubernetes deployment"

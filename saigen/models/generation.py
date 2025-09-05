@@ -44,6 +44,7 @@ class GenerationContext(BaseModel):
     software_name: str
     repository_data: List[RepositoryPackage] = Field(default_factory=list)
     similar_saidata: List[SaiData] = Field(default_factory=list)
+    sample_saidata: List[SaiData] = Field(default_factory=list)
     user_hints: Optional[Dict[str, Any]] = None
     target_providers: List[str] = Field(default_factory=list)
     existing_saidata: Optional[SaiData] = None

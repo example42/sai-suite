@@ -1,0 +1,186 @@
+version: "0.2"
+
+metadata:
+  name: "docker"
+  display_name: "Docker"
+  description: "Platform for developing, shipping, and running applications in containers"
+  version: "24.0.0"
+  category: "container"
+  subcategory: "runtime"
+  tags: ["container", "virtualization", "devops", "deployment"]
+  license: "Apache-2.0"
+  language: "Go"
+  maintainer: "Docker Inc."
+  urls:
+    website: "https://www.docker.com"
+    documentation: "https://docs.docker.com"
+    source: "https://github.com/moby/moby"
+    issues: "https://github.com/moby/moby/issues"
+    support: "https://www.docker.com/support"
+    download: "https://download.docker.com"
+    changelog: "https://docs.docker.com/engine/release-notes"
+    license: "https://github.com/moby/moby/blob/master/LICENSE"
+  security:
+    security_contact: "security@docker.com"
+    vulnerability_disclosure: "https://www.docker.com/security"
+
+packages:
+  - name: "engine"
+    version: "24.0.0"
+    alternatives: ["docker-ce", "docker.io"]
+  - name: "cli"
+    version: "24.0.0"
+    alternatives: ["docker-ce-cli"]
+  - name: "compose"
+    version: "2.20.0"
+    alternatives: ["docker-compose-plugin"]
+
+services:
+  - name: "daemon"
+    service_name: "docker"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/docker/daemon.json"]
+
+files:
+  - name: "config"
+    path: "/etc/docker/daemon.json"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "socket"
+    path: "/var/run/docker.sock"
+    type: "socket"
+    owner: "root"
+    group: "docker"
+    mode: "0660"
+  - name: "log"
+    path: "/var/log/docker.log"
+    type: "log"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/docker"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "data"
+    path: "/var/lib/docker"
+    owner: "root"
+    group: "root"
+    mode: "0711"
+  - name: "log"
+    path: "/var/log/docker"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+commands:
+  - name: "docker"
+    path: "/usr/bin/docker"
+    shell_completion: true
+    man_page: "docker(1)"
+  - name: "dockerd"
+    path: "/usr/bin/dockerd"
+    man_page: "dockerd(8)"
+
+ports:
+  - port: 2375
+    protocol: "tcp"
+    service: "docker-api"
+    description: "Docker API (insecure)"
+  - port: 2376
+    protocol: "tcp"
+    service: "docker-api-tls"
+    description: "Docker API (TLS)"
+
+providers:
+  apt:
+    repositories:
+      - name: "docker-official"
+        url: "https://download.docker.com/linux/ubuntu"
+        key: "https://download.docker.com/linux/ubuntu/gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "engine"
+            version: "5:24.0.0-1~ubuntu.22.04~jammy"
+            alternatives: ["docker-ce"]
+          - name: "cli"
+            version: "5:24.0.0-1~ubuntu.22.04~jammy"
+            alternatives: ["docker-ce-cli"]
+          - name: "compose"
+            version: "2.20.0-1~ubuntu.22.04~jammy"
+            alternatives: ["docker-compose-plugin"]
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "engine"
+            alternatives: ["docker.io"]
+          - name: "compose"
+            alternatives: ["docker-compose"]
+        notes: "Older version, not recommended for production"
+
+  dnf:
+    repositories:
+      - name: "docker-official"
+        url: "https://download.docker.com/linux/fedora"
+        key: "https://download.docker.com/linux/fedora/gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "engine"
+            alternatives: ["docker-ce"]
+          - name: "cli"
+            alternatives: ["docker-ce-cli"]
+          - name: "compose"
+            alternatives: ["docker-compose-plugin"]
+
+  brew:
+    packages:
+      - name: "engine"
+        alternatives: ["docker"]
+      - name: "compose"
+        alternatives: ["docker-compose"]
+
+  docker:
+    containers:
+      - name: "dind"
+        image: "docker"
+        tag: "24.0-dind"
+        registry: "docker.io"
+        ports: ["2376:2376"]
+        volumes: ["/var/lib/docker"]
+        environment:
+          DOCKER_TLS_CERTDIR: "/certs"
+        labels:
+          purpose: "docker-in-docker"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Docker-in-Docker for containerized environments"

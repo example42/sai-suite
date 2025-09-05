@@ -1,0 +1,228 @@
+version: "0.2"
+
+metadata:
+  name: "mongodb"
+  display_name: "MongoDB"
+  description: "Document-oriented NoSQL database program"
+  version: "7.0.0"
+  category: "database"
+  subcategory: "nosql"
+  tags: ["mongodb", "database", "nosql", "document", "json", "bson"]
+  license: "SSPL-1.0"
+  language: "C++"
+  maintainer: "MongoDB Inc."
+  urls:
+    website: "https://www.mongodb.com"
+    documentation: "https://docs.mongodb.com"
+    source: "https://github.com/mongodb/mongo"
+    issues: "https://jira.mongodb.org"
+    support: "https://www.mongodb.com/support"
+    download: "https://www.mongodb.com/try/download/community"
+    changelog: "https://docs.mongodb.com/manual/release-notes"
+    license: "https://github.com/mongodb/mongo/blob/master/LICENSE-Community.txt"
+  security:
+    security_contact: "security@mongodb.com"
+    vulnerability_disclosure: "https://www.mongodb.com/vulnerability-disclosure-policy"
+
+packages:
+  - name: "server"
+    version: "7.0.0"
+    alternatives: ["mongodb-org-server", "mongod"]
+  - name: "shell"
+    version: "7.0.0"
+    alternatives: ["mongodb-org-shell", "mongosh"]
+  - name: "tools"
+    version: "7.0.0"
+    alternatives: ["mongodb-org-tools"]
+
+services:
+  - name: "mongod"
+    service_name: "mongod"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/mongod.conf"]
+
+files:
+  - name: "config"
+    path: "/etc/mongod.conf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "log"
+    path: "/var/log/mongodb/mongod.log"
+    type: "log"
+    owner: "mongodb"
+    group: "mongodb"
+    mode: "0644"
+  - name: "pid"
+    path: "/var/run/mongodb/mongod.pid"
+    type: "temp"
+    owner: "mongodb"
+    group: "mongodb"
+    mode: "0644"
+
+directories:
+  - name: "data"
+    path: "/var/lib/mongodb"
+    owner: "mongodb"
+    group: "mongodb"
+    mode: "0755"
+  - name: "log"
+    path: "/var/log/mongodb"
+    owner: "mongodb"
+    group: "mongodb"
+    mode: "0755"
+  - name: "run"
+    path: "/var/run/mongodb"
+    owner: "mongodb"
+    group: "mongodb"
+    mode: "0755"
+
+commands:
+  - name: "mongod"
+    path: "/usr/bin/mongod"
+    man_page: "mongod(1)"
+  - name: "mongosh"
+    path: "/usr/bin/mongosh"
+    shell_completion: true
+    man_page: "mongosh(1)"
+  - name: "mongodump"
+    path: "/usr/bin/mongodump"
+    man_page: "mongodump(1)"
+  - name: "mongorestore"
+    path: "/usr/bin/mongorestore"
+    man_page: "mongorestore(1)"
+
+ports:
+  - port: 27017
+    protocol: "tcp"
+    service: "mongodb"
+    description: "MongoDB server"
+  - port: 27018
+    protocol: "tcp"
+    service: "mongodb-shard"
+    description: "MongoDB shard server"
+  - port: 27019
+    protocol: "tcp"
+    service: "mongodb-config"
+    description: "MongoDB config server"
+
+providers:
+  apt:
+    repositories:
+      - name: "mongodb-official"
+        url: "https://repo.mongodb.org/apt/ubuntu"
+        key: "https://www.mongodb.org/static/pgp/server-7.0.asc"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "server"
+            version: "7.0.0"
+            alternatives: ["mongodb-org-server"]
+          - name: "shell"
+            alternatives: ["mongodb-mongosh"]
+          - name: "tools"
+            alternatives: ["mongodb-org-tools"]
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "server"
+            alternatives: ["mongodb"]
+        notes: "Usually older version"
+
+  dnf:
+    repositories:
+      - name: "mongodb-official"
+        url: "https://repo.mongodb.org/yum/redhat/8/mongodb-org/7.0"
+        key: "https://www.mongodb.org/static/pgp/server-7.0.asc"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "server"
+            alternatives: ["mongodb-org-server"]
+          - name: "shell"
+            alternatives: ["mongodb-mongosh"]
+          - name: "tools"
+            alternatives: ["mongodb-org-tools"]
+
+  brew:
+    packages:
+      - name: "server"
+        alternatives: ["mongodb-community@7.0", "mongodb/brew/mongodb-community"]
+        recommended: true
+
+  choco:
+    packages:
+      - name: "server"
+        version: "7.0.0"
+        alternatives: ["mongodb"]
+
+  docker:
+    containers:
+      - name: "mongodb"
+        image: "mongo"
+        tag: "7.0.0"
+        registry: "docker.io"
+        ports: ["27017:27017"]
+        volumes: ["/data/db:/data/db"]
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: "admin"
+          MONGO_INITDB_ROOT_PASSWORD: "password"
+        labels:
+          purpose: "document-database"
+
+  helm:
+    repositories:
+      - name: "bitnami"
+        url: "https://charts.bitnami.com/bitnami"
+        type: "third-party"
+        recommended: true
+        packages:
+          - name: "mongodb"
+            alternatives: ["mongodb"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      notes: "Windows service configuration differs"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development and containerized deployments"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes deployment with replica sets and sharding"
+
+requirements:
+  system:
+    memory_min: "1GB"
+    memory_recommended: "4GB"
+    disk_space: "10GB"
+  performance:
+    wired_tiger_cache: "50% of available RAM"
+    file_descriptors: "64000"

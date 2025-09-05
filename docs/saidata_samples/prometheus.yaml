@@ -1,0 +1,229 @@
+version: "0.2"
+
+metadata:
+  name: "prometheus"
+  display_name: "Prometheus"
+  description: "Open-source monitoring and alerting toolkit with time series database"
+  version: "2.45.0"
+  category: "monitoring"
+  subcategory: "metrics"
+  tags: ["prometheus", "monitoring", "metrics", "alerting", "observability"]
+  license: "Apache-2.0"
+  language: "Go"
+  maintainer: "Prometheus Community"
+  urls:
+    website: "https://prometheus.io"
+    documentation: "https://prometheus.io/docs"
+    source: "https://github.com/prometheus/prometheus"
+    issues: "https://github.com/prometheus/prometheus/issues"
+    support: "https://prometheus.io/community"
+    download: "https://github.com/prometheus/prometheus/releases"
+    changelog: "https://github.com/prometheus/prometheus/blob/main/CHANGELOG.md"
+    license: "https://github.com/prometheus/prometheus/blob/main/LICENSE"
+  security:
+    security_contact: "security@prometheus.io"
+    vulnerability_disclosure: "https://prometheus.io/docs/operating/security"
+
+packages:
+  - name: "prometheus"
+    version: "2.45.0"
+    alternatives: ["prometheus"]
+  - name: "node-exporter"
+    version: "1.6.0"
+    alternatives: ["prometheus-node-exporter"]
+  - name: "alertmanager"
+    version: "0.25.0"
+    alternatives: ["prometheus-alertmanager"]
+
+services:
+  - name: "prometheus"
+    service_name: "prometheus"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/prometheus/prometheus.yml"]
+  - name: "node-exporter"
+    service_name: "prometheus-node-exporter"
+    type: "systemd"
+    enabled: true
+  - name: "alertmanager"
+    service_name: "prometheus-alertmanager"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/prometheus/alertmanager.yml"]
+
+files:
+  - name: "config"
+    path: "/etc/prometheus/prometheus.yml"
+    type: "config"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0644"
+    backup: true
+  - name: "alertmanager-config"
+    path: "/etc/prometheus/alertmanager.yml"
+    type: "config"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0644"
+    backup: true
+  - name: "rules"
+    path: "/etc/prometheus/rules.yml"
+    type: "config"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0644"
+    backup: true
+  - name: "log"
+    path: "/var/log/prometheus/prometheus.log"
+    type: "log"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/prometheus"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0755"
+  - name: "data"
+    path: "/var/lib/prometheus"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0755"
+  - name: "log"
+    path: "/var/log/prometheus"
+    owner: "prometheus"
+    group: "prometheus"
+    mode: "0755"
+
+commands:
+  - name: "prometheus"
+    path: "/usr/bin/prometheus"
+    man_page: "prometheus(1)"
+  - name: "promtool"
+    path: "/usr/bin/promtool"
+    shell_completion: true
+    man_page: "promtool(1)"
+  - name: "node_exporter"
+    path: "/usr/bin/node_exporter"
+    man_page: "node_exporter(1)"
+  - name: "alertmanager"
+    path: "/usr/bin/alertmanager"
+    man_page: "alertmanager(1)"
+
+ports:
+  - port: 9090
+    protocol: "tcp"
+    service: "prometheus-web"
+    description: "Prometheus web interface and API"
+  - port: 9100
+    protocol: "tcp"
+    service: "node-exporter"
+    description: "Node Exporter metrics"
+  - port: 9093
+    protocol: "tcp"
+    service: "alertmanager"
+    description: "Alertmanager web interface"
+
+containers:
+  - name: "prometheus"
+    image: "prom/prometheus"
+    tag: "v2.45.0"
+    registry: "docker.io"
+    ports: ["9090:9090"]
+    volumes: ["/etc/prometheus:/etc/prometheus", "/var/lib/prometheus:/prometheus"]
+    labels:
+      purpose: "monitoring-server"
+  - name: "node-exporter"
+    image: "prom/node-exporter"
+    tag: "v1.6.0"
+    registry: "docker.io"
+    ports: ["9100:9100"]
+    volumes: ["/proc:/host/proc:ro", "/sys:/host/sys:ro", "/:/rootfs:ro"]
+    labels:
+      purpose: "system-metrics"
+  - name: "alertmanager"
+    image: "prom/alertmanager"
+    tag: "v0.25.0"
+    registry: "docker.io"
+    ports: ["9093:9093"]
+    volumes: ["/etc/prometheus:/etc/alertmanager"]
+    labels:
+      purpose: "alert-management"
+
+providers:
+  apt:
+    packages:
+      - name: "prometheus"
+        alternatives: ["prometheus"]
+      - name: "node-exporter"
+        alternatives: ["prometheus-node-exporter"]
+      - name: "alertmanager"
+        alternatives: ["prometheus-alertmanager"]
+
+  dnf:
+    packages:
+      - name: "prometheus"
+        alternatives: ["prometheus"]
+      - name: "node-exporter"
+        alternatives: ["golang-github-prometheus-node-exporter"]
+
+  brew:
+    packages:
+      - name: "prometheus"
+        alternatives: ["prometheus"]
+      - name: "node-exporter"
+        alternatives: ["node_exporter"]
+      - name: "alertmanager"
+        alternatives: ["alertmanager"]
+
+  docker:
+    containers:
+      - name: "prometheus"
+        image: "prom/prometheus"
+        tag: "v2.45.0"
+        registry: "docker.io"
+        ports: ["9090:9090"]
+        volumes: ["/etc/prometheus:/etc/prometheus", "/var/lib/prometheus:/prometheus"]
+
+  helm:
+    repositories:
+      - name: "prometheus-community"
+        url: "https://prometheus-community.github.io/helm-charts"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "prometheus"
+            alternatives: ["kube-prometheus-stack"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development and testing"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Kubernetes deployment with full stack"

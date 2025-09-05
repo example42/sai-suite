@@ -120,6 +120,13 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
             return packages
             
         except Exception as e:
+            # Close session on error to prevent unclosed session warnings
+            if self._session:
+                try:
+                    await self._session.close()
+                    self._session = None
+                except:
+                    pass
             raise RepositoryError(f"Failed to download package list from {self.repository_info.name}: {str(e)}")
     
     def _resolve_url_template(self, url_template: str) -> str:
@@ -327,10 +334,22 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
             
             url = self._resolve_url_template(packages_url)
             
-            async with session.head(url, ssl=True) as response:
+            # Use a shorter timeout for availability checks
+            timeout = session.timeout.total if session.timeout else 30
+            short_timeout = min(timeout, 10)  # Max 10 seconds for availability check
+            
+            async with session.head(url, ssl=True, timeout=short_timeout) as response:
                 return response.status == 200
                 
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Repository {self.repository_info.name} is not available: {e}")
+            # Close session on error to prevent unclosed session warnings
+            if self._session:
+                try:
+                    await self._session.close()
+                    self._session = None
+                except:
+                    pass
             return False
     
     async def get_repository_metadata(self) -> Dict[str, Any]:
@@ -369,5 +388,20 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         if self._session:
-            await self._session.close()
+            try:
+                await self._session.close()
+            except Exception as e:
+                logger.debug(f"Error closing session: {e}")
+            finally:
+                self._session = None
         await super().__aexit__(exc_type, exc_val, exc_tb)
+    
+    async def close(self):
+        """Explicitly close the session."""
+        if self._session:
+            try:
+                await self._session.close()
+            except Exception as e:
+                logger.debug(f"Error closing session: {e}")
+            finally:
+                self._session = None

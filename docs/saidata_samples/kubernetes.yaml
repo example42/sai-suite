@@ -1,0 +1,243 @@
+version: "0.2"
+
+metadata:
+  name: "kubernetes"
+  display_name: "Kubernetes"
+  description: "Container orchestration platform for automating deployment, scaling, and management"
+  version: "1.28.0"
+  category: "orchestration"
+  subcategory: "container"
+  tags: ["kubernetes", "orchestration", "containers", "devops", "cloud-native"]
+  license: "Apache-2.0"
+  language: "Go"
+  maintainer: "Cloud Native Computing Foundation"
+  urls:
+    website: "https://kubernetes.io"
+    documentation: "https://kubernetes.io/docs"
+    source: "https://github.com/kubernetes/kubernetes"
+    issues: "https://github.com/kubernetes/kubernetes/issues"
+    support: "https://kubernetes.io/community"
+    download: "https://github.com/kubernetes/kubernetes/releases"
+    changelog: "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG"
+    license: "https://github.com/kubernetes/kubernetes/blob/master/LICENSE"
+  security:
+    security_contact: "security@kubernetes.io"
+    vulnerability_disclosure: "https://kubernetes.io/docs/reference/issues-security/security"
+
+packages:
+  - name: "kubelet"
+    version: "1.28.0"
+    alternatives: ["kubelet"]
+  - name: "kubeadm"
+    version: "1.28.0"
+    alternatives: ["kubeadm"]
+  - name: "kubectl"
+    version: "1.28.0"
+    alternatives: ["kubectl"]
+  - name: "kube-proxy"
+    version: "1.28.0"
+    alternatives: ["kube-proxy"]
+
+services:
+  - name: "kubelet"
+    service_name: "kubelet"
+    type: "systemd"
+    enabled: true
+    config_files: ["/var/lib/kubelet/config.yaml", "/etc/kubernetes/kubelet/kubelet-config.json"]
+  - name: "kube-proxy"
+    service_name: "kube-proxy"
+    type: "systemd"
+    enabled: true
+
+files:
+  - name: "kubelet-config"
+    path: "/var/lib/kubelet/config.yaml"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "kubeconfig"
+    path: "/etc/kubernetes/admin.conf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0600"
+    backup: true
+  - name: "kubelet-log"
+    path: "/var/log/kubelet.log"
+    type: "log"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/kubernetes"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "kubelet-data"
+    path: "/var/lib/kubelet"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "etcd-data"
+    path: "/var/lib/etcd"
+    owner: "root"
+    group: "root"
+    mode: "0700"
+  - name: "manifests"
+    path: "/etc/kubernetes/manifests"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+commands:
+  - name: "kubectl"
+    path: "/usr/bin/kubectl"
+    shell_completion: true
+    man_page: "kubectl(1)"
+  - name: "kubeadm"
+    path: "/usr/bin/kubeadm"
+    shell_completion: true
+    man_page: "kubeadm(1)"
+  - name: "kubelet"
+    path: "/usr/bin/kubelet"
+    man_page: "kubelet(8)"
+
+ports:
+  - port: 6443
+    protocol: "tcp"
+    service: "kube-apiserver"
+    description: "Kubernetes API server"
+  - port: 2379
+    protocol: "tcp"
+    service: "etcd-client"
+    description: "etcd client communication"
+  - port: 2380
+    protocol: "tcp"
+    service: "etcd-peer"
+    description: "etcd peer communication"
+  - port: 10250
+    protocol: "tcp"
+    service: "kubelet-api"
+    description: "Kubelet API"
+  - port: 10259
+    protocol: "tcp"
+    service: "kube-scheduler"
+    description: "kube-scheduler"
+  - port: 10257
+    protocol: "tcp"
+    service: "kube-controller-manager"
+    description: "kube-controller-manager"
+
+containers:
+  - name: "kube-apiserver"
+    image: "k8s.gcr.io/kube-apiserver"
+    tag: "v1.28.0"
+    registry: "k8s.gcr.io"
+    ports: ["6443:6443"]
+    volumes: ["/etc/kubernetes:/etc/kubernetes", "/etc/ssl/certs:/etc/ssl/certs"]
+  - name: "kube-controller-manager"
+    image: "k8s.gcr.io/kube-controller-manager"
+    tag: "v1.28.0"
+    registry: "k8s.gcr.io"
+  - name: "kube-scheduler"
+    image: "k8s.gcr.io/kube-scheduler"
+    tag: "v1.28.0"
+    registry: "k8s.gcr.io"
+  - name: "etcd"
+    image: "k8s.gcr.io/etcd"
+    tag: "3.5.9-0"
+    registry: "k8s.gcr.io"
+    ports: ["2379:2379", "2380:2380"]
+    volumes: ["/var/lib/etcd:/var/lib/etcd"]
+
+providers:
+  apt:
+    repositories:
+      - name: "kubernetes-official"
+        url: "https://apt.kubernetes.io"
+        key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "kubelet"
+            version: "1.28.0-00"
+          - name: "kubeadm"
+            version: "1.28.0-00"
+          - name: "kubectl"
+            version: "1.28.0-00"
+
+  dnf:
+    repositories:
+      - name: "kubernetes-official"
+        url: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
+        key: "https://packages.cloud.google.com/yum/doc/yum-key.gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "kubelet"
+            version: "1.28.0-0"
+          - name: "kubeadm"
+            version: "1.28.0-0"
+          - name: "kubectl"
+            version: "1.28.0-0"
+
+  brew:
+    packages:
+      - name: "kubectl"
+        alternatives: ["kubectl"]
+      - name: "kubeadm"
+        alternatives: ["kubeadm"]
+
+  helm:
+    repositories:
+      - name: "bitnami"
+        url: "https://charts.bitnami.com/bitnami"
+        type: "third-party"
+        packages:
+          - name: "kubernetes"
+            alternatives: ["kubernetes"]
+
+  docker:
+    containers:
+      - name: "kind-cluster"
+        image: "kindest/node"
+        tag: "v1.28.0"
+        registry: "docker.io"
+        ports: ["6443:6443"]
+        volumes: ["/var/lib/docker"]
+        labels:
+          purpose: "kubernetes-in-docker"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      os_version: ["18.04", "20.04", "22.04"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Client tools only"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Managed Kubernetes deployment"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kind (Kubernetes in Docker) for development"

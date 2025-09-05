@@ -68,6 +68,8 @@ class PromptTemplate:
             return bool(context.repository_data)
         elif section.condition == "has_similar_saidata":
             return bool(context.similar_saidata)
+        elif section.condition == "has_sample_saidata":
+            return bool(getattr(context, 'sample_saidata', []))
         elif section.condition == "has_user_hints":
             return bool(context.user_hints)
         elif section.condition == "has_existing_saidata":
@@ -106,11 +108,17 @@ class PromptTemplate:
         Returns:
             Dictionary of template variables
         """
+        # Combine similar saidata and sample saidata for examples
+        all_saidata_examples = context.similar_saidata.copy()
+        if hasattr(context, 'sample_saidata') and context.sample_saidata:
+            all_saidata_examples.extend(context.sample_saidata)
+        
         variables = {
             "software_name": context.software_name,
             "target_providers": ", ".join(context.target_providers) if context.target_providers else "apt, brew, winget",
             "repository_context": self._format_repository_data(context.repository_data),
-            "similar_saidata_examples": self._format_similar_saidata(context.similar_saidata),
+            "similar_saidata_examples": self._format_similar_saidata(all_saidata_examples),
+            "sample_saidata_examples": self._format_sample_saidata(getattr(context, 'sample_saidata', [])),
             "user_hints": self._format_user_hints(context.user_hints),
             "existing_saidata": self._format_existing_saidata(context.existing_saidata),
         }
@@ -212,6 +220,62 @@ class PromptTemplate:
         
         return "Similar software examples:\n\n" + "\n\n".join(examples)
     
+    def _format_sample_saidata(self, sample_saidata: List[SaiData]) -> str:
+        """Format sample saidata for prompt inclusion.
+        
+        Args:
+            sample_saidata: List of sample saidata files
+            
+        Returns:
+            Formatted sample saidata string
+        """
+        if not sample_saidata:
+            return "No sample saidata available."
+        
+        examples = []
+        for i, saidata in enumerate(sample_saidata[:3], 1):  # Limit to 3 examples
+            example_parts = [f"Sample {i}: {saidata.metadata.name}"]
+            
+            if saidata.metadata.description:
+                example_parts.append(f"  Description: {saidata.metadata.description}")
+            
+            if saidata.metadata.category:
+                example_parts.append(f"  Category: {saidata.metadata.category}")
+            
+            if saidata.providers:
+                providers = list(saidata.providers.keys())
+                example_parts.append(f"  Providers: {', '.join(providers)}")
+                
+                # Show complete structure for one provider as example
+                first_provider = list(saidata.providers.items())[0]
+                provider_name, provider_config = first_provider
+                
+                config_details = []
+                if provider_config.packages:
+                    pkg_details = []
+                    for pkg in provider_config.packages[:2]:
+                        pkg_str = f"name: {pkg.name}"
+                        if pkg.version:
+                            pkg_str += f", version: {pkg.version}"
+                        pkg_details.append(pkg_str)
+                    config_details.append(f"packages: [{'; '.join(pkg_details)}]")
+                
+                if provider_config.services:
+                    svc_details = []
+                    for svc in provider_config.services[:2]:
+                        svc_str = f"name: {svc.name}"
+                        if hasattr(svc, 'enabled') and svc.enabled is not None:
+                            svc_str += f", enabled: {svc.enabled}"
+                        svc_details.append(svc_str)
+                    config_details.append(f"services: [{'; '.join(svc_details)}]")
+                
+                if config_details:
+                    example_parts.append(f"  {provider_name} config: {', '.join(config_details)}")
+            
+            examples.append("\n".join(example_parts))
+        
+        return "Reference saidata samples:\n\n" + "\n\n".join(examples)
+    
     def _format_user_hints(self, user_hints: Optional[Dict[str, Any]]) -> str:
         """Format user hints for prompt inclusion.
         
@@ -295,6 +359,14 @@ Use these examples as reference for structure, provider configurations, and best
             condition="has_similar_saidata"
         ),
         PromptSection(
+            name="sample_examples",
+            template="""REFERENCE SAIDATA SAMPLES:
+$sample_saidata_examples
+
+These are high-quality reference examples showing proper saidata structure, formatting, and best practices. Use these as templates for structure and formatting, adapting the content for the specific software being generated.""",
+            condition="has_sample_saidata"
+        ),
+        PromptSection(
             name="user_guidance",
             template="""USER HINTS AND PREFERENCES:
 $user_hints
@@ -318,32 +390,7 @@ Incorporate these user preferences and hints into the generated saidata.""",
 EXAMPLE STRUCTURE:
 ```yaml
 version: "0.2"
-metadata:
-  name: "software-name"
-  display_name: "Software Display Name"
-  description: "Brief description of the software"
-  category: "category"
-  license: "license-type"
-  urls:
-    website: "https://example.com"
-    documentation: "https://docs.example.com"
-
-providers:
-  apt:
-    packages:
-      - name: "package-name"
-        version: "latest"
-    services:
-      - name: "service-name"
-        enabled: true
-  
-  brew:
-    packages:
-      - name: "package-name"
-        
-  winget:
-    packages:
-      - name: "Publisher.PackageName"
+metadata:`
 ```
 
 Generate complete, valid YAML following this structure.""",

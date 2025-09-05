@@ -82,8 +82,17 @@ class GenerationEngine:
         self._generation_count = 0
         self._total_tokens_used = 0
         self._total_cost = 0.0
+        
+        # Generation logger
+        self.logger: Optional['GenerationLogger'] = None
     
-
+    def set_logger(self, logger: 'GenerationLogger') -> None:
+        """Set the generation logger.
+        
+        Args:
+            logger: GenerationLogger instance
+        """
+        self.logger = logger
     
     async def generate_saidata(self, request: GenerationRequest) -> GenerationResult:
         """Generate saidata based on the request.
@@ -102,30 +111,56 @@ class GenerationEngine:
         try:
             logger.info(f"Starting saidata generation for '{request.software_name}'")
             
-            # Validate request
-            self._validate_request(request)
+            if self.logger:
+                with self.logger.log_step("validate_request", "Validating generation request"):
+                    # Validate request
+                    self._validate_request(request)
+            else:
+                # Validate request
+                self._validate_request(request)
             
             # Build generation context
-            context = await self._build_generation_context(request)
+            if self.logger:
+                with self.logger.log_step("build_context", "Building generation context") as step:
+                    context = await self._build_generation_context(request)
+                    self.logger.log_generation_context(context)
+            else:
+                context = await self._build_generation_context(request)
             
             # Generate saidata using LLM with fallback
             provider_name = request.llm_provider.value if hasattr(request.llm_provider, 'value') else request.llm_provider
             
-            # For backward compatibility with tests, use mocked providers if available
-            if provider_name in self._llm_providers:
-                mock_provider = self._llm_providers[provider_name]
-                llm_response = await mock_provider.generate_saidata(context)
+            if self.logger:
+                with self.logger.log_step("llm_generation", f"Generating saidata using {provider_name}"):
+                    # For backward compatibility with tests, use mocked providers if available
+                    if provider_name in self._llm_providers:
+                        mock_provider = self._llm_providers[provider_name]
+                        llm_response = await mock_provider.generate_saidata(context)
+                    else:
+                        llm_response = await self._generate_with_logged_llm(context, provider_name)
             else:
-                llm_response = await self.provider_manager.generate_with_fallback(
-                    context=context,
-                    preferred_provider=provider_name
-                )
+                # For backward compatibility with tests, use mocked providers if available
+                if provider_name in self._llm_providers:
+                    mock_provider = self._llm_providers[provider_name]
+                    llm_response = await mock_provider.generate_saidata(context)
+                else:
+                    llm_response = await self.provider_manager.generate_with_fallback(
+                        context=context,
+                        preferred_provider=provider_name
+                    )
             
             # Parse and validate generated YAML
-            saidata = await self._parse_and_validate_yaml(
-                llm_response.content, 
-                request.software_name
-            )
+            if self.logger:
+                with self.logger.log_step("parse_validate", "Parsing and validating generated YAML"):
+                    saidata = await self._parse_and_validate_yaml(
+                        llm_response.content, 
+                        request.software_name
+                    )
+            else:
+                saidata = await self._parse_and_validate_yaml(
+                    llm_response.content, 
+                    request.software_name
+                )
             
             # Track generation metrics
             self._update_metrics(llm_response)
@@ -150,6 +185,9 @@ class GenerationEngine:
         except Exception as e:
             generation_time = time.time() - start_time
             logger.error(f"Failed to generate saidata for '{request.software_name}': {e}")
+            
+            if self.logger:
+                self.logger.log_error(f"Generation failed: {e}")
             
             return GenerationResult(
                 success=False,
@@ -213,21 +251,40 @@ class GenerationEngine:
         # RAG integration for enhanced context
         if request.use_rag and self.rag_context_builder:
             try:
-                rag_context = await self.rag_context_builder.build_context(
-                    software_name=request.software_name,
-                    target_providers=request.target_providers,
-                    max_packages=5,
-                    max_saidata=3
-                )
+                if self.logger:
+                    with self.logger.log_data_op("rag_query", f"Building RAG context for {request.software_name}") as log_output:
+                        rag_context = await self.rag_context_builder.build_context(
+                            software_name=request.software_name,
+                            target_providers=request.target_providers,
+                            max_packages=5,
+                            max_saidata=3
+                        )
+                        
+                        # Log the RAG results
+                        log_output({
+                            "similar_packages_count": len(rag_context.get('similar_packages', [])),
+                            "similar_saidata_count": len(rag_context.get('similar_saidata', [])),
+                            "sample_saidata_count": len(rag_context.get('sample_saidata', []))
+                        })
+                else:
+                    rag_context = await self.rag_context_builder.build_context(
+                        software_name=request.software_name,
+                        target_providers=request.target_providers,
+                        max_packages=5,
+                        max_saidata=3
+                    )
                 
                 # Inject RAG data into context
                 context.repository_data = rag_context.get('similar_packages', [])
                 context.similar_saidata = rag_context.get('similar_saidata', [])
+                context.sample_saidata = rag_context.get('sample_saidata', [])
                 
-                logger.debug(f"RAG context built: {len(context.repository_data)} packages, {len(context.similar_saidata)} saidata examples")
+                logger.debug(f"RAG context built: {len(context.repository_data)} packages, {len(context.similar_saidata)} similar saidata, {len(context.sample_saidata)} sample saidata")
                 
             except Exception as e:
                 logger.warning(f"Failed to build RAG context for {request.software_name}: {e}")
+                if self.logger:
+                    self.logger.log_error(f"RAG context building failed: {e}")
                 # Continue without RAG context
         
         return context
@@ -246,35 +303,155 @@ class GenerationEngine:
             ValidationFailedError: If validation fails
         """
         try:
-            # Parse YAML
-            data = yaml.safe_load(yaml_content)
-            if not isinstance(data, dict):
-                raise ValidationFailedError("Generated content is not a valid YAML dictionary")
+            if self.logger:
+                with self.logger.log_data_op("yaml_parsing", "Parsing generated YAML content") as log_output:
+                    # Clean YAML content (remove markdown code blocks if present)
+                    cleaned_yaml = self._clean_yaml_content(yaml_content)
+                    
+                    # Parse YAML
+                    data = yaml.safe_load(cleaned_yaml)
+                    if not isinstance(data, dict):
+                        raise ValidationFailedError("Generated content is not a valid YAML dictionary")
+                    
+                    log_output({
+                        "original_length": len(yaml_content),
+                        "cleaned_length": len(cleaned_yaml),
+                        "parsed_keys": list(data.keys()) if isinstance(data, dict) else []
+                    })
+            else:
+                # Clean YAML content (remove markdown code blocks if present)
+                cleaned_yaml = self._clean_yaml_content(yaml_content)
+                
+                # Parse YAML
+                data = yaml.safe_load(cleaned_yaml)
+                if not isinstance(data, dict):
+                    raise ValidationFailedError("Generated content is not a valid YAML dictionary")
             
-            # Validate against schema
-            validation_result = self.validator.validate_data(data, f"generated:{software_name}")
+            if self.logger:
+                with self.logger.log_data_op("schema_validation", "Validating against saidata schema") as log_output:
+                    # Validate against schema
+                    validation_result = self.validator.validate_data(data, f"generated:{software_name}")
+                    
+                    log_output({
+                        "is_valid": validation_result.is_valid,
+                        "error_count": len(validation_result.errors),
+                        "warning_count": len(validation_result.warnings)
+                    })
+                    
+                    if not validation_result.is_valid:
+                        error_messages = [error.message for error in validation_result.errors]
+                        raise ValidationFailedError(f"Schema validation failed: {'; '.join(error_messages)}")
+            else:
+                # Validate against schema
+                validation_result = self.validator.validate_data(data, f"generated:{software_name}")
+                
+                if not validation_result.is_valid:
+                    error_messages = [error.message for error in validation_result.errors]
+                    raise ValidationFailedError(f"Schema validation failed: {'; '.join(error_messages)}")
             
-            if not validation_result.is_valid:
-                error_messages = [error.message for error in validation_result.errors]
-                raise ValidationFailedError(f"Schema validation failed: {'; '.join(error_messages)}")
-            
-            # Convert to Pydantic model
-            saidata = SaiData(**data)
-            
-            # Additional validation of the Pydantic model
-            model_validation = self.validator.validate_pydantic_model(saidata)
-            if not model_validation.is_valid:
-                error_messages = [error.message for error in model_validation.errors]
-                raise ValidationFailedError(f"Model validation failed: {'; '.join(error_messages)}")
+            if self.logger:
+                with self.logger.log_data_op("model_validation", "Validating Pydantic model") as log_output:
+                    # Convert to Pydantic model
+                    saidata = SaiData(**data)
+                    
+                    # Additional validation of the Pydantic model
+                    model_validation = self.validator.validate_pydantic_model(saidata)
+                    
+                    log_output({
+                        "model_created": True,
+                        "model_validation_valid": model_validation.is_valid,
+                        "model_error_count": len(model_validation.errors)
+                    })
+                    
+                    if not model_validation.is_valid:
+                        error_messages = [error.message for error in model_validation.errors]
+                        raise ValidationFailedError(f"Model validation failed: {'; '.join(error_messages)}")
+            else:
+                # Convert to Pydantic model
+                saidata = SaiData(**data)
+                
+                # Additional validation of the Pydantic model
+                model_validation = self.validator.validate_pydantic_model(saidata)
+                if not model_validation.is_valid:
+                    error_messages = [error.message for error in model_validation.errors]
+                    raise ValidationFailedError(f"Model validation failed: {'; '.join(error_messages)}")
             
             return saidata
             
         except yaml.YAMLError as e:
+            if self.logger:
+                self.logger.log_error(f"YAML parsing error: {e}")
             raise ValidationFailedError(f"Invalid YAML syntax: {e}")
         except Exception as e:
             if isinstance(e, ValidationFailedError):
+                if self.logger:
+                    self.logger.log_error(f"Validation failed: {e}")
                 raise
+            if self.logger:
+                self.logger.log_error(f"Validation error: {e}")
             raise ValidationFailedError(f"Validation error: {e}")
+    
+    async def _generate_with_logged_llm(self, context: GenerationContext, provider_name: str):
+        """Generate saidata with LLM and log the interaction.
+        
+        Args:
+            context: Generation context
+            provider_name: Name of the LLM provider
+            
+        Returns:
+            LLM response
+        """
+        # Get the prompt that will be sent
+        from ..llm.prompts import PromptManager
+        prompt_manager = PromptManager()
+        template = prompt_manager.get_template("generation")
+        prompt = template.render(context)
+        
+        # Record start time for LLM interaction
+        llm_start_time = time.time()
+        
+        try:
+            # Generate with provider manager
+            llm_response = await self.provider_manager.generate_with_fallback(
+                context=context,
+                preferred_provider=provider_name
+            )
+            
+            # Calculate duration
+            llm_duration = time.time() - llm_start_time
+            
+            # Log the successful interaction
+            if self.logger:
+                self.logger.log_llm_interaction(
+                    provider=provider_name,
+                    model=getattr(llm_response, 'model', 'unknown'),
+                    prompt=prompt,
+                    response=llm_response.content,
+                    tokens_used=llm_response.tokens_used,
+                    cost_estimate=llm_response.cost_estimate,
+                    duration_seconds=llm_duration,
+                    success=True
+                )
+            
+            return llm_response
+            
+        except Exception as e:
+            # Calculate duration
+            llm_duration = time.time() - llm_start_time
+            
+            # Log the failed interaction
+            if self.logger:
+                self.logger.log_llm_interaction(
+                    provider=provider_name,
+                    model='unknown',
+                    prompt=prompt,
+                    response='',
+                    duration_seconds=llm_duration,
+                    success=False,
+                    error=str(e)
+                )
+            
+            raise
     
     def _get_repository_sources(self, context: GenerationContext) -> List[str]:
         """Get list of repository sources used in context.
@@ -290,6 +467,27 @@ class GenerationEngine:
             if package.repository_name not in sources:
                 sources.append(package.repository_name)
         return sources
+    
+    def _clean_yaml_content(self, content: str) -> str:
+        """Clean YAML content by removing markdown code blocks and extra formatting.
+        
+        Args:
+            content: Raw content from LLM that may contain markdown
+            
+        Returns:
+            Cleaned YAML content
+        """
+        import re
+        
+        # Remove markdown code blocks
+        # Pattern matches ```yaml or ``` at start and ``` at end
+        content = re.sub(r'^```(?:yaml|yml)?\s*\n', '', content, flags=re.MULTILINE)
+        content = re.sub(r'\n```\s*$', '', content, flags=re.MULTILINE)
+        
+        # Remove any remaining ``` at the beginning or end
+        content = content.strip('`').strip()
+        
+        return content
     
     def _update_metrics(self, llm_response) -> None:
         """Update generation metrics.
@@ -316,18 +514,39 @@ class GenerationEngine:
             GenerationEngineError: If saving fails
         """
         try:
-            # Ensure output directory exists
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Convert to dict and save as YAML
-            data = saidata.model_dump(exclude_none=True)
-            
-            with open(output_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
+            if self.logger:
+                with self.logger.log_data_op("file_save", f"Saving saidata to {output_path}") as log_output:
+                    # Ensure output directory exists
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    
+                    # Convert to dict and save as YAML
+                    data = saidata.model_dump(exclude_none=True)
+                    
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
+                    
+                    # Log file details
+                    file_size = output_path.stat().st_size
+                    log_output({
+                        "output_path": str(output_path),
+                        "file_size_bytes": file_size,
+                        "providers_count": len(saidata.providers) if saidata.providers else 0
+                    })
+            else:
+                # Ensure output directory exists
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Convert to dict and save as YAML
+                data = saidata.model_dump(exclude_none=True)
+                
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    yaml.dump(data, f, default_flow_style=False, sort_keys=False, indent=2)
             
             logger.info(f"Saved saidata to {output_path}")
             
         except Exception as e:
+            if self.logger:
+                self.logger.log_error(f"Failed to save saidata to {output_path}: {e}")
             raise GenerationEngineError(f"Failed to save saidata to {output_path}: {e}")
     
     def get_available_providers(self) -> List[str]:
@@ -578,7 +797,10 @@ class GenerationEngine:
                     model_name=model_name
                 )
                 
-                self.rag_context_builder = RAGContextBuilder(self.rag_indexer)
+                self.rag_context_builder = RAGContextBuilder(
+                    self.rag_indexer, 
+                    config=rag_config
+                )
                 
                 logger.info(f"RAG components initialized with model: {model_name}")
             else:

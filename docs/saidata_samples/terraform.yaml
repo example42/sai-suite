@@ -1,0 +1,148 @@
+version: "0.2"
+
+metadata:
+  name: "terraform"
+  display_name: "Terraform"
+  description: "Infrastructure as Code tool for building, changing, and versioning infrastructure"
+  version: "1.5.0"
+  category: "infrastructure"
+  subcategory: "iac"
+  tags: ["terraform", "infrastructure", "iac", "devops", "cloud"]
+  license: "MPL-2.0"
+  language: "Go"
+  maintainer: "HashiCorp"
+  urls:
+    website: "https://www.terraform.io"
+    documentation: "https://www.terraform.io/docs"
+    source: "https://github.com/hashicorp/terraform"
+    issues: "https://github.com/hashicorp/terraform/issues"
+    support: "https://www.terraform.io/community"
+    download: "https://releases.hashicorp.com/terraform"
+    changelog: "https://github.com/hashicorp/terraform/blob/main/CHANGELOG.md"
+    license: "https://github.com/hashicorp/terraform/blob/main/LICENSE"
+  security:
+    security_contact: "security@hashicorp.com"
+    vulnerability_disclosure: "https://www.hashicorp.com/security"
+
+packages:
+  - name: "terraform"
+    version: "1.5.0"
+    checksum: "sha256:..."
+    download_url: "https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip"
+
+files:
+  - name: "config"
+    path: "~/.terraformrc"
+    type: "config"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0644"
+    backup: true
+  - name: "credentials"
+    path: "~/.terraform.d/credentials.tfrc.json"
+    type: "config"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0600"
+    backup: true
+  - name: "log"
+    path: "/tmp/terraform.log"
+    type: "log"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "~/.terraform.d"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0755"
+  - name: "plugins"
+    path: "~/.terraform.d/plugins"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0755"
+  - name: "cache"
+    path: "~/.terraform.d/plugin-cache"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0755"
+
+commands:
+  - name: "terraform"
+    path: "/usr/local/bin/terraform"
+    shell_completion: true
+    aliases: ["tf"]
+
+providers:
+  apt:
+    repositories:
+      - name: "hashicorp-official"
+        url: "https://apt.releases.hashicorp.com"
+        key: "https://apt.releases.hashicorp.com/gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "terraform"
+            version: "1.5.0"
+
+  dnf:
+    repositories:
+      - name: "hashicorp-official"
+        url: "https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "terraform"
+            version: "1.5.0"
+
+  brew:
+    packages:
+      - name: "terraform"
+        alternatives: ["terraform"]
+
+  snap:
+    packages:
+      - name: "terraform"
+        alternatives: ["terraform"]
+
+  docker:
+    containers:
+      - name: "terraform"
+        image: "hashicorp/terraform"
+        tag: "1.5.0"
+        registry: "docker.io"
+        volumes: ["/workspace:/workspace"]
+        environment:
+          TF_LOG: "INFO"
+        labels:
+          purpose: "infrastructure-as-code"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "snap"
+      platform: "linux"
+      architecture: ["amd64", "arm64"]
+      supported: true
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Containerized execution environment"

@@ -1,0 +1,247 @@
+version: "0.2"
+
+metadata:
+  name: "mysql"
+  display_name: "MySQL"
+  description: "Open source relational database management system"
+  version: "8.0.34"
+  category: "database"
+  subcategory: "relational"
+  tags: ["mysql", "database", "sql", "relational", "mariadb"]
+  license: "GPL-2.0"
+  language: "C++"
+  maintainer: "Oracle Corporation"
+  urls:
+    website: "https://www.mysql.com"
+    documentation: "https://dev.mysql.com/doc"
+    source: "https://github.com/mysql/mysql-server"
+    issues: "https://bugs.mysql.com"
+    support: "https://www.mysql.com/support"
+    download: "https://dev.mysql.com/downloads"
+    changelog: "https://dev.mysql.com/doc/relnotes/mysql/8.0/en"
+    license: "https://github.com/mysql/mysql-server/blob/8.0/LICENSE"
+  security:
+    security_contact: "secalert_us@oracle.com"
+    vulnerability_disclosure: "https://www.oracle.com/security-alerts"
+
+packages:
+  - name: "server"
+    version: "8.0.34"
+    alternatives: ["mysql-server", "mysql-server-8.0"]
+  - name: "client"
+    version: "8.0.34"
+    alternatives: ["mysql-client", "mysql-client-8.0"]
+  - name: "common"
+    version: "8.0.34"
+    alternatives: ["mysql-common"]
+
+services:
+  - name: "mysql"
+    service_name: "mysql"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/mysql/mysql.conf.d/mysqld.cnf"]
+
+files:
+  - name: "server-config"
+    path: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "client-config"
+    path: "/etc/mysql/mysql.conf.d/mysql.cnf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "error-log"
+    path: "/var/log/mysql/error.log"
+    type: "log"
+    owner: "mysql"
+    group: "adm"
+    mode: "0640"
+  - name: "slow-query-log"
+    path: "/var/log/mysql/mysql-slow.log"
+    type: "log"
+    owner: "mysql"
+    group: "adm"
+    mode: "0640"
+
+directories:
+  - name: "config"
+    path: "/etc/mysql"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "data"
+    path: "/var/lib/mysql"
+    owner: "mysql"
+    group: "mysql"
+    mode: "0700"
+  - name: "log"
+    path: "/var/log/mysql"
+    owner: "mysql"
+    group: "adm"
+    mode: "0750"
+  - name: "run"
+    path: "/var/run/mysqld"
+    owner: "mysql"
+    group: "mysql"
+    mode: "0755"
+
+commands:
+  - name: "mysql"
+    path: "/usr/bin/mysql"
+    shell_completion: true
+    man_page: "mysql(1)"
+  - name: "mysqld"
+    path: "/usr/sbin/mysqld"
+    man_page: "mysqld(8)"
+  - name: "mysqldump"
+    path: "/usr/bin/mysqldump"
+    man_page: "mysqldump(1)"
+  - name: "mysqladmin"
+    path: "/usr/bin/mysqladmin"
+    man_page: "mysqladmin(1)"
+
+ports:
+  - port: 3306
+    protocol: "tcp"
+    service: "mysql"
+    description: "MySQL database server"
+  - port: 33060
+    protocol: "tcp"
+    service: "mysqlx"
+    description: "MySQL X Protocol"
+
+providers:
+  apt:
+    repositories:
+      - name: "mysql-official"
+        url: "https://repo.mysql.com/apt/ubuntu"
+        key: "https://repo.mysql.com/RPM-GPG-KEY-mysql-2022"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "server"
+            version: "8.0.34-0ubuntu0.22.04.1"
+            alternatives: ["mysql-server-8.0"]
+          - name: "client"
+            version: "8.0.34-0ubuntu0.22.04.1"
+            alternatives: ["mysql-client-8.0"]
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "server"
+            alternatives: ["mysql-server", "default-mysql-server"]
+          - name: "client"
+            alternatives: ["mysql-client", "default-mysql-client"]
+
+  dnf:
+    repositories:
+      - name: "mysql-official"
+        url: "https://repo.mysql.com/yum/mysql-8.0-community/el/8"
+        key: "https://repo.mysql.com/RPM-GPG-KEY-mysql-2022"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "server"
+            alternatives: ["mysql-community-server"]
+          - name: "client"
+            alternatives: ["mysql-community-client"]
+      - name: "appstream"
+        type: "os-default"
+        packages:
+          - name: "server"
+            alternatives: ["mysql-server"]
+          - name: "client"
+            alternatives: ["mysql"]
+
+  brew:
+    packages:
+      - name: "server"
+        alternatives: ["mysql@8.0", "mysql"]
+        recommended: true
+
+  choco:
+    packages:
+      - name: "server"
+        version: "8.0.34"
+        alternatives: ["mysql"]
+
+  winget:
+    packages:
+      - name: "server"
+        id: "Oracle.MySQL"
+        version: "8.0.34"
+        recommended: true
+
+  docker:
+    containers:
+      - name: "mysql"
+        image: "mysql"
+        tag: "8.0.34"
+        registry: "docker.io"
+        ports: ["3306:3306"]
+        volumes: ["/var/lib/mysql:/var/lib/mysql"]
+        environment:
+          MYSQL_ROOT_PASSWORD: "rootpassword"
+          MYSQL_DATABASE: "mydb"
+          MYSQL_USER: "user"
+          MYSQL_PASSWORD: "password"
+        labels:
+          purpose: "database-server"
+
+  helm:
+    repositories:
+      - name: "bitnami"
+        url: "https://charts.bitnami.com/bitnami"
+        type: "third-party"
+        recommended: true
+        packages:
+          - name: "mysql"
+            alternatives: ["mysql"]
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      notes: "Windows service configuration differs significantly"
+    - provider: "winget"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      recommended: true
+      notes: "Official Oracle installer for Windows"
+    - provider: "docker"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Recommended for development and testing"
+    - provider: "helm"
+      platform: ["linux", "macos", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes deployment with persistent storage and clustering"

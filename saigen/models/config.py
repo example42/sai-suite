@@ -62,6 +62,11 @@ class RAGConfig(BaseModel):
     max_context_items: int = 5
     similarity_threshold: float = 0.7
     rebuild_on_startup: bool = False
+    
+    # Sample data configuration
+    default_samples_directory: Optional[Path] = None
+    use_default_samples: bool = True
+    max_sample_examples: int = 3
 
 
 class ValidationConfig(BaseModel):
