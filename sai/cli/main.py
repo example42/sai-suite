@@ -485,12 +485,142 @@ def _get_provider_package_info(provider, saidata):
         if not package_name:
             return None, None, False
         
+        # Try to get real available version from provider if we don't have version info
+        if is_available and not version_info:
+            available_version = _get_available_version_from_provider(provider, package_name)
+            if available_version:
+                version_info = available_version
+        
         return package_name, version_info, is_available
         
     except Exception as e:
         # Return basic info even if template resolution fails
         package_name = saidata.metadata.name if saidata and saidata.metadata else None
         return package_name, None, False
+
+
+def _get_available_version_from_provider(provider, package_name):
+    """Get available version from provider by executing info command.
+    
+    Args:
+        provider: Provider instance
+        package_name: Package name for this provider
+        
+    Returns:
+        Available version string or None if not found
+    """
+    try:
+        import subprocess
+        import re
+        
+        # Define version query commands for different providers
+        version_commands = {
+            'brew': f'brew info {package_name}',
+            'npm': f'npm view {package_name} version',
+            'gem': f'gem search {package_name} --remote --exact',
+            'pypi': f'python -c "import requests; print(requests.get(\'https://pypi.org/pypi/{package_name}/json\').json()[\'info\'][\'version\'])"',
+            'apt': f'apt-cache show {package_name}',
+            'dnf': f'dnf info {package_name}',
+            'yum': f'yum info {package_name}',
+            'pacman': f'pacman -Si {package_name}',
+            'zypper': f'zypper info {package_name}',
+            'choco': f'choco info {package_name}',
+            'winget': f'winget show {package_name}',
+            'scoop': f'scoop info {package_name}',
+            'snap': f'snap info {package_name}',
+            'flatpak': f'flatpak remote-info flathub {package_name}',
+            'cargo': f'cargo search {package_name} --limit 1',
+            'go': f'go list -m -versions {package_name}',
+            'helm': f'helm search repo {package_name}',
+        }
+        
+        command = version_commands.get(provider.name)
+        if not command:
+            return None
+            
+        # Execute command with timeout
+        result = subprocess.run(
+            command.split(),
+            capture_output=True,
+            text=True,
+            timeout=5  # Reduced timeout for faster provider selection
+        )
+        
+        if result.returncode != 0:
+            return None
+            
+        output = result.stdout.strip()
+        
+        # Parse version from output based on provider
+        if provider.name == 'brew':
+            # Extract version from "==> rust: stable 1.89.0 (bottled)"
+            match = re.search(r'stable\s+([^\s\(]+)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'npm':
+            # npm view returns just the version
+            return output if output else None
+            
+        elif provider.name == 'gem':
+            # Extract version from "rust (1.0.0)"
+            match = re.search(rf'{re.escape(package_name)}\s+\(([^)]+)\)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name in ['apt', 'dnf', 'yum']:
+            # Extract version from "Version: 1.2.3"
+            match = re.search(r'Version:\s*([^\s]+)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'pacman':
+            # Extract version from "Version         : 1.2.3-1"
+            match = re.search(r'Version\s*:\s*([^\s]+)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'cargo':
+            # Extract version from "rust = "1.0.0""
+            match = re.search(rf'{re.escape(package_name)}\s*=\s*"([^"]+)"', output)
+            return match.group(1) if match else None
+            
+        elif provider.name in ['choco', 'winget']:
+            # Extract version from various Windows package manager formats
+            match = re.search(r'Version:\s*([^\s]+)', output, re.IGNORECASE)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'scoop':
+            # Extract version from "Version: 1.2.3"
+            match = re.search(r'Version:\s*([^\s]+)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'snap':
+            # Extract version from snap info output
+            match = re.search(r'latest/stable:\s*([^\s]+)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'flatpak':
+            # Extract version from flatpak remote-info output
+            match = re.search(r'Version:\s*([^\s]+)', output)
+            return match.group(1) if match else None
+            
+        elif provider.name == 'helm':
+            # Extract version from helm search output
+            lines = output.split('\n')
+            for line in lines[1:]:  # Skip header
+                if package_name in line:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        return parts[1]  # Chart version
+            return None
+            
+        elif provider.name == 'pypi':
+            # Python script returns just the version
+            return output.strip() if output else None
+            
+        # Add more provider-specific parsing as needed
+        return None
+        
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError, Exception):
+        # Silently fail for version queries to not slow down provider selection
+        return None
 
 
 def _execute_software_action(ctx: click.Context, action: str, software: str, 

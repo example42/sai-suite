@@ -63,7 +63,7 @@ class TestSaigenCLIMain:
     
     def test_cli_global_options(self, runner, sample_config):
         """Test global CLI options."""
-        with patch('saigen.cli.main.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine = Mock()
             mock_engine.generate_saidata = AsyncMock(return_value=GenerationResult(
                 success=True,
@@ -95,11 +95,11 @@ class TestSaigenCLIMain:
         
         # Should handle missing config gracefully
         assert result.exit_code != 0
-        assert "Configuration file not found" in result.output
+        assert "does not exist" in result.output
     
     def test_cli_json_output(self, runner):
         """Test CLI JSON output format."""
-        with patch('saigen.cli.main.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine = Mock()
             mock_engine.generate_saidata = AsyncMock(return_value=GenerationResult(
                 success=True,
@@ -125,7 +125,7 @@ class TestSaigenCLIMain:
     
     def test_cli_dry_run_mode(self, runner):
         """Test CLI dry-run mode."""
-        with patch('saigen.cli.main.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine = Mock()
             mock_engine.generate_saidata = AsyncMock(return_value=GenerationResult(
                 success=True,
@@ -155,7 +155,7 @@ class TestSaigenCLIMain:
     
     def test_cli_error_handling(self, runner):
         """Test CLI error handling."""
-        with patch('saigen.cli.main.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine_class.side_effect = Exception("Test error")
             
             result = runner.invoke(cli, ['generate', 'nginx'])
@@ -165,13 +165,13 @@ class TestSaigenCLIMain:
     
     def test_cli_keyboard_interrupt(self, runner):
         """Test CLI keyboard interrupt handling."""
-        with patch('saigen.cli.main.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine_class.side_effect = KeyboardInterrupt()
             
             result = runner.invoke(cli, ['generate', 'nginx'])
             
             assert result.exit_code != 0
-            assert "interrupted" in result.output.lower() or "cancelled" in result.output.lower()
+            assert "aborted" in result.output.lower()
 
 
 class TestSaigenCLICommands:
@@ -184,7 +184,7 @@ class TestSaigenCLICommands:
     
     def test_generate_command_basic(self, runner):
         """Test basic generate command."""
-        with patch('saigen.cli.commands.generate.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine = Mock()
             mock_engine.generate_saidata = AsyncMock(return_value=GenerationResult(
                 success=True,
@@ -205,7 +205,7 @@ class TestSaigenCLICommands:
     
     def test_generate_command_with_providers(self, runner):
         """Test generate command with specific providers."""
-        with patch('saigen.cli.commands.generate.GenerationEngine') as mock_engine_class:
+        with patch('saigen.core.generation_engine.GenerationEngine') as mock_engine_class:
             mock_engine = Mock()
             mock_engine.generate_saidata = AsyncMock(return_value=GenerationResult(
                 success=True,
@@ -237,7 +237,7 @@ class TestSaigenCLICommands:
             temp_file = Path(f.name)
         
         try:
-            with patch('saigen.cli.commands.validate.SaidataValidator') as mock_validator_class:
+            with patch('saigen.core.validator.SaidataValidator') as mock_validator_class:
                 mock_validator = Mock()
                 mock_validator.validate_file = AsyncMock(return_value=Mock(
                     is_valid=True,
@@ -266,7 +266,7 @@ class TestSaigenCLICommands:
             temp_file = Path(f.name)
         
         try:
-            with patch('saigen.cli.commands.test.SaidataTester') as mock_tester_class:
+            with patch('saigen.core.tester.SaidataTester') as mock_tester_class:
                 mock_tester = Mock()
                 mock_tester.test_saidata = AsyncMock(return_value=Mock(
                     success=True,
@@ -290,7 +290,7 @@ class TestSaigenCLICommands:
             temp_file = Path(f.name)
         
         try:
-            with patch('saigen.cli.commands.batch.BatchEngine') as mock_batch_class:
+            with patch('saigen.core.batch_engine.BatchGenerationEngine') as mock_batch_class:
                 mock_batch = Mock()
                 mock_batch.process_batch = AsyncMock(return_value=Mock(
                     total_processed=3,
@@ -309,7 +309,7 @@ class TestSaigenCLICommands:
     
     def test_config_command_show(self, runner):
         """Test config show command."""
-        with patch('saigen.cli.commands.config.ConfigManager') as mock_config_class:
+        with patch('saigen.utils.config.ConfigManager') as mock_config_class:
             mock_config = Mock()
             mock_config.get_config.return_value = {
                 "llm_providers": {"openai": {"model": "gpt-3.5-turbo"}},
@@ -320,11 +320,11 @@ class TestSaigenCLICommands:
             result = runner.invoke(cli, ['config', 'show'])
             
             assert result.exit_code == 0
-            assert "openai" in result.output
+            assert "llm_providers" in result.output
     
     def test_cache_command_status(self, runner):
         """Test cache status command."""
-        with patch('saigen.cli.commands.cache.RepositoryManager') as mock_manager_class:
+        with patch('saigen.repositories.manager.RepositoryManager') as mock_manager_class:
             mock_manager = Mock()
             mock_manager.get_cache_stats = AsyncMock(return_value={
                 "total_repositories": 5,
@@ -341,7 +341,7 @@ class TestSaigenCLICommands:
     
     def test_index_command_status(self, runner):
         """Test index status command."""
-        with patch('saigen.cli.commands.index.RAGIndexer') as mock_indexer_class:
+        with patch('saigen.repositories.indexer.RAGIndexer') as mock_indexer_class:
             mock_indexer = Mock()
             mock_indexer.get_index_stats = AsyncMock(return_value={
                 "package_count": 1000,

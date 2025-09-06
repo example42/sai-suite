@@ -328,6 +328,12 @@ class BatchGenerationEngine:
                 for i, result in enumerate(results):
                     if not result.success:
                         failed_software.append(valid_software[i])
+                        # Stop on first failure when continue_on_error=False
+                        logger.error(f"Batch processing stopped due to failure: {valid_software[i]}")
+                        raise GenerationEngineError(f"Batch processing failed: {valid_software[i]} generation failed")
+            except GenerationEngineError:
+                # Re-raise our own exceptions
+                raise
             except Exception as e:
                 logger.error(f"Batch processing stopped due to error: {e}")
                 raise GenerationEngineError(f"Batch processing failed: {e}")

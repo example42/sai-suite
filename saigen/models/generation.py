@@ -127,5 +127,7 @@ class BatchError(Exception):
 class BatchProcessingError(BatchError):
     """Error during batch processing."""
     def __init__(self, message: str, software_name: Optional[str] = None):
+        if software_name:
+            message = f"{message} (software: {software_name})"
         super().__init__(message)
         self.software_name = software_name

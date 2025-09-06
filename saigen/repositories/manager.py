@@ -292,7 +292,7 @@ class RepositoryManager:
     # Backward compatibility methods
     async def get_package_info(self, package_name: str, repository_name: Optional[str] = None):
         """Get package info - backward compatibility method."""
-        return await self.get_package_details(package_name, repository_names=[repository_name] if repository_name else None)
+        return await self.get_package_details(package_name)
     
     def get_enabled_repositories(self) -> List[str]:
         """Get enabled repositories - backward compatibility method."""

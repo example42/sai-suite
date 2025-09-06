@@ -300,7 +300,8 @@ class TestBatchGenerationEngine:
         )
         
         # Execute batch generation - should raise exception
-        with pytest.raises(Exception, match="Batch processing failed"):
+        from saigen.core.generation_engine import GenerationEngineError
+        with pytest.raises(GenerationEngineError, match="Batch processing failed"):
             await batch_engine.generate_batch(request)
     
     @pytest.mark.asyncio

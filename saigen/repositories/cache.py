@@ -489,6 +489,83 @@ class RepositoryCache:
         
         return removed_count
     
+    async def has_key(self, cache_key: str) -> bool:
+        """Check if cache key exists.
+        
+        Args:
+            cache_key: Cache key to check
+            
+        Returns:
+            True if key exists and is not expired
+        """
+        cache_entry = await self.get(cache_key)
+        return cache_entry is not None
+    
+    async def delete(self, cache_key: str) -> bool:
+        """Delete cache entry by key.
+        
+        Args:
+            cache_key: Cache key to delete
+            
+        Returns:
+            True if entry was deleted
+        """
+        return await self.invalidate(cache_key)
+    
+    async def get_cached_data(self, repository_name: str) -> Optional[List[RepositoryPackage]]:
+        """Get cached data for a repository - backward compatibility method.
+        
+        Args:
+            repository_name: Repository name
+            
+        Returns:
+            List of cached packages or None if not found
+        """
+        packages = await self.get_packages_by_repository(repository_name)
+        return packages if packages else None
+    
+    def is_expired(self, cache_key: str) -> bool:
+        """Check if cache entry is expired - synchronous method for backward compatibility.
+        
+        Args:
+            cache_key: Cache key to check
+            
+        Returns:
+            True if expired or not found
+        """
+        meta_path = self._get_metadata_path(cache_key)
+        
+        if not meta_path.exists():
+            return True
+        
+        try:
+            with open(meta_path, 'r') as f:
+                content = f.read()
+                metadata = json.loads(content)
+            
+            expires_at = datetime.fromisoformat(metadata['expires_at'])
+            return datetime.utcnow() > expires_at
+        except Exception:
+            return True
+    
+    async def store_data(self, repository_name: str, packages: List[RepositoryPackage]) -> None:
+        """Store data for a repository - backward compatibility method.
+        
+        Args:
+            repository_name: Repository name
+            packages: List of packages to store
+        """
+        cache_key = f"{repository_name}_packages"
+        await self.set(cache_key, packages, repository_name)
+    
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics - backward compatibility method.
+        
+        Returns:
+            Dictionary with cache statistics
+        """
+        return await self.get_cache_stats()
+    
     async def _remove_cache_files(self, cache_key: str) -> bool:
         """Remove cache and metadata files for a key."""
         removed = False

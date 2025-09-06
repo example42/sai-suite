@@ -49,10 +49,10 @@ class TestCompleteWorkflows:
                 "type": "package_manager",
                 "platforms": ["linux", "darwin"],
                 "capabilities": list(actions.keys()),
-                "executable": f"{name}-cmd"
+                "executable": f"{name}-cmd",
+                "priority": priority
             },
-            "actions": actions,
-            "priority": priority
+            "actions": actions
         }
         
         provider_file = self.provider_dir / f"{name}.yaml"
@@ -209,10 +209,15 @@ class TestCompleteWorkflows:
         # Create test saidata
         self.create_test_saidata("git")
         
+        # Mock provider loading to only use test providers
+        from sai.providers.loader import ProviderLoader
+        test_loader = ProviderLoader()
+        test_providers = test_loader.load_providers_from_directory(self.provider_dir)
+        
         # Mock provider availability
-        with patch('sai.utils.system.is_executable_available', return_value=True), \
-             patch('sai.utils.system.check_executable_functionality', return_value=True), \
-             patch('sai.core.execution_engine.subprocess.Popen') as mock_popen:
+        with patch('sai.providers.base.BaseProvider.is_available', return_value=True), \
+             patch('sai.core.execution_engine.subprocess.Popen') as mock_popen, \
+             patch('sai.providers.loader.ProviderLoader.load_all_providers', return_value=test_providers):
             
             mock_process = Mock()
             mock_process.communicate.return_value = ("Package installed", "")
@@ -248,9 +253,14 @@ class TestCompleteWorkflows:
         # Create test saidata
         self.create_test_saidata("vim")
         
+        # Mock provider loading to only use test providers
+        from sai.providers.loader import ProviderLoader
+        test_loader = ProviderLoader()
+        test_providers = test_loader.load_providers_from_directory(self.provider_dir)
+        
         # Mock provider availability
-        with patch('sai.utils.system.is_executable_available', return_value=True), \
-             patch('sai.utils.system.check_executable_functionality', return_value=True):
+        with patch('sai.providers.base.BaseProvider.is_available', return_value=True), \
+             patch('sai.providers.loader.ProviderLoader.load_all_providers', return_value=test_providers):
             
             result = self.runner.invoke(cli, ['--dry-run', 'install', 'vim'])
             
@@ -391,10 +401,15 @@ class TestCompleteWorkflows:
         
         # Don't create saidata file - should use basic execution
         
+        # Mock provider loading to only use test providers
+        from sai.providers.loader import ProviderLoader
+        test_loader = ProviderLoader()
+        test_providers = test_loader.load_providers_from_directory(self.provider_dir)
+        
         # Mock provider availability
-        with patch('sai.utils.system.is_executable_available', return_value=True), \
-             patch('sai.utils.system.check_executable_functionality', return_value=True), \
-             patch('sai.core.execution_engine.subprocess.Popen') as mock_popen:
+        with patch('sai.providers.base.BaseProvider.is_available', return_value=True), \
+             patch('sai.core.execution_engine.subprocess.Popen') as mock_popen, \
+             patch('sai.providers.loader.ProviderLoader.load_all_providers', return_value=test_providers):
             
             mock_process = Mock()
             mock_process.communicate.return_value = ("Package installed", "")
@@ -577,10 +592,15 @@ class TestCompleteWorkflows:
         # Create test saidata
         self.create_test_saidata("htop")
         
+        # Mock provider loading to only use test providers
+        from sai.providers.loader import ProviderLoader
+        test_loader = ProviderLoader()
+        test_providers = test_loader.load_providers_from_directory(self.provider_dir)
+        
         # Mock provider availability
-        with patch('sai.utils.system.is_executable_available', return_value=True), \
-             patch('sai.utils.system.check_executable_functionality', return_value=True), \
-             patch('sai.core.execution_engine.subprocess.Popen') as mock_popen:
+        with patch('sai.providers.base.BaseProvider.is_available', return_value=True), \
+             patch('sai.core.execution_engine.subprocess.Popen') as mock_popen, \
+             patch('sai.providers.loader.ProviderLoader.load_all_providers', return_value=test_providers):
             
             mock_process = Mock()
             mock_process.communicate.return_value = ("Package installed", "")
