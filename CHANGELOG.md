@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **🚀 MAJOR FEATURE: Configurable Saidata Repository System**: Complete implementation of repository-based saidata management
+  - **GitRepositoryHandler**: Full git repository operations with shallow clone support, authentication (SSH keys, tokens), and automatic updates
+  - **TarballRepositoryHandler**: Fallback HTTP download system with GitHub releases API integration and checksum verification
+  - **SaidataRepositoryManager**: Central coordinator for repository lifecycle management with health checks and status reporting
+  - **Hierarchical Saidata Structure**: New `software/{prefix}/{name}/default.yaml` organization for better scalability and performance
+  - **Repository Cache System**: Intelligent caching with TTL management, concurrent access safety, and automatic cleanup
+  - **Enhanced CLI Commands**: New repository management commands (`sai repository status`, `update`, `configure`, `clear`, `cleanup`)
+  - **Offline Mode Support**: Graceful fallback to cached repositories when network unavailable with appropriate warnings
+  - **Multi-Authentication Support**: SSH keys, personal access tokens, and basic authentication for private repositories
+  - **Security Enhancements**: URL validation, path traversal protection, secure file permissions, and credential management
+  - **Performance Optimizations**: Shallow clones, connection pooling, streaming operations, and efficient path resolution
+  - **Comprehensive Error Handling**: Detailed error messages, network connectivity detection, and repository integrity validation
+  - **Migration Support**: Automatic migration from flat to hierarchical structure with backward compatibility
 - **Advanced Validation and Quality Metrics System**: Complete implementation of comprehensive saidata quality assessment
   - AdvancedSaidataValidator class with 6 quality metrics (completeness, accuracy, consistency, repository alignment, metadata richness, cross-reference integrity)
   - Quality scoring system with weighted metrics and overall quality scores
@@ -138,6 +151,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **🔄 BREAKING CHANGE: Default Saidata Source**: SAI now uses repository-based saidata by default instead of local files
+  - Default saidata paths now prioritize `~/.sai/cache/repositories/saidata-main`
+  - Local saidata directory removed from project (moved to repository-based system)
+  - Hierarchical path resolution replaces flat file structure
+  - Automatic repository updates every 24 hours (configurable)
+- **Enhanced Configuration System**: Extended SaiConfig model with comprehensive repository settings
+  - New repository configuration options: URL, branch, authentication, update intervals
+  - Environment variable overrides for all repository settings
+  - Backward-compatible configuration migration
+- **Improved CLI Interface**: Enhanced commands with repository management capabilities
+  - `sai info` now shows repository-based saidata source information
+  - All commands work seamlessly with repository-cached saidata
+  - New `--offline` flag for commands to use cached data only
+- **SaidataLoader Rewrite**: Complete rewrite to use repository-based hierarchical structure
+  - Removed legacy flat file search mechanisms
+  - Enhanced error messages for missing saidata files
+  - Improved saidata merging logic for hierarchical files
 - **Repository Architecture**: Implemented comprehensive repository management system with async-first design
 - **Configuration System**: Enhanced configuration management to support repository-specific settings
 - **CLI Interface**: Updated SAIGEN CLI to include repository management commands (list, update, stats, clear)
@@ -161,6 +191,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI Interface**: Expanded CLI with stats, config-show, and version commands
 
 ### Security
+- **🔒 MAJOR SECURITY ENHANCEMENTS: Repository Security Framework**: Comprehensive security measures for repository operations
+  - **Authentication Security**: Secure credential storage using environment variables, SSH key management, and token-based authentication
+  - **Network Security**: URL scheme validation (http/https/ftp/ftps only), SSL certificate verification enforcement, HTTP response size limits
+  - **File System Security**: Secure cache file permissions (0o600), path traversal protection, cache key sanitization
+  - **Git Security**: Git signature verification when available, secure git operations with minimal environment
+  - **Input Validation**: Comprehensive validation of repository URLs, branch names, and configuration parameters
+  - **Process Security**: Secure subprocess execution for git operations with timeout controls and resource limits
 - **Enhanced Command Sanitization**: Improved sensitive data redaction in output formatter
   - Regex-based pattern matching for better detection of sensitive arguments
   - Comprehensive patterns for passwords, tokens, keys, and authentication data
@@ -186,6 +223,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment Hardening**: Minimal secure environment variables, removal of dangerous PATH entries
 
 ### Fixed
+- **🐛 Test Infrastructure**: Fixed pytest collection warnings by renaming test fixture classes
+  - Renamed `TestRepository` → `TestRepositoryConfig` to avoid pytest collection conflicts
+  - Fixed test class naming conflicts in repository test fixtures
+  - Enhanced test isolation and mocking for repository operations
+- **Repository Operations**: Enhanced error handling and recovery mechanisms
+  - Improved network connectivity detection and offline mode handling
+  - Better cache corruption detection and automatic cleanup
+  - Enhanced git operation error messages and troubleshooting guidance
+- **Configuration Loading**: Improved repository configuration validation and error reporting
+  - Better handling of invalid repository URLs and authentication settings
+  - Enhanced environment variable processing for repository settings
+  - Improved configuration file migration and backward compatibility
 - **Test Class Naming Conflicts**: Renamed test-related classes to avoid pytest collection conflicts:
   - `TestResult` → `SaidataTestResult`
   - `TestSuite` → `SaidataTestSuite` 

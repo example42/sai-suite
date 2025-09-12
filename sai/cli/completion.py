@@ -19,6 +19,21 @@ def complete_software_names(ctx: click.Context, param: click.Parameter, incomple
         software_names = set()
         for path in search_paths:
             if path.exists() and path.is_dir():
+                # Check for hierarchical structure: software/{prefix}/{name}/default.yaml
+                software_dir = path / "software"
+                if software_dir.exists() and software_dir.is_dir():
+                    for prefix_dir in software_dir.iterdir():
+                        if prefix_dir.is_dir():
+                            for name_dir in prefix_dir.iterdir():
+                                if name_dir.is_dir():
+                                    # Check if default.yaml exists
+                                    default_file = name_dir / "default.yaml"
+                                    if default_file.exists():
+                                        name = name_dir.name
+                                        if name.startswith(incomplete):
+                                            software_names.add(name)
+                
+                # Also check for legacy flat structure for backward compatibility
                 for saidata_file in path.glob("*.yaml"):
                     name = saidata_file.stem
                     if name.startswith(incomplete):

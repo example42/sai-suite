@@ -8,7 +8,7 @@ This directory contains comprehensive sample configuration files for both SAI an
 - [`saigen-config-sample.yaml`](./saigen-config-sample.yaml) - YAML format (recommended)
 
 ### SAI Configuration Samples  
-- [`sai-config-sample.yaml`](./sai-config-sample.yaml) - YAML format (recommended)
+- [`sai-config-sample.yaml`](./sai-config-sample.yaml) - YAML format (recommended) with repository configuration
 
 ## Quick Start
 
@@ -38,7 +38,26 @@ This directory contains comprehensive sample configuration files for both SAI an
    cp docs/sai-config-sample.yaml ~/.sai/config.yaml
    ```
 
-2. Customize provider priorities and paths as needed.
+2. Configure repository settings (optional - defaults work for most users):
+   ```yaml
+   # Use default repository
+   saidata_repository_url: "https://github.com/example42/saidata"
+   
+   # Or configure custom repository
+   saidata_repository_url: "https://github.com/myorg/custom-saidata"
+   saidata_repository_branch: "main"
+   ```
+
+3. Set up authentication for private repositories (if needed):
+   ```bash
+   # For SSH authentication
+   ssh-add ~/.ssh/id_ed25519
+   
+   # For token authentication
+   export GITHUB_TOKEN="your_token_here"
+   ```
+
+4. Customize provider priorities and paths as needed.
 
 ## Configuration File Locations
 
@@ -97,11 +116,20 @@ Control how providers are selected and prioritized:
 - **Default provider**: Fallback when no provider specified
 - **Search paths**: Directories to find provider implementations
 
+#### Repository Configuration
+Configure saidata repository settings:
+- **Repository URL**: Git repository containing saidata files
+- **Repository branch**: Branch to use from the repository
+- **Authentication**: SSH keys, tokens, or credentials for private repositories
+- **Update behavior**: Automatic updates, intervals, and offline mode
+- **Cache settings**: Local repository caching for performance
+
 #### Data Sources
 Configure where to find saidata and providers:
-- **Saidata paths**: Directories containing software metadata
+- **Repository cache**: Primary source from configured git repository
+- **Saidata paths**: Additional directories containing software metadata
 - **Provider paths**: Directories containing provider implementations
-- **Cache settings**: Local caching for performance
+- **Hierarchical structure**: `software/{prefix}/{name}/default.yaml` organization
 
 #### Execution Control
 Control how actions are executed:
@@ -122,6 +150,12 @@ Control how actions are executed:
 - `SAI_LOG_LEVEL`: Override log level
 - `SAI_CACHE_DIR`: Override cache directory
 - `SAI_CONFIG_PATH`: Override config file path
+- `SAI_REPOSITORY_URL`: Override repository URL
+- `SAI_REPOSITORY_BRANCH`: Override repository branch
+- `SAI_OFFLINE_MODE`: Force offline mode (true/false)
+- `SAI_AUTO_UPDATE`: Enable/disable auto-update (true/false)
+- `GITHUB_TOKEN`: GitHub personal access token for private repositories
+- `SSH_AUTH_SOCK`: SSH agent socket for SSH key authentication
 
 ## Validation
 

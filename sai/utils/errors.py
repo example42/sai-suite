@@ -381,7 +381,11 @@ class TemplateResolutionError(ExecutionError):
 
 class SecurityError(SaiError):
     """Base class for security-related errors."""
-    pass
+    
+    def __init__(self, message: str, security_issue: Optional[str] = None, **kwargs):
+        super().__init__(message, **kwargs)
+        if security_issue:
+            self.details['security_issue'] = security_issue
 
 
 class UnsafeCommandError(SecurityError):
@@ -466,7 +470,7 @@ class NetworkError(SaiError):
 
 
 class RepositoryError(NetworkError):
-    """Raised when repository operations fail."""
+    """Base class for repository-related errors."""
     
     def __init__(self, repository_url: str, operation: str, **kwargs):
         message = f"Repository operation failed: {operation} on {repository_url}"
@@ -474,11 +478,185 @@ class RepositoryError(NetworkError):
         
         self.details['repository_url'] = repository_url
         self.details['operation'] = operation
+
+
+class RepositoryNotFoundError(RepositoryError):
+    """Raised when repository is not found or inaccessible."""
+    
+    def __init__(self, repository_url: str, **kwargs):
+        super().__init__(repository_url, "access", **kwargs)
+        self.message = f"Repository not found or inaccessible: {repository_url}"
+        
+        self.suggestions = [
+            "Verify the repository URL is correct",
+            "Check if the repository exists and is public",
+            "Ensure you have access permissions for private repositories",
+            "Check your internet connection"
+        ]
+
+
+class RepositoryAuthenticationError(RepositoryError):
+    """Raised when repository authentication fails."""
+    
+    def __init__(self, repository_url: str, auth_type: Optional[str] = None, **kwargs):
+        super().__init__(repository_url, "authentication", **kwargs)
+        self.message = f"Authentication failed for repository: {repository_url}"
+        
+        if auth_type:
+            self.details['auth_type'] = auth_type
+            self.message += f" (using {auth_type})"
+        
+        self.suggestions = [
+            "Check your authentication credentials",
+            "Verify SSH keys are properly configured (for SSH authentication)",
+            "Ensure access tokens have the correct permissions (for token authentication)",
+            "Check if two-factor authentication is required",
+            "Use 'sai config auth' to configure authentication"
+        ]
+
+
+class RepositoryNetworkError(RepositoryError):
+    """Raised when network connectivity issues prevent repository operations."""
+    
+    def __init__(self, repository_url: str, network_error: str, is_temporary: bool = True, **kwargs):
+        operation = "network_access"
+        super().__init__(repository_url, operation, **kwargs)
+        
+        self.message = f"Network error accessing repository {repository_url}: {network_error}"
+        self.details['network_error'] = network_error
+        self.details['is_temporary'] = is_temporary
+        
+        if is_temporary:
+            self.suggestions = [
+                "Check your internet connection",
+                "Try again in a few moments",
+                "Check if there are network connectivity issues",
+                "Verify DNS resolution is working"
+            ]
+        else:
+            self.suggestions = [
+                "Check your internet connection",
+                "Verify the repository URL is correct",
+                "Check if the repository service is down",
+                "Try using a different network connection"
+            ]
+
+
+class RepositoryIntegrityError(RepositoryError):
+    """Raised when repository integrity validation fails."""
+    
+    def __init__(self, repository_url: str, integrity_issue: str, **kwargs):
+        super().__init__(repository_url, "integrity_validation", **kwargs)
+        self.message = f"Repository integrity validation failed: {integrity_issue}"
+        
+        self.details['integrity_issue'] = integrity_issue
+        
+        self.suggestions = [
+            "Try updating the repository again",
+            "Clear the repository cache and re-download",
+            "Verify the repository source is trusted",
+            "Check if the repository has been compromised"
+        ]
+
+
+class RepositoryStructureError(RepositoryError):
+    """Raised when repository structure is invalid or unexpected."""
+    
+    def __init__(self, repository_url: str, structure_issue: str, expected_structure: Optional[str] = None, **kwargs):
+        super().__init__(repository_url, "structure_validation", **kwargs)
+        self.message = f"Invalid repository structure: {structure_issue}"
+        
+        self.details['structure_issue'] = structure_issue
+        if expected_structure:
+            self.details['expected_structure'] = expected_structure
+        
+        self.suggestions = [
+            "Verify you are using the correct repository URL",
+            "Check if the repository follows the expected saidata structure",
+            "Ensure the repository contains the required directories and files",
+            "Contact the repository maintainer if structure is incorrect"
+        ]
+
+
+class GitOperationError(RepositoryError):
+    """Raised when git operations fail."""
+    
+    def __init__(self, repository_url: str, git_command: str, exit_code: int, 
+                 stderr: Optional[str] = None, **kwargs):
+        super().__init__(repository_url, f"git_{git_command}", **kwargs)
+        
+        self.message = f"Git {git_command} failed for {repository_url} (exit code: {exit_code})"
+        self.details['git_command'] = git_command
+        self.details['exit_code'] = exit_code
+        
+        if stderr:
+            self.details['stderr'] = stderr
+            # Include first line of stderr in message for context
+            first_line = stderr.split('\n')[0] if stderr else ""
+            if first_line:
+                self.message += f": {first_line}"
+        
+        self.suggestions = [
+            "Check if git is installed and available",
+            "Verify the repository URL is correct",
+            "Check your git authentication setup",
+            "Try running the git command manually for more details"
+        ]
+
+
+class TarballDownloadError(RepositoryError):
+    """Raised when tarball download operations fail."""
+    
+    def __init__(self, repository_url: str, download_url: str, error_details: str, **kwargs):
+        super().__init__(repository_url, "tarball_download", **kwargs)
+        
+        self.message = f"Failed to download tarball from {download_url}: {error_details}"
+        self.details['download_url'] = download_url
+        self.details['error_details'] = error_details
         
         self.suggestions = [
             "Check your internet connection",
-            "Verify the repository URL is correct",
-            "Try again later if the repository is temporarily unavailable"
+            "Verify the download URL is accessible",
+            "Try again later if the server is temporarily unavailable",
+            "Check if authentication is required for the download"
+        ]
+
+
+class ChecksumValidationError(RepositoryError):
+    """Raised when checksum validation fails."""
+    
+    def __init__(self, repository_url: str, expected_checksum: str, actual_checksum: str, 
+                 algorithm: str = "sha256", **kwargs):
+        super().__init__(repository_url, "checksum_validation", **kwargs)
+        
+        self.message = f"Checksum validation failed: expected {expected_checksum}, got {actual_checksum}"
+        self.details['expected_checksum'] = expected_checksum
+        self.details['actual_checksum'] = actual_checksum
+        self.details['algorithm'] = algorithm
+        
+        self.suggestions = [
+            "Try downloading the file again",
+            "Check if the file was corrupted during download",
+            "Verify the expected checksum is correct",
+            "Contact the repository maintainer if checksums consistently fail"
+        ]
+
+
+class RepositoryCacheError(CacheError):
+    """Raised when repository cache operations fail."""
+    
+    def __init__(self, repository_url: str, cache_operation: str, error_details: str, **kwargs):
+        super().__init__(f"Repository cache {cache_operation} failed for {repository_url}: {error_details}", **kwargs)
+        
+        self.details['repository_url'] = repository_url
+        self.details['cache_operation'] = cache_operation
+        self.details['error_details'] = error_details
+        
+        self.suggestions = [
+            "Check disk space in the cache directory",
+            "Verify write permissions for the cache directory",
+            "Try clearing the repository cache",
+            "Check if the cache directory is accessible"
         ]
 
 

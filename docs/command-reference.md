@@ -20,7 +20,11 @@ This document provides a comprehensive reference for all available commands in b
 
 ## SAI Commands
 
-SAI (Software Action Interface) is a cross-platform software management CLI tool that executes actions using provider-based configurations.
+SAI (Software Action Interface) is a cross-platform software management CLI tool that automatically fetches software definitions (saidata) from a configurable git repository using a hierarchical structure and executes actions using provider-based configurations.
+
+**Default Repository:** `https://github.com/example42/saidata`  
+**Hierarchical Structure:** `software/{first_two_letters}/{software_name}/default.yaml`  
+**Cache Location:** `~/.sai/cache/repositories/`
 
 ### Global Options
 
@@ -38,6 +42,9 @@ sai [GLOBAL_OPTIONS] COMMAND [COMMAND_OPTIONS] [ARGUMENTS]
 - `--yes, -y` - Assume yes for all prompts
 - `--quiet, -q` - Suppress non-essential output
 - `--json` - Output in JSON format
+- `--offline` - Force offline mode (use cached repositories only)
+- `--repository-url URL` - Override repository URL for this command
+- `--repository-branch BRANCH` - Override repository branch for this command
 - `--version` - Show version and exit
 - `--help` - Show help message
 
@@ -46,13 +53,21 @@ sai [GLOBAL_OPTIONS] COMMAND [COMMAND_OPTIONS] [ARGUMENTS]
 #### install
 Install software using the best available provider.
 
+Automatically fetches saidata from the configured repository using the hierarchical structure: `software/{first_two_letters}/{software_name}/default.yaml`
+
 ```bash
 sai install SOFTWARE [OPTIONS]
 ```
 
 **Options:**
 - `--timeout SECONDS` - Command timeout in seconds
-- `--no-cache` - Skip cache and perform fresh operations
+- `--no-cache` - Skip cache and force repository update
+
+**Repository Behavior:**
+- Uses cached repository data by default for performance
+- Updates repository if cache is stale or `--no-cache` is specified
+- Falls back to tarball download if git is unavailable
+- Works offline using cached data when network is unavailable
 
 **Examples:**
 ```bash
@@ -60,10 +75,13 @@ sai install nginx
 sai install --provider apt nginx
 sai install --timeout 300 docker
 sai --dry-run install postgresql
+sai install --no-cache redis  # Force repository update
 ```
 
 #### uninstall
 Uninstall software using the best available provider.
+
+Uses saidata from the configured repository's hierarchical structure to determine the best uninstallation method for the target software.
 
 ```bash
 sai uninstall SOFTWARE [OPTIONS]
@@ -71,13 +89,14 @@ sai uninstall SOFTWARE [OPTIONS]
 
 **Options:**
 - `--timeout SECONDS` - Command timeout in seconds
-- `--no-cache` - Skip cache and perform fresh operations
+- `--no-cache` - Skip cache and force repository update
 
 **Examples:**
 ```bash
 sai uninstall nginx
 sai uninstall --provider brew nodejs
 sai --yes uninstall old-package
+sai uninstall --no-cache apache  # Force repository update
 ```
 
 #### start
@@ -150,7 +169,9 @@ sai --quiet status apache2
 ```
 
 #### info
-Show software information.
+Show software information from all available providers.
+
+Queries multiple providers to show comprehensive information about the specified software using saidata from the configured repository's hierarchical structure.
 
 ```bash
 sai info SOFTWARE [OPTIONS]
@@ -158,13 +179,17 @@ sai info SOFTWARE [OPTIONS]
 
 **Options:**
 - `--timeout SECONDS` - Command timeout in seconds
-- `--no-cache` - Skip cache and perform fresh operations
+- `--no-cache` - Skip cache and force repository update
+
+**Hierarchical Path:**
+Looks for saidata at: `software/{first_two_letters}/{software_name}/default.yaml`
 
 **Examples:**
 ```bash
 sai info nginx
 sai info --json postgresql
 sai info --provider apt docker
+sai info --no-cache mysql  # Force repository update
 ```
 
 #### search
@@ -291,6 +316,111 @@ actions:
 sai apply deployment.yaml
 sai apply --parallel --continue-on-error setup.yaml
 sai --dry-run apply production.yaml
+```
+
+### Repository Management
+
+#### repository
+Manage saidata repository operations.
+
+Commands for managing the saidata repository including updates, status checks, and configuration. The repository system automatically fetches saidata from a configurable git repository with fallback to tarball downloads.
+
+```bash
+sai repository COMMAND [OPTIONS]
+```
+
+##### repository status
+Show repository status and health information.
+
+```bash
+sai repository status [OPTIONS]
+```
+
+**Options:**
+- `--detailed, -d` - Show detailed repository information
+
+**Examples:**
+```bash
+sai repository status
+sai repository status --detailed
+sai repository status --json
+```
+
+##### repository update
+Update the saidata repository.
+
+```bash
+sai repository update [OPTIONS]
+```
+
+**Options:**
+- `--force, -f` - Force update even if cache is valid
+
+**Examples:**
+```bash
+sai repository update
+sai repository update --force
+```
+
+##### repository configure
+Configure repository settings.
+
+```bash
+sai repository configure [OPTIONS]
+```
+
+**Options:**
+- `--url URL` - Set repository URL
+- `--branch BRANCH` - Set repository branch
+- `--auto-update/--no-auto-update` - Enable/disable automatic updates
+- `--offline-mode/--online-mode` - Enable/disable offline mode
+- `--update-interval SECONDS` - Set update interval in seconds
+- `--show` - Show current configuration
+
+**Examples:**
+```bash
+sai repository configure --show
+sai repository configure --url https://github.com/myorg/custom-saidata
+sai repository configure --branch develop
+sai repository configure --auto-update
+sai repository configure --update-interval 43200  # 12 hours
+```
+
+##### repository cleanup
+Clean up old repository caches.
+
+```bash
+sai repository cleanup [OPTIONS]
+```
+
+**Options:**
+- `--keep-days DAYS` - Keep repositories newer than this many days (default: 7)
+- `--dry-run` - Show what would be cleaned without actually doing it
+
+**Examples:**
+```bash
+sai repository cleanup
+sai repository cleanup --keep-days 3
+sai repository cleanup --dry-run
+```
+
+##### repository clear
+Clear repository caches.
+
+```bash
+sai repository clear [OPTIONS]
+```
+
+**Options:**
+- `--all` - Clear all repository caches
+- `--url URL` - Clear cache for specific repository URL
+- `--branch BRANCH` - Branch name for specific repository (default: main)
+
+**Examples:**
+```bash
+sai repository clear
+sai repository clear --all
+sai repository clear --url https://github.com/myorg/custom-saidata
 ```
 
 ### System Management
@@ -483,7 +613,7 @@ saigen test [OPTIONS]
 **Examples:**
 ```bash
 saigen test -f nginx.yaml
-saigen test -d saidata/ --parallel
+saigen test -d ~/.sai/cache/repositories/saidata-main/software/ --parallel
 saigen test --mcp-server local-server nginx.yaml
 ```
 
@@ -830,13 +960,27 @@ Both tools use standard exit codes:
 ### Common SAI Workflows
 
 ```bash
-# Install and start a web server
+# Install and start a web server (uses repository saidata)
 sai install nginx
 sai start nginx
 sai status nginx
 
+# Force repository update before installation
+sai install --no-cache redis
+
+# Work offline with cached repository data
+sai --offline install docker
+
+# Use custom repository for organization
+sai --repository-url https://github.com/myorg/saidata install nginx
+
 # Batch deployment
 sai apply deployment.yaml --parallel
+
+# Repository management
+sai repository status
+sai repository update --force
+sai repository configure --show
 
 # Search and install with specific provider
 sai search "web server" --provider apt

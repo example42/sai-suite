@@ -21,7 +21,7 @@ COPY pyproject.toml README.md CHANGELOG.md ./
 COPY sai/ ./sai/
 COPY saigen/ ./saigen/
 COPY providers/ ./providers/
-COPY saidata/ ./saidata/
+
 COPY schemas/ ./schemas/
 
 # Install the package

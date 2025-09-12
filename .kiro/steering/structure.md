@@ -6,7 +6,7 @@
 - **Schemas**: `schemas/` - JSON schema definitions
 - **Scripts**: `scripts/` - Build, deployment, and utility scripts
 - **Tests**: `tests/` - Comprehensive test suite with fixtures
-- **Saidata**: `saidata/` - Generated saidata
+- **Saidata**: Repository-based saidata (cached in `~/.sai/cache/repositories/`)
 - **Providerdata**: `providerdata/` - Provider data to support actions
 
 ## Core Package Structure

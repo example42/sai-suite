@@ -1,462 +1,569 @@
-"""Tests for repository cache system."""
+"""Tests for repository cache functionality."""
 
-import pytest
+import json
+import time
+import shutil
 import tempfile
-import asyncio
 from pathlib import Path
 from datetime import datetime, timedelta
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import patch, MagicMock
 
-from saigen.models.repository import RepositoryPackage, RepositoryInfo, CacheEntry
-from saigen.repositories.cache import RepositoryCache, CacheManager
-from saigen.repositories.downloaders.base import BaseRepositoryDownloader
-from saigen.utils.errors import CacheError
+import pytest
+
+from sai.core.repository_cache import RepositoryCache, RepositoryMetadata, RepositoryStatus
+from sai.models.config import SaiConfig
 
 
-class MockRepositoryDownloader(BaseRepositoryDownloader):
-    """Mock repository downloader for testing."""
+class TestRepositoryMetadata:
+    """Test RepositoryMetadata dataclass."""
     
-    def __init__(self, repository_info: RepositoryInfo, packages: list = None):
-        super().__init__(repository_info)
-        self.mock_packages = packages or []
-        self.download_called = False
-        self.metadata_called = False
+    def test_to_dict(self):
+        """Test conversion to dictionary."""
+        metadata = RepositoryMetadata(
+            url="https://github.com/example/repo",
+            branch="main",
+            local_path=Path("/tmp/repo"),
+            last_updated=1234567890.0,
+            is_git_repo=True,
+            auth_type="ssh",
+            size_bytes=1024,
+            file_count=10
+        )
+        
+        result = metadata.to_dict()
+        
+        assert result['url'] == "https://github.com/example/repo"
+        assert result['branch'] == "main"
+        assert result['local_path'] == "/tmp/repo"
+        assert result['last_updated'] == 1234567890.0
+        assert result['is_git_repo'] is True
+        assert result['auth_type'] == "ssh"
+        assert result['size_bytes'] == 1024
+        assert result['file_count'] == 10
     
-    async def download_package_list(self):
-        """Mock download implementation."""
-        self.download_called = True
-        return self.mock_packages
-    
-    async def search_package(self, name: str):
-        """Mock search implementation."""
-        return [pkg for pkg in self.mock_packages if name.lower() in pkg.name.lower()]
-    
-    async def get_package_details(self, name: str, version=None):
-        """Mock package details implementation."""
-        for pkg in self.mock_packages:
-            if pkg.name == name and (version is None or pkg.version == version):
-                return pkg
-        return None
-    
-    async def get_repository_metadata(self):
-        """Mock metadata implementation."""
-        self.metadata_called = True
-        return {
-            'package_count': len(self.mock_packages),
-            'last_updated': datetime.utcnow(),
-            'test_metadata': True
+    def test_from_dict(self):
+        """Test creation from dictionary."""
+        data = {
+            'url': "https://github.com/example/repo",
+            'branch': "main",
+            'local_path': "/tmp/repo",
+            'last_updated': 1234567890.0,
+            'is_git_repo': True,
+            'auth_type': "ssh",
+            'size_bytes': 1024,
+            'file_count': 10
         }
+        
+        metadata = RepositoryMetadata.from_dict(data)
+        
+        assert metadata.url == "https://github.com/example/repo"
+        assert metadata.branch == "main"
+        assert metadata.local_path == Path("/tmp/repo")
+        assert metadata.last_updated == 1234567890.0
+        assert metadata.is_git_repo is True
+        assert metadata.auth_type == "ssh"
+        assert metadata.size_bytes == 1024
+        assert metadata.file_count == 10
 
 
 class TestRepositoryCache:
-    """Test RepositoryCache functionality."""
+    """Test RepositoryCache class."""
     
     @pytest.fixture
-    def temp_cache_dir(self):
-        """Create temporary cache directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            yield Path(temp_dir)
+    def temp_dir(self):
+        """Create temporary directory for testing."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir)
     
     @pytest.fixture
-    def sample_packages(self):
-        """Sample repository packages."""
-        return [
-            RepositoryPackage(
-                name="nginx",
-                version="1.24.0",
-                description="HTTP server",
-                repository_name="test-repo",
-                platform="linux"
-            ),
-            RepositoryPackage(
-                name="apache2",
-                version="2.4.57",
-                description="Apache HTTP Server",
-                repository_name="test-repo",
-                platform="linux"
+    def config(self, temp_dir):
+        """Create test configuration."""
+        return SaiConfig(
+            cache_directory=temp_dir / "cache",
+            cache_enabled=True,
+            saidata_update_interval=3600,  # 1 hour
+            saidata_repository_cache_dir=temp_dir / "cache" / "repositories"
+        )
+    
+    @pytest.fixture
+    def cache(self, config):
+        """Create RepositoryCache instance."""
+        return RepositoryCache(config)
+    
+    def test_init(self, config, temp_dir):
+        """Test RepositoryCache initialization."""
+        cache = RepositoryCache(config)
+        
+        assert cache.config == config
+        assert cache.cache_enabled is True
+        assert cache.cache_dir == temp_dir / "cache" / "repositories"
+        assert cache.update_interval == 3600
+        assert cache.metadata_file == temp_dir / "cache" / "repositories" / ".repository_metadata"
+        
+        # Check that cache directory was created
+        assert cache.cache_dir.exists()
+    
+    def test_init_cache_disabled(self, temp_dir):
+        """Test initialization with cache disabled."""
+        config = SaiConfig(
+            cache_directory=temp_dir / "cache",
+            cache_enabled=False
+        )
+        
+        cache = RepositoryCache(config)
+        
+        assert cache.cache_enabled is False
+    
+    def test_get_repository_key(self, cache):
+        """Test repository key generation."""
+        key1 = cache._get_repository_key("https://github.com/example/repo", "main")
+        key2 = cache._get_repository_key("https://github.com/example/repo", "develop")
+        key3 = cache._get_repository_key("https://github.com/other/repo", "main")
+        
+        # Keys should be different for different URLs or branches
+        assert key1 != key2
+        assert key1 != key3
+        assert key2 != key3
+        
+        # Keys should be consistent
+        assert key1 == cache._get_repository_key("https://github.com/example/repo", "main")
+    
+    def test_get_repository_path(self, cache):
+        """Test repository path generation."""
+        path = cache._get_repository_path("https://github.com/example/repo", "main")
+        
+        assert isinstance(path, Path)
+        assert path.parent == cache.cache_dir
+        assert "repo" in str(path)
+    
+    def test_calculate_directory_stats_empty(self, cache, temp_dir):
+        """Test directory stats calculation for empty directory."""
+        test_dir = temp_dir / "empty"
+        test_dir.mkdir()
+        
+        size, count = cache._calculate_directory_stats(test_dir)
+        
+        assert size == 0
+        assert count == 0
+    
+    def test_calculate_directory_stats_with_files(self, cache, temp_dir):
+        """Test directory stats calculation with files."""
+        test_dir = temp_dir / "with_files"
+        test_dir.mkdir()
+        
+        # Create test files
+        (test_dir / "file1.txt").write_text("hello")
+        (test_dir / "file2.txt").write_text("world")
+        subdir = test_dir / "subdir"
+        subdir.mkdir()
+        (subdir / "file3.txt").write_text("test")
+        
+        size, count = cache._calculate_directory_stats(test_dir)
+        
+        assert size > 0
+        assert count == 3
+    
+    def test_calculate_directory_stats_nonexistent(self, cache, temp_dir):
+        """Test directory stats calculation for nonexistent directory."""
+        test_dir = temp_dir / "nonexistent"
+        
+        size, count = cache._calculate_directory_stats(test_dir)
+        
+        assert size == 0
+        assert count == 0
+    
+    def test_is_repository_valid_no_cache(self, cache):
+        """Test repository validity check with no cache."""
+        result = cache.is_repository_valid("https://github.com/example/repo")
+        
+        assert result is False
+    
+    def test_is_repository_valid_cache_disabled(self, temp_dir):
+        """Test repository validity check with cache disabled."""
+        config = SaiConfig(
+            cache_directory=temp_dir / "cache",
+            cache_enabled=False
+        )
+        cache = RepositoryCache(config)
+        
+        result = cache.is_repository_valid("https://github.com/example/repo")
+        
+        assert result is False
+    
+    def test_mark_repository_updated(self, cache):
+        """Test marking repository as updated."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create a fake repository directory
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test content")
+        
+        cache.mark_repository_updated(url, branch, is_git_repo=True, auth_type="ssh")
+        
+        # Check that repository is now valid
+        assert cache.is_repository_valid(url, branch) is True
+        
+        # Check metadata was saved
+        assert cache.metadata_file.exists()
+    
+    def test_get_repository_path_cached(self, cache):
+        """Test getting repository path for cached repository."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Mark repository as updated first
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        cache.mark_repository_updated(url, branch)
+        
+        # Get cached path
+        cached_path = cache.get_repository_path(url, branch)
+        
+        assert cached_path == repo_path
+    
+    def test_get_repository_path_not_cached(self, cache):
+        """Test getting repository path for non-cached repository."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        cached_path = cache.get_repository_path(url, branch)
+        
+        assert cached_path is None
+    
+    def test_get_repository_status_cached(self, cache):
+        """Test getting repository status for cached repository."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create and mark repository
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test content")
+        cache.mark_repository_updated(url, branch, is_git_repo=True, auth_type="ssh")
+        
+        status = cache.get_repository_status(url, branch)
+        
+        assert isinstance(status, RepositoryStatus)
+        assert status.url == url
+        assert status.branch == branch
+        assert status.local_path == repo_path
+        assert status.is_git_repo is True
+        assert status.exists is True
+        assert status.last_updated is not None
+        assert status.age_seconds >= 0
+        assert status.is_expired is False
+        assert status.size_mb > 0
+        assert status.file_count == 1
+    
+    def test_get_repository_status_not_cached(self, cache):
+        """Test getting repository status for non-cached repository."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        status = cache.get_repository_status(url, branch)
+        
+        assert isinstance(status, RepositoryStatus)
+        assert status.url == url
+        assert status.branch == branch
+        assert status.exists is False
+        assert status.last_updated is None
+        assert status.age_seconds == float('inf')
+        assert status.is_expired is True
+    
+    def test_cleanup_expired_repositories(self, cache):
+        """Test cleanup of expired repositories."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create repository and mark as updated with old timestamp
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test content")
+        
+        # Manually create expired metadata
+        repositories = {
+            cache._get_repository_key(url, branch): RepositoryMetadata(
+                url=url,
+                branch=branch,
+                local_path=repo_path,
+                last_updated=time.time() - 7200,  # 2 hours ago (expired)
+                is_git_repo=True,
+                size_bytes=100,
+                file_count=1
             )
-        ]
+        }
+        cache._save_metadata(repositories)
+        
+        # Cleanup expired repositories
+        cleaned_count = cache.cleanup_expired_repositories()
+        
+        assert cleaned_count == 1
+        assert not repo_path.exists()
     
-    @pytest.fixture
-    def repository_info(self):
-        """Sample repository info."""
-        return RepositoryInfo(
-            name="test-repo",
-            type="apt",
-            platform="linux",
-            url="https://example.com/repo"
-        )
-    
-    def test_cache_initialization(self, temp_cache_dir):
-        """Test cache initialization."""
-        cache = RepositoryCache(temp_cache_dir)
+    def test_cleanup_invalid_repositories(self, cache):
+        """Test cleanup of invalid repositories."""
+        url = "https://github.com/example/repo"
+        branch = "main"
         
-        assert cache.cache_dir == temp_cache_dir
-        assert cache.default_ttl == timedelta(hours=24)
-        assert temp_cache_dir.exists()
-    
-    def test_cache_key_sanitization(self, temp_cache_dir):
-        """Test cache key sanitization."""
-        cache = RepositoryCache(temp_cache_dir)
-        
-        # Test dangerous characters
-        dangerous_key = "../../../etc/passwd"
-        safe_key = cache._sanitize_cache_key(dangerous_key)
-        assert "../" not in safe_key
-        assert safe_key == "_________etc_passwd"
-        
-        # Test long key
-        long_key = "a" * 300
-        safe_long_key = cache._sanitize_cache_key(long_key)
-        assert len(safe_long_key) <= 200
-    
-    @pytest.mark.asyncio
-    async def test_cache_set_and_get(self, temp_cache_dir, sample_packages):
-        """Test setting and getting cache entries."""
-        cache = RepositoryCache(temp_cache_dir)
-        cache_key = "test-key"
-        
-        # Set cache entry
-        await cache.set(
-            cache_key=cache_key,
-            packages=sample_packages,
-            repository_name="test-repo",
-            ttl=timedelta(hours=1)
-        )
-        
-        # Get cache entry
-        entry = await cache.get(cache_key)
-        
-        assert entry is not None
-        assert entry.repository_name == "test-repo"
-        assert len(entry.data) == 2
-        assert entry.data[0].name == "nginx"
-        assert entry.data[1].name == "apache2"
-    
-    @pytest.mark.asyncio
-    async def test_cache_expiration(self, temp_cache_dir, sample_packages):
-        """Test cache entry expiration."""
-        cache = RepositoryCache(temp_cache_dir)
-        cache_key = "expiring-key"
-        
-        # Set cache entry with very short TTL
-        await cache.set(
-            cache_key=cache_key,
-            packages=sample_packages,
-            repository_name="test-repo",
-            ttl=timedelta(milliseconds=1)
-        )
-        
-        # Wait for expiration
-        await asyncio.sleep(0.01)
-        
-        # Should return None for expired entry
-        entry = await cache.get(cache_key)
-        assert entry is None
-        
-        # Cache files should be cleaned up
-        cache_path = cache._get_cache_path(cache_key)
-        meta_path = cache._get_metadata_path(cache_key)
-        assert not cache_path.exists()
-        assert not meta_path.exists()
-    
-    @pytest.mark.asyncio
-    async def test_cache_invalidation(self, temp_cache_dir, sample_packages):
-        """Test cache invalidation."""
-        cache = RepositoryCache(temp_cache_dir)
-        cache_key = "invalidate-key"
-        
-        # Set cache entry
-        await cache.set(
-            cache_key=cache_key,
-            packages=sample_packages,
-            repository_name="test-repo"
-        )
-        
-        # Verify entry exists
-        entry = await cache.get(cache_key)
-        assert entry is not None
-        
-        # Invalidate entry
-        result = await cache.invalidate(cache_key)
-        assert result is True
-        
-        # Verify entry is gone
-        entry = await cache.get(cache_key)
-        assert entry is None
-    
-    @pytest.mark.asyncio
-    async def test_cache_get_or_fetch(self, temp_cache_dir, sample_packages, repository_info):
-        """Test get_or_fetch functionality."""
-        cache = RepositoryCache(temp_cache_dir)
-        downloader = MockRepositoryDownloader(repository_info, sample_packages)
-        
-        # First call should fetch from downloader
-        packages = await cache.get_or_fetch(downloader)
-        
-        assert len(packages) == 2
-        assert downloader.download_called is True
-        assert downloader.metadata_called is True
-        
-        # Reset mock flags
-        downloader.download_called = False
-        downloader.metadata_called = False
-        
-        # Second call should use cache
-        packages = await cache.get_or_fetch(downloader)
-        
-        assert len(packages) == 2
-        assert downloader.download_called is False  # Should not call downloader again
-        assert downloader.metadata_called is False
-    
-    @pytest.mark.asyncio
-    async def test_cache_invalidate_repository(self, temp_cache_dir, sample_packages):
-        """Test invalidating all entries for a repository."""
-        cache = RepositoryCache(temp_cache_dir)
-        
-        # Set multiple cache entries for same repository
-        await cache.set("key1", sample_packages, "test-repo")
-        await cache.set("key2", sample_packages, "test-repo")
-        await cache.set("key3", sample_packages, "other-repo")
-        
-        # Invalidate entries for test-repo
-        removed_count = await cache.invalidate_repository("test-repo")
-        
-        assert removed_count == 2
-        
-        # Verify correct entries were removed
-        assert await cache.get("key1") is None
-        assert await cache.get("key2") is None
-        assert await cache.get("key3") is not None  # Different repo, should remain
-    
-    @pytest.mark.asyncio
-    async def test_cache_cleanup_expired(self, temp_cache_dir, sample_packages):
-        """Test cleanup of expired entries."""
-        cache = RepositoryCache(temp_cache_dir)
-        
-        # Set entries with different TTLs
-        await cache.set("fresh", sample_packages, "repo1", ttl=timedelta(hours=1))
-        await cache.set("expired1", sample_packages, "repo2", ttl=timedelta(milliseconds=1))
-        await cache.set("expired2", sample_packages, "repo3", ttl=timedelta(milliseconds=1))
-        
-        # Wait for expiration
-        await asyncio.sleep(0.01)
-        
-        # Cleanup expired entries
-        removed_count = await cache.cleanup_expired()
-        
-        assert removed_count == 2
-        
-        # Verify correct entries remain
-        assert await cache.get("fresh") is not None
-        assert await cache.get("expired1") is None
-        assert await cache.get("expired2") is None
-    
-    @pytest.mark.asyncio
-    async def test_cache_stats(self, temp_cache_dir, sample_packages):
-        """Test cache statistics."""
-        cache = RepositoryCache(temp_cache_dir)
-        
-        # Set some cache entries
-        await cache.set("key1", sample_packages, "repo1")
-        await cache.set("key2", sample_packages[:1], "repo2")
-        
-        stats = await cache.get_cache_stats()
-        
-        assert stats['total_entries'] == 2
-        assert stats['expired_entries'] == 0
-        assert stats['total_packages'] == 3  # 2 + 1
-        assert stats['total_size_bytes'] > 0
-        assert 'repo1' in stats['repositories']
-        assert 'repo2' in stats['repositories']
-        assert stats['repositories']['repo1']['packages'] == 2
-        assert stats['repositories']['repo2']['packages'] == 1
-    
-    @pytest.mark.asyncio
-    async def test_cache_clear_all(self, temp_cache_dir, sample_packages):
-        """Test clearing all cache entries."""
-        cache = RepositoryCache(temp_cache_dir)
-        
-        # Set multiple cache entries
-        await cache.set("key1", sample_packages, "repo1")
-        await cache.set("key2", sample_packages, "repo2")
-        await cache.set("key3", sample_packages, "repo3")
-        
-        # Clear all entries
-        removed_count = await cache.clear_all()
-        
-        assert removed_count == 3
-        
-        # Verify all entries are gone
-        assert await cache.get("key1") is None
-        assert await cache.get("key2") is None
-        assert await cache.get("key3") is None
-    
-    @pytest.mark.asyncio
-    async def test_cache_concurrent_access(self, temp_cache_dir, sample_packages):
-        """Test concurrent cache access."""
-        cache = RepositoryCache(temp_cache_dir)
-        cache_key = "concurrent-key"
-        
-        async def set_cache():
-            await cache.set(cache_key, sample_packages, "test-repo")
-        
-        async def get_cache():
-            return await cache.get(cache_key)
-        
-        # Run concurrent operations
-        tasks = [set_cache(), get_cache(), get_cache()]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Should not raise exceptions
-        for result in results:
-            assert not isinstance(result, Exception)
-    
-    @pytest.mark.asyncio
-    async def test_cache_corrupted_files(self, temp_cache_dir):
-        """Test handling of corrupted cache files."""
-        cache = RepositoryCache(temp_cache_dir)
-        cache_key = "corrupted-key"
-        
-        # Create corrupted cache files
-        cache_path = cache._get_cache_path(cache_key)
-        meta_path = cache._get_metadata_path(cache_key)
-        
-        cache_path.write_bytes(b"corrupted data")
-        meta_path.write_text("invalid json")
-        
-        # Should return None for corrupted cache
-        entry = await cache.get(cache_key)
-        assert entry is None
-        
-        # Files should be cleaned up
-        assert not cache_path.exists()
-        assert not meta_path.exists()
-
-
-class TestCacheManager:
-    """Test CacheManager functionality."""
-    
-    @pytest.fixture
-    def temp_cache_dir(self):
-        """Create temporary cache directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            yield Path(temp_dir)
-    
-    @pytest.fixture
-    def sample_packages(self):
-        """Sample repository packages."""
-        return [
-            RepositoryPackage(
-                name="test-package",
-                version="1.0.0",
-                description="Test package",
-                repository_name="test-repo",
-                platform="linux"
+        # Create metadata for non-existent repository
+        repo_path = cache._get_repository_path(url, branch)
+        repositories = {
+            cache._get_repository_key(url, branch): RepositoryMetadata(
+                url=url,
+                branch=branch,
+                local_path=repo_path,
+                last_updated=time.time(),
+                is_git_repo=True,
+                size_bytes=100,
+                file_count=1
             )
+        }
+        cache._save_metadata(repositories)
+        
+        # Cleanup invalid repositories
+        cleaned_count = cache.cleanup_invalid_repositories()
+        
+        assert cleaned_count == 1
+        
+        # Check metadata was cleaned
+        metadata = cache._load_metadata()
+        assert len(metadata) == 0
+    
+    def test_cleanup_old_repositories(self, cache):
+        """Test cleanup of old repositories."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create repository and mark as updated with old timestamp
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test content")
+        
+        # Manually create old metadata (31 days ago)
+        old_timestamp = time.time() - (31 * 24 * 3600)
+        repositories = {
+            cache._get_repository_key(url, branch): RepositoryMetadata(
+                url=url,
+                branch=branch,
+                local_path=repo_path,
+                last_updated=old_timestamp,
+                is_git_repo=True,
+                size_bytes=100,
+                file_count=1
+            )
+        }
+        cache._save_metadata(repositories)
+        
+        # Cleanup old repositories (max age 30 days)
+        cleaned_count = cache.cleanup_old_repositories(max_age_days=30)
+        
+        assert cleaned_count == 1
+        assert not repo_path.exists()
+    
+    def test_get_all_repositories(self, cache):
+        """Test getting all cached repositories."""
+        # Create multiple repositories
+        repos = [
+            ("https://github.com/example/repo1", "main"),
+            ("https://github.com/example/repo2", "develop"),
         ]
-    
-    @pytest.fixture
-    def repository_info(self):
-        """Sample repository info."""
-        return RepositoryInfo(
-            name="test-repo",
-            type="apt",
-            platform="linux",
-            url="https://example.com/repo"
-        )
-    
-    @pytest.mark.asyncio
-    async def test_update_repository_cache_miss(self, temp_cache_dir, sample_packages, repository_info):
-        """Test updating repository when cache is empty."""
-        cache = RepositoryCache(temp_cache_dir)
-        manager = CacheManager(cache)
-        downloader = MockRepositoryDownloader(repository_info, sample_packages)
         
-        # Update repository (cache miss)
-        result = await manager.update_repository(downloader, force=False)
+        for url, branch in repos:
+            repo_path = cache._get_repository_path(url, branch)
+            repo_path.mkdir(parents=True)
+            (repo_path / "test.txt").write_text("test")
+            cache.mark_repository_updated(url, branch)
+        
+        all_repos = cache.get_all_repositories()
+        
+        assert len(all_repos) == 2
+        assert all(isinstance(repo, RepositoryStatus) for repo in all_repos)
+        
+        # Check sorting by URL then branch
+        urls = [repo.url for repo in all_repos]
+        assert urls == sorted(urls)
+    
+    def test_get_cache_status(self, cache):
+        """Test getting cache status."""
+        # Create a repository
+        url = "https://github.com/example/repo"
+        branch = "main"
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test content")
+        cache.mark_repository_updated(url, branch)
+        
+        status = cache.get_cache_status()
+        
+        assert isinstance(status, dict)
+        assert 'cache_enabled' in status
+        assert 'cache_directory' in status
+        assert 'total_repositories' in status
+        assert 'total_cache_size_bytes' in status
+        assert 'total_cache_size_mb' in status
+        assert 'repositories' in status
+        
+        assert status['cache_enabled'] is True
+        assert status['total_repositories'] == 1
+        assert status['total_cache_size_bytes'] > 0
+        assert len(status['repositories']) == 1
+    
+    def test_clear_repository_cache(self, cache):
+        """Test clearing specific repository cache."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create repository
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test")
+        cache.mark_repository_updated(url, branch)
+        
+        # Clear cache
+        result = cache.clear_repository_cache(url, branch)
         
         assert result is True
-        assert downloader.download_called is True
+        assert not repo_path.exists()
+        assert not cache.is_repository_valid(url, branch)
     
-    @pytest.mark.asyncio
-    async def test_update_repository_cache_hit(self, temp_cache_dir, sample_packages, repository_info):
-        """Test updating repository when cache is valid."""
-        cache = RepositoryCache(temp_cache_dir)
-        manager = CacheManager(cache)
-        downloader = MockRepositoryDownloader(repository_info, sample_packages)
+    def test_clear_repository_cache_not_exists(self, cache):
+        """Test clearing non-existent repository cache."""
+        url = "https://github.com/example/nonexistent"
+        branch = "main"
         
-        # Pre-populate cache
-        await cache.set(
-            downloader.get_cache_key(),
-            sample_packages,
-            "test-repo",
-            ttl=timedelta(hours=1)
+        result = cache.clear_repository_cache(url, branch)
+        
+        assert result is False
+    
+    def test_clear_all_repository_cache(self, cache):
+        """Test clearing all repository caches."""
+        # Create multiple repositories
+        repos = [
+            ("https://github.com/example/repo1", "main"),
+            ("https://github.com/example/repo2", "develop"),
+        ]
+        
+        for url, branch in repos:
+            repo_path = cache._get_repository_path(url, branch)
+            repo_path.mkdir(parents=True)
+            (repo_path / "test.txt").write_text("test")
+            cache.mark_repository_updated(url, branch)
+        
+        # Clear all caches
+        cleared_count = cache.clear_all_repository_cache()
+        
+        assert cleared_count == 2
+        
+        # Check all repositories are gone
+        for url, branch in repos:
+            assert not cache.is_repository_valid(url, branch)
+    
+    def test_metadata_persistence(self, cache):
+        """Test that metadata persists across cache instances."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create repository with first cache instance
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test")
+        cache.mark_repository_updated(url, branch)
+        
+        # Create new cache instance with same config
+        cache2 = RepositoryCache(cache.config)
+        
+        # Check that repository is still valid
+        assert cache2.is_repository_valid(url, branch) is True
+    
+    def test_repository_expiration(self, cache):
+        """Test repository expiration based on update interval."""
+        url = "https://github.com/example/repo"
+        branch = "main"
+        
+        # Create repository
+        repo_path = cache._get_repository_path(url, branch)
+        repo_path.mkdir(parents=True)
+        (repo_path / "test.txt").write_text("test")
+        
+        # Manually create expired metadata
+        old_timestamp = time.time() - 7200  # 2 hours ago
+        repositories = {
+            cache._get_repository_key(url, branch): RepositoryMetadata(
+                url=url,
+                branch=branch,
+                local_path=repo_path,
+                last_updated=old_timestamp,
+                is_git_repo=True,
+                size_bytes=100,
+                file_count=1
+            )
+        }
+        cache._save_metadata(repositories)
+        
+        # Check that repository is expired (update interval is 1 hour)
+        assert cache.is_repository_valid(url, branch) is False
+        
+        status = cache.get_repository_status(url, branch)
+        assert status.is_expired is True
+    
+    @patch('sai.core.repository_cache.logger')
+    def test_error_handling_metadata_load(self, mock_logger, cache, temp_dir):
+        """Test error handling when loading corrupted metadata."""
+        # Create corrupted metadata file
+        cache.metadata_file.parent.mkdir(parents=True, exist_ok=True)
+        cache.metadata_file.write_text("invalid json")
+        
+        # Try to load metadata
+        metadata = cache._load_metadata()
+        
+        assert metadata == {}
+        mock_logger.warning.assert_called()
+    
+    @patch('sai.core.repository_cache.logger')
+    def test_error_handling_metadata_save(self, mock_logger, cache, temp_dir):
+        """Test error handling when saving metadata fails."""
+        # Create a scenario where saving fails by using an invalid path
+        original_metadata_file = cache.metadata_file
+        cache.metadata_file = Path("/invalid/path/that/does/not/exist/.repository_metadata")
+        
+        try:
+            repositories = {
+                "test": RepositoryMetadata(
+                    url="https://github.com/example/repo",
+                    branch="main",
+                    local_path=Path("/tmp/test"),
+                    last_updated=time.time(),
+                    is_git_repo=True
+                )
+            }
+            cache._save_metadata(repositories)
+            
+            mock_logger.error.assert_called()
+        finally:
+            # Restore original metadata file path
+            cache.metadata_file = original_metadata_file
+    
+    def test_cache_disabled_operations(self, temp_dir):
+        """Test that operations work correctly when cache is disabled."""
+        config = SaiConfig(
+            cache_directory=temp_dir / "cache",
+            cache_enabled=False
         )
+        cache = RepositoryCache(config)
         
-        # Update repository (cache hit)
-        result = await manager.update_repository(downloader, force=False)
+        url = "https://github.com/example/repo"
+        branch = "main"
         
-        assert result is False  # No update needed
-        assert downloader.download_called is False
-    
-    @pytest.mark.asyncio
-    async def test_update_repository_force(self, temp_cache_dir, sample_packages, repository_info):
-        """Test force updating repository."""
-        cache = RepositoryCache(temp_cache_dir)
-        manager = CacheManager(cache)
-        downloader = MockRepositoryDownloader(repository_info, sample_packages)
+        # All operations should return appropriate values for disabled cache
+        assert cache.is_repository_valid(url, branch) is False
+        assert cache.get_repository_path(url, branch) is None
+        assert cache.cleanup_expired_repositories() == 0
+        assert cache.cleanup_invalid_repositories() == 0
+        assert cache.cleanup_old_repositories() == 0
+        assert cache.clear_repository_cache(url, branch) is False
+        assert cache.clear_all_repository_cache() == 0
         
-        # Pre-populate cache
-        await cache.set(
-            downloader.get_cache_key(),
-            sample_packages,
-            "test-repo",
-            ttl=timedelta(hours=1)
-        )
-        
-        # Force update repository
-        result = await manager.update_repository(downloader, force=True)
-        
-        assert result is True
-        assert downloader.download_called is True
-    
-    @pytest.mark.asyncio
-    async def test_update_all_repositories(self, temp_cache_dir, sample_packages):
-        """Test updating multiple repositories."""
-        cache = RepositoryCache(temp_cache_dir)
-        manager = CacheManager(cache)
-        
-        # Create multiple downloaders
-        repo1 = RepositoryInfo(name="repo1", type="apt", platform="linux")
-        repo2 = RepositoryInfo(name="repo2", type="brew", platform="macos")
-        
-        downloader1 = MockRepositoryDownloader(repo1, sample_packages)
-        downloader2 = MockRepositoryDownloader(repo2, sample_packages)
-        
-        # Update all repositories
-        results = await manager.update_all_repositories([downloader1, downloader2])
-        
-        assert len(results) == 2
-        assert results["repo1"] is True
-        assert results["repo2"] is True
-        assert downloader1.download_called is True
-        assert downloader2.download_called is True
-    
-    @pytest.mark.asyncio
-    async def test_maintenance(self, temp_cache_dir, sample_packages):
-        """Test cache maintenance."""
-        cache = RepositoryCache(temp_cache_dir)
-        manager = CacheManager(cache)
-        
-        # Set expired entries
-        await cache.set("expired1", sample_packages, "repo1", ttl=timedelta(milliseconds=1))
-        await cache.set("expired2", sample_packages, "repo2", ttl=timedelta(milliseconds=1))
-        
-        # Wait for expiration
-        await asyncio.sleep(0.01)
-        
-        # Run maintenance
-        stats = await manager.maintenance()
-        
-        assert stats['expired_removed'] == 2
+        # mark_repository_updated should not fail but do nothing
+        cache.mark_repository_updated(url, branch)  # Should not raise exception

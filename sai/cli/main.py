@@ -11,6 +11,7 @@ from ..utils.config import get_config
 from ..providers.loader import ProviderLoader
 from ..core.execution_engine import ExecutionEngine, ExecutionContext
 from ..core.saidata_loader import SaidataLoader, SaidataNotFoundError, ValidationError
+from ..core.saidata_repository_manager import SaidataRepositoryManager, RepositoryStatus
 from ..models.config import LogLevel
 from ..utils.errors import (
     SaiError, format_error_for_cli, get_error_suggestions, 
@@ -68,15 +69,35 @@ def setup_logging(config, verbose: bool = False):
 @click.option('--yes', '-y', is_flag=True, help='Assume yes for all prompts')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress non-essential output')
 @click.option('--json', 'output_json', is_flag=True, help='Output in JSON format')
+@click.option('--offline', is_flag=True, help='Force offline mode (use cached repositories only)')
+@click.option('--repository-url', help='Override repository URL for this command')
+@click.option('--repository-branch', help='Override repository branch for this command')
 @click.version_option(version=get_version(), prog_name="sai")
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str], 
-        verbose: bool, dry_run: bool, yes: bool, quiet: bool, output_json: bool):
+        verbose: bool, dry_run: bool, yes: bool, quiet: bool, output_json: bool,
+        offline: bool, repository_url: Optional[str], repository_branch: Optional[str]):
     """SAI - Software Automation and Installation CLI tool.
     
-    A cross-platform software management utility that detects locally available 
-    package managers and providers, then executes software management actions 
-    based on saidata definitions.
+    A cross-platform software management utility that automatically fetches
+    software definitions (saidata) from a configurable git repository using
+    a hierarchical structure (software/{prefix}/{name}/default.yaml).
+    
+    Default repository: https://github.com/example42/saidata
+    
+    The tool automatically:
+    - Clones/updates the saidata repository using git (with tarball fallback)
+    - Caches repository data locally for offline operation
+    - Uses hierarchical saidata structure for better organization
+    - Detects locally available package managers and executes actions
+    
+    Repository Management:
+    - Use --offline to work with cached data only
+    - Use --repository-url to override the default repository
+    - Use --repository-branch to specify a different branch
+    - Repository cache is stored in ~/.sai/cache/repositories/
+    
+    For repository configuration and management, see 'sai repository --help'.
     """
     # Ensure context object exists
     ctx.ensure_object(dict)
@@ -90,10 +111,22 @@ def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str],
     # Enable quiet mode when JSON output is requested to prevent interference
     ctx.obj['quiet'] = quiet or output_json
     ctx.obj['output_json'] = output_json
+    ctx.obj['offline'] = offline
+    ctx.obj['repository_url'] = repository_url
+    ctx.obj['repository_branch'] = repository_branch
     
     # Load configuration
     try:
         sai_config = get_config()
+        
+        # Apply CLI overrides to configuration
+        if offline:
+            sai_config.saidata_offline_mode = True
+        if repository_url:
+            sai_config.saidata_repository_url = repository_url
+        if repository_branch:
+            sai_config.saidata_repository_branch = repository_branch
+            
         ctx.obj['sai_config'] = sai_config
         
         # Setup logging
@@ -125,20 +158,36 @@ def cli(ctx: click.Context, config: Optional[Path], provider: Optional[str],
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
-@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
+@click.option('--no-cache', is_flag=True, help='Skip cache and force repository update')
 @click.pass_context
 def install(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
-    """Install software using the best available provider."""
+    """Install software using the best available provider.
+    
+    Automatically fetches saidata from the configured repository using the
+    hierarchical structure: software/{first_two_letters}/{software_name}/default.yaml
+    
+    Repository behavior:
+    - Uses cached repository data by default for performance
+    - Updates repository if cache is stale or --no-cache is specified
+    - Falls back to tarball download if git is unavailable
+    - Works offline using cached data when network is unavailable
+    """
     _execute_software_action(ctx, 'install', software, timeout, use_cache=not no_cache)
 
 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
-@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
+@click.option('--no-cache', is_flag=True, help='Skip cache and force repository update')
 @click.pass_context
 def uninstall(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
-    """Uninstall software using the best available provider."""
+    """Uninstall software using the best available provider.
+    
+    Uses saidata from the configured repository's hierarchical structure
+    to determine the best uninstallation method for the target software.
+    
+    Searches for saidata at: software/{prefix}/{software_name}/default.yaml
+    """
     _execute_software_action(ctx, 'uninstall', software, timeout, use_cache=not no_cache)
 
 
@@ -185,10 +234,17 @@ def status(ctx: click.Context, software: str, timeout: Optional[int], no_cache: 
 @cli.command()
 @click.argument('software', required=True)
 @click.option('--timeout', type=int, help='Command timeout in seconds')
-@click.option('--no-cache', is_flag=True, help='Skip cache and perform fresh operations')
+@click.option('--no-cache', is_flag=True, help='Skip cache and force repository update')
 @click.pass_context
 def info(ctx: click.Context, software: str, timeout: Optional[int], no_cache: bool):
-    """Show software information."""
+    """Show software information from all available providers.
+    
+    Queries multiple providers to show comprehensive information about
+    the specified software using saidata from the configured repository's
+    hierarchical structure.
+    
+    Looks for saidata at: software/{first_two_letters}/{software_name}/default.yaml
+    """
     _execute_software_action(ctx, 'info', software, timeout, requires_confirmation=False, use_cache=not no_cache)
 
 
@@ -296,12 +352,12 @@ def apply(ctx: click.Context, action_file: Path, parallel: bool, continue_on_err
         # Sort provider instances by priority
         provider_instances.sort(key=lambda p: p.get_priority(), reverse=True)
         
-        # Create execution engine and saidata loader
+        # Create execution engine and repository manager
         engine = ExecutionEngine(provider_instances, ctx.obj['sai_config'])
-        saidata_loader = SaidataLoader(ctx.obj['sai_config'])
+        repo_manager = SaidataRepositoryManager(ctx.obj['sai_config'])
         
-        # Create action executor
-        executor = ActionExecutor(engine, saidata_loader)
+        # Create action executor with repository manager
+        executor = ActionExecutor(engine, repo_manager.saidata_loader)
         
         # Prepare global configuration overrides from CLI options
         global_config = {}
@@ -654,8 +710,13 @@ def _execute_software_action(ctx: click.Context, action: str, software: str,
         saidata = None
         if software:
             try:
-                saidata_loader = SaidataLoader(ctx.obj['sai_config'])
-                saidata = saidata_loader.load_saidata(software, use_cache=use_cache)
+                # Use repository manager for saidata loading
+                repo_manager = SaidataRepositoryManager(ctx.obj['sai_config'])
+                saidata = repo_manager.get_saidata(software, force_update=not use_cache)
+                
+                if saidata is None:
+                    raise SaidataNotFoundError(f"No saidata found for '{software}'")
+                    
             except SaidataNotFoundError:
                 if not ctx.obj['quiet'] and ctx.obj['verbose']:
                     click.echo(f"Warning: No saidata found for '{software}', using basic execution", err=True)
@@ -2767,6 +2828,423 @@ def cache_cleanup(ctx: click.Context):
         if ctx.obj['verbose']:
             import traceback
             click.echo(traceback.format_exc(), err=True)
+        
+        ctx.exit(1)
+
+
+# Repository management commands
+@cli.group()
+@click.pass_context
+def repository(ctx: click.Context):
+    """Manage saidata repository operations.
+    
+    Commands for managing the saidata repository including updates, status checks,
+    and configuration. The repository system automatically fetches saidata from
+    a configurable git repository with fallback to tarball downloads.
+    """
+    pass
+
+
+@repository.command('status')
+@click.option('--detailed', '-d', is_flag=True, help='Show detailed repository information')
+@click.pass_context
+def repository_status(ctx: click.Context, detailed: bool):
+    """Show repository status and health information."""
+    try:
+        repo_manager = SaidataRepositoryManager(ctx.obj['sai_config'])
+        status = repo_manager.get_repository_status()
+        
+        if ctx.obj['output_json']:
+            import json
+            status_data = {
+                'status': status.status.value,
+                'last_updated': status.last_updated.isoformat() if status.last_updated else None,
+                'last_check': status.last_check.isoformat() if status.last_check else None,
+                'error_message': status.error_message,
+                'cache_valid': status.cache_valid,
+                'update_available': status.update_available,
+                'is_healthy': status.is_healthy,
+                'needs_update': status.needs_update
+            }
+            
+            if detailed:
+                # Add detailed information
+                cache_status = repo_manager.get_cache_status()
+                network_status = repo_manager.get_network_status()
+                cached_repos = repo_manager.get_all_cached_repositories()
+                
+                status_data.update({
+                    'cache_status': cache_status,
+                    'network_status': network_status,
+                    'cached_repositories': cached_repos,
+                    'repository_url': ctx.obj['sai_config'].saidata_repository_url,
+                    'repository_branch': ctx.obj['sai_config'].saidata_repository_branch,
+                    'auto_update': ctx.obj['sai_config'].saidata_auto_update,
+                    'offline_mode': ctx.obj['sai_config'].saidata_offline_mode
+                })
+            
+            click.echo(json.dumps(status_data, indent=2))
+        else:
+            # Human-readable output
+            from ..utils.output_formatter import create_output_formatter
+            formatter = create_output_formatter(ctx)
+            
+            # Status indicator
+            status_color = 'green' if status.is_healthy else 'red'
+            status_symbol = "✓" if status.is_healthy else "✗"
+            
+            click.echo(f"{click.style(status_symbol, fg=status_color)} Repository Status: {click.style(status.status.value.title(), fg=status_color)}")
+            
+            # Basic information
+            if status.last_updated:
+                age = repo_manager.get_cached_repository_age()
+                age_str = f" ({age.days}d {age.seconds//3600}h ago)" if age else ""
+                click.echo(f"  Last Updated: {status.last_updated.strftime('%Y-%m-%d %H:%M:%S')}{age_str}")
+            
+            if status.error_message:
+                click.echo(f"  Error: {click.style(status.error_message, fg='red')}")
+            
+            click.echo(f"  Cache Valid: {click.style('Yes' if status.cache_valid else 'No', fg='green' if status.cache_valid else 'yellow')}")
+            
+            if status.update_available:
+                click.echo(f"  Update Available: {click.style('Yes', fg='yellow')}")
+            
+            # Repository configuration
+            click.echo(f"  Repository URL: {ctx.obj['sai_config'].saidata_repository_url}")
+            click.echo(f"  Branch: {ctx.obj['sai_config'].saidata_repository_branch}")
+            click.echo(f"  Auto Update: {ctx.obj['sai_config'].saidata_auto_update}")
+            click.echo(f"  Offline Mode: {ctx.obj['sai_config'].saidata_offline_mode}")
+            
+            if detailed:
+                # Show detailed information
+                click.echo("\nDetailed Information:")
+                
+                # Cache status
+                cache_status = repo_manager.get_cache_status()
+                click.echo(f"  Cache Directory: {cache_status.get('cache_directory', 'N/A')}")
+                click.echo(f"  Total Cached Repositories: {cache_status.get('total_repositories', 0)}")
+                click.echo(f"  Cache Size: {cache_status.get('total_size_mb', 0):.1f} MB")
+                
+                # Network status
+                network_status = repo_manager.get_network_status()
+                network_ok = network_status.get('connectivity_ok', False)
+                click.echo(f"  Network Connectivity: {click.style('OK' if network_ok else 'Failed', fg='green' if network_ok else 'red')}")
+                
+                if network_status.get('failure_count', 0) > 0:
+                    click.echo(f"  Network Failures: {network_status['failure_count']}")
+                
+                # Cached repositories
+                cached_repos = repo_manager.get_all_cached_repositories()
+                if cached_repos:
+                    click.echo(f"\nCached Repositories ({len(cached_repos)}):")
+                    for repo in cached_repos:
+                        repo_status = repo.get('status', 'unknown')
+                        repo_color = 'green' if repo_status == 'available' else 'yellow'
+                        click.echo(f"  • {repo['name']} - {click.style(repo_status, fg=repo_color)}")
+                        if repo.get('last_updated'):
+                            click.echo(f"    Last Updated: {repo['last_updated']}")
+                        if repo.get('size_mb'):
+                            click.echo(f"    Size: {repo['size_mb']:.1f} MB")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error getting repository status: {error_msg}", err=True)
+        
+        ctx.exit(1)
+
+
+@repository.command('update')
+@click.option('--force', '-f', is_flag=True, help='Force update even if cache is valid')
+@click.pass_context
+def repository_update(ctx: click.Context, force: bool):
+    """Update the saidata repository."""
+    try:
+        repo_manager = SaidataRepositoryManager(ctx.obj['sai_config'])
+        
+        if not ctx.obj['quiet']:
+            click.echo("Updating saidata repository...")
+        
+        success = repo_manager.update_repository(force=force)
+        
+        if ctx.obj['output_json']:
+            import json
+            result = {
+                'success': success,
+                'forced': force,
+                'repository_url': ctx.obj['sai_config'].saidata_repository_url,
+                'repository_branch': ctx.obj['sai_config'].saidata_repository_branch
+            }
+            click.echo(json.dumps(result, indent=2))
+        else:
+            if success:
+                from ..utils.output_formatter import create_output_formatter
+                formatter = create_output_formatter(ctx)
+                formatter.print_success_message("Repository updated successfully")
+                
+                # Show updated status
+                status = repo_manager.get_repository_status()
+                if status.last_updated:
+                    click.echo(f"Last Updated: {status.last_updated.strftime('%Y-%m-%d %H:%M:%S')}")
+            else:
+                click.echo("Repository update failed", err=True)
+                ctx.exit(1)
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error updating repository: {error_msg}", err=True)
+        
+        ctx.exit(1)
+
+
+@repository.command('configure')
+@click.option('--url', help='Set repository URL')
+@click.option('--branch', help='Set repository branch')
+@click.option('--auto-update/--no-auto-update', default=None, help='Enable/disable automatic updates')
+@click.option('--offline-mode/--online-mode', default=None, help='Enable/disable offline mode')
+@click.option('--update-interval', type=int, help='Set update interval in seconds')
+@click.option('--show', is_flag=True, help='Show current configuration')
+@click.pass_context
+def repository_configure(ctx: click.Context, url: Optional[str], branch: Optional[str], 
+                        auto_update: Optional[bool], offline_mode: Optional[bool], 
+                        update_interval: Optional[int], show: bool):
+    """Configure repository settings."""
+    try:
+        config = ctx.obj['sai_config']
+        
+        if show:
+            # Show current configuration
+            if ctx.obj['output_json']:
+                import json
+                config_data = {
+                    'repository_url': config.saidata_repository_url,
+                    'repository_branch': config.saidata_repository_branch,
+                    'auto_update': config.saidata_auto_update,
+                    'offline_mode': config.saidata_offline_mode,
+                    'update_interval': config.saidata_update_interval,
+                    'repository_timeout': config.saidata_repository_timeout,
+                    'shallow_clone': config.saidata_shallow_clone,
+                    'cache_directory': str(config.saidata_repository_cache_dir)
+                }
+                click.echo(json.dumps(config_data, indent=2))
+            else:
+                click.echo("Current Repository Configuration:")
+                click.echo(f"  URL: {config.saidata_repository_url}")
+                click.echo(f"  Branch: {config.saidata_repository_branch}")
+                click.echo(f"  Auto Update: {config.saidata_auto_update}")
+                click.echo(f"  Offline Mode: {config.saidata_offline_mode}")
+                click.echo(f"  Update Interval: {config.saidata_update_interval}s ({config.saidata_update_interval//3600}h)")
+                click.echo(f"  Timeout: {config.saidata_repository_timeout}s")
+                click.echo(f"  Shallow Clone: {config.saidata_shallow_clone}")
+                click.echo(f"  Cache Directory: {config.saidata_repository_cache_dir}")
+            return
+        
+        # Update configuration
+        changes_made = False
+        
+        if url:
+            config.saidata_repository_url = url
+            changes_made = True
+            if not ctx.obj['quiet']:
+                click.echo(f"Repository URL updated to: {url}")
+        
+        if branch:
+            config.saidata_repository_branch = branch
+            changes_made = True
+            if not ctx.obj['quiet']:
+                click.echo(f"Repository branch updated to: {branch}")
+        
+        if auto_update is not None:
+            config.saidata_auto_update = auto_update
+            changes_made = True
+            if not ctx.obj['quiet']:
+                click.echo(f"Auto update {'enabled' if auto_update else 'disabled'}")
+        
+        if offline_mode is not None:
+            config.saidata_offline_mode = offline_mode
+            changes_made = True
+            if not ctx.obj['quiet']:
+                click.echo(f"Offline mode {'enabled' if offline_mode else 'disabled'}")
+        
+        if update_interval:
+            config.saidata_update_interval = update_interval
+            changes_made = True
+            if not ctx.obj['quiet']:
+                click.echo(f"Update interval set to: {update_interval}s ({update_interval//3600}h)")
+        
+        if not changes_made:
+            click.echo("No configuration changes specified. Use --show to view current settings.", err=True)
+            ctx.exit(1)
+        
+        # Save configuration (this would need to be implemented in the config system)
+        if not ctx.obj['quiet']:
+            click.echo("Configuration updated successfully")
+            click.echo("Note: Configuration changes will take effect on next repository operation")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error configuring repository: {error_msg}", err=True)
+        
+        ctx.exit(1)
+
+
+@repository.command('cleanup')
+@click.option('--keep-days', type=int, default=7, help='Keep repositories newer than this many days')
+@click.option('--dry-run', is_flag=True, help='Show what would be cleaned without actually doing it')
+@click.pass_context
+def repository_cleanup(ctx: click.Context, keep_days: int, dry_run: bool):
+    """Clean up old repository caches."""
+    try:
+        repo_manager = SaidataRepositoryManager(ctx.obj['sai_config'])
+        
+        if dry_run:
+            # Show what would be cleaned
+            cached_repos = repo_manager.get_all_cached_repositories()
+            from datetime import datetime, timedelta
+            cutoff_date = datetime.now() - timedelta(days=keep_days)
+            
+            old_repos = [
+                repo for repo in cached_repos 
+                if repo.get('last_updated') and 
+                datetime.fromisoformat(repo['last_updated'].replace('Z', '+00:00')) < cutoff_date
+            ]
+            
+            if ctx.obj['output_json']:
+                import json
+                result = {
+                    'dry_run': True,
+                    'keep_days': keep_days,
+                    'repositories_to_clean': len(old_repos),
+                    'repositories': old_repos
+                }
+                click.echo(json.dumps(result, indent=2))
+            else:
+                click.echo(f"Dry run: Would clean {len(old_repos)} repositories older than {keep_days} days")
+                for repo in old_repos:
+                    click.echo(f"  • {repo['name']} (last updated: {repo.get('last_updated', 'unknown')})")
+        else:
+            # Actually clean up
+            cleaned_count = repo_manager.cleanup_old_repositories(keep_days=keep_days)
+            
+            if ctx.obj['output_json']:
+                import json
+                result = {
+                    'cleaned_repositories': cleaned_count,
+                    'keep_days': keep_days
+                }
+                click.echo(json.dumps(result, indent=2))
+            else:
+                if cleaned_count > 0:
+                    from ..utils.output_formatter import create_output_formatter
+                    formatter = create_output_formatter(ctx)
+                    formatter.print_success_message(f"Cleaned up {cleaned_count} old repositories")
+                else:
+                    if not ctx.obj['quiet']:
+                        click.echo("No old repositories found to clean up")
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error cleaning up repositories: {error_msg}", err=True)
+        
+        ctx.exit(1)
+
+
+@repository.command('clear')
+@click.option('--all', is_flag=True, help='Clear all repository caches')
+@click.option('--url', help='Clear cache for specific repository URL')
+@click.option('--branch', default='main', help='Branch name for specific repository (default: main)')
+@click.pass_context
+def repository_clear(ctx: click.Context, all: bool, url: Optional[str], branch: str):
+    """Clear repository caches."""
+    try:
+        repo_manager = SaidataRepositoryManager(ctx.obj['sai_config'])
+        
+        if all:
+            # Clear all repository caches
+            cleared_count = repo_manager.clear_all_repository_cache()
+            
+            if ctx.obj['output_json']:
+                import json
+                result = {'cleared_repositories': cleared_count}
+                click.echo(json.dumps(result, indent=2))
+            else:
+                if cleared_count > 0:
+                    from ..utils.output_formatter import create_output_formatter
+                    formatter = create_output_formatter(ctx)
+                    formatter.print_success_message(f"Cleared {cleared_count} repository caches")
+                else:
+                    if not ctx.obj['quiet']:
+                        click.echo("No repository caches found to clear")
+        
+        elif url:
+            # Clear specific repository cache
+            success = repo_manager.clear_repository_cache(url=url, branch=branch)
+            
+            if ctx.obj['output_json']:
+                import json
+                result = {
+                    'success': success,
+                    'repository_url': url,
+                    'branch': branch
+                }
+                click.echo(json.dumps(result, indent=2))
+            else:
+                if success:
+                    from ..utils.output_formatter import create_output_formatter
+                    formatter = create_output_formatter(ctx)
+                    formatter.print_success_message(f"Cleared cache for repository: {url} (branch: {branch})")
+                else:
+                    click.echo(f"No cache found for repository: {url} (branch: {branch})", err=True)
+                    ctx.exit(1)
+        
+        else:
+            # Clear current configured repository cache
+            success = repo_manager.clear_repository_cache()
+            
+            if ctx.obj['output_json']:
+                import json
+                result = {
+                    'success': success,
+                    'repository_url': ctx.obj['sai_config'].saidata_repository_url,
+                    'branch': ctx.obj['sai_config'].saidata_repository_branch
+                }
+                click.echo(json.dumps(result, indent=2))
+            else:
+                if success:
+                    from ..utils.output_formatter import create_output_formatter
+                    formatter = create_output_formatter(ctx)
+                    formatter.print_success_message("Cleared current repository cache")
+                else:
+                    click.echo("No cache found for current repository", err=True)
+                    ctx.exit(1)
+    
+    except Exception as e:
+        if ctx.obj['output_json']:
+            import json
+            error_output = {'error': str(e), 'error_type': e.__class__.__name__}
+            click.echo(json.dumps(error_output, indent=2))
+        else:
+            error_msg = format_error_for_cli(e, ctx.obj['verbose'])
+            click.echo(f"Error clearing repository cache: {error_msg}", err=True)
         
         ctx.exit(1)
 

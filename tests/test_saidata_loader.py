@@ -37,45 +37,43 @@ class TestSaidataLoader:
             assert len(search_paths) == 1
             assert temp_path.resolve() in [p.resolve() for p in search_paths]
     
-    def test_find_saidata_files(self):
-        """Test finding saidata files."""
+    def test_find_hierarchical_software(self):
+        """Test finding software in hierarchical structure."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
-            # Create test files
-            (temp_path / "nginx.yaml").touch()
-            (temp_path / "apache.yml").touch()
-            (temp_path / "mysql.json").touch()
+            # Create hierarchical structure
+            # software/ng/nginx/default.yaml
+            nginx_dir = temp_path / "software" / "ng" / "nginx"
+            nginx_dir.mkdir(parents=True)
+            (nginx_dir / "default.yaml").write_text("version: '0.2'\nmetadata:\n  name: nginx")
             
-            # Create subdirectory with saidata file
-            subdir = temp_path / "postgres"
-            subdir.mkdir()
-            (subdir / "saidata.yaml").touch()
+            # software/ap/apache/default.yaml
+            apache_dir = temp_path / "software" / "ap" / "apache"
+            apache_dir.mkdir(parents=True)
+            (apache_dir / "default.yaml").write_text("version: '0.2'\nmetadata:\n  name: apache")
+            
+            # software/my/mysql/default.yaml
+            mysql_dir = temp_path / "software" / "my" / "mysql"
+            mysql_dir.mkdir(parents=True)
+            (mysql_dir / "default.yaml").write_text("version: '0.2'\nmetadata:\n  name: mysql")
             
             config = SaiConfig(saidata_paths=[str(temp_path)])
             loader = SaidataLoader(config)
             
-            # Test finding direct files
-            nginx_files = loader._find_saidata_files("nginx")
-            assert len(nginx_files) == 1
-            assert nginx_files[0].name == "nginx.yaml"
+            # Test finding all software in hierarchical structure
+            software_list = loader.find_all_hierarchical_software(temp_path)
+            assert "nginx" in software_list
+            assert "apache" in software_list
+            assert "mysql" in software_list
+            assert len(software_list) == 3
             
-            apache_files = loader._find_saidata_files("apache")
-            assert len(apache_files) == 1
-            assert apache_files[0].name == "apache.yml"
+            # Test expected paths
+            nginx_path = loader.get_expected_hierarchical_path("nginx", temp_path)
+            assert nginx_path.hierarchical_path == temp_path / "software" / "ng" / "nginx" / "default.yaml"
             
-            mysql_files = loader._find_saidata_files("mysql")
-            assert len(mysql_files) == 1
-            assert mysql_files[0].name == "mysql.json"
-            
-            # Test finding subdirectory files
-            postgres_files = loader._find_saidata_files("postgres")
-            assert len(postgres_files) == 1
-            assert postgres_files[0].name == "saidata.yaml"
-            
-            # Test not found
-            notfound_files = loader._find_saidata_files("notfound")
-            assert len(notfound_files) == 0
+            apache_path = loader.get_expected_hierarchical_path("apache", temp_path)
+            assert apache_path.hierarchical_path == temp_path / "software" / "ap" / "apache" / "default.yaml"
     
     def test_load_saidata_file_yaml(self):
         """Test loading YAML saidata files."""
@@ -256,7 +254,7 @@ class TestSaidataLoader:
         assert any("packages" in warning.lower() for warning in result.warnings)
     
     def test_load_saidata_success(self):
-        """Test successful saidata loading."""
+        """Test successful saidata loading from hierarchical structure."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
@@ -270,7 +268,10 @@ class TestSaidataLoader:
                 "services": [{"name": "nginx", "type": "systemd"}]
             }
             
-            saidata_file = temp_path / "nginx.yaml"
+            # Create hierarchical structure: software/ng/nginx/default.yaml
+            nginx_dir = temp_path / "software" / "ng" / "nginx"
+            nginx_dir.mkdir(parents=True)
+            saidata_file = nginx_dir / "default.yaml"
             with open(saidata_file, 'w') as f:
                 yaml.dump(test_data, f)
             
@@ -297,7 +298,7 @@ class TestSaidataLoader:
                 loader.load_saidata("nonexistent")
     
     def test_load_saidata_validation_error(self):
-        """Test loading invalid saidata."""
+        """Test loading invalid saidata from hierarchical structure."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
@@ -306,7 +307,10 @@ class TestSaidataLoader:
                 # Missing required metadata
             }
             
-            saidata_file = temp_path / "invalid.yaml"
+            # Create hierarchical structure: software/in/invalid/default.yaml
+            invalid_dir = temp_path / "software" / "in" / "invalid"
+            invalid_dir.mkdir(parents=True)
+            saidata_file = invalid_dir / "default.yaml"
             with open(saidata_file, 'w') as f:
                 yaml.dump(invalid_data, f)
             

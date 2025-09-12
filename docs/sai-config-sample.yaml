@@ -13,6 +13,18 @@ config_version: "0.1.0"
 log_level: "info"  # debug, info, warning, error
 log_file: "~/.sai/logs/sai.log"  # Path to log file
 
+# Repository Configuration (NEW)
+# SAI now uses a git repository for saidata with hierarchical structure
+saidata_repository_url: "https://github.com/example42/saidata"  # Default repository
+saidata_repository_branch: "main"  # Repository branch to use
+saidata_repository_auth: null  # Authentication configuration (see examples below)
+saidata_auto_update: true  # Automatically update repository when cache is stale
+saidata_update_interval: 86400  # Update interval in seconds (24 hours)
+saidata_offline_mode: false  # Force offline mode (use cached repositories only)
+saidata_repository_cache_dir: null  # Cache directory (defaults to ~/.sai/cache/repositories/)
+saidata_repository_timeout: 300  # Repository operation timeout in seconds (5 minutes)
+saidata_shallow_clone: true  # Use shallow clones for better performance
+
 # Provider Priority Configuration
 # Higher numbers indicate higher priority
 provider_priorities: {}
@@ -22,11 +34,13 @@ provider_priorities: {}
   # winget: 6
   # dnf: 5
 
-# Saidata Search Paths
+# Saidata Search Paths (UPDATED)
 # Directories to search for saidata files (in order of priority)
+# Repository cache is automatically included and takes precedence over local paths
 saidata_paths:
-  - "."  # Current directory
-  - "~/.sai/saidata"  # User saidata directory
+  - "."  # Current directory (highest precedence for local overrides)
+  - "~/.sai/saidata"  # User saidata directory (legacy support)
+  # Repository cache is automatically added here: ~/.sai/cache/repositories/
   - "/usr/local/share/sai/saidata"  # System-wide saidata (macOS/Linux)
   - "/usr/share/sai/saidata"  # System-wide saidata (Linux)
 
@@ -56,6 +70,36 @@ dry_run_default: false  # Default to dry-run mode
 # Example Complete Configuration
 # Uncomment and customize the sections below as needed:
 
+# Repository Configuration Examples:
+
+# Custom repository URL:
+# saidata_repository_url: "https://github.com/myorg/custom-saidata"
+# saidata_repository_branch: "develop"
+
+# Private repository with SSH authentication:
+# saidata_repository_url: "git@github.com:myorg/private-saidata.git"
+
+# Private repository with token authentication:
+# saidata_repository_url: "https://github.com/myorg/private-saidata"
+# saidata_repository_auth:
+#   type: "token"
+#   token: "${GITHUB_TOKEN}"  # Use environment variable
+
+# Username/password authentication:
+# saidata_repository_auth:
+#   type: "basic"
+#   username: "${REPO_USERNAME}"
+#   password: "${REPO_PASSWORD}"
+
+# Performance tuning for repositories:
+# saidata_update_interval: 43200  # Update every 12 hours
+# saidata_repository_timeout: 600  # 10 minute timeout for large repos
+# saidata_shallow_clone: true     # Use shallow clones (recommended)
+
+# Offline mode for air-gapped environments:
+# saidata_offline_mode: true
+# saidata_auto_update: false
+
 # provider_priorities:
 #   apt: 10      # Highest priority for apt (Debian/Ubuntu)
 #   brew: 8      # High priority for Homebrew (macOS/Linux)
@@ -66,13 +110,14 @@ dry_run_default: false  # Default to dry-run mode
 
 # default_provider: "apt"  # Use apt as default provider
 
-# Custom saidata and provider paths:
+# Custom saidata paths (with repository integration):
 # saidata_paths:
-#   - "./custom-saidata"
-#   - "~/.sai/saidata"
-#   - "/opt/company/sai/saidata"
-#   - "/usr/local/share/sai/saidata"
-#   - "/usr/share/sai/saidata"
+#   - "./custom-saidata"                    # Local overrides (highest precedence)
+#   - "~/.sai/saidata"                     # User saidata (legacy)
+#   # Repository cache automatically included here
+#   - "/opt/company/sai/saidata"           # Company-wide saidata
+#   - "/usr/local/share/sai/saidata"       # System saidata
+#   - "/usr/share/sai/saidata"             # System saidata
 
 # provider_paths:
 #   - "./custom-providers"
@@ -89,3 +134,6 @@ dry_run_default: false  # Default to dry-run mode
 # Security settings:
 # require_confirmation: true  # Always require confirmation
 # dry_run_default: true      # Default to dry-run for safety
+
+# Repository cache management:
+# saidata_repository_cache_dir: "/tmp/sai-cache"  # Custom cache location

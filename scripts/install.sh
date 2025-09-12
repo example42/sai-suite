@@ -137,9 +137,9 @@ create_config() {
 config_version: "0.1.0"
 log_level: info
 
-# Provider search paths
+# Saidata search paths (repository cache has highest priority)
 saidata_paths:
-  - "."
+  - "~/.sai/cache/repositories/saidata-main"
   - "~/.sai/saidata"
   - "/usr/local/share/sai/saidata"
 

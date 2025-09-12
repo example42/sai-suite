@@ -656,7 +656,7 @@ class SaidataCache:
 
 
 class CacheManager:
-    """Unified cache manager for both provider and saidata caches."""
+    """Unified cache manager for provider, saidata, and repository caches."""
     
     def __init__(self, config: Union[SaiConfig, Path]):
         """Initialize cache manager.
@@ -672,6 +672,10 @@ class CacheManager:
             self.config = config
         self.provider_cache = ProviderCache(self.config)
         self.saidata_cache = SaidataCache(self.config)
+        
+        # Import repository cache here to avoid circular imports
+        from ..core.repository_cache import RepositoryCache
+        self.repository_cache = RepositoryCache(self.config)
         
         # Generic cache interface for tests
         self._generic_cache = {}
@@ -720,9 +724,12 @@ class CacheManager:
         """
         provider_status = self.provider_cache.get_cache_status()
         saidata_status = self.saidata_cache.get_cache_status()
+        repository_status = self.repository_cache.get_cache_status()
         
         # Calculate total cache size
-        total_size_bytes = provider_status['cache_size_bytes'] + saidata_status['cache_size_bytes']
+        total_size_bytes = (provider_status['cache_size_bytes'] + 
+                           saidata_status['cache_size_bytes'] + 
+                           repository_status['total_cache_size_bytes'])
         total_size_mb = total_size_bytes / (1024 * 1024)
         
         return {
@@ -733,7 +740,8 @@ class CacheManager:
             'total_cache_size_bytes': total_size_bytes,
             'total_cache_size_mb': total_size_mb,
             'provider_cache': provider_status,
-            'saidata_cache': saidata_status
+            'saidata_cache': saidata_status,
+            'repository_cache': repository_status
         }
     
     def cleanup_all_expired(self) -> Dict[str, int]:
@@ -744,11 +752,13 @@ class CacheManager:
         """
         provider_cleaned = self.provider_cache.cleanup_expired_cache()
         saidata_cleaned = self.saidata_cache.cleanup_expired_cache()
+        repository_cleaned = self.repository_cache.cleanup_expired_repositories()
         
         return {
             'provider_cache_cleaned': provider_cleaned,
             'saidata_cache_cleaned': saidata_cleaned,
-            'total_cleaned': provider_cleaned + saidata_cleaned
+            'repository_cache_cleaned': repository_cleaned,
+            'total_cleaned': provider_cleaned + saidata_cleaned + repository_cleaned
         }
     
     def clear_all_caches(self) -> Dict[str, int]:
@@ -759,9 +769,11 @@ class CacheManager:
         """
         provider_cleared = self.provider_cache.clear_all_provider_cache()
         saidata_cleared = self.saidata_cache.clear_saidata_cache()
+        repository_cleared = self.repository_cache.clear_all_repository_cache()
         
         return {
             'provider_cache_cleared': provider_cleared,
             'saidata_cache_cleared': saidata_cleared,
-            'total_cleared': provider_cleared + saidata_cleared
+            'repository_cache_cleared': repository_cleared,
+            'total_cleared': provider_cleared + saidata_cleared + repository_cleared
         }

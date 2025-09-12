@@ -56,7 +56,7 @@ This repository contains two complementary tools that work together to provide a
 │       ├── __init__.py
 │       └── config.py            # Configuration management
 │
-├── saidata/                       # Generated saidata files
+├── cache/repositories/            # Repository-based saidata cache
 │   ├── ansible.yaml
 │   ├── docker.yaml
 │   └── ...                      # Other software metadata files

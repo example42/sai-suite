@@ -148,7 +148,7 @@ sai backup redis --provider restic --action list
 All specialized providers work with the same saidata files as installation providers:
 
 ```yaml
-# redis-saidata.yaml
+# software/re/redis/default.yaml
 metadata:
   name: "redis"
   description: "In-memory data structure store"

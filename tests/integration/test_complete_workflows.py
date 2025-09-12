@@ -62,7 +62,7 @@ class TestCompleteWorkflows:
         return provider_file
     
     def create_test_saidata(self, name: str, packages: list = None, services: list = None) -> Path:
-        """Create a test saidata YAML file."""
+        """Create a test saidata YAML file in hierarchical structure."""
         saidata = {
             "version": "0.2",
             "metadata": {
@@ -91,7 +91,11 @@ class TestCompleteWorkflows:
             }
         }
         
-        saidata_file = self.saidata_dir / f"{name}.yaml"
+        # Create hierarchical structure: software/{prefix}/{name}/default.yaml
+        prefix = name[:2].lower()
+        software_dir = self.saidata_dir / "software" / prefix / name
+        software_dir.mkdir(parents=True, exist_ok=True)
+        saidata_file = software_dir / "default.yaml"
         with open(saidata_file, 'w') as f:
             yaml.dump(saidata, f)
         
@@ -476,7 +480,7 @@ class TestCompleteWorkflows:
             }
         }
         
-        # Create test saidata with both providers
+        # Create test saidata with both providers in hierarchical structure
         saidata = {
             "version": "0.2",
             "metadata": {
@@ -489,7 +493,10 @@ class TestCompleteWorkflows:
             }
         }
         
-        saidata_file = self.saidata_dir / "code.yaml"
+        # Create hierarchical structure: software/co/code/default.yaml
+        code_dir = self.saidata_dir / "software" / "co" / "code"
+        code_dir.mkdir(parents=True, exist_ok=True)
+        saidata_file = code_dir / "default.yaml"
         with open(saidata_file, 'w') as f:
             yaml.dump(saidata, f)
         

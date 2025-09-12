@@ -133,7 +133,7 @@ mappings:
 ### 3. Runtime Resolution
 Tools combine saidata + providerdata at runtime:
 
-1. Load `saidata/redis.yaml` (software metadata)
+1. Load `software/re/redis/default.yaml` from repository cache (software metadata)
 2. Load `providerdata/apt.yaml` (provider implementation)
 3. Resolve variables: `{{saidata.metadata.name}}` → `redis`
 4. Execute: `apt-get install -y redis-server`
@@ -180,7 +180,7 @@ Tools combine saidata + providerdata at runtime:
 
 ### Installing Redis via Different Providers
 
-**Same saidata file (`redis.yaml`):**
+**Same saidata file (`software/re/redis/default.yaml`):**
 ```yaml
 metadata:
   name: \"redis\"

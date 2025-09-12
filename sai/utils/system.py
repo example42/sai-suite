@@ -4,9 +4,12 @@ import logging
 import os
 import platform
 import shutil
+import socket
 import subprocess
+import time
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
+from urllib.parse import urlparse
 
 
 logger = logging.getLogger(__name__)
@@ -229,3 +232,181 @@ def is_platform_supported(supported_platforms: List[str]) -> bool:
             return True
             
     return False
+
+
+def check_network_connectivity(host: str = "8.8.8.8", port: int = 53, timeout: int = 5) -> bool:
+    """Check if network connectivity is available.
+    
+    Args:
+        host: Host to test connectivity to (default: Google DNS)
+        port: Port to test (default: 53 for DNS)
+        timeout: Timeout in seconds
+        
+    Returns:
+        True if network is available, False otherwise
+    """
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        logger.debug(f"Network connectivity check successful to {host}:{port}")
+        return True
+    except (socket.error, OSError) as e:
+        logger.debug(f"Network connectivity check failed to {host}:{port}: {e}")
+        return False
+    except Exception as e:
+        logger.warning(f"Unexpected error during network connectivity check: {e}")
+        return False
+
+
+def check_url_accessibility(url: str, timeout: int = 10) -> Tuple[bool, Optional[str]]:
+    """Check if a specific URL is accessible.
+    
+    Args:
+        url: URL to check accessibility
+        timeout: Timeout in seconds
+        
+    Returns:
+        Tuple of (is_accessible, error_message)
+    """
+    try:
+        parsed_url = urlparse(url)
+        if not parsed_url.hostname:
+            return False, "Invalid URL format"
+        
+        # For git URLs, check if we can resolve the hostname
+        if url.startswith(('git://', 'ssh://', 'git@')):
+            # Extract hostname from git URLs
+            if url.startswith('git@'):
+                # Format: git@hostname:path
+                hostname = url.split('@')[1].split(':')[0]
+            else:
+                hostname = parsed_url.hostname
+            
+            # Try to resolve hostname
+            try:
+                socket.gethostbyname(hostname)
+                logger.debug(f"Git URL hostname resolution successful: {hostname}")
+                return True, None
+            except socket.gaierror as e:
+                error_msg = f"Cannot resolve hostname {hostname}: {e}"
+                logger.debug(error_msg)
+                return False, error_msg
+        
+        # For HTTP/HTTPS URLs, try a simple connection test
+        elif url.startswith(('http://', 'https://')):
+            port = parsed_url.port or (443 if url.startswith('https://') else 80)
+            
+            try:
+                socket.setdefaulttimeout(timeout)
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((parsed_url.hostname, port))
+                logger.debug(f"HTTP URL accessibility check successful: {url}")
+                return True, None
+            except (socket.error, OSError) as e:
+                error_msg = f"Cannot connect to {parsed_url.hostname}:{port}: {e}"
+                logger.debug(error_msg)
+                return False, error_msg
+        
+        else:
+            return False, f"Unsupported URL scheme: {parsed_url.scheme}"
+            
+    except Exception as e:
+        error_msg = f"Error checking URL accessibility: {e}"
+        logger.warning(error_msg)
+        return False, error_msg
+
+
+def detect_offline_mode() -> Tuple[bool, str]:
+    """Detect if the system should operate in offline mode.
+    
+    Returns:
+        Tuple of (is_offline, reason)
+    """
+    # Check basic network connectivity
+    if not check_network_connectivity():
+        return True, "No network connectivity detected"
+    
+    # Check if we can reach common internet services
+    test_hosts = [
+        ("github.com", 443),
+        ("gitlab.com", 443),
+        ("bitbucket.org", 443)
+    ]
+    
+    accessible_count = 0
+    for host, port in test_hosts:
+        try:
+            socket.setdefaulttimeout(5)
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+            accessible_count += 1
+            logger.debug(f"Successfully connected to {host}:{port}")
+        except (socket.error, OSError):
+            logger.debug(f"Failed to connect to {host}:{port}")
+            continue
+    
+    # If we can't reach any of the common git hosting services, consider offline
+    if accessible_count == 0:
+        return True, "Cannot reach common git hosting services"
+    
+    logger.debug(f"Network connectivity OK: {accessible_count}/{len(test_hosts)} services accessible")
+    return False, "Network connectivity available"
+
+
+class NetworkConnectivityTracker:
+    """Track network connectivity and failure patterns for exponential backoff."""
+    
+    def __init__(self):
+        self._failure_count = 0
+        self._last_failure_time: Optional[float] = None
+        self._backoff_delay = 1.0  # Start with 1 second
+        self._max_backoff_delay = 300.0  # Maximum 5 minutes
+        self._reset_threshold = 3600.0  # Reset after 1 hour of no failures
+    
+    def record_failure(self) -> None:
+        """Record a network operation failure."""
+        self._failure_count += 1
+        self._last_failure_time = time.time()
+        
+        # Exponential backoff with jitter
+        self._backoff_delay = min(
+            self._backoff_delay * 2,
+            self._max_backoff_delay
+        )
+        
+        logger.debug(f"Network failure recorded (count: {self._failure_count}, "
+                    f"next backoff: {self._backoff_delay}s)")
+    
+    def record_success(self) -> None:
+        """Record a successful network operation."""
+        if self._failure_count > 0:
+            logger.debug(f"Network operation successful after {self._failure_count} failures")
+        
+        self._failure_count = 0
+        self._last_failure_time = None
+        self._backoff_delay = 1.0
+    
+    def should_retry(self) -> Tuple[bool, float]:
+        """Check if we should retry and return the delay.
+        
+        Returns:
+            Tuple of (should_retry, delay_seconds)
+        """
+        if self._failure_count == 0:
+            return True, 0.0
+        
+        # Reset failure count if enough time has passed
+        if (self._last_failure_time and 
+            time.time() - self._last_failure_time > self._reset_threshold):
+            logger.debug("Resetting network failure count after threshold period")
+            self.record_success()
+            return True, 0.0
+        
+        # Apply exponential backoff
+        return True, self._backoff_delay
+    
+    def get_failure_count(self) -> int:
+        """Get the current failure count."""
+        return self._failure_count
+    
+    def get_backoff_delay(self) -> float:
+        """Get the current backoff delay."""
+        return self._backoff_delay

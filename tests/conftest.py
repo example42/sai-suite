@@ -106,11 +106,11 @@ def mock_provider(sample_provider_data):
 
 @pytest.fixture
 def test_saidata_files(temp_dir):
-    """Create test saidata files in temporary directory."""
+    """Create test saidata files in hierarchical structure."""
     saidata_dir = temp_dir / "saidata"
     saidata_dir.mkdir(parents=True, exist_ok=True)
     
-    # Create nginx saidata
+    # Create nginx saidata in hierarchical structure
     nginx_data = {
         "version": "0.2",
         "metadata": {
@@ -126,11 +126,14 @@ def test_saidata_files(temp_dir):
         }
     }
     
-    nginx_file = saidata_dir / "nginx.yaml"
+    # Create hierarchical structure: software/ng/nginx/default.yaml
+    nginx_dir = saidata_dir / "software" / "ng" / "nginx"
+    nginx_dir.mkdir(parents=True, exist_ok=True)
+    nginx_file = nginx_dir / "default.yaml"
     with open(nginx_file, 'w') as f:
         yaml.dump(nginx_data, f)
     
-    # Create git saidata
+    # Create git saidata in hierarchical structure
     git_data = {
         "version": "0.2",
         "metadata": {
@@ -146,7 +149,10 @@ def test_saidata_files(temp_dir):
         }
     }
     
-    git_file = saidata_dir / "git.yaml"
+    # Create hierarchical structure: software/gi/git/default.yaml
+    git_dir = saidata_dir / "software" / "gi" / "git"
+    git_dir.mkdir(parents=True, exist_ok=True)
+    git_file = git_dir / "default.yaml"
     with open(git_file, 'w') as f:
         yaml.dump(git_data, f)
     

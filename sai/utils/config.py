@@ -126,12 +126,26 @@ class ConfigManager:
             'SAI_CACHE_DIR': lambda val: setattr(self._config, 'cache_directory', Path(val)),
             'SAI_DEFAULT_PROVIDER': lambda val: setattr(self._config, 'default_provider', val),
             'SAI_REQUIRE_CONFIRMATION': lambda val: setattr(self._config, 'require_confirmation', val.lower() == 'true'),
+            
+            # Repository configuration overrides
+            'SAI_REPOSITORY_URL': lambda val: setattr(self._config, 'saidata_repository_url', val),
+            'SAI_REPOSITORY_BRANCH': lambda val: setattr(self._config, 'saidata_repository_branch', val),
+            'SAI_REPOSITORY_AUTH_TYPE': lambda val: setattr(self._config, 'saidata_repository_auth_type', val),
+            'SAI_AUTO_UPDATE': lambda val: setattr(self._config, 'saidata_auto_update', val.lower() == 'true'),
+            'SAI_UPDATE_INTERVAL': lambda val: setattr(self._config, 'saidata_update_interval', int(val)),
+            'SAI_OFFLINE_MODE': lambda val: setattr(self._config, 'saidata_offline_mode', val.lower() == 'true'),
+            'SAI_REPOSITORY_CACHE_DIR': lambda val: setattr(self._config, 'saidata_repository_cache_dir', Path(val)),
+            'SAI_SHALLOW_CLONE': lambda val: setattr(self._config, 'saidata_shallow_clone', val.lower() == 'true'),
+            'SAI_REPOSITORY_TIMEOUT': lambda val: setattr(self._config, 'saidata_repository_timeout', int(val)),
         }
         
         for env_var, setter in env_overrides.items():
             value = os.getenv(env_var)
             if value:
-                setter(value)
+                try:
+                    setter(value)
+                except (ValueError, TypeError) as e:
+                    print(f"Warning: Invalid value for {env_var}: {value} ({e})")
     
     def get_config(self) -> SaiConfig:
         """Get current configuration."""
@@ -170,7 +184,32 @@ class ConfigManager:
         except PermissionError:
             issues.append(f"Cannot create cache directory: {config.cache_directory}")
         
-        # Check saidata paths exist
+        # Check repository cache directory permissions
+        try:
+            config.saidata_repository_cache_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            issues.append(f"Cannot create repository cache directory: {config.saidata_repository_cache_dir}")
+        
+        # Validate repository URL format
+        try:
+            # This will trigger the validator
+            from ..models.config import SaiConfig
+            SaiConfig.validate_repository_url(config.saidata_repository_url)
+        except ValueError as e:
+            issues.append(f"Invalid repository URL: {e}")
+        
+        # Check repository authentication configuration
+        if config.saidata_repository_auth_type and not config.saidata_repository_auth_data:
+            issues.append("Repository authentication type specified but no authentication data provided")
+        
+        # Validate update interval and timeout
+        if config.saidata_update_interval < 60:
+            issues.append("Repository update interval is too short (minimum 60 seconds)")
+        
+        if config.saidata_repository_timeout < 10:
+            issues.append("Repository timeout is too short (minimum 10 seconds)")
+        
+        # Check saidata paths exist (repository cache path gets priority)
         saidata_paths_exist = False
         for path_str in config.saidata_paths:
             path = Path(path_str)
@@ -178,8 +217,8 @@ class ConfigManager:
                 saidata_paths_exist = True
                 break
         
-        if not saidata_paths_exist:
-            issues.append("No saidata paths exist - you may need to initialize saidata")
+        if not saidata_paths_exist and not config.saidata_auto_update:
+            issues.append("No saidata paths exist and auto-update is disabled - you may need to initialize saidata or enable auto-update")
         
         return issues
 

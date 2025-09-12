@@ -2,6 +2,125 @@
 
 This guide helps resolve common issues with the SAI Software Management Suite.
 
+## Repository Issues
+
+### Repository Access Problems
+
+**Problem**: SAI cannot access the saidata repository.
+
+**Common Causes**:
+1. **Network connectivity issues**
+2. **Authentication failures** (private repositories)
+3. **Invalid repository URL**
+4. **Git not available**
+
+**Solutions**:
+
+#### Check Repository Status
+```bash
+# Check current repository status
+sai repository status --detailed
+
+# Test repository connectivity
+sai repository update --force
+
+# Show repository configuration
+sai repository configure --show
+```
+
+#### Network Connectivity
+```bash
+# Test basic connectivity
+ping github.com
+
+# Test repository access
+git ls-remote https://github.com/example42/saidata
+
+# Check proxy settings
+env | grep -i proxy
+```
+
+#### Authentication Issues
+```bash
+# For SSH authentication
+ssh -T git@github.com
+ssh-add -l  # List loaded SSH keys
+ssh-add ~/.ssh/id_ed25519  # Add SSH key
+
+# For token authentication
+echo $GITHUB_TOKEN  # Verify token is set
+export GITHUB_TOKEN="your_token_here"
+```
+
+#### Git Availability
+```bash
+# Check if git is installed
+git --version
+
+# Install git if missing
+# Ubuntu/Debian: sudo apt install git
+# macOS: brew install git
+# Windows: winget install Git.Git
+```
+
+### Saidata Loading Issues
+
+**Problem**: "Saidata not found for software 'X'" errors.
+
+**Common Causes**:
+1. **Software not available in repository**
+2. **Repository cache is stale**
+3. **Hierarchical path issues**
+4. **Network issues preventing repository updates**
+
+**Solutions**:
+
+#### Update Repository
+```bash
+# Force repository update
+sai repository update --force
+
+# Check repository status
+sai repository status --detailed
+```
+
+#### Verify Hierarchical Structure
+```bash
+# Check expected path (example for nginx)
+ls ~/.sai/cache/repositories/*/software/ng/nginx/
+
+# Search for software in repository
+find ~/.sai/cache/repositories/ -name "*nginx*" -type f
+
+# Use verbose mode for detailed path resolution
+sai info nginx --verbose
+```
+
+#### Clear and Rebuild Cache
+```bash
+# Clear repository cache
+sai repository clear
+
+# Force fresh download
+sai repository update --force
+```
+
+### Offline Mode Issues
+
+**Problem**: SAI tries to access network in offline mode.
+
+**Solutions**:
+```bash
+# Enable offline mode
+sai repository configure --offline-mode
+
+# Use offline flag for single command
+sai --offline install nginx
+
+# Verify offline mode is enabled
+sai repository configure --show
+```
+
 ## Provider Loading Issues
 
 ### Provider Validation Errors
@@ -171,17 +290,43 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
 
+## Repository Troubleshooting
+
+For detailed repository troubleshooting, see the [Repository Troubleshooting Guide](./repository-troubleshooting.md).
+
+### Quick Repository Fixes
+
+```bash
+# Complete repository reset
+sai repository clear --all
+sai repository update --force
+
+# Check repository health
+sai repository status --detailed
+
+# Test saidata loading
+sai info nginx --verbose
+
+# Enable debug logging
+export SAI_LOG_LEVEL=debug
+sai --verbose repository update
+```
+
 ## Getting Help
 
 If you encounter issues not covered in this guide:
 
-1. **Check Logs**: Enable debug logging for detailed error information
-2. **Validate Files**: Use schema validation tools to check YAML files
-3. **Test Isolation**: Try loading individual provider files to isolate issues
-4. **Community Support**: Check GitHub issues or create a new issue with:
+1. **Check Repository Status**: Use `sai repository status --detailed` for repository issues
+2. **Check Logs**: Enable debug logging for detailed error information
+3. **Validate Files**: Use schema validation tools to check YAML files
+4. **Test Isolation**: Try loading individual provider files to isolate issues
+5. **Repository Diagnostics**: Include repository information when reporting issues
+6. **Community Support**: Check GitHub issues or create a new issue with:
    - Error messages and stack traces
+   - Repository status output (`sai repository status --detailed --json`)
    - Provider YAML files (sanitized)
-   - System information (OS, Python version)
+   - System information (OS, Python version, git version)
+   - Network connectivity information
    - Steps to reproduce the issue
 
 ## Best Practices
