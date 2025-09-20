@@ -7,6 +7,7 @@ provider:
   description: "The package manager for Kubernetes"
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
+  executable: "helm"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status", "logs"]
 
 actions:

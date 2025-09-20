@@ -7,6 +7,7 @@ provider:
   description: "Command-line package manager for openSUSE and SUSE Linux Enterprise"
   type: "package_manager"
   platforms: ["opensuse", "sles"]
+  executable: "zypper"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

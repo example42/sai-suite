@@ -1,6 +1,6 @@
 # SAI Software Management Suite Makefile
 
-.PHONY: help install install-dev test test-cov lint format type-check security clean build publish docker docs pre-commit
+.PHONY: help install install-dev test test-cov lint format type-check security clean build publish docker docs pre-commit validate-providers validate-providers-verbose
 
 # Default target
 help:
@@ -35,6 +35,9 @@ help:
 	@echo "Documentation:"
 	@echo "  docs          Generate documentation"
 	@echo "  docs-serve    Serve documentation locally"
+	@echo ""
+	@echo "Validation Commands:"
+	@echo "  validate-providers    Validate provider files against schema"
 
 # Installation
 install:
@@ -144,6 +147,15 @@ version:
 dev: format lint type-check test
 	@echo "Development cycle complete!"
 
+# Provider Validation
+validate-providers:
+	@echo "Validating provider files against schema..."
+	./scripts/validate_providers.sh
+
+validate-providers-verbose:
+	@echo "Validating provider files against schema (verbose)..."
+	./scripts/validate_providers.sh --verbose
+
 # All Quality Checks
-quality: lint type-check security test-cov
+quality: lint type-check security test-cov validate-providers
 	@echo "All quality checks passed!"

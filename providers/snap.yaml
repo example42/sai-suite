@@ -7,6 +7,7 @@ provider:
   description: "Universal Linux package manager with sandboxing"
   type: "package_manager"
   platforms: ["ubuntu", "fedora", "debian", "opensuse", "arch"]
+  executable: "snap"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

@@ -1,0 +1,70 @@
+# Security Scanner Provider - Consolidated security scanning and SBOM generation
+version: "1.0"
+
+provider:
+  name: "security-scanner"
+  display_name: "Security Scanner"
+  description: "Comprehensive security scanning using Trivy, Grype, and Syft"
+  type: "security"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["vulnerabilities", "sbom", "secrets", "config", "licenses", "compliance"]
+
+actions:
+  vulnerabilities:
+    description: "Scan for vulnerabilities in images and filesystems"
+    template: "{{vuln_scanner}} {{vuln_target}} {{vuln_options}} -o {{output_format}} --output {{vuln_output}}"
+    variables:
+      vuln_scanner: "trivy"  # Options: "trivy", "grype"
+      vuln_target: "{{scan_target_type}} {{scan_target_path}}"
+      vuln_options: "--severity HIGH,CRITICAL"
+      output_format: "json"
+      vuln_output: "/tmp/vulns-{{saidata.metadata.name}}.json"
+      scan_target_type: "fs"  # Options: "image", "fs", "repo"
+      scan_target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+
+  sbom:
+    description: "Generate Software Bill of Materials"
+    template: "{{sbom_tool}} {{sbom_target}} -o {{sbom_format}} --output {{sbom_output}}"
+    variables:
+      sbom_tool: "syft"  # Options: "syft", "trivy"
+      sbom_target: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      sbom_format: "spdx-json"  # Options: "spdx-json", "cyclonedx-json", "table"
+      sbom_output: "/tmp/sbom-{{saidata.metadata.name}}.json"
+
+  secrets:
+    description: "Scan for exposed secrets and credentials"
+    template: "trivy fs --scanners secret {{scan_path}} -o json --output {{secrets_output}}"
+    variables:
+      scan_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      secrets_output: "/tmp/secrets-{{saidata.metadata.name}}.json"
+
+  config:
+    description: "Scan configuration files for security issues"
+    template: "trivy config {{config_path}} --severity {{severity}} -o json --output {{config_output}}"
+    variables:
+      config_path: "{{sai_file(saidata, 1, 'path') or '/etc'}}"
+      severity: "HIGH,CRITICAL"
+      config_output: "/tmp/config-scan-{{saidata.metadata.name}}.json"
+
+  licenses:
+    description: "Scan for license compliance issues"
+    template: "{{license_tool}} {{license_target}} {{license_options}} -o json --output {{license_output}}"
+    variables:
+      license_tool: "trivy"  # Options: "trivy", "syft"
+      license_target: "fs {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      license_options: "--scanners license"
+      license_output: "/tmp/licenses-{{saidata.metadata.name}}.json"
+
+  compliance:
+    description: "Comprehensive security and compliance scan"
+    steps:
+      - name: "vulnerability-scan"
+        command: "trivy fs {{sai_file(saidata, 0, 'path') or '/tmp'}} --severity HIGH,CRITICAL -o json --output /tmp/vulns-{{saidata.metadata.name}}.json"
+      - name: "secret-scan"
+        command: "trivy fs --scanners secret {{sai_file(saidata, 0, 'path') or '/tmp'}} -o json --output /tmp/secrets-{{saidata.metadata.name}}.json"
+      - name: "config-scan"
+        command: "trivy config {{sai_file(saidata, 1, 'path') or '/etc'}} --severity HIGH,CRITICAL -o json --output /tmp/config-scan-{{saidata.metadata.name}}.json"
+      - name: "license-scan"
+        command: "trivy fs --scanners license {{sai_file(saidata, 0, 'path') or '/tmp'}} -o json --output /tmp/licenses-{{saidata.metadata.name}}.json"
+      - name: "generate-report"
+        command: "echo 'Compliance scan completed for {{saidata.metadata.name}}'"

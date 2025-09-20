@@ -7,6 +7,7 @@ provider:
   description: "Package manager for Alpine Linux"
   type: "package_manager"
   platforms: ["alpine"]
+  executable: "apk"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

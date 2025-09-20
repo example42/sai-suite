@@ -14,7 +14,7 @@ actions:
     description: "Scan for packages and dependencies"
     template: "syft {{scan_target}} -o {{output_format}} --file {{sbom_output}}"
     variables:
-      scan_target: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
+      scan_target: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
       output_format: "spdx-json"
       sbom_output: "/tmp/sbom-{{saidata.metadata.name}}.json"
 
@@ -22,7 +22,7 @@ actions:
     description: "Generate SBOM from container image"
     template: "syft {{image_name}} -o {{output_format}} --file {{sbom_output}}"
     variables:
-      image_name: "{{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+      image_name: "{{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
       output_format: "spdx-json"
       sbom_output: "/tmp/sbom-{{saidata.metadata.name}}-image.json"
 
@@ -57,7 +57,7 @@ actions:
       - name: "export-table"
         command: "syft {{scan_target}} -o table --file {{export_dir}}/{{saidata.metadata.name}}-table.txt"
     variables:
-      scan_target: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
+      scan_target: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
       export_dir: "/tmp/sbom-export-{{saidata.metadata.name}}"
 
   version:

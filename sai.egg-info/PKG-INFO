@@ -347,6 +347,7 @@ saigen validate --show-context --format json nginx.yaml
 #### Generation and Validation
 - `saigen generate <software>` - Generate saidata for software with AI assistance
 - `saigen validate <file>` - Validate saidata file against schema with detailed reporting
+- `saigen quality <file>` - Assess quality metrics for saidata files with comprehensive scoring
 - `saigen update <file>` - Update existing saidata with new information using intelligent merging
 - `saigen batch` - Generate saidata for multiple software packages in parallel
 
@@ -397,6 +398,9 @@ saigen validate --show-context --format json nginx.yaml
 - `--format` - Output format (text, json, yaml)
 - `--show-context` - Include detailed error context
 - `--strict` - Enable strict validation mode
+- `--advanced` - Enable advanced validation with quality metrics
+- `--no-repository-check` - Skip repository accuracy checking
+- `--detailed` - Show detailed quality metrics and suggestions
 
 ## Troubleshooting
 
@@ -416,9 +420,9 @@ Example SAI configuration:
 config_version: "0.1.0"
 log_level: info
 
-# Provider search paths
+# Saidata search paths (repository cache has highest priority)
 saidata_paths:
-  - "."
+  - "~/.sai/cache/repositories/saidata-main"
   - "~/.sai/saidata"
   - "/usr/local/share/sai/saidata"
 
@@ -516,7 +520,7 @@ validation:
 │   ├── models/            # Data models (saidata, generation)
 │   ├── repositories/      # Package repository integrations
 │   └── utils/             # Utilities and helpers
-├── saidata/               # Generated saidata files
+├── cache/repositories/    # Repository-based saidata cache
 ├── providers/             # Provider data files
 ├── schemas/               # JSON schema definitions
 ├── docs/                  # Documentation

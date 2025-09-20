@@ -12,8 +12,8 @@ provider:
 actions:
   info:
     description: "Show disk usage size"
-    template: "du -sh {{sai_file(saidata, 0, "path") or '/tmp'}}"
+    template: "du -sh {{sai_file(saidata, 0, 'path') or '/tmp'}}"
 
   list:
     description: "Summarize directory usage"
-    template: "du -s {{sai_file(saidata, 0, "path") or '/tmp'}} {{sai_file(saidata, 1, "path") or '/etc'}}"
+    template: "du -s {{sai_file(saidata, 0, 'path') or '/tmp'}} {{sai_file(saidata, 1, 'path') or '/etc'}}"

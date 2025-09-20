@@ -15,7 +15,7 @@ actions:
     template: "trivy image {{scan_options}} {{image_name}} -o {{output_format}} --output {{image_output}}"
     variables:
       scan_options: "--severity HIGH,CRITICAL"
-      image_name: "{{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+      image_name: "{{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
       output_format: "json"
       image_output: "/tmp/trivy-image-{{saidata.metadata.name}}.json"
 
@@ -24,7 +24,7 @@ actions:
     template: "trivy fs {{scan_options}} {{scan_path}} -o {{output_format}} --output {{fs_output}}"
     variables:
       scan_options: "--severity HIGH,CRITICAL"
-      scan_path: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
+      scan_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
       output_format: "json"
       fs_output: "/tmp/trivy-fs-{{saidata.metadata.name}}.json"
 
@@ -42,7 +42,7 @@ actions:
     template: "trivy config {{scan_options}} {{config_path}} -o {{output_format}} --output {{config_output}}"
     variables:
       scan_options: "--severity HIGH,CRITICAL"
-      config_path: "{{sai_file(saidata, 1, "path") or '/etc'}}"
+      config_path: "{{sai_file(saidata, 1, 'path') or '/etc'}}"
       output_format: "json"
       config_output: "/tmp/trivy-config-{{saidata.metadata.name}}.json"
 
@@ -50,7 +50,7 @@ actions:
     description: "Scan for secrets"
     template: "trivy fs --scanners secret {{scan_path}} -o {{output_format}} --output {{secret_output}}"
     variables:
-      scan_path: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
+      scan_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
       output_format: "json"
       secret_output: "/tmp/trivy-secrets-{{saidata.metadata.name}}.json"
 
@@ -58,7 +58,7 @@ actions:
     description: "Scan for license compliance"
     template: "trivy fs --scanners license {{scan_path}} -o {{output_format}} --output {{license_output}}"
     variables:
-      scan_path: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
+      scan_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
       output_format: "json"
       license_output: "/tmp/trivy-licenses-{{saidata.metadata.name}}.json"
 
@@ -66,5 +66,5 @@ actions:
     description: "Generate SBOM"
     template: "trivy image {{image_name}} --format spdx-json --output {{sbom_output}}"
     variables:
-      image_name: "{{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+      image_name: "{{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
       sbom_output: "/tmp/trivy-sbom-{{saidata.metadata.name}}.json"

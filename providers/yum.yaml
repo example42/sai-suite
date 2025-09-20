@@ -7,6 +7,7 @@ provider:
   description: "Legacy package manager for RPM-based systems"
   type: "package_manager"
   platforms: ["rhel", "centos", "scientific"]
+  executable: "yum"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

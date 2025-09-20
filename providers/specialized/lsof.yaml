@@ -7,6 +7,7 @@ provider:
   description: "Troubleshoot file and network connections"
   type: "troubleshoot"
   platforms: ["linux", "macos"]
+  executable: "lsof"  # Main executable for availability detection
   capabilities: ["files", "network", "processes", "ports", "sockets", "locks", "memory"]
 
 actions:

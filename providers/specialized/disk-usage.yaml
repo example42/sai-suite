@@ -1,0 +1,47 @@
+# Disk Usage Provider - Consolidated disk space analysis
+version: "1.0"
+
+provider:
+  name: "disk-usage"
+  display_name: "Disk Usage Analysis"
+  description: "Comprehensive disk usage analysis using df, du, and ncdu commands"
+  type: "filesystem"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["info", "list", "analyze", "interactive", "export"]
+
+actions:
+  info:
+    description: "Show filesystem space usage summary"
+    template: "df -h {{target_path}}"
+    variables:
+      target_path: "{{sai_file(saidata, 0, 'path') or '/'}}"
+
+  list:
+    description: "Show directory usage breakdown"
+    template: "du -sh {{target_path}}/* | sort -hr"
+    variables:
+      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+
+  analyze:
+    description: "Detailed usage analysis with exclusions"
+    template: "du -h --max-depth={{max_depth}} {{exclude_options}} {{target_path}} | sort -hr"
+    variables:
+      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      max_depth: "2"
+      exclude_options: "--exclude='*.log' --exclude='*.tmp'"
+
+  interactive:
+    description: "Interactive disk usage explorer"
+    template: "{{interactive_tool}} {{interactive_options}} {{target_path}}"
+    variables:
+      interactive_tool: "ncdu"
+      interactive_options: "-x"
+      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    fallback: "du -sh {{target_path}}/* | sort -hr"
+
+  export:
+    description: "Export usage analysis to file"
+    template: "ncdu -o /tmp/disk-usage-{{saidata.metadata.name}}.json {{target_path}}"
+    variables:
+      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    fallback: "du -h {{target_path}} > /tmp/disk-usage-{{saidata.metadata.name}}.txt"

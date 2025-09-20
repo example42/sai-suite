@@ -1,0 +1,103 @@
+# Process Management Provider - Consolidated process operations
+version: "1.0"
+
+provider:
+  name: "ps"
+  display_name: "Process Management"
+  description: "Comprehensive process management using ps, pgrep, pkill, and killall commands"
+  type: "process"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["list", "search", "info", "status", "stop", "restart", "monitor"]
+  executable: "ps"
+
+actions:
+  list:
+    description: "List processes matching criteria"
+    template: "ps {{ps_options}} | grep {{search_pattern}}"
+    variables:
+      ps_options: "aux"
+      search_pattern: "{{saidata.metadata.name}}"
+
+  search:
+    description: "Find processes by name or pattern"
+    template: "pgrep {{pgrep_options}} {{saidata.metadata.name}}"
+    variables:
+      pgrep_options: "-f"
+
+  info:
+    description: "Show detailed process information"
+    template: "ps -p $(pgrep -f {{saidata.metadata.name}}) -o pid,ppid,user,cpu,mem,vsz,rss,tty,stat,start,time,command"
+    fallback: "pgrep -a -f {{saidata.metadata.name}}"
+
+  status:
+    description: "Check process status and count"
+    template: "pgrep -c -f {{saidata.metadata.name}} && echo 'Process count:' $(pgrep -c -f {{saidata.metadata.name}})"
+    validation:
+      command: "pgrep -f {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop processes using appropriate method"
+    steps:
+      - name: "graceful-stop"
+        command: "{{kill_method}} {{kill_signal}} {{saidata.metadata.name}}"
+        ignore_failure: true
+        variables:
+          kill_method: "{{kill_method_preference}}"
+          kill_signal: "{{graceful_signal}}"
+      - name: "wait-termination"
+        command: "sleep {{termination_wait}}"
+      - name: "force-stop"
+        command: "{{kill_method}} -KILL {{saidata.metadata.name}}"
+        condition: "pgrep -f {{saidata.metadata.name}}"
+        ignore_failure: true
+    variables:
+      kill_method_preference: "pkill -f"  # Options: "pkill -f", "killall"
+      graceful_signal: "-TERM"
+      termination_wait: "3"
+    validation:
+      command: "! pgrep -f {{saidata.metadata.name}}"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart processes (stop and start)"
+    steps:
+      - name: "stop-process"
+        command: "pkill -f {{saidata.metadata.name}}"
+      - name: "wait-cleanup"
+        command: "sleep {{restart_delay}}"
+      - name: "start-process"
+        command: "{{start_command}} &"
+    variables:
+      restart_delay: "2"
+      start_command: "{{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
+
+  monitor:
+    description: "Monitor process in real-time"
+    template: "{{monitor_tool}} {{monitor_options}} $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    variables:
+      monitor_tool: "top"  # Options: "top", "htop"
+      monitor_options: "-p"
+
+# Platform-specific configurations
+platform_overrides:
+  windows:
+    actions:
+      search:
+        template: "tasklist /FI \"IMAGENAME eq {{saidata.metadata.name}}*\""
+      stop:
+        template: "taskkill /F /IM {{saidata.metadata.name}}"
+      info:
+        template: "tasklist /FI \"IMAGENAME eq {{saidata.metadata.name}}*\" /FO LIST"
+
+# Method preferences by platform
+method_preferences:
+  linux:
+    kill_method: "pkill -f"
+    monitor_tool: "htop"
+  macos:
+    kill_method: "pkill -f"
+    monitor_tool: "top"
+  windows:
+    kill_method: "taskkill"
+    monitor_tool: "tasklist"

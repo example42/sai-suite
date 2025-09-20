@@ -7,6 +7,7 @@ provider:
   description: "Alternative interface to Gentoo's Portage system"
   type: "package_manager"
   platforms: ["gentoo"]
+  executable: "emerge"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

@@ -1,0 +1,104 @@
+# Network Monitoring Provider - Consolidated network statistics and connections
+version: "1.0"
+
+provider:
+  name: "network-monitor"
+  display_name: "Network Monitor"
+  description: "Network connections, statistics, and socket monitoring using netstat and ss"
+  type: "network"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["connections", "listening", "statistics", "processes", "sockets", "routing"]
+
+actions:
+  connections:
+    description: "Show network connections for service"
+    template: "{{network_tool}} {{connection_options}} | grep {{target_port}}"
+    variables:
+      network_tool: "{{preferred_network_tool}}"
+      connection_options: "{{connection_flags}}"
+      target_port: "{{sai_port(saidata) or saidata.metadata.name}}"
+
+  listening:
+    description: "Show listening ports and services"
+    template: "{{network_tool}} {{listening_options}} | grep {{target_port}}"
+    variables:
+      network_tool: "{{preferred_network_tool}}"
+      listening_options: "{{listening_flags}}"
+      target_port: "{{sai_port(saidata) or saidata.metadata.name}}"
+
+  statistics:
+    description: "Show network statistics and summary"
+    template: "{{network_tool}} {{stats_options}}"
+    variables:
+      network_tool: "{{preferred_network_tool}}"
+      stats_options: "{{stats_flags}}"
+
+  processes:
+    description: "Show processes using network connections"
+    template: "{{network_tool}} {{process_options}} | grep {{saidata.metadata.name}}"
+    variables:
+      network_tool: "{{preferred_network_tool}}"
+      process_options: "{{process_flags}}"
+
+  sockets:
+    description: "Show socket information and states"
+    template: "{{network_tool}} {{socket_options}}"
+    variables:
+      network_tool: "{{preferred_network_tool}}"
+      socket_options: "{{socket_flags}}"
+
+  routing:
+    description: "Show routing table information"
+    template: "{{network_tool}} {{routing_options}}"
+    variables:
+      network_tool: "{{preferred_network_tool}}"
+      routing_options: "{{routing_flags}}"
+
+# Platform-specific configurations
+platform_overrides:
+  linux:
+    variables:
+      preferred_network_tool: "ss"  # Prefer ss on Linux (modern replacement for netstat)
+      connection_flags: "-tan"
+      listening_flags: "-tln"
+      stats_flags: "-s"
+      process_flags: "-tlnp"
+      socket_flags: "-tuln"
+      routing_flags: "-r"
+    fallback:
+      network_tool: "netstat"  # Fallback to netstat if ss not available
+      connection_flags: "-an"
+      listening_flags: "-ln"
+      stats_flags: "-s"
+      process_flags: "-tlnp"
+      socket_flags: "-tuln"
+      routing_flags: "-rn"
+
+  macos:
+    variables:
+      preferred_network_tool: "netstat"
+      connection_flags: "-an"
+      listening_flags: "-ln"
+      stats_flags: "-s"
+      process_flags: "-anv"
+      socket_flags: "-an"
+      routing_flags: "-rn"
+
+  windows:
+    variables:
+      preferred_network_tool: "netstat"
+      connection_flags: "-an"
+      listening_flags: "-an"
+      stats_flags: "-s"
+      process_flags: "-ano"
+      socket_flags: "-an"
+      routing_flags: "-rn"
+
+# Tool detection and fallback logic
+tool_detection:
+  - name: "ss"
+    check_command: "which ss"
+    platforms: ["linux"]
+  - name: "netstat"
+    check_command: "which netstat"
+    platforms: ["linux", "macos", "windows"]

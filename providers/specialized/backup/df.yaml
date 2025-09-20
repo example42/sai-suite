@@ -18,4 +18,4 @@ actions:
     description: "Human readable format"
     template: "df -h {{filesystem_path}}"
     variables:
-      filesystem_path: "{{sai_file(saidata, 0, "path") or '/tmp'}}"
+      filesystem_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"

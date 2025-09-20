@@ -7,6 +7,7 @@ provider:
   description: "The Nix packages collection"
   type: "package_manager"
   platforms: ["nixos", "linux", "macos"]
+  executable: "nix-env"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

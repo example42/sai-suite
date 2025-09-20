@@ -7,6 +7,7 @@ provider:
   description: "Official package manager for Slackware Linux"
   type: "package_manager"
   platforms: ["slackware"]
+  executable: "slackpkg"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

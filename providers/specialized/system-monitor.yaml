@@ -1,0 +1,48 @@
+# System Performance Monitor - Consolidated system monitoring
+version: "1.0"
+
+provider:
+  name: "system-monitor"
+  display_name: "System Performance Monitor"
+  description: "System performance monitoring using iostat, iotop, vmstat, and related tools"
+  type: "system"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["cpu", "memory", "io", "processes", "continuous"]
+
+actions:
+  cpu:
+    description: "CPU usage and statistics"
+    template: "{{cpu_tool}} {{cpu_options}}"
+    variables:
+      cpu_tool: "vmstat"
+      cpu_options: "1 1"
+
+  memory:
+    description: "Memory usage and virtual memory statistics"
+    template: "{{memory_tool}} {{memory_options}}"
+    variables:
+      memory_tool: "vmstat"
+      memory_options: "-s"
+
+  io:
+    description: "I/O statistics and disk performance"
+    template: "{{io_tool}} {{io_options}}"
+    variables:
+      io_tool: "iostat"
+      io_options: "-x 1 1"
+
+  processes:
+    description: "Process-specific I/O monitoring"
+    template: "{{process_tool}} {{process_options}} $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    variables:
+      process_tool: "iotop"
+      process_options: "-a -o -p"
+    fallback: "ps -p $(pgrep -f {{saidata.metadata.name}}) -o pid,cpu,mem,vsz,rss"
+
+  continuous:
+    description: "Continuous system monitoring"
+    template: "{{monitor_tool}} {{monitor_interval}} {{monitor_count}}"
+    variables:
+      monitor_tool: "vmstat"
+      monitor_interval: "2"
+      monitor_count: "10"

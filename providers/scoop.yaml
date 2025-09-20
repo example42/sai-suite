@@ -7,6 +7,7 @@ provider:
   description: "A command-line installer for Windows"
   type: "package_manager"
   platforms: ["windows"]
+  executable: "scoop"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
 
 actions:

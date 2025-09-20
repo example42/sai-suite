@@ -7,6 +7,7 @@ provider:
   description: "Interactive process viewer and system monitor"
   type: "monitor"
   platforms: ["linux", "macos"]
+  executable: "htop"  # Main executable for availability detection
   capabilities: ["status", "list", "info", "search", "stop"]
 
 actions:

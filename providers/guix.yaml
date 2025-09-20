@@ -7,6 +7,7 @@ provider:
   description: "Transactional package manager and system configuration tool"
   type: "package_manager"
   platforms: ["guix", "linux"]
+  executable: "guix"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:

@@ -7,6 +7,7 @@ provider:
   description: "Container platform for building, shipping, and running applications"
   type: "container"
   platforms: ["linux", "macos", "windows"]
+  executable: "docker"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "start", "stop", "restart", "status", "logs", "info", "list"]
 
 actions:
@@ -14,9 +15,9 @@ actions:
     description: "Pull and create Docker container"
     steps:
       - name: "pull-image"
-        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
       - name: "create-container"
-        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or '80'}}:{{sai_port(saidata) or '80'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or '80'}}:{{sai_port(saidata) or '80'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
     timeout: 600
     validation:
       command: "docker ps -a | grep {{container_name}}"
@@ -35,7 +36,7 @@ actions:
         command: "docker rm {{container_name}}"
         ignore_failure: true
       - name: "remove-image"
-        command: "docker rmi {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+        command: "docker rmi {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
         ignore_failure: true
     variables:
       container_name: "{{sai_package(saidata, 'docker')}}-container"
@@ -48,9 +49,9 @@ actions:
       - name: "remove-container"
         command: "docker rm {{container_name}}"
       - name: "pull-new-image"
-        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+        command: "docker pull {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
       - name: "create-new-container"
-        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or '80'}}:{{sai_port(saidata) or '80'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+        command: "docker create --name {{container_name}} -p {{sai_port(saidata) or '80'}}:{{sai_port(saidata) or '80'}} {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
       - name: "start-container"
         command: "docker start {{container_name}}"
     timeout: 600
@@ -96,7 +97,7 @@ actions:
 
   info:
     description: "Show Docker image information"
-    template: "docker inspect {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, "version") or 'latest'}}"
+    template: "docker inspect {{sai_package(saidata) or saidata.metadata.name}}:{{sai_package(saidata, 0, 'version') or 'latest'}}"
 
   list:
     description: "List Docker containers"

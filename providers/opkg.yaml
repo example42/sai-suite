@@ -7,6 +7,7 @@ provider:
   description: "Lightweight package manager for OpenWrt and embedded systems"
   type: "package_manager"
   platforms: ["openwrt", "embedded"]
+  executable: "opkg"  # Main executable for availability detection
   capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
 
 actions:
