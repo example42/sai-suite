@@ -24,10 +24,20 @@ from .commands import validate, generate, config, cache, test, update
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[Path], llm_provider: Optional[str], 
         verbose: bool, dry_run: bool):
-    """saigen - AI-powered saidata generation tool.
+    """saigen - AI-powered saidata generation tool for schema 0.3.
     
-    Generate, validate, and manage software metadata (saidata) files using AI
-    and repository data. Supports multiple LLM providers and package repositories.
+    Generate, validate, and manage software metadata (saidata) files using the
+    latest 0.3 schema format. Features include:
+    
+    • Multiple installation methods: sources, binaries, scripts
+    • URL templating with {{version}}, {{platform}}, {{architecture}}
+    • Enhanced security metadata and checksum validation
+    • Provider-specific configurations and compatibility matrices
+    • AI-powered generation with repository data integration
+    • Comprehensive validation with automatic error recovery
+    
+    Supports multiple LLM providers (OpenAI, Anthropic, Ollama) and package
+    repositories (apt, brew, npm, pypi, cargo, winget, and more).
     """
     ctx.ensure_object(dict)
     ctx.obj['config_path'] = config

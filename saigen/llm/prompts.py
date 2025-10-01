@@ -18,9 +18,9 @@ def load_saidata_schema() -> str:
         JSON schema as formatted string, or fallback text if schema not found
     """
     try:
-        # Try to find the schema file relative to this module
+        # Try to find the 0.3 schema file relative to this module
         current_dir = Path(__file__).parent
-        schema_path = current_dir.parent.parent / "schemas" / "saidata-0.2-schema.json"
+        schema_path = current_dir.parent.parent / "schemas" / "saidata-0.3-schema.json"
         
         if schema_path.exists():
             with open(schema_path, 'r', encoding='utf-8') as f:
@@ -463,81 +463,160 @@ Incorporate these user preferences and hints into the generated saidata.""",
         ),
         PromptSection(
             name="schema_requirements",
-            template="""SAIDATA SCHEMA REQUIREMENTS:
+            template="""SAIDATA SCHEMA REQUIREMENTS (VERSION 0.3):
 
-The saidata YAML must follow this exact JSON schema structure:
+The saidata YAML must follow this exact JSON schema structure for version 0.3:
 
 **Root Level (Required):**
-- version: string (semantic version like "0.2")
+- version: string (must be "0.3")
 - metadata: object (required)
+- packages: array of package objects (optional)
+- services: array of service objects (optional)
+- files: array of file objects (optional)
+- directories: array of directory objects (optional)
+- commands: array of command objects (optional)
+- ports: array of port objects (optional)
+- containers: array of container objects (optional)
+- sources: array of source build objects (NEW in 0.3)
+- binaries: array of binary download objects (NEW in 0.3)
+- scripts: array of script installation objects (NEW in 0.3)
 - providers: object (provider configurations)
+- compatibility: object (compatibility matrix)
 
-**Metadata Object (Required):**
+**Enhanced Metadata Object (Required):**
 - name: string (required)
+- display_name: string (optional)
 - description: string (optional but recommended)
-- category: string (optional but recommended)
 - version: string (optional)
-- license: string (optional)
+- category: string (optional but recommended)
+- subcategory: string (optional)
 - tags: array of strings (optional)
+- license: string (optional)
+- language: string (optional)
+- maintainer: string (optional)
+- urls: object with website, documentation, source, issues, support, download, changelog, license, sbom, icon (optional)
+- security: object with cve_exceptions, security_contact, vulnerability_disclosure, sbom_url, signing_key (NEW in 0.3)
 
-**Providers Object:**
-Each provider (apt, brew, winget, etc.) can contain:
-- packages: array of package objects
-- services: array of service objects  
-- files: array of file objects
-- directories: array of directory objects
-- commands: array of command objects
-- ports: array of port objects
+**NEW: Source Build Objects:**
+- name: string (required) - logical name like "main", "stable"
+- url: string (required) - supports {{version}}, {{platform}}, {{architecture}} templating
+- build_system: string (required) - autotools, cmake, make, meson, ninja, custom
+- version: string (optional)
+- configure_args: array of strings (optional)
+- build_args: array of strings (optional)
+- install_args: array of strings (optional)
+- prerequisites: array of strings (optional)
+- environment: object (optional)
+- checksum: string (optional) - format "algorithm:hash"
+- custom_commands: object (optional)
 
-**Package Object:**
-- name: string (required)
+**NEW: Binary Download Objects:**
+- name: string (required) - logical name like "main", "stable"
+- url: string (required) - supports {{version}}, {{platform}}, {{architecture}} templating
+- version: string (optional)
+- architecture: string (optional) - amd64, arm64, 386
+- platform: string (optional) - linux, darwin, windows
+- checksum: string (optional) - format "algorithm:hash"
+- install_path: string (optional) - defaults to /usr/local/bin
+- executable: string (optional)
+- archive: object (optional) - format, strip_prefix, extract_path
+- permissions: string (optional) - octal format like "0755"
+- custom_commands: object (optional)
+
+**NEW: Script Installation Objects:**
+- name: string (required) - logical name like "official", "convenience"
+- url: string (required) - should use HTTPS for security
+- version: string (optional)
+- interpreter: string (optional) - bash, sh, python, python3
+- checksum: string (required for security) - format "algorithm:hash"
+- arguments: array of strings (optional)
+- environment: object (optional)
+- working_dir: string (optional)
+- timeout: integer (optional) - 1-3600 seconds
+- custom_commands: object (optional)
+
+**Enhanced Package Object:**
+- name: string (required) - logical name
+- package_name: string (required) - actual package name
 - version: string (optional)
 - alternatives: array of strings (optional)
+- install_options: string (optional)
+- repository: string (optional)
+- checksum: string (optional)
+- signature: string (optional)
+- download_url: string (optional)
 
-**Service Object:**
-- name: string (required)
-- service_name: string (optional)
-- type: string (systemd, init, launchd, windows_service, docker, kubernetes)
-- enabled: boolean (optional)
-
-**Port Object:**
-- port: integer (required)
-- protocol: string (tcp, udp, sctp)
-- service: string (optional)
-- description: string (optional)
+**Enhanced Provider Configuration:**
+Each provider can now contain all resource types including:
+- prerequisites: array of strings (for source builds)
+- build_commands: array of strings (for source builds)
+- package_sources: array of package source objects
+- repositories: array of repository objects
+- sources: array of source objects (provider-specific overrides)
+- binaries: array of binary objects (provider-specific overrides)
+- scripts: array of script objects (provider-specific overrides)
 
 **CRITICAL DATA TYPE REQUIREMENTS:**
-- packages, services, files, directories, commands, ports must be ARRAYS, not objects
-- Each item in these arrays must be an OBJECT with the required fields
-- version must be a STRING, not a number
-- port numbers must be INTEGERS, not strings
-- enabled must be a BOOLEAN (true/false), not a string
+- version must be "0.3" (string)
+- All resource arrays (packages, services, sources, binaries, scripts, etc.) must be ARRAYS of OBJECTS
+- checksum must follow format "algorithm:hash" (e.g., "sha256:abc123...")
+- timeout must be integer between 1 and 3600
+- permissions must be octal string (e.g., "0755")
+- port numbers must be INTEGERS
+- enabled must be BOOLEAN (true/false)
 
-**EXAMPLE STRUCTURE:**
+**EXAMPLE 0.3 STRUCTURE:**
 ```yaml
-version: "0.2"
+version: "0.3"
 metadata:
   name: "example-software"
   description: "Example software description"
   category: "web-server"
+  urls:
+    website: "https://example.com"
+    documentation: "https://docs.example.com"
+  security:
+    security_contact: "security@example.com"
+sources:
+  - name: "main"
+    url: "https://example.com/software-{{version}}.tar.gz"
+    build_system: "autotools"
+    configure_args: ["--enable-ssl", "--with-modules"]
+    prerequisites: ["build-essential", "libssl-dev"]
+    checksum: "sha256:abc123..."
+binaries:
+  - name: "main"
+    url: "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip"
+    install_path: "/usr/local/bin"
+    checksum: "sha256:def456..."
+scripts:
+  - name: "official"
+    url: "https://get.example.com/install.sh"
+    interpreter: "bash"
+    checksum: "sha256:ghi789..."
+    timeout: 600
 providers:
   apt:
-
+    packages:
+      - name: "main"
+        package_name: "example-software"
 ```
 
-Generate complete, valid YAML following this structure exactly.""",
+Generate complete, valid YAML following this 0.3 structure exactly.""",
             required=True
         ),
         PromptSection(
             name="output_instruction",
             template="""OUTPUT INSTRUCTIONS:
 1. Generate ONLY the YAML content - no explanations or markdown formatting
-2. Start directly with the YAML (version: "0.2")
+2. Start directly with the YAML (version: "0.3")
 3. Ensure all YAML syntax is correct and properly indented
-4. Include comprehensive provider configurations
+4. Include comprehensive provider configurations with 0.3 features
 5. Use accurate package names from repository data
 6. Include relevant metadata, services, and configuration details
-7. Ensure the output is production-ready and follows best practices
+7. Include sources, binaries, and/or scripts sections when appropriate
+8. Include enhanced metadata with security information when relevant
+9. Ensure the output is production-ready and follows 0.3 schema best practices
 
 Generate the saidata YAML now:""",
             required=True
@@ -675,114 +754,177 @@ This is the complete JSON schema that your YAML output must validate against. Pa
         ),
         PromptSection(
             name="schema_requirements",
-            template="""SAIDATA SCHEMA REQUIREMENTS:
+            template="""SAIDATA SCHEMA REQUIREMENTS (VERSION 0.3):
 
-The saidata YAML must follow this exact JSON schema structure:
+The saidata YAML must follow this exact JSON schema structure for version 0.3:
 
 **Root Level (Required):**
-- version: string (semantic version like "0.2")
+- version: string (must be "0.3")
 - metadata: object (required)
+- packages: array of package objects (optional)
+- services: array of service objects (optional)
+- files: array of file objects (optional)
+- directories: array of directory objects (optional)
+- commands: array of command objects (optional)
+- ports: array of port objects (optional)
+- containers: array of container objects (optional)
+- sources: array of source build objects (NEW in 0.3)
+- binaries: array of binary download objects (NEW in 0.3)
+- scripts: array of script installation objects (NEW in 0.3)
 - providers: object (provider configurations)
+- compatibility: object (compatibility matrix)
 
-**Metadata Object (Required):**
+**Enhanced Metadata Object (Required):**
 - name: string (required)
+- display_name: string (optional)
 - description: string (optional but recommended)
-- category: string (optional but recommended)
 - version: string (optional)
-- license: string (optional)
+- category: string (optional but recommended)
+- subcategory: string (optional)
 - tags: array of strings (optional)
+- license: string (optional)
+- language: string (optional)
+- maintainer: string (optional)
+- urls: object with website, documentation, source, issues, support, download, changelog, license, sbom, icon (optional)
+- security: object with cve_exceptions, security_contact, vulnerability_disclosure, sbom_url, signing_key (NEW in 0.3)
 
-**Providers Object:**
-Each provider (apt, brew, winget, etc.) can contain:
-- packages: array of package objects
-- services: array of service objects  
-- files: array of file objects
-- directories: array of directory objects
-- commands: array of command objects
-- ports: array of port objects
+**NEW: Source Build Objects:**
+- name: string (required) - logical name like "main", "stable"
+- url: string (required) - supports {{version}}, {{platform}}, {{architecture}} templating
+- build_system: string (required) - autotools, cmake, make, meson, ninja, custom
+- version: string (optional)
+- configure_args: array of strings (optional)
+- build_args: array of strings (optional)
+- install_args: array of strings (optional)
+- prerequisites: array of strings (optional)
+- environment: object (optional)
+- checksum: string (optional) - format "algorithm:hash"
+- custom_commands: object (optional)
 
-**Package Object:**
-- name: string (required)
+**NEW: Binary Download Objects:**
+- name: string (required) - logical name like "main", "stable"
+- url: string (required) - supports {{version}}, {{platform}}, {{architecture}} templating
+- version: string (optional)
+- architecture: string (optional) - amd64, arm64, 386
+- platform: string (optional) - linux, darwin, windows
+- checksum: string (optional) - format "algorithm:hash"
+- install_path: string (optional) - defaults to /usr/local/bin
+- executable: string (optional)
+- archive: object (optional) - format, strip_prefix, extract_path
+- permissions: string (optional) - octal format like "0755"
+- custom_commands: object (optional)
+
+**NEW: Script Installation Objects:**
+- name: string (required) - logical name like "official", "convenience"
+- url: string (required) - should use HTTPS for security
+- version: string (optional)
+- interpreter: string (optional) - bash, sh, python, python3
+- checksum: string (required for security) - format "algorithm:hash"
+- arguments: array of strings (optional)
+- environment: object (optional)
+- working_dir: string (optional)
+- timeout: integer (optional) - 1-3600 seconds
+- custom_commands: object (optional)
+
+**Enhanced Package Object:**
+- name: string (required) - logical name
+- package_name: string (required) - actual package name
 - version: string (optional)
 - alternatives: array of strings (optional)
+- install_options: string (optional)
+- repository: string (optional)
+- checksum: string (optional)
+- signature: string (optional)
+- download_url: string (optional)
 
-**Service Object:**
-- name: string (required)
-- service_name: string (optional)
-- type: string (systemd, init, launchd, windows_service, docker, kubernetes)
-- enabled: boolean (optional)
-
-**Port Object:**
-- port: integer (required)
-- protocol: string (tcp, udp, sctp)
-- service: string (optional)
-- description: string (optional)
+**Enhanced Provider Configuration:**
+Each provider can now contain all resource types including:
+- prerequisites: array of strings (for source builds)
+- build_commands: array of strings (for source builds)
+- package_sources: array of package source objects
+- repositories: array of repository objects
+- sources: array of source objects (provider-specific overrides)
+- binaries: array of binary objects (provider-specific overrides)
+- scripts: array of script objects (provider-specific overrides)
 
 **CRITICAL DATA TYPE REQUIREMENTS:**
-- packages, services, files, directories, commands, ports must be ARRAYS, not objects or strings
-- Each item in these arrays must be an OBJECT with the required fields
-- version must be a STRING, not a number
-- port numbers must be INTEGERS, not strings
-- enabled must be a BOOLEAN (true/false), not a string
-- DO NOT use shorthand syntax like "packages: [redis-server]" - use full object syntax
+- version must be "0.3" (string, not "0.2")
+- All resource arrays (packages, services, sources, binaries, scripts, etc.) must be ARRAYS of OBJECTS
+- checksum must follow format "algorithm:hash" (e.g., "sha256:abc123...")
+- timeout must be integer between 1 and 3600
+- permissions must be octal string (e.g., "0755")
+- port numbers must be INTEGERS
+- enabled must be BOOLEAN (true/false)
+- DO NOT use shorthand syntax - use full object syntax
 
-**CORRECT EXAMPLE:**
+**CORRECT 0.3 EXAMPLE:**
 ```yaml
-version: "0.2"
+version: "0.3"
 metadata:
   name: "example-software"
   description: "Example software description"
   category: "web-server"
+  urls:
+    website: "https://example.com"
+  security:
+    security_contact: "security@example.com"
+sources:
+  - name: "main"
+    url: "https://example.com/software-{{version}}.tar.gz"
+    build_system: "autotools"
+    checksum: "sha256:abc123..."
+binaries:
+  - name: "main"
+    url: "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip"
+    install_path: "/usr/local/bin"
+    checksum: "sha256:def456..."
+scripts:
+  - name: "official"
+    url: "https://get.example.com/install.sh"
+    interpreter: "bash"
+    checksum: "sha256:ghi789..."
 providers:
   apt:
     packages:
-      - name: "example-package"
-        version: "latest"
-    services:
-      - name: "example-service"
-        type: "systemd"
-        enabled: true
-    ports:
-      - port: 8080
-        protocol: "tcp"
-        description: "HTTP port"
+      - name: "main"
+        package_name: "example-software"
 ```
 
 **INCORRECT EXAMPLES TO AVOID:**
 ```yaml
-# WRONG - packages as strings instead of objects
+# WRONG - version 0.2 instead of 0.3
+version: "0.2"  # WRONG - must be "0.3"
+
+# WRONG - missing package_name in package objects
 providers:
   apt:
     packages:
-      - redis-server  # WRONG - should be object with name field
+      - name: "software"  # WRONG - missing package_name field
 
-# WRONG - services as object instead of array
-providers:
-  apt:
-    services:
-      redis:  # WRONG - should be array of service objects
-        enabled: true
+# WRONG - missing required fields in new sections
+sources:
+  - url: "https://example.com/source.tar.gz"  # WRONG - missing name and build_system
 
-# WRONG - ports as strings instead of integers
-providers:
-  apt:
-    ports:
-      - port: "6379"  # WRONG - should be integer 6379
+# WRONG - invalid checksum format
+sources:
+  - name: "main"
+    checksum: "abc123"  # WRONG - should be "sha256:abc123..."
 ```
 
-Generate complete, valid YAML following this structure exactly and fixing all validation errors.""",
+Generate complete, valid YAML following this 0.3 structure exactly and fixing all validation errors.""",
             required=True
         ),
         PromptSection(
             name="output_instruction",
             template="""OUTPUT INSTRUCTIONS:
 1. Generate ONLY the corrected YAML content - no explanations or markdown formatting
-2. Start directly with the YAML (version: "0.2")
+2. Start directly with the YAML (version: "0.3")
 3. Fix ALL validation errors from the previous attempt
 4. Ensure all YAML syntax is correct and properly indented
-5. Include all required fields with correct data types
+5. Include all required fields with correct data types for 0.3 schema
 6. Use accurate package names from repository data
-7. Ensure the output passes schema validation
+7. Include sources, binaries, and/or scripts sections when appropriate
+8. Ensure the output passes 0.3 schema validation
 
 Generate the corrected saidata YAML now:""",
             required=True

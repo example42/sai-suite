@@ -1,0 +1,272 @@
+version: "0.3"
+
+metadata:
+  name: "nginx"
+  display_name: "NGINX"
+  description: "High-performance HTTP server and reverse proxy"
+  version: "1.24.0"
+  category: "web-server"
+  subcategory: "http-server"
+  tags: ["nginx", "web-server", "reverse-proxy", "load-balancer", "http"]
+  license: "BSD-2-Clause"
+  language: "C"
+  maintainer: "NGINX Inc."
+  urls:
+    website: "https://nginx.org"
+    documentation: "https://nginx.org/en/docs"
+    source: "https://github.com/nginx/nginx"
+    issues: "https://trac.nginx.org/nginx"
+    support: "https://nginx.org/en/support.html"
+    download: "https://nginx.org/en/download.html"
+    changelog: "https://nginx.org/en/CHANGES"
+    license: "https://nginx.org/LICENSE"
+    sbom: "https://nginx.org/en/security_advisories.html"
+    icon: "https://nginx.org/favicon.ico"
+  security:
+    security_contact: "security-alert@nginx.org"
+    vulnerability_disclosure: "https://nginx.org/en/security_advisories.html"
+    cve_exceptions: ["CVE-2021-23017"]
+
+# Source compilation - primary method for custom builds
+sources:
+  - name: "main"
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    version: "1.24.0"
+    build_system: "autotools"
+    build_dir: "/tmp/sai-build-nginx"
+    source_dir: "nginx-1.24.0"
+    install_prefix: "/usr/local/nginx"
+    configure_args:
+      - "--with-http_ssl_module"
+      - "--with-http_v2_module"
+      - "--with-http_realip_module"
+      - "--with-http_gzip_static_module"
+      - "--with-pcre"
+      - "--with-file-aio"
+      - "--with-http_secure_link_module"
+    build_args:
+      - "-j$(nproc)"
+    install_args:
+      - "DESTDIR=/tmp/nginx-staging"
+    prerequisites:
+      - "build-essential"
+      - "libssl-dev"
+      - "libpcre3-dev"
+      - "zlib1g-dev"
+      - "libgd-dev"
+    environment:
+      CC: "gcc"
+      CFLAGS: "-O2 -g -pipe"
+      LDFLAGS: "-Wl,-rpath,/usr/local/nginx/lib"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+    custom_commands:
+      configure: "./configure --prefix=/usr/local/nginx --with-http_ssl_module --with-http_v2_module"
+      validation: "/usr/local/nginx/sbin/nginx -t"
+      version: "/usr/local/nginx/sbin/nginx -v 2>&1 | grep -o 'nginx/[0-9.]*'"
+
+  - name: "minimal"
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    version: "1.24.0"
+    build_system: "autotools"
+    configure_args:
+      - "--without-http_rewrite_module"
+      - "--without-http_gzip_module"
+    prerequisites:
+      - "build-essential"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+
+  - name: "custom"
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    version: "1.24.0"
+    build_system: "custom"
+    prerequisites:
+      - "build-essential"
+      - "libssl-dev"
+      - "libpcre3-dev"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+    custom_commands:
+      configure: "auto/configure --prefix=/usr/local/nginx --with-http_ssl_module"
+      build: "make -j$(nproc)"
+      install: "make install"
+
+# Package installations for convenience
+packages:
+  - name: "nginx"
+    package_name: "nginx"
+    version: "1.24.0"
+    alternatives: ["nginx-full", "nginx-light", "nginx-extras"]
+
+services:
+  - name: "nginx"
+    service_name: "nginx"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/nginx/nginx.conf"]
+
+files:
+  - name: "main-config"
+    path: "/etc/nginx/nginx.conf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "access-log"
+    path: "/var/log/nginx/access.log"
+    type: "log"
+    owner: "www-data"
+    group: "adm"
+    mode: "0644"
+  - name: "error-log"
+    path: "/var/log/nginx/error.log"
+    type: "log"
+    owner: "www-data"
+    group: "adm"
+    mode: "0644"
+
+directories:
+  - name: "config"
+    path: "/etc/nginx"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "html"
+    path: "/var/www/html"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0755"
+  - name: "log"
+    path: "/var/log/nginx"
+    owner: "www-data"
+    group: "adm"
+    mode: "0755"
+
+commands:
+  - name: "nginx"
+    path: "/usr/sbin/nginx"
+    shell_completion: false
+    man_page: "nginx(8)"
+
+ports:
+  - port: 80
+    protocol: "tcp"
+    service: "http"
+    description: "HTTP web server"
+  - port: 443
+    protocol: "tcp"
+    service: "https"
+    description: "HTTPS web server"
+
+providers:
+  # Source compilation with provider-specific prerequisites
+  source:
+    prerequisites:
+      - "build-essential"
+      - "libssl-dev"
+      - "libpcre3-dev"
+      - "zlib1g-dev"
+    build_commands:
+      - "wget https://nginx.org/download/nginx-{{version}}.tar.gz"
+      - "tar -xzf nginx-{{version}}.tar.gz"
+      - "cd nginx-{{version}}"
+      - "./configure --prefix=/usr/local/nginx --with-http_ssl_module"
+      - "make -j$(nproc)"
+      - "make install"
+    sources:
+      - name: "main"
+        configure_args:
+          - "--prefix=/usr/local/nginx"
+          - "--with-http_ssl_module"
+          - "--with-http_v2_module"
+          - "--with-http_realip_module"
+
+  # Package manager installations
+  apt:
+    repositories:
+      - name: "nginx-official"
+        url: "https://nginx.org/packages/ubuntu"
+        key: "https://nginx.org/keys/nginx_signing.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nginx"
+            package_name: "nginx"
+            version: "1.24.0-1~jammy"
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "nginx"
+            package_name: "nginx-full"
+            alternatives: ["nginx-light", "nginx-extras"]
+        notes: "Ubuntu maintained packages with additional modules"
+
+  dnf:
+    repositories:
+      - name: "nginx-official"
+        url: "https://nginx.org/packages/centos/8"
+        key: "https://nginx.org/keys/nginx_signing.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nginx"
+            package_name: "nginx"
+            version: "1.24.0-1.el8.ngx"
+
+  brew:
+    packages:
+      - name: "nginx"
+        package_name: "nginx"
+        version: "1.24.0"
+
+  # Container-based installation
+  docker:
+    containers:
+      - name: "nginx"
+        image: "nginx"
+        tag: "1.24.0"
+        registry: "docker.io"
+        ports: ["80:80", "443:443"]
+        volumes: ["/etc/nginx:/etc/nginx", "/var/www/html:/usr/share/nginx/html"]
+        labels:
+          purpose: "web-server"
+
+compatibility:
+  matrix:
+    - provider: "source"
+      platform: ["linux"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Recommended for custom builds and performance optimization"
+    
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64", "i386"]
+      supported: true
+      recommended: true
+      tested: true
+    
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "brew"
+      platform: "darwin"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "docker"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+
+  versions:
+    latest: "1.24.0"
+    minimum: "1.18.0"
+    latest_lts: "1.22.1"
+    latest_minimum: "1.24.0"

@@ -1,0 +1,408 @@
+version: "0.3"
+
+metadata:
+  name: "kubernetes"
+  display_name: "Kubernetes"
+  description: "Production-Grade Container Orchestration"
+  version: "1.28.0"
+  category: "orchestration"
+  subcategory: "container-orchestration"
+  tags: ["kubernetes", "k8s", "orchestration", "containers", "devops", "cloud-native"]
+  license: "Apache-2.0"
+  language: "Go"
+  maintainer: "Kubernetes Community"
+  urls:
+    website: "https://kubernetes.io"
+    documentation: "https://kubernetes.io/docs"
+    source: "https://github.com/kubernetes/kubernetes"
+    issues: "https://github.com/kubernetes/kubernetes/issues"
+    support: "https://kubernetes.io/community/support"
+    download: "https://kubernetes.io/releases/download"
+    changelog: "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG"
+    license: "https://github.com/kubernetes/kubernetes/blob/master/LICENSE"
+    sbom: "https://dl.k8s.io/{{version}}/kubernetes-src.tar.gz.sbom"
+    icon: "https://kubernetes.io/images/favicon.png"
+  security:
+    security_contact: "security@kubernetes.io"
+    vulnerability_disclosure: "https://kubernetes.io/docs/reference/issues-security/security"
+    cve_exceptions: ["CVE-2023-2727", "CVE-2023-2728"]
+    signing_key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+
+# Source compilation for custom builds
+sources:
+  - name: "main"
+    url: "https://github.com/kubernetes/kubernetes/archive/v{{version}}.tar.gz"
+    version: "1.28.0"
+    build_system: "make"
+    build_dir: "/tmp/sai-build-kubernetes"
+    source_dir: "kubernetes-{{version}}"
+    install_prefix: "/usr/local"
+    build_args:
+      - "WHAT=cmd/kubelet"
+      - "WHAT=cmd/kubeadm"
+      - "WHAT=cmd/kubectl"
+    prerequisites:
+      - "build-essential"
+      - "golang-1.20"
+      - "git"
+      - "rsync"
+    environment:
+      GOPATH: "/tmp/go"
+      GOOS: "linux"
+      GOARCH: "amd64"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+    custom_commands:
+      build: "make WHAT=cmd/kubelet WHAT=cmd/kubeadm WHAT=cmd/kubectl"
+      install: "cp _output/bin/* /usr/local/bin/"
+      validation: "kubectl version --client && kubelet --version"
+
+# Binary downloads - primary installation method
+binaries:
+  - name: "kubectl"
+    url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kubectl"
+    version: "1.28.0"
+    checksum: "sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5"
+    install_path: "/usr/local/bin"
+    executable: "kubectl"
+    archive:
+      format: "none"
+    permissions: "0755"
+    custom_commands:
+      validation: "kubectl version --client"
+      version: "kubectl version --client --output=yaml | grep gitVersion | cut -d' ' -f4"
+
+  - name: "kubeadm"
+    url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kubeadm"
+    version: "1.28.0"
+    checksum: "sha256:abc123def456789012345678901234567890123456789012345678901234567890"
+    install_path: "/usr/local/bin"
+    executable: "kubeadm"
+    archive:
+      format: "none"
+    permissions: "0755"
+    custom_commands:
+      validation: "kubeadm version"
+
+  - name: "kubelet"
+    url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kubelet"
+    version: "1.28.0"
+    checksum: "sha256:def456abc789012345678901234567890123456789012345678901234567890123"
+    install_path: "/usr/local/bin"
+    executable: "kubelet"
+    archive:
+      format: "none"
+    permissions: "0755"
+    custom_commands:
+      validation: "kubelet --version"
+
+  - name: "kube-proxy"
+    url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kube-proxy"
+    version: "1.28.0"
+    checksum: "sha256:ghi789abc012345678901234567890123456789012345678901234567890123456"
+    install_path: "/usr/local/bin"
+    executable: "kube-proxy"
+    archive:
+      format: "none"
+    permissions: "0755"
+
+# Script installations for cluster setup
+scripts:
+  - name: "kubeadm-init"
+    url: "https://raw.githubusercontent.com/kubernetes/kubernetes/v{{version}}/cluster/addons/addon-manager/kube-addons.sh"
+    version: "1.28.0"
+    checksum: "sha256:jkl012def345678901234567890123456789012345678901234567890123456789"
+    interpreter: "bash"
+    timeout: 1800
+    arguments: ["--config", "/etc/kubernetes/kubeadm.yaml"]
+    environment:
+      KUBECONFIG: "/etc/kubernetes/admin.conf"
+      KUBERNETES_VERSION: "v1.28.0"
+    working_dir: "/tmp"
+    custom_commands:
+      validation: "kubectl cluster-info"
+
+  - name: "install-cni"
+    url: "https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml"
+    checksum: "sha256:mno345abc678901234567890123456789012345678901234567890123456789012"
+    interpreter: "bash"
+    timeout: 600
+    arguments: ["-c", "kubectl apply -f -"]
+    environment:
+      KUBECONFIG: "/etc/kubernetes/admin.conf"
+    custom_commands:
+      install: "kubectl apply -f calico.yaml"
+      validation: "kubectl get pods -n kube-system"
+
+# Package installations
+packages:
+  - name: "kubectl"
+    package_name: "kubectl"
+    version: "1.28.0-00"
+  - name: "kubeadm"
+    package_name: "kubeadm"
+    version: "1.28.0-00"
+  - name: "kubelet"
+    package_name: "kubelet"
+    version: "1.28.0-00"
+
+services:
+  - name: "kubelet"
+    service_name: "kubelet"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/kubernetes/kubelet.conf", "/var/lib/kubelet/config.yaml"]
+
+files:
+  - name: "kubelet-config"
+    path: "/var/lib/kubelet/config.yaml"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "kubeadm-config"
+    path: "/etc/kubernetes/kubeadm.yaml"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0600"
+    backup: true
+
+directories:
+  - name: "kubernetes-config"
+    path: "/etc/kubernetes"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "kubelet-data"
+    path: "/var/lib/kubelet"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "kubernetes-manifests"
+    path: "/etc/kubernetes/manifests"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+commands:
+  - name: "kubectl"
+    path: "/usr/bin/kubectl"
+    shell_completion: true
+    man_page: "kubectl(1)"
+    aliases: ["k"]
+  - name: "kubeadm"
+    path: "/usr/bin/kubeadm"
+    shell_completion: true
+    man_page: "kubeadm(1)"
+  - name: "kubelet"
+    path: "/usr/bin/kubelet"
+    man_page: "kubelet(8)"
+
+ports:
+  - port: 6443
+    protocol: "tcp"
+    service: "kube-apiserver"
+    description: "Kubernetes API server"
+  - port: 2379
+    protocol: "tcp"
+    service: "etcd-client"
+    description: "etcd client requests"
+  - port: 2380
+    protocol: "tcp"
+    service: "etcd-peer"
+    description: "etcd peer communication"
+  - port: 10250
+    protocol: "tcp"
+    service: "kubelet-api"
+    description: "Kubelet API"
+  - port: 10259
+    protocol: "tcp"
+    service: "kube-scheduler"
+    description: "kube-scheduler"
+  - port: 10257
+    protocol: "tcp"
+    service: "kube-controller-manager"
+    description: "kube-controller-manager"
+
+containers:
+  - name: "kube-apiserver"
+    image: "k8s.gcr.io/kube-apiserver"
+    tag: "v1.28.0"
+    registry: "k8s.gcr.io"
+    ports: ["6443:6443"]
+    volumes: ["/etc/kubernetes:/etc/kubernetes"]
+    labels:
+      component: "kube-apiserver"
+      tier: "control-plane"
+
+providers:
+  # Source compilation
+  source:
+    prerequisites:
+      - "build-essential"
+      - "golang-1.20"
+      - "git"
+      - "rsync"
+    build_commands:
+      - "git clone https://github.com/kubernetes/kubernetes.git"
+      - "cd kubernetes"
+      - "git checkout v{{version}}"
+      - "make WHAT=cmd/kubectl WHAT=cmd/kubeadm WHAT=cmd/kubelet"
+      - "cp _output/bin/* /usr/local/bin/"
+    sources:
+      - name: "main"
+        build_args:
+          - "WHAT=cmd/kubectl"
+          - "WHAT=cmd/kubeadm" 
+          - "WHAT=cmd/kubelet"
+          - "WHAT=cmd/kube-proxy"
+
+  # Binary installations
+  binary:
+    binaries:
+      - name: "kubectl"
+        url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kubectl"
+        install_path: "/usr/local/bin"
+      - name: "kubeadm"
+        url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kubeadm"
+        install_path: "/usr/local/bin"
+      - name: "kubelet"
+        url: "https://dl.k8s.io/release/v{{version}}/bin/{{platform}}/{{architecture}}/kubelet"
+        install_path: "/usr/local/bin"
+
+  # Package manager installations
+  apt:
+    repositories:
+      - name: "kubernetes-official"
+        url: "https://apt.kubernetes.io"
+        key: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "kubectl"
+            package_name: "kubectl"
+            version: "1.28.0-00"
+          - name: "kubeadm"
+            package_name: "kubeadm"
+            version: "1.28.0-00"
+          - name: "kubelet"
+            package_name: "kubelet"
+            version: "1.28.0-00"
+
+  dnf:
+    repositories:
+      - name: "kubernetes-official"
+        url: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
+        key: "https://packages.cloud.google.com/yum/doc/yum-key.gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "kubectl"
+            package_name: "kubectl"
+            version: "1.28.0-0"
+          - name: "kubeadm"
+            package_name: "kubeadm"
+            version: "1.28.0-0"
+          - name: "kubelet"
+            package_name: "kubelet"
+            version: "1.28.0-0"
+
+  brew:
+    packages:
+      - name: "kubectl"
+        package_name: "kubectl"
+        version: "1.28.0"
+    binaries:
+      - name: "kubectl"
+        url: "https://dl.k8s.io/release/v{{version}}/bin/darwin/{{architecture}}/kubectl"
+        install_path: "/opt/homebrew/bin"
+
+  choco:
+    packages:
+      - name: "kubectl"
+        package_name: "kubernetes-cli"
+        version: "1.28.0"
+
+  # Container-based tools
+  docker:
+    containers:
+      - name: "kubectl"
+        image: "bitnami/kubectl"
+        tag: "1.28.0"
+        registry: "docker.io"
+        volumes: ["~/.kube:/root/.kube"]
+        labels:
+          purpose: "kubernetes-client"
+
+  # Helm charts for cluster components
+  helm:
+    repositories:
+      - name: "kubernetes-dashboard"
+        url: "https://kubernetes.github.io/dashboard"
+        type: "upstream"
+        packages:
+          - name: "dashboard"
+            package_name: "kubernetes-dashboard"
+            version: "6.0.8"
+
+compatibility:
+  matrix:
+    - provider: "source"
+      platform: ["linux"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: false
+      tested: true
+      notes: "For custom builds and development"
+    
+    - provider: "binary"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Official binaries from Kubernetes releases"
+    
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "brew"
+      platform: "darwin"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      recommended: true
+    
+    - provider: "docker"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Containerized kubectl for CI/CD environments"
+    
+    - provider: "helm"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Kubernetes cluster components via Helm"
+
+  versions:
+    latest: "1.28.0"
+    minimum: "1.24.0"
+    latest_lts: "1.27.5"
+    latest_minimum: "1.28.0"

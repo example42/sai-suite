@@ -20,7 +20,7 @@ from ...models.generation import LLMProvider
 @click.option('--output-dir', '-o', type=click.Path(path_type=Path),
               help='Output directory for generated saidata files')
 @click.option('--providers', multiple=True,
-              help='Target providers for saidata (e.g., apt, brew, winget)')
+              help='Target providers for saidata 0.3 (e.g., apt, brew, binary, source, script)')
 @click.option('--category-filter', '-c',
               help='Filter by category using regex pattern (e.g., "web|database")')
 @click.option('--max-concurrent', '-j', type=int, default=3,
@@ -38,26 +38,39 @@ def batch(ctx: click.Context, input_file: Optional[Path], software_list: tuple,
           output_dir: Optional[Path], providers: tuple, category_filter: Optional[str],
           max_concurrent: int, no_rag: bool, stop_on_error: bool, force: bool,
           preview: bool):
-    """Generate saidata for multiple software packages in batch.
+    """Generate saidata 0.3 for multiple software packages in batch.
     
-    Process multiple software packages efficiently using parallel generation.
-    Software can be specified via input file or command line arguments.
+    Process multiple software packages efficiently using parallel generation
+    with the latest 0.3 schema format. Each generated file includes:
+    
+    🆕 NEW 0.3 FEATURES:
+    • Multiple installation methods (sources, binaries, scripts)
+    • URL templating with {{version}}, {{platform}}, {{architecture}}
+    • Enhanced security metadata and checksum validation
+    • Provider-specific configurations and overrides
+    • Comprehensive compatibility matrices
+    
+    📊 BATCH PROCESSING:
+    • Parallel generation with configurable concurrency
+    • Category filtering for targeted generation
+    • Progress tracking and error handling
+    • Automatic file organization and naming
     
     Examples:
-        # Generate from file
+        # Generate 0.3 saidata from file list
         saigen batch -f software_list.txt -o output/
         
-        # Generate specific software
-        saigen batch -s nginx -s postgresql -s redis -o output/
+        # Generate with specific installation methods
+        saigen batch -s nginx -s terraform --providers apt,brew,binary,source -o output/
         
-        # Filter by category
-        saigen batch -f web_tools.txt -c "database|cache" -o output/
+        # Filter by category with parallel processing
+        saigen batch -f web_tools.txt -c "database|cache" -j 5 -o output/
         
-        # Control concurrency
-        saigen batch -f large_list.txt -j 5 -o output/
+        # Preview what would be generated
+        saigen batch -f software_list.txt --preview --verbose
         
-        # Preview mode
-        saigen batch -f software_list.txt --preview
+        # Generate with enhanced security focus
+        saigen batch -f security_tools.txt --providers binary,source -o secure/
     """
     config = ctx.obj['config']
     verbose = ctx.obj['verbose']
@@ -119,7 +132,7 @@ def batch(ctx: click.Context, input_file: Optional[Path], software_list: tuple,
     
     # Preview mode
     if preview:
-        click.echo(f"Preview: Would process {len(software_names)} software packages")
+        click.echo(f"Preview: Would process {len(software_names)} software packages (saidata 0.3)")
         click.echo(f"LLM Provider: {llm_provider.value}")
         click.echo(f"Target providers: {list(providers) if providers else 'default'}")
         click.echo(f"Max concurrent: {max_concurrent}")
@@ -140,7 +153,7 @@ def batch(ctx: click.Context, input_file: Optional[Path], software_list: tuple,
     
     # Dry run mode
     if dry_run:
-        click.echo(f"[DRY RUN] Would process {len(software_names)} software packages")
+        click.echo(f"[DRY RUN] Would process {len(software_names)} software packages (saidata 0.3)")
         if output_dir:
             click.echo(f"[DRY RUN] Would save files to: {output_dir}")
         return

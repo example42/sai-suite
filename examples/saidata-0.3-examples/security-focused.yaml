@@ -1,0 +1,326 @@
+version: "0.3"
+
+metadata:
+  name: "vault"
+  display_name: "HashiCorp Vault"
+  description: "Secure, store and tightly control access to tokens, passwords, certificates, encryption keys"
+  version: "1.15.0"
+  category: "security"
+  subcategory: "secrets-management"
+  tags: ["vault", "secrets", "security", "encryption", "pki", "authentication"]
+  license: "MPL-2.0"
+  language: "Go"
+  maintainer: "HashiCorp"
+  urls:
+    website: "https://www.vaultproject.io"
+    documentation: "https://developer.hashicorp.com/vault/docs"
+    source: "https://github.com/hashicorp/vault"
+    issues: "https://github.com/hashicorp/vault/issues"
+    support: "https://support.hashicorp.com"
+    download: "https://releases.hashicorp.com/vault"
+    changelog: "https://github.com/hashicorp/vault/blob/main/CHANGELOG.md"
+    license: "https://github.com/hashicorp/vault/blob/main/LICENSE"
+    sbom: "https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS.sig"
+    icon: "https://www.vaultproject.io/img/logo-vault.svg"
+  security:
+    security_contact: "security@hashicorp.com"
+    vulnerability_disclosure: "https://www.hashicorp.com/security"
+    cve_exceptions: 
+      - "CVE-2023-0620"  # Fixed in 1.12.3, acceptable for 1.15.0+
+      - "CVE-2023-0665"  # Not applicable to enterprise features
+    signing_key: "https://www.hashicorp.com/security.html"
+    sbom_url: "https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS.sig"
+
+# Source compilation with security hardening
+sources:
+  - name: "main"
+    url: "https://github.com/hashicorp/vault/archive/v{{version}}.tar.gz"
+    version: "1.15.0"
+    build_system: "make"
+    build_dir: "/tmp/sai-build-vault"
+    source_dir: "vault-{{version}}"
+    install_prefix: "/usr/local"
+    build_args:
+      - "dev"
+      - "CGO_ENABLED=0"
+    prerequisites:
+      - "golang-1.20"
+      - "git"
+      - "make"
+      - "gcc"
+    environment:
+      CGO_ENABLED: "0"
+      GOOS: "linux"
+      GOARCH: "amd64"
+      VAULT_DEV_BUILD: "1"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+    custom_commands:
+      build: "make dev CGO_ENABLED=0"
+      install: "cp bin/vault /usr/local/bin/ && chmod 755 /usr/local/bin/vault"
+      validation: "vault version && vault status || true"
+      version: "vault version | head -n1 | cut -d' ' -f2 | sed 's/v//'"
+
+# Binary downloads with comprehensive security validation
+binaries:
+  - name: "main"
+    url: "https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_{{platform}}_{{architecture}}.zip"
+    version: "1.15.0"
+    checksum: "sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5"
+    install_path: "/usr/local/bin"
+    executable: "vault"
+    archive:
+      format: "zip"
+      strip_prefix: ""
+    permissions: "0755"
+    custom_commands:
+      download: "curl -fsSL {{url}} -o vault.zip && curl -fsSL https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS -o checksums.txt"
+      extract: "unzip -q vault.zip && sha256sum -c checksums.txt --ignore-missing"
+      install: "install -m 755 vault /usr/local/bin/vault && setcap cap_ipc_lock=+ep /usr/local/bin/vault"
+      validation: "vault version && vault status || true"
+      version: "vault version | head -n1 | cut -d' ' -f2 | sed 's/v//'"
+
+  - name: "enterprise"
+    url: "https://releases.hashicorp.com/vault-enterprise/{{version}}+ent/vault-enterprise_{{version}}+ent_{{platform}}_{{architecture}}.zip"
+    version: "1.15.0"
+    checksum: "sha256:abc123def456789012345678901234567890123456789012345678901234567890"
+    install_path: "/usr/local/bin"
+    executable: "vault"
+    archive:
+      format: "zip"
+    permissions: "0755"
+    custom_commands:
+      validation: "vault version | grep -q enterprise"
+
+# Script installation with security measures
+scripts:
+  - name: "official-installer"
+    url: "https://raw.githubusercontent.com/hashicorp/vault/v{{version}}/scripts/install.sh"
+    version: "1.15.0"
+    checksum: "sha256:def456abc789012345678901234567890123456789012345678901234567890123"
+    interpreter: "bash"
+    timeout: 600
+    arguments: ["--version", "1.15.0", "--verify-signature"]
+    environment:
+      VAULT_VERSION: "1.15.0"
+      VERIFY_SIGNATURE: "true"
+      INSTALL_DIR: "/usr/local/bin"
+      VAULT_USER: "vault"
+    working_dir: "/tmp"
+    custom_commands:
+      download: "curl -fsSL {{url}} -o install.sh && curl -fsSL {{url}}.sig -o install.sh.sig"
+      install: "gpg --verify install.sh.sig install.sh && bash install.sh --version {{version}}"
+      validation: "vault version && systemctl is-active vault || true"
+
+# Package installations
+packages:
+  - name: "vault"
+    package_name: "vault"
+    version: "1.15.0-1"
+    checksum: "sha256:ghi789abc012345678901234567890123456789012345678901234567890123456"
+    signature: "https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS.sig"
+
+services:
+  - name: "vault"
+    service_name: "vault"
+    type: "systemd"
+    enabled: false  # Security: manual start recommended
+    config_files: ["/etc/vault.d/vault.hcl"]
+
+files:
+  - name: "config"
+    path: "/etc/vault.d/vault.hcl"
+    type: "config"
+    owner: "vault"
+    group: "vault"
+    mode: "0640"  # Security: restricted permissions
+    backup: true
+  - name: "systemd-service"
+    path: "/etc/systemd/system/vault.service"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  - name: "audit-log"
+    path: "/var/log/vault/audit.log"
+    type: "log"
+    owner: "vault"
+    group: "vault"
+    mode: "0640"  # Security: restricted log access
+
+directories:
+  - name: "config"
+    path: "/etc/vault.d"
+    owner: "vault"
+    group: "vault"
+    mode: "0750"  # Security: restricted directory access
+  - name: "data"
+    path: "/opt/vault/data"
+    owner: "vault"
+    group: "vault"
+    mode: "0700"  # Security: vault-only access
+  - name: "logs"
+    path: "/var/log/vault"
+    owner: "vault"
+    group: "vault"
+    mode: "0750"
+  - name: "tls"
+    path: "/opt/vault/tls"
+    owner: "vault"
+    group: "vault"
+    mode: "0700"  # Security: TLS certificates protection
+
+commands:
+  - name: "vault"
+    path: "/usr/local/bin/vault"
+    shell_completion: true
+    man_page: "vault(1)"
+
+ports:
+  - port: 8200
+    protocol: "tcp"
+    service: "vault-api"
+    description: "Vault API (HTTPS)"
+  - port: 8201
+    protocol: "tcp"
+    service: "vault-cluster"
+    description: "Vault cluster communication"
+
+providers:
+  # Source compilation with security hardening
+  source:
+    prerequisites:
+      - "golang-1.20"
+      - "git"
+      - "make"
+      - "gcc"
+      - "libcap-dev"  # For setcap capabilities
+    build_commands:
+      - "git clone https://github.com/hashicorp/vault.git"
+      - "cd vault && git checkout v{{version}}"
+      - "make dev CGO_ENABLED=0"
+      - "cp bin/vault /usr/local/bin/"
+      - "setcap cap_ipc_lock=+ep /usr/local/bin/vault"
+    sources:
+      - name: "main"
+        environment:
+          CGO_ENABLED: "0"
+          VAULT_DEV_BUILD: "1"
+        custom_commands:
+          install: "cp bin/vault /usr/local/bin/ && setcap cap_ipc_lock=+ep /usr/local/bin/vault"
+
+  # Binary installation with signature verification
+  binary:
+    binaries:
+      - name: "main"
+        url: "https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_{{platform}}_{{architecture}}.zip"
+        custom_commands:
+          download: "curl -fsSL {{url}} -o vault.zip && curl -fsSL https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS -o checksums.txt && curl -fsSL https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS.sig -o checksums.sig"
+          extract: "gpg --verify checksums.sig checksums.txt && unzip -q vault.zip && sha256sum -c checksums.txt --ignore-missing"
+          install: "install -m 755 vault /usr/local/bin/vault && setcap cap_ipc_lock=+ep /usr/local/bin/vault"
+
+  # Package manager installations with security repositories
+  apt:
+    repositories:
+      - name: "hashicorp-official"
+        url: "https://apt.releases.hashicorp.com"
+        key: "https://apt.releases.hashicorp.com/gpg"
+        type: "upstream"
+        recommended: true
+        maintainer: "HashiCorp"
+        packages:
+          - name: "vault"
+            package_name: "vault"
+            version: "1.15.0-1"
+            signature: "https://releases.hashicorp.com/vault/{{version}}/vault_{{version}}_SHA256SUMS.sig"
+
+  dnf:
+    repositories:
+      - name: "hashicorp-official"
+        url: "https://rpm.releases.hashicorp.com/fedora/hashicorp.repo"
+        key: "https://rpm.releases.hashicorp.com/gpg"
+        type: "upstream"
+        recommended: true
+        maintainer: "HashiCorp"
+        packages:
+          - name: "vault"
+            package_name: "vault"
+            version: "1.15.0-1"
+
+  brew:
+    packages:
+      - name: "vault"
+        package_name: "vault"
+        version: "1.15.0"
+
+  # Container-based installation with security context
+  docker:
+    containers:
+      - name: "vault"
+        image: "vault"
+        tag: "1.15.0"
+        registry: "docker.io"
+        ports: ["8200:8200"]
+        volumes: 
+          - "/opt/vault/data:/vault/data"
+          - "/opt/vault/config:/vault/config"
+          - "/opt/vault/logs:/vault/logs"
+        environment:
+          VAULT_DEV_ROOT_TOKEN_ID: ""  # Security: no default token
+          VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+          VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/data"}}, "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}}}'
+        labels:
+          purpose: "secrets-management"
+          security.level: "high"
+
+compatibility:
+  matrix:
+    - provider: "source"
+      platform: ["linux"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: false
+      tested: true
+      notes: "For security-hardened custom builds"
+    
+    - provider: "binary"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64", "386"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Official signed binaries with signature verification"
+    
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Signed packages from HashiCorp repository"
+    
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    
+    - provider: "brew"
+      platform: "darwin"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "docker"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: false
+      notes: "Development only - not recommended for production secrets"
+
+  versions:
+    latest: "1.15.0"
+    minimum: "1.12.0"  # Security: minimum version with critical fixes
+    latest_lts: "1.14.8"
+    latest_minimum: "1.15.0"

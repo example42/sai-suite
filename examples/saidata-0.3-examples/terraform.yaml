@@ -1,0 +1,194 @@
+version: "0.3"
+
+metadata:
+  name: "terraform"
+  display_name: "Terraform"
+  description: "Infrastructure as Code tool for building, changing, and versioning infrastructure"
+  version: "1.6.0"
+  category: "infrastructure"
+  subcategory: "iac"
+  tags: ["terraform", "infrastructure", "iac", "devops", "cloud"]
+  license: "MPL-2.0"
+  language: "Go"
+  maintainer: "HashiCorp"
+  urls:
+    website: "https://www.terraform.io"
+    documentation: "https://developer.hashicorp.com/terraform/docs"
+    source: "https://github.com/hashicorp/terraform"
+    issues: "https://github.com/hashicorp/terraform/issues"
+    support: "https://support.hashicorp.com"
+    download: "https://releases.hashicorp.com/terraform"
+    changelog: "https://github.com/hashicorp/terraform/blob/main/CHANGELOG.md"
+    license: "https://github.com/hashicorp/terraform/blob/main/LICENSE"
+    sbom: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_SHA256SUMS.sig"
+    icon: "https://www.terraform.io/img/logo-hashicorp.svg"
+  security:
+    security_contact: "security@hashicorp.com"
+    vulnerability_disclosure: "https://www.hashicorp.com/security"
+    signing_key: "https://www.hashicorp.com/security.html"
+
+# Binary downloads with URL templating - primary installation method
+binaries:
+  - name: "main"
+    url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip"
+    version: "1.6.0"
+    checksum: "sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5"
+    install_path: "/usr/local/bin"
+    executable: "terraform"
+    archive:
+      format: "zip"
+      strip_prefix: ""
+    permissions: "0755"
+    custom_commands:
+      validation: "terraform version"
+      version: "terraform version | head -n1 | cut -d' ' -f2 | sed 's/v//'"
+
+  - name: "beta"
+    url: "https://releases.hashicorp.com/terraform/{{version}}-beta1/terraform_{{version}}-beta1_{{platform}}_{{architecture}}.zip"
+    version: "1.7.0"
+    checksum: "sha256:abc123def456789012345678901234567890123456789012345678901234567890"
+    install_path: "/usr/local/bin"
+    executable: "terraform-beta"
+    archive:
+      format: "zip"
+    permissions: "0755"
+
+# Script installation for convenience
+scripts:
+  - name: "official"
+    url: "https://raw.githubusercontent.com/hashicorp/terraform/main/scripts/install.sh"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+    interpreter: "bash"
+    arguments: ["--version", "1.6.0"]
+    timeout: 300
+    environment:
+      TERRAFORM_VERSION: "1.6.0"
+      INSTALL_DIR: "/usr/local/bin"
+    custom_commands:
+      validation: "terraform version"
+
+commands:
+  - name: "terraform"
+    path: "/usr/local/bin/terraform"
+    shell_completion: true
+    man_page: "terraform(1)"
+    aliases: ["tf"]
+
+providers:
+  # Package manager installations
+  brew:
+    packages:
+      - name: "terraform"
+        package_name: "terraform"
+        version: "1.6.0"
+    binaries:
+      - name: "main"
+        url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_darwin_{{architecture}}.zip"
+        install_path: "/opt/homebrew/bin"
+
+  choco:
+    packages:
+      - name: "terraform"
+        package_name: "terraform"
+        version: "1.6.0"
+    binaries:
+      - name: "main"
+        url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_windows_{{architecture}}.zip"
+        install_path: "C:\\tools\\terraform"
+        executable: "terraform.exe"
+
+  apt:
+    repositories:
+      - name: "hashicorp-official"
+        url: "https://apt.releases.hashicorp.com"
+        key: "https://apt.releases.hashicorp.com/gpg"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "terraform"
+            package_name: "terraform"
+            version: "1.6.0-1"
+
+  dnf:
+    repositories:
+      - name: "hashicorp-official"
+        url: "https://rpm.releases.hashicorp.com/fedora/hashicorp.repo"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "terraform"
+            package_name: "terraform"
+            version: "1.6.0-1"
+
+  # Container-based installation
+  docker:
+    containers:
+      - name: "terraform"
+        image: "hashicorp/terraform"
+        tag: "1.6.0"
+        registry: "docker.io"
+        volumes: ["/workspace:/workspace"]
+        environment:
+          TF_IN_AUTOMATION: "true"
+        labels:
+          purpose: "infrastructure-as-code"
+
+  # Binary provider with platform-specific overrides
+  binary:
+    binaries:
+      - name: "main"
+        url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip"
+        version: "1.6.0"
+        install_path: "/usr/local/bin"
+        custom_commands:
+          download: "curl -fsSL {{url}} -o terraform.zip"
+          extract: "unzip -q terraform.zip"
+          install: "install -m 755 terraform {{install_path}}/terraform"
+          validation: "terraform version"
+
+compatibility:
+  matrix:
+    - provider: "binary"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64", "386"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Primary installation method with official HashiCorp binaries"
+    
+    - provider: "brew"
+      platform: "darwin"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+    
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      recommended: true
+    
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "docker"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      notes: "Containerized execution environment"
+
+  versions:
+    latest: "1.6.0"
+    minimum: "1.0.0"
+    latest_lts: "1.5.7"
+    latest_minimum: "1.6.0"

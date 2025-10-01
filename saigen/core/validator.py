@@ -12,6 +12,8 @@ from jsonschema import Draft7Validator
 import yaml
 
 from ..models.saidata import SaiData
+from ..utils.url_templating import URLTemplateProcessor, TemplateValidationError
+from ..utils.checksum_validator import ChecksumValidator, ChecksumValidationError
 
 
 class ValidationSeverity(str, Enum):
@@ -56,6 +58,15 @@ class ValidationResult:
         return len(self.errors) + len(self.warnings) + len(self.info)
 
 
+@dataclass
+class RecoveryResult:
+    """Result of validation error recovery."""
+    recovered_data: Dict[str, Any]
+    fixed_errors: List[str]
+    remaining_errors: List[ValidationError]
+    recovery_notes: List[str]
+
+
 class SaidataValidator:
     """Comprehensive saidata validation system."""
     
@@ -63,11 +74,13 @@ class SaidataValidator:
         """Initialize validator with schema.
         
         Args:
-            schema_path: Path to saidata schema JSON file. If None, uses default.
+            schema_path: Path to saidata schema JSON file. If None, uses default 0.3 schema.
         """
-        self.schema_path = schema_path or Path(__file__).parent.parent.parent / "schemas" / "saidata-0.2-schema.json"
+        self.schema_path = schema_path or Path(__file__).parent.parent.parent / "schemas" / "saidata-0.3-schema.json"
         self._schema: Optional[Dict[str, Any]] = None
         self._validator: Optional[Draft7Validator] = None
+        self.url_processor = URLTemplateProcessor()
+        self.checksum_validator = ChecksumValidator()
         
     def _load_schema(self) -> Dict[str, Any]:
         """Load and cache the JSON schema."""
@@ -163,6 +176,15 @@ class SaidataValidator:
         schema_errors = self._validate_json_schema(data, source)
         errors.extend(schema_errors)
         
+        # URL template validation
+        url_errors, url_warnings = self._validate_url_templates(data, source)
+        errors.extend(url_errors)
+        warnings.extend(url_warnings)
+        
+        # Checksum format validation
+        checksum_errors = self._validate_checksums(data, source)
+        errors.extend(checksum_errors)
+        
         # Custom validation rules
         custom_errors, custom_warnings, custom_info = self._validate_custom_rules(data, source)
         errors.extend(custom_errors)
@@ -219,6 +241,140 @@ class SaidataValidator:
                 }
             ))
             
+        return errors
+    
+    def _validate_url_templates(self, data: Dict[str, Any], source: str) -> tuple[List[ValidationError], List[ValidationError]]:
+        """Validate URL templates in sources, binaries, and scripts sections."""
+        errors = []
+        warnings = []
+        
+        # Check global sections
+        for section_name in ['sources', 'binaries', 'scripts']:
+            section = data.get(section_name, [])
+            if isinstance(section, list):
+                for i, item in enumerate(section):
+                    if isinstance(item, dict) and 'url' in item:
+                        url = item['url']
+                        if isinstance(url, str):
+                            try:
+                                result = self.url_processor.validate_template(url)
+                                
+                                # Add errors
+                                for error_msg in result.errors:
+                                    errors.append(ValidationError(
+                                        severity=ValidationSeverity.ERROR,
+                                        message=f"Invalid URL template in {section_name}[{i}]: {error_msg}",
+                                        path=f"{source}.{section_name}[{i}].url",
+                                        code="invalid_url_template",
+                                        suggestion="Fix URL template syntax or use supported placeholders: {{version}}, {{platform}}, {{architecture}}"
+                                    ))
+                                
+                                # Add warnings
+                                for warning_msg in result.warnings:
+                                    warnings.append(ValidationError(
+                                        severity=ValidationSeverity.WARNING,
+                                        message=f"URL template warning in {section_name}[{i}]: {warning_msg}",
+                                        path=f"{source}.{section_name}[{i}].url",
+                                        code="url_template_warning",
+                                        suggestion="Consider adding version placeholder for better template functionality"
+                                    ))
+                                    
+                            except Exception as e:
+                                errors.append(ValidationError(
+                                    severity=ValidationSeverity.ERROR,
+                                    message=f"URL template validation failed in {section_name}[{i}]: {str(e)}",
+                                    path=f"{source}.{section_name}[{i}].url",
+                                    code="url_template_validation_error"
+                                ))
+        
+        # Check provider-specific sections
+        providers = data.get('providers', {})
+        if isinstance(providers, dict):
+            for provider_name, provider_config in providers.items():
+                if isinstance(provider_config, dict):
+                    for section_name in ['sources', 'binaries', 'scripts']:
+                        section = provider_config.get(section_name, [])
+                        if isinstance(section, list):
+                            for i, item in enumerate(section):
+                                if isinstance(item, dict) and 'url' in item:
+                                    url = item['url']
+                                    if isinstance(url, str):
+                                        try:
+                                            result = self.url_processor.validate_template(url)
+                                            
+                                            # Add errors
+                                            for error_msg in result.errors:
+                                                errors.append(ValidationError(
+                                                    severity=ValidationSeverity.ERROR,
+                                                    message=f"Invalid URL template in providers.{provider_name}.{section_name}[{i}]: {error_msg}",
+                                                    path=f"{source}.providers.{provider_name}.{section_name}[{i}].url",
+                                                    code="invalid_url_template",
+                                                    suggestion="Fix URL template syntax or use supported placeholders"
+                                                ))
+                                            
+                                            # Add warnings
+                                            for warning_msg in result.warnings:
+                                                warnings.append(ValidationError(
+                                                    severity=ValidationSeverity.WARNING,
+                                                    message=f"URL template warning in providers.{provider_name}.{section_name}[{i}]: {warning_msg}",
+                                                    path=f"{source}.providers.{provider_name}.{section_name}[{i}].url",
+                                                    code="url_template_warning"
+                                                ))
+                                                
+                                        except Exception as e:
+                                            errors.append(ValidationError(
+                                                severity=ValidationSeverity.ERROR,
+                                                message=f"URL template validation failed in providers.{provider_name}.{section_name}[{i}]: {str(e)}",
+                                                path=f"{source}.providers.{provider_name}.{section_name}[{i}].url",
+                                                code="url_template_validation_error"
+                                            ))
+        
+        return errors, warnings
+    
+    def _validate_checksums(self, data: Dict[str, Any], source: str) -> List[ValidationError]:
+        """Validate checksum format across all sections."""
+        errors = []
+        
+        # Check global sections
+        for section_name in ['sources', 'binaries', 'scripts']:
+            section = data.get(section_name, [])
+            if isinstance(section, list):
+                for i, item in enumerate(section):
+                    if isinstance(item, dict) and 'checksum' in item:
+                        checksum = item['checksum']
+                        if isinstance(checksum, str):
+                            checksum_errors = self.checksum_validator.validate_checksum(checksum)
+                            for error_msg in checksum_errors:
+                                errors.append(ValidationError(
+                                    severity=ValidationSeverity.ERROR,
+                                    message=f"Invalid checksum in {section_name}[{i}]: {error_msg}",
+                                    path=f"{source}.{section_name}[{i}].checksum",
+                                    code="invalid_checksum_format",
+                                    suggestion="Use format 'algorithm:hash' (e.g., 'sha256:abc123...')"
+                                ))
+        
+        # Check provider-specific sections
+        providers = data.get('providers', {})
+        if isinstance(providers, dict):
+            for provider_name, provider_config in providers.items():
+                if isinstance(provider_config, dict):
+                    for section_name in ['sources', 'binaries', 'scripts']:
+                        section = provider_config.get(section_name, [])
+                        if isinstance(section, list):
+                            for i, item in enumerate(section):
+                                if isinstance(item, dict) and 'checksum' in item:
+                                    checksum = item['checksum']
+                                    if isinstance(checksum, str):
+                                        checksum_errors = self.checksum_validator.validate_checksum(checksum)
+                                        for error_msg in checksum_errors:
+                                            errors.append(ValidationError(
+                                                severity=ValidationSeverity.ERROR,
+                                                message=f"Invalid checksum in providers.{provider_name}.{section_name}[{i}]: {error_msg}",
+                                                path=f"{source}.providers.{provider_name}.{section_name}[{i}].checksum",
+                                                code="invalid_checksum_format",
+                                                suggestion="Use format 'algorithm:hash' (e.g., 'sha256:abc123...')"
+                                            ))
+        
         return errors
     
     def _format_schema_error(self, error: jsonschema.ValidationError) -> tuple[str, Optional[str]]:
@@ -305,6 +461,19 @@ class SaidataValidator:
                 suggestion="Use semantic versioning format (e.g., '1.0', '1.0.0')"
             ))
         
+        # Validate that version is 0.3 for new schema features
+        if version == "0.3":
+            # Check for new 0.3 features usage
+            new_sections = ['sources', 'binaries', 'scripts']
+            for section_name in new_sections:
+                if section_name in data:
+                    info.append(ValidationError(
+                        severity=ValidationSeverity.INFO,
+                        message=f"Using saidata 0.3 feature: {section_name} section",
+                        path=f"{source}.{section_name}",
+                        code="saidata_0_3_feature"
+                    ))
+        
         # Validate metadata name consistency
         metadata = data.get("metadata", {})
         if isinstance(metadata, dict):
@@ -344,6 +513,9 @@ class SaidataValidator:
         
         # Validate file paths
         self._validate_file_paths(data, source, warnings)
+        
+        # Validate enum values for 0.3 schema
+        self._validate_enum_values(data, source, errors)
         
         return errors, warnings, info
     
@@ -485,6 +657,113 @@ class SaidataValidator:
                     provider_dirs = provider_config.get("directories", [])
                     check_paths_list(provider_dirs, f"{source}.providers.{provider_name}.directories", "directory")
     
+    def _validate_enum_values(self, data: Dict[str, Any], source: str, errors: List[ValidationError]) -> None:
+        """Validate enum values for 0.3 schema fields."""
+        
+        # Valid enum values for 0.3 schema
+        valid_build_systems = ["autotools", "cmake", "make", "meson", "ninja", "custom"]
+        valid_service_types = ["systemd", "init", "launchd", "windows_service", "docker", "kubernetes"]
+        valid_file_types = ["config", "binary", "library", "data", "log", "temp", "socket"]
+        valid_protocols = ["tcp", "udp", "sctp"]
+        valid_repo_types = ["upstream", "os-default", "os-backports", "third-party"]
+        valid_archive_formats = ["tar.gz", "tar.bz2", "tar.xz", "zip", "7z", "none"]
+        
+        # Check sources build_system
+        sources = data.get('sources', [])
+        if isinstance(sources, list):
+            for i, source_item in enumerate(sources):
+                if isinstance(source_item, dict):
+                    build_system = source_item.get('build_system')
+                    if build_system and build_system not in valid_build_systems:
+                        errors.append(ValidationError(
+                            severity=ValidationSeverity.ERROR,
+                            message=f"Invalid build_system '{build_system}' in sources[{i}]",
+                            path=f"{source}.sources[{i}].build_system",
+                            code="invalid_enum_value",
+                            suggestion=f"Use one of: {', '.join(valid_build_systems)}"
+                        ))
+        
+        # Check binaries archive format
+        binaries = data.get('binaries', [])
+        if isinstance(binaries, list):
+            for i, binary_item in enumerate(binaries):
+                if isinstance(binary_item, dict):
+                    archive = binary_item.get('archive', {})
+                    if isinstance(archive, dict):
+                        archive_format = archive.get('format')
+                        if archive_format and archive_format not in valid_archive_formats:
+                            errors.append(ValidationError(
+                                severity=ValidationSeverity.ERROR,
+                                message=f"Invalid archive format '{archive_format}' in binaries[{i}]",
+                                path=f"{source}.binaries[{i}].archive.format",
+                                code="invalid_enum_value",
+                                suggestion=f"Use one of: {', '.join(valid_archive_formats)}"
+                            ))
+        
+        # Check services type
+        services = data.get('services', [])
+        if isinstance(services, list):
+            for i, service_item in enumerate(services):
+                if isinstance(service_item, dict):
+                    service_type = service_item.get('type')
+                    if service_type and service_type not in valid_service_types:
+                        errors.append(ValidationError(
+                            severity=ValidationSeverity.ERROR,
+                            message=f"Invalid service type '{service_type}' in services[{i}]",
+                            path=f"{source}.services[{i}].type",
+                            code="invalid_enum_value",
+                            suggestion=f"Use one of: {', '.join(valid_service_types)}"
+                        ))
+        
+        # Check files type
+        files = data.get('files', [])
+        if isinstance(files, list):
+            for i, file_item in enumerate(files):
+                if isinstance(file_item, dict):
+                    file_type = file_item.get('type')
+                    if file_type and file_type not in valid_file_types:
+                        errors.append(ValidationError(
+                            severity=ValidationSeverity.ERROR,
+                            message=f"Invalid file type '{file_type}' in files[{i}]",
+                            path=f"{source}.files[{i}].type",
+                            code="invalid_enum_value",
+                            suggestion=f"Use one of: {', '.join(valid_file_types)}"
+                        ))
+        
+        # Check ports protocol
+        ports = data.get('ports', [])
+        if isinstance(ports, list):
+            for i, port_item in enumerate(ports):
+                if isinstance(port_item, dict):
+                    protocol = port_item.get('protocol')
+                    if protocol and protocol not in valid_protocols:
+                        errors.append(ValidationError(
+                            severity=ValidationSeverity.ERROR,
+                            message=f"Invalid protocol '{protocol}' in ports[{i}]",
+                            path=f"{source}.ports[{i}].protocol",
+                            code="invalid_enum_value",
+                            suggestion=f"Use one of: {', '.join(valid_protocols)}"
+                        ))
+        
+        # Check repository types in providers
+        providers = data.get('providers', {})
+        if isinstance(providers, dict):
+            for provider_name, provider_config in providers.items():
+                if isinstance(provider_config, dict):
+                    repositories = provider_config.get('repositories', [])
+                    if isinstance(repositories, list):
+                        for i, repo_item in enumerate(repositories):
+                            if isinstance(repo_item, dict):
+                                repo_type = repo_item.get('type')
+                                if repo_type and repo_type not in valid_repo_types:
+                                    errors.append(ValidationError(
+                                        severity=ValidationSeverity.ERROR,
+                                        message=f"Invalid repository type '{repo_type}' in providers.{provider_name}.repositories[{i}]",
+                                        path=f"{source}.providers.{provider_name}.repositories[{i}].type",
+                                        code="invalid_enum_value",
+                                        suggestion=f"Use one of: {', '.join(valid_repo_types)}"
+                                    ))
+    
     def format_validation_report(self, result: ValidationResult, show_context: bool = False) -> str:
         """Format validation result as a human-readable report.
         
@@ -534,5 +813,381 @@ class SaidataValidator:
                 lines.append(f"   Context: {issue.context}")
             
             lines.append("")
+        
+        return "\n".join(lines)
+    
+    def attempt_recovery(self, data: Dict[str, Any], validation_result: ValidationResult) -> RecoveryResult:
+        """Attempt to automatically fix common validation errors.
+        
+        Args:
+            data: Original saidata dictionary
+            validation_result: Validation result with errors to fix
+            
+        Returns:
+            RecoveryResult with fixed data and recovery information
+        """
+        recovered_data = data.copy()
+        fixed_errors = []
+        remaining_errors = []
+        recovery_notes = []
+        
+        for error in validation_result.errors:
+            try:
+                if self._is_url_template_error(error):
+                    recovered_data, fixed = self._fix_url_template_error(recovered_data, error)
+                    if fixed:
+                        fixed_errors.append(error.message)
+                        recovery_notes.append(f"Fixed URL template in {error.path}")
+                    else:
+                        remaining_errors.append(error)
+                        
+                elif self._is_checksum_format_error(error):
+                    recovered_data, fixed = self._fix_checksum_format_error(recovered_data, error)
+                    if fixed:
+                        fixed_errors.append(error.message)
+                        recovery_notes.append(f"Fixed checksum format in {error.path}")
+                    else:
+                        remaining_errors.append(error)
+                        
+                elif self._is_enum_value_error(error):
+                    recovered_data, fixed = self._fix_enum_value_error(recovered_data, error)
+                    if fixed:
+                        fixed_errors.append(error.message)
+                        recovery_notes.append(f"Fixed enum value in {error.path}")
+                    else:
+                        remaining_errors.append(error)
+                        
+                elif self._is_missing_required_field_error(error):
+                    recovered_data, fixed = self._fix_missing_required_field_error(recovered_data, error)
+                    if fixed:
+                        fixed_errors.append(error.message)
+                        recovery_notes.append(f"Added missing required field in {error.path}")
+                    else:
+                        remaining_errors.append(error)
+                        
+                else:
+                    remaining_errors.append(error)
+                    
+            except Exception as e:
+                remaining_errors.append(error)
+                recovery_notes.append(f"Recovery failed for {error.path}: {str(e)}")
+        
+        return RecoveryResult(
+            recovered_data=recovered_data,
+            fixed_errors=fixed_errors,
+            remaining_errors=remaining_errors,
+            recovery_notes=recovery_notes
+        )
+    
+    def _is_url_template_error(self, error: ValidationError) -> bool:
+        """Check if error is related to URL template validation."""
+        return error.code in ["invalid_url_template", "url_template_validation_error"]
+    
+    def _is_checksum_format_error(self, error: ValidationError) -> bool:
+        """Check if error is related to checksum format."""
+        return error.code == "invalid_checksum_format"
+    
+    def _is_enum_value_error(self, error: ValidationError) -> bool:
+        """Check if error is related to invalid enum values."""
+        return error.code == "invalid_enum_value"
+    
+    def _is_missing_required_field_error(self, error: ValidationError) -> bool:
+        """Check if error is related to missing required fields."""
+        return error.code == "schema_validation" and "required" in error.message.lower()
+    
+    def _fix_url_template_error(self, data: Dict[str, Any], error: ValidationError) -> tuple[Dict[str, Any], bool]:
+        """Attempt to fix URL template errors."""
+        path_parts = error.path.split('.')
+        
+        try:
+            # Navigate to the problematic URL field
+            current = data
+            for part in path_parts[1:-1]:  # Skip source name and 'url'
+                if '[' in part and ']' in part:
+                    # Handle array indices like "sources[0]"
+                    array_name = part.split('[')[0]
+                    index = int(part.split('[')[1].split(']')[0])
+                    current = current[array_name][index]
+                else:
+                    current = current[part]
+            
+            if 'url' in current and isinstance(current['url'], str):
+                original_url = current['url']
+                
+                # Common URL template fixes
+                fixed_url = original_url
+                
+                # Fix single braces to double braces
+                fixed_url = re.sub(r'(?<!\{)\{([^}]+)\}(?!\})', r'{{\1}}', fixed_url)
+                
+                # Fix common placeholder names
+                placeholder_fixes = {
+                    '{{ver}}': '{{version}}',
+                    '{{v}}': '{{version}}',
+                    '{{os}}': '{{platform}}',
+                    '{{arch}}': '{{architecture}}',
+                    '{{cpu}}': '{{architecture}}'
+                }
+                
+                for old, new in placeholder_fixes.items():
+                    fixed_url = fixed_url.replace(old, new)
+                
+                # Validate the fixed URL
+                try:
+                    result = self.url_processor.validate_template(fixed_url)
+                    if result.is_valid:
+                        current['url'] = fixed_url
+                        return data, True
+                except:
+                    pass
+                    
+        except (KeyError, IndexError, ValueError):
+            pass
+        
+        return data, False
+    
+    def _fix_checksum_format_error(self, data: Dict[str, Any], error: ValidationError) -> tuple[Dict[str, Any], bool]:
+        """Attempt to fix checksum format errors."""
+        path_parts = error.path.split('.')
+        
+        try:
+            # Navigate to the problematic checksum field
+            current = data
+            for part in path_parts[1:-1]:  # Skip source name and 'checksum'
+                if '[' in part and ']' in part:
+                    array_name = part.split('[')[0]
+                    index = int(part.split('[')[1].split(']')[0])
+                    current = current[array_name][index]
+                else:
+                    current = current[part]
+            
+            if 'checksum' in current and isinstance(current['checksum'], str):
+                original_checksum = current['checksum']
+                
+                # Common checksum format fixes
+                fixed_checksum = original_checksum
+                
+                # If it's just a hash without algorithm, try to detect and add algorithm
+                if ':' not in fixed_checksum:
+                    hash_length = len(fixed_checksum)
+                    if hash_length == 32:
+                        fixed_checksum = f"md5:{fixed_checksum}"
+                    elif hash_length == 64:
+                        fixed_checksum = f"sha256:{fixed_checksum}"
+                    elif hash_length == 128:
+                        fixed_checksum = f"sha512:{fixed_checksum}"
+                
+                # Normalize algorithm names
+                algorithm_fixes = {
+                    'SHA256:': 'sha256:',
+                    'SHA512:': 'sha512:',
+                    'MD5:': 'md5:',
+                    'sha-256:': 'sha256:',
+                    'sha-512:': 'sha512:'
+                }
+                
+                for old, new in algorithm_fixes.items():
+                    if fixed_checksum.startswith(old):
+                        fixed_checksum = fixed_checksum.replace(old, new, 1)
+                        break
+                
+                # Validate the fixed checksum
+                checksum_errors = self.checksum_validator.validate_checksum(fixed_checksum)
+                if not checksum_errors:
+                    current['checksum'] = fixed_checksum
+                    return data, True
+                    
+        except (KeyError, IndexError, ValueError):
+            pass
+        
+        return data, False
+    
+    def _fix_enum_value_error(self, data: Dict[str, Any], error: ValidationError) -> tuple[Dict[str, Any], bool]:
+        """Attempt to fix enum value errors."""
+        path_parts = error.path.split('.')
+        
+        try:
+            # Navigate to the problematic field
+            current = data
+            field_name = path_parts[-1]
+            
+            for part in path_parts[1:-1]:  # Skip source name and field name
+                if '[' in part and ']' in part:
+                    array_name = part.split('[')[0]
+                    index = int(part.split('[')[1].split(']')[0])
+                    current = current[array_name][index]
+                else:
+                    current = current[part]
+            
+            if field_name in current:
+                original_value = current[field_name]
+                
+                # Common enum value fixes
+                enum_fixes = {
+                    # Build system fixes
+                    'autoconf': 'autotools',
+                    'automake': 'autotools',
+                    'configure': 'autotools',
+                    'makefile': 'make',
+                    'gnumake': 'make',
+                    
+                    # Service type fixes
+                    'system': 'systemd',
+                    'service': 'systemd',
+                    'daemon': 'systemd',
+                    'launchctl': 'launchd',
+                    'windows': 'windows_service',
+                    'win_service': 'windows_service',
+                    
+                    # File type fixes
+                    'configuration': 'config',
+                    'executable': 'binary',
+                    'lib': 'library',
+                    'logfile': 'log',
+                    'temporary': 'temp',
+                    
+                    # Protocol fixes
+                    'TCP': 'tcp',
+                    'UDP': 'udp',
+                    'SCTP': 'sctp',
+                    
+                    # Repository type fixes
+                    'official': 'upstream',
+                    'main': 'os-default',
+                    'backport': 'os-backports',
+                    'third_party': 'third-party',
+                    'external': 'third-party',
+                    
+                    # Archive format fixes
+                    'tgz': 'tar.gz',
+                    'tbz2': 'tar.bz2',
+                    'txz': 'tar.xz',
+                    'tar': 'tar.gz',
+                    'gzip': 'tar.gz',
+                    'bzip2': 'tar.bz2',
+                    'xz': 'tar.xz'
+                }
+                
+                if isinstance(original_value, str):
+                    fixed_value = enum_fixes.get(original_value.lower(), original_value)
+                    if fixed_value != original_value:
+                        current[field_name] = fixed_value
+                        return data, True
+                        
+        except (KeyError, IndexError, ValueError):
+            pass
+        
+        return data, False
+    
+    def _fix_missing_required_field_error(self, data: Dict[str, Any], error: ValidationError) -> tuple[Dict[str, Any], bool]:
+        """Attempt to fix missing required field errors."""
+        path_parts = error.path.split('.')
+        
+        try:
+            # Navigate to the object missing the required field
+            current = data
+            for part in path_parts[1:]:  # Skip source name
+                if '[' in part and ']' in part:
+                    array_name = part.split('[')[0]
+                    index = int(part.split('[')[1].split(']')[0])
+                    current = current[array_name][index]
+                else:
+                    current = current[part]
+            
+            # Extract required field name from error message
+            if "Missing required property:" in error.message:
+                field_match = re.search(r"'([^']+)'", error.message)
+                if field_match:
+                    required_field = field_match.group(1)
+                    
+                    # Add default values for common required fields
+                    default_values = {
+                        'name': 'unnamed',
+                        'package_name': 'unnamed-package',
+                        'url': 'https://example.com/download',
+                        'build_system': 'make',
+                        'path': '/tmp/default',
+                        'port': 8080
+                    }
+                    
+                    if required_field in default_values:
+                        current[required_field] = default_values[required_field]
+                        return data, True
+                        
+        except (KeyError, IndexError, ValueError):
+            pass
+        
+        return data, False   
+ 
+    def validate_with_recovery(self, data: Dict[str, Any], source: str = "data", max_recovery_attempts: int = 3) -> tuple[ValidationResult, Optional[RecoveryResult]]:
+        """Validate saidata with automatic error recovery.
+        
+        Args:
+            data: Saidata dictionary to validate
+            source: Source identifier for error reporting
+            max_recovery_attempts: Maximum number of recovery attempts
+            
+        Returns:
+            Tuple of (final_validation_result, recovery_result_if_applied)
+        """
+        current_data = data.copy()
+        recovery_result = None
+        
+        for attempt in range(max_recovery_attempts + 1):
+            validation_result = self.validate_data(current_data, source)
+            
+            if validation_result.is_valid or attempt == max_recovery_attempts:
+                # Either validation passed or we've exhausted recovery attempts
+                return validation_result, recovery_result
+            
+            # Attempt recovery
+            recovery_result = self.attempt_recovery(current_data, validation_result)
+            
+            if not recovery_result.fixed_errors:
+                # No errors were fixed, stop trying
+                return validation_result, recovery_result
+            
+            # Use the recovered data for the next validation attempt
+            current_data = recovery_result.recovered_data
+        
+        # This should not be reached, but return the last validation result
+        final_validation = self.validate_data(current_data, source)
+        return final_validation, recovery_result
+    
+    def format_recovery_report(self, recovery_result: RecoveryResult) -> str:
+        """Format recovery result as a human-readable report.
+        
+        Args:
+            recovery_result: RecoveryResult to format
+            
+        Returns:
+            Formatted recovery report string
+        """
+        lines = []
+        
+        if recovery_result.fixed_errors:
+            lines.append("🔧 Validation Error Recovery Report")
+            lines.append(f"Fixed {len(recovery_result.fixed_errors)} error(s)")
+            lines.append("")
+            
+            lines.append("Fixed Errors:")
+            for error in recovery_result.fixed_errors:
+                lines.append(f"  ✅ {error}")
+            lines.append("")
+            
+            if recovery_result.recovery_notes:
+                lines.append("Recovery Actions:")
+                for note in recovery_result.recovery_notes:
+                    lines.append(f"  🔧 {note}")
+                lines.append("")
+        
+        if recovery_result.remaining_errors:
+            lines.append(f"Remaining Errors: {len(recovery_result.remaining_errors)}")
+            for error in recovery_result.remaining_errors:
+                lines.append(f"  ❌ {error.message}")
+                lines.append(f"     Path: {error.path}")
+                if error.suggestion:
+                    lines.append(f"     Suggestion: {error.suggestion}")
+                lines.append("")
         
         return "\n".join(lines)

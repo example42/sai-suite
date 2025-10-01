@@ -23,6 +23,7 @@ from .validator import SaidataValidator, ValidationResult, ValidationSeverity
 from ..repositories.indexer import RAGIndexer, RAGContextBuilder
 from ..repositories.cache import RepositoryCache
 from ..utils.errors import RAGError
+from .context_builder_v03 import EnhancedContextBuilderV03
 
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,9 @@ class GenerationEngine:
         self.repository_cache: Optional[RepositoryCache] = None
         self._initialize_rag_components()
         
+        # Initialize enhanced context builder for 0.3 schema
+        self.enhanced_context_builder = EnhancedContextBuilderV03(self.rag_context_builder)
+        
         # Backward compatibility: expose providers dict for tests
         self._llm_providers = {}
         self._initialize_providers()
@@ -95,7 +99,7 @@ class GenerationEngine:
         self.logger = logger
     
     async def generate_saidata(self, request: GenerationRequest) -> GenerationResult:
-        """Generate saidata based on the request.
+        """Generate saidata based on the request using 0.3 schema.
         
         Args:
             request: Generation request with software name and parameters
@@ -109,7 +113,7 @@ class GenerationEngine:
         start_time = time.time()
         
         try:
-            logger.info(f"Starting saidata generation for '{request.software_name}'")
+            logger.info(f"Starting saidata generation for '{request.software_name}' using 0.3 schema")
             
             if self.logger:
                 with self.logger.log_step("validate_request", "Validating generation request"):
@@ -119,13 +123,13 @@ class GenerationEngine:
                 # Validate request
                 self._validate_request(request)
             
-            # Build generation context
+            # Build enhanced generation context for 0.3 schema
             if self.logger:
-                with self.logger.log_step("build_context", "Building generation context") as step:
-                    context = await self._build_generation_context(request)
+                with self.logger.log_step("build_context", "Building enhanced generation context for 0.3 schema") as step:
+                    context = await self._build_enhanced_generation_context_v03(request)
                     self.logger.log_generation_context(context)
             else:
-                context = await self._build_generation_context(request)
+                context = await self._build_enhanced_generation_context_v03(request)
             
             # Generate saidata using LLM with fallback
             provider_name = request.llm_provider.value if hasattr(request.llm_provider, 'value') else request.llm_provider
@@ -292,6 +296,45 @@ class GenerationEngine:
                 # Continue without RAG context
         
         return context
+    
+    async def _build_enhanced_generation_context_v03(self, request: GenerationRequest) -> GenerationContext:
+        """Build enhanced generation context for saidata 0.3 schema.
+        
+        Args:
+            request: Generation request
+            
+        Returns:
+            Enhanced GenerationContext with 0.3-specific data
+        """
+        # Start with base context
+        context = await self._build_generation_context(request)
+        
+        # Enhance with 0.3-specific features
+        try:
+            if self.logger:
+                with self.logger.log_step("enhance_context_v03", "Enhancing context for 0.3 schema") as step:
+                    enhanced_context = await self.enhanced_context_builder.build_enhanced_context(context)
+                    
+                    # Log enhancement details
+                    enhancement_info = {
+                        "installation_methods": getattr(enhanced_context, 'likely_installation_methods', []),
+                        "software_category": getattr(enhanced_context, 'software_category', 'unknown'),
+                        "has_security_template": hasattr(enhanced_context, 'security_metadata_template'),
+                        "has_compatibility_template": hasattr(enhanced_context, 'compatibility_matrix_template')
+                    }
+                    self.logger.log_generation_context_enhancement(enhancement_info)
+            else:
+                enhanced_context = await self.enhanced_context_builder.build_enhanced_context(context)
+            
+            logger.debug(f"Enhanced context built for {request.software_name} with 0.3 features")
+            return enhanced_context
+            
+        except Exception as e:
+            logger.warning(f"Failed to enhance context for 0.3 schema: {e}")
+            if self.logger:
+                self.logger.log_error(f"Context enhancement failed: {e}")
+            # Return base context if enhancement fails
+            return context
     
     async def _parse_and_validate_yaml(self, yaml_content: str, software_name: str, context: Optional[GenerationContext] = None, provider_name: Optional[str] = None, is_retry: bool = False) -> SaiData:
         """Parse and validate generated YAML content.
@@ -1101,6 +1144,980 @@ class GenerationEngine:
                 'context_summary': f'Failed to build RAG context for {software_name}: {e}'
             }
     
+    async def generate_sources(self, request: GenerationRequest, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate source build configurations for 0.3 schema.
+        
+        Args:
+            request: Generation request
+            context: Generation context
+            
+        Returns:
+            List of source configuration dictionaries
+        """
+        try:
+            logger.debug(f"Generating source configurations for {request.software_name}")
+            
+            # Determine likely source build configurations based on software type
+            sources = []
+            
+            # Check if software is commonly built from source
+            software_category = getattr(context, 'software_category', 'unknown')
+            if software_category in ['web-server', 'database', 'development-tool', 'system-tool']:
+                # Generate main source configuration
+                main_source = {
+                    "name": "main",
+                    "url": f"https://github.com/example/{request.software_name}/archive/{{{{version}}}}.tar.gz",
+                    "build_system": self._detect_build_system(request.software_name, context),
+                    "version": "latest",
+                    "configure_args": self._generate_configure_args(request.software_name, context),
+                    "prerequisites": self._generate_prerequisites(request.software_name, context),
+                    "checksum": "sha256:placeholder_checksum_to_be_updated"
+                }
+                sources.append(main_source)
+            
+            return sources
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate source configurations: {e}")
+            return []
+    
+    async def generate_binaries(self, request: GenerationRequest, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate binary download configurations for 0.3 schema.
+        
+        Args:
+            request: Generation request
+            context: Generation context
+            
+        Returns:
+            List of binary configuration dictionaries
+        """
+        try:
+            logger.debug(f"Generating binary configurations for {request.software_name}")
+            
+            binaries = []
+            
+            # Check if software commonly provides pre-compiled binaries
+            software_category = getattr(context, 'software_category', 'unknown')
+            if software_category in ['cli-tool', 'development-tool', 'system-tool']:
+                # Generate main binary configuration
+                main_binary = {
+                    "name": "main",
+                    "url": f"https://releases.example.com/{request.software_name}/{{{{version}}}}/{request.software_name}_{{{{version}}}}_{{{{platform}}}}_{{{{architecture}}}}.zip",
+                    "version": "latest",
+                    "install_path": "/usr/local/bin",
+                    "executable": request.software_name,
+                    "checksum": "sha256:placeholder_checksum_to_be_updated",
+                    "permissions": "0755",
+                    "archive": {
+                        "format": "zip",
+                        "strip_prefix": f"{request.software_name}_{{{{version}}}}_{{{{platform}}}}_{{{{architecture}}}}/",
+                        "extract_path": "bin/"
+                    }
+                }
+                binaries.append(main_binary)
+            
+            return binaries
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate binary configurations: {e}")
+            return []
+    
+    async def generate_scripts(self, request: GenerationRequest, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate script installation configurations for 0.3 schema.
+        
+        Args:
+            request: Generation request
+            context: Generation context
+            
+        Returns:
+            List of script configuration dictionaries
+        """
+        try:
+            logger.debug(f"Generating script configurations for {request.software_name}")
+            
+            scripts = []
+            
+            # Check if software commonly provides installation scripts
+            software_category = getattr(context, 'software_category', 'unknown')
+            if software_category in ['runtime', 'development-tool', 'container-tool']:
+                # Generate official script configuration
+                official_script = {
+                    "name": "official",
+                    "url": f"https://get.{request.software_name}.com/install.sh",
+                    "interpreter": "bash",
+                    "checksum": "sha256:placeholder_checksum_to_be_updated",
+                    "timeout": 600,
+                    "arguments": ["--channel", "stable"],
+                    "environment": {
+                        "CHANNEL": "stable",
+                        "INSTALL_DIR": "/usr/local/bin"
+                    }
+                }
+                scripts.append(official_script)
+            
+            return scripts
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate script configurations: {e}")
+            return []
+    
+    def _detect_build_system(self, software_name: str, context: GenerationContext) -> str:
+        """Detect likely build system based on software name and context.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            Build system name
+        """
+        # Simple heuristics for build system detection
+        if 'nginx' in software_name.lower() or 'apache' in software_name.lower():
+            return "autotools"
+        elif 'cmake' in software_name.lower() or any('cmake' in pkg.name.lower() for pkg in context.repository_data):
+            return "cmake"
+        elif 'rust' in software_name.lower() or 'cargo' in software_name.lower():
+            return "custom"  # Cargo build
+        elif 'go' in software_name.lower():
+            return "custom"  # Go build
+        else:
+            return "autotools"  # Default fallback
+    
+    def _generate_configure_args(self, software_name: str, context: GenerationContext) -> List[str]:
+        """Generate configure arguments based on software type.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            List of configure arguments
+        """
+        args = []
+        
+        # Common security and feature flags
+        if 'server' in software_name.lower() or 'web' in software_name.lower():
+            args.extend(["--with-http_ssl_module", "--with-http_v2_module"])
+        
+        if 'database' in software_name.lower() or 'sql' in software_name.lower():
+            args.extend(["--enable-ssl", "--with-openssl"])
+        
+        # Default prefix
+        args.append("--prefix=/usr/local")
+        
+        return args
+    
+    def _generate_prerequisites(self, software_name: str, context: GenerationContext) -> List[str]:
+        """Generate build prerequisites based on software type.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            List of prerequisite packages
+        """
+        prereqs = ["build-essential", "gcc", "make"]
+        
+        # Add common development libraries
+        if 'ssl' in software_name.lower() or 'crypto' in software_name.lower():
+            prereqs.append("libssl-dev")
+        
+        if 'xml' in software_name.lower():
+            prereqs.append("libxml2-dev")
+        
+        if 'curl' in software_name.lower() or 'http' in software_name.lower():
+            prereqs.append("libcurl4-openssl-dev")
+        
+        return prereqs
+    
+    async def generate_enhanced_metadata(self, request: GenerationRequest, context: GenerationContext) -> Dict[str, Any]:
+        """Generate enhanced metadata for 0.3 schema including security information.
+        
+        Args:
+            request: Generation request
+            context: Generation context
+            
+        Returns:
+            Enhanced metadata dictionary
+        """
+        try:
+            logger.debug(f"Generating enhanced metadata for {request.software_name}")
+            
+            # Start with basic metadata
+            metadata = {
+                "name": request.software_name,
+                "description": f"Software management configuration for {request.software_name}",
+                "category": self._detect_software_category(request.software_name, context),
+                "version": "latest"
+            }
+            
+            # Add enhanced URLs
+            urls = self._generate_enhanced_urls(request.software_name, context)
+            if urls:
+                metadata["urls"] = urls
+            
+            # Add security metadata
+            security = self._generate_security_metadata(request.software_name, context)
+            if security:
+                metadata["security"] = security
+            
+            # Add tags based on software type
+            tags = self._generate_software_tags(request.software_name, context)
+            if tags:
+                metadata["tags"] = tags
+            
+            # Add license information if detectable
+            license_info = self._detect_software_license(request.software_name, context)
+            if license_info:
+                metadata["license"] = license_info
+            
+            return metadata
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate enhanced metadata: {e}")
+            # Return basic metadata as fallback
+            return {
+                "name": request.software_name,
+                "description": f"Software management configuration for {request.software_name}"
+            }
+    
+    def _generate_enhanced_urls(self, software_name: str, context: GenerationContext) -> Dict[str, str]:
+        """Generate comprehensive URL types for enhanced metadata.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            Dictionary of URL types and values
+        """
+        urls = {}
+        
+        # Try to extract URLs from repository data
+        for package in context.repository_data:
+            if package.homepage:
+                urls["website"] = package.homepage
+                break
+        
+        # Generate common URL patterns
+        base_name = software_name.lower().replace('-', '').replace('_', '')
+        
+        # Common website patterns
+        if "website" not in urls:
+            urls["website"] = f"https://{base_name}.org"
+        
+        # Documentation patterns
+        urls["documentation"] = f"https://docs.{base_name}.org"
+        
+        # Source code patterns
+        urls["source"] = f"https://github.com/{base_name}/{base_name}"
+        
+        # Issues tracker
+        urls["issues"] = f"https://github.com/{base_name}/{base_name}/issues"
+        
+        # Download page
+        urls["download"] = f"https://{base_name}.org/download"
+        
+        return urls
+    
+    def _generate_security_metadata(self, software_name: str, context: GenerationContext) -> Dict[str, Any]:
+        """Generate security metadata fields for enhanced security information.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            Dictionary of security metadata
+        """
+        security = {}
+        
+        # Generate security contact based on software type
+        base_name = software_name.lower().replace('-', '').replace('_', '')
+        security["security_contact"] = f"security@{base_name}.org"
+        
+        # Add vulnerability disclosure policy URL
+        security["vulnerability_disclosure"] = f"https://{base_name}.org/security"
+        
+        # Add SBOM URL for software bill of materials
+        security["sbom_url"] = f"https://{base_name}.org/sbom"
+        
+        # Add signing key information for package verification
+        security["signing_key"] = f"https://{base_name}.org/keys/release.asc"
+        
+        return security
+    
+    def _generate_software_tags(self, software_name: str, context: GenerationContext) -> List[str]:
+        """Generate software tags based on category and characteristics.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            List of relevant tags
+        """
+        tags = []
+        
+        # Add category-based tags
+        category = self._detect_software_category(software_name, context)
+        if category:
+            tags.append(category)
+        
+        # Add technology-specific tags
+        name_lower = software_name.lower()
+        
+        if any(term in name_lower for term in ['web', 'http', 'server']):
+            tags.extend(["web", "server", "http"])
+        
+        if any(term in name_lower for term in ['database', 'db', 'sql']):
+            tags.extend(["database", "storage"])
+        
+        if any(term in name_lower for term in ['docker', 'container']):
+            tags.extend(["container", "docker"])
+        
+        if any(term in name_lower for term in ['cli', 'command', 'tool']):
+            tags.extend(["cli", "command-line"])
+        
+        if any(term in name_lower for term in ['dev', 'development']):
+            tags.extend(["development", "tools"])
+        
+        # Remove duplicates while preserving order
+        return list(dict.fromkeys(tags))
+    
+    def _detect_software_category(self, software_name: str, context: GenerationContext) -> str:
+        """Detect software category based on name and context.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            Software category string
+        """
+        name_lower = software_name.lower()
+        
+        # Web servers and HTTP tools
+        if any(term in name_lower for term in ['nginx', 'apache', 'httpd', 'web', 'server']):
+            return "web-server"
+        
+        # Databases
+        if any(term in name_lower for term in ['mysql', 'postgres', 'redis', 'mongo', 'database', 'db']):
+            return "database"
+        
+        # Development tools
+        if any(term in name_lower for term in ['git', 'docker', 'kubectl', 'terraform', 'ansible']):
+            return "development-tool"
+        
+        # CLI tools
+        if any(term in name_lower for term in ['cli', 'command', 'tool']):
+            return "cli-tool"
+        
+        # System tools
+        if any(term in name_lower for term in ['system', 'admin', 'monitor']):
+            return "system-tool"
+        
+        # Container tools
+        if any(term in name_lower for term in ['docker', 'container', 'k8s', 'kubernetes']):
+            return "container-tool"
+        
+        # Runtime environments
+        if any(term in name_lower for term in ['node', 'python', 'java', 'runtime']):
+            return "runtime"
+        
+        return "application"
+    
+    def _detect_software_license(self, software_name: str, context: GenerationContext) -> Optional[str]:
+        """Detect likely software license based on name and context.
+        
+        Args:
+            software_name: Name of the software
+            context: Generation context
+            
+        Returns:
+            License string or None
+        """
+        name_lower = software_name.lower()
+        
+        # Common open source licenses
+        if any(term in name_lower for term in ['apache', 'httpd']):
+            return "Apache-2.0"
+        
+        if any(term in name_lower for term in ['nginx']):
+            return "BSD-2-Clause"
+        
+        if any(term in name_lower for term in ['mysql']):
+            return "GPL-2.0"
+        
+        if any(term in name_lower for term in ['postgres']):
+            return "PostgreSQL"
+        
+        if any(term in name_lower for term in ['redis']):
+            return "BSD-3-Clause"
+        
+        # Default to MIT for unknown software
+        return "MIT"
+    
+    async def generate_compatibility_matrix(self, request: GenerationRequest, context: GenerationContext) -> Dict[str, Any]:
+        """Generate compatibility matrix for cross-platform support.
+        
+        Args:
+            request: Generation request
+            context: Generation context
+            
+        Returns:
+            Compatibility matrix dictionary
+        """
+        try:
+            logger.debug(f"Generating compatibility matrix for {request.software_name}")
+            
+            compatibility = {
+                "matrix": [],
+                "versions": {
+                    "latest": "latest",
+                    "minimum": "1.0.0",
+                    "latest_lts": "lts",
+                    "latest_minimum": "1.0.0"
+                }
+            }
+            
+            # Generate compatibility entries for target providers
+            for provider in request.target_providers or ["apt", "brew", "winget"]:
+                entry = self._generate_compatibility_entry(provider, request.software_name, context)
+                if entry:
+                    compatibility["matrix"].append(entry)
+            
+            return compatibility
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate compatibility matrix: {e}")
+            return {}
+    
+    def _generate_compatibility_entry(self, provider: str, software_name: str, context: GenerationContext) -> Dict[str, Any]:
+        """Generate a single compatibility matrix entry.
+        
+        Args:
+            provider: Provider name
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            Compatibility entry dictionary
+        """
+        # Map providers to typical platforms
+        provider_platforms = {
+            "apt": ["linux"],
+            "dnf": ["linux"],
+            "yum": ["linux"],
+            "pacman": ["linux"],
+            "brew": ["darwin", "linux"],
+            "winget": ["windows"],
+            "choco": ["windows"],
+            "scoop": ["windows"]
+        }
+        
+        # Map providers to typical architectures
+        provider_architectures = {
+            "apt": ["amd64", "arm64"],
+            "dnf": ["amd64", "arm64"],
+            "yum": ["amd64", "arm64"],
+            "pacman": ["amd64", "arm64"],
+            "brew": ["amd64", "arm64"],
+            "winget": ["amd64", "arm64"],
+            "choco": ["amd64"],
+            "scoop": ["amd64"]
+        }
+        
+        platforms = provider_platforms.get(provider, ["linux"])
+        architectures = provider_architectures.get(provider, ["amd64"])
+        
+        return {
+            "provider": provider,
+            "platform": platforms if len(platforms) > 1 else platforms[0],
+            "architecture": architectures if len(architectures) > 1 else architectures[0],
+            "supported": True,
+            "tested": True,
+            "recommended": provider in ["apt", "brew", "winget"],
+            "notes": f"Supported on {provider} package manager"
+        }
+    
+    async def generate_enhanced_provider_configs(self, request: GenerationRequest, context: GenerationContext) -> Dict[str, Any]:
+        """Generate enhanced provider configurations for new installation methods.
+        
+        Args:
+            request: Generation request
+            context: Generation context
+            
+        Returns:
+            Dictionary of provider configurations
+        """
+        try:
+            logger.debug(f"Generating enhanced provider configurations for {request.software_name}")
+            
+            providers = {}
+            
+            # Generate configurations for each target provider
+            for provider_name in request.target_providers or ["apt", "brew", "winget"]:
+                provider_config = await self._generate_single_provider_config(
+                    provider_name, request.software_name, context
+                )
+                if provider_config:
+                    providers[provider_name] = provider_config
+            
+            return providers
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate enhanced provider configurations: {e}")
+            return {}
+    
+    async def _generate_single_provider_config(self, provider_name: str, software_name: str, context: GenerationContext) -> Dict[str, Any]:
+        """Generate configuration for a single provider with enhanced features.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            Provider configuration dictionary
+        """
+        config = {}
+        
+        # Add prerequisites for source compilation
+        if provider_name in ["apt", "dnf", "yum", "pacman"]:
+            prerequisites = self._generate_provider_prerequisites(provider_name, software_name)
+            if prerequisites:
+                config["prerequisites"] = prerequisites
+        
+        # Add build commands for source compilation
+        build_commands = self._generate_provider_build_commands(provider_name, software_name)
+        if build_commands:
+            config["build_commands"] = build_commands
+        
+        # Generate package sources with priority and recommendations
+        package_sources = self._generate_package_sources(provider_name, software_name, context)
+        if package_sources:
+            config["package_sources"] = package_sources
+        
+        # Generate repository configurations
+        repositories = self._generate_repository_configs(provider_name, software_name, context)
+        if repositories:
+            config["repositories"] = repositories
+        
+        # Generate provider-specific packages
+        packages = self._generate_provider_packages(provider_name, software_name, context)
+        if packages:
+            config["packages"] = packages
+        
+        # Generate provider-specific sources (overrides)
+        sources = await self._generate_provider_sources(provider_name, software_name, context)
+        if sources:
+            config["sources"] = sources
+        
+        # Generate provider-specific binaries (overrides)
+        binaries = await self._generate_provider_binaries(provider_name, software_name, context)
+        if binaries:
+            config["binaries"] = binaries
+        
+        # Generate provider-specific scripts (overrides)
+        scripts = await self._generate_provider_scripts(provider_name, software_name, context)
+        if scripts:
+            config["scripts"] = scripts
+        
+        return config
+    
+    def _generate_provider_prerequisites(self, provider_name: str, software_name: str) -> List[str]:
+        """Generate provider-specific prerequisites for source compilation.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            
+        Returns:
+            List of prerequisite packages
+        """
+        # Base prerequisites by provider
+        base_prereqs = {
+            "apt": ["build-essential", "gcc", "make"],
+            "dnf": ["gcc", "gcc-c++", "make", "cmake"],
+            "yum": ["gcc", "gcc-c++", "make", "cmake"],
+            "pacman": ["base-devel", "gcc", "make"],
+            "brew": ["gcc", "make", "cmake"],
+        }
+        
+        prereqs = base_prereqs.get(provider_name, ["gcc", "make"])
+        
+        # Add software-specific prerequisites
+        name_lower = software_name.lower()
+        
+        if 'ssl' in name_lower or 'crypto' in name_lower:
+            if provider_name == "apt":
+                prereqs.append("libssl-dev")
+            elif provider_name in ["dnf", "yum"]:
+                prereqs.append("openssl-devel")
+            elif provider_name == "pacman":
+                prereqs.append("openssl")
+        
+        if 'xml' in name_lower:
+            if provider_name == "apt":
+                prereqs.append("libxml2-dev")
+            elif provider_name in ["dnf", "yum"]:
+                prereqs.append("libxml2-devel")
+            elif provider_name == "pacman":
+                prereqs.append("libxml2")
+        
+        return prereqs
+    
+    def _generate_provider_build_commands(self, provider_name: str, software_name: str) -> List[str]:
+        """Generate provider-specific build commands.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            
+        Returns:
+            List of build commands
+        """
+        commands = []
+        
+        # Standard build sequence
+        commands.extend([
+            "wget ${SOURCE_URL} -O source.tar.gz",
+            "tar -xzf source.tar.gz",
+            "cd ${SOURCE_DIR}",
+            "./configure --prefix=/usr/local",
+            "make -j$(nproc)",
+            "sudo make install"
+        ])
+        
+        return commands
+    
+    def _generate_package_sources(self, provider_name: str, software_name: str, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate package source configurations with priority and recommendations.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            List of package source configurations
+        """
+        sources = []
+        
+        # Main repository source
+        main_source = {
+            "name": "main",
+            "repository": self._get_main_repository(provider_name),
+            "priority": 1,
+            "recommended": True,
+            "packages": [
+                {
+                    "name": "main",
+                    "package_name": self._get_package_name(provider_name, software_name, context)
+                }
+            ]
+        }
+        sources.append(main_source)
+        
+        # Add backports or testing repository if applicable
+        if provider_name == "apt":
+            backports_source = {
+                "name": "backports",
+                "repository": "backports",
+                "priority": 2,
+                "recommended": False,
+                "packages": [
+                    {
+                        "name": "main",
+                        "package_name": f"{self._get_package_name(provider_name, software_name, context)}-backports"
+                    }
+                ],
+                "notes": "Newer versions available in backports repository"
+            }
+            sources.append(backports_source)
+        
+        return sources
+    
+    def _generate_repository_configs(self, provider_name: str, software_name: str, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate repository configurations with enhanced metadata.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            List of repository configurations
+        """
+        repositories = []
+        
+        # Main repository
+        main_repo = {
+            "name": self._get_main_repository(provider_name),
+            "type": "os-default",
+            "priority": 1,
+            "recommended": True,
+            "maintainer": self._get_repository_maintainer(provider_name),
+            "notes": f"Official {provider_name} repository"
+        }
+        
+        # Add provider-specific repository details
+        if provider_name == "apt":
+            main_repo.update({
+                "url": "http://archive.ubuntu.com/ubuntu/",
+                "components": ["main", "universe"]
+            })
+        elif provider_name == "dnf":
+            main_repo.update({
+                "url": "https://download.fedoraproject.org/pub/fedora/linux/releases/",
+                "components": ["fedora", "updates"]
+            })
+        elif provider_name == "brew":
+            main_repo.update({
+                "url": "https://github.com/Homebrew/homebrew-core",
+                "type": "upstream"
+            })
+        
+        repositories.append(main_repo)
+        
+        return repositories
+    
+    def _generate_provider_packages(self, provider_name: str, software_name: str, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate provider-specific package configurations.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            List of package configurations
+        """
+        packages = []
+        
+        # Main package
+        main_package = {
+            "name": "main",
+            "package_name": self._get_package_name(provider_name, software_name, context),
+            "version": "latest"
+        }
+        
+        # Add alternatives if common
+        alternatives = self._get_package_alternatives(provider_name, software_name)
+        if alternatives:
+            main_package["alternatives"] = alternatives
+        
+        packages.append(main_package)
+        
+        return packages
+    
+    async def _generate_provider_sources(self, provider_name: str, software_name: str, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate provider-specific source build configurations.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            List of provider-specific source configurations
+        """
+        # Only generate provider-specific sources for providers that commonly build from source
+        if provider_name not in ["apt", "dnf", "yum", "pacman", "brew"]:
+            return []
+        
+        sources = []
+        
+        # Provider-specific source configuration
+        if provider_name == "brew":
+            # Homebrew often has specific build configurations
+            brew_source = {
+                "name": "homebrew",
+                "url": f"https://github.com/Homebrew/homebrew-core/raw/HEAD/Formula/{software_name}.rb",
+                "build_system": "custom",
+                "custom_commands": {
+                    "install": f"brew install --build-from-source {software_name}"
+                }
+            }
+            sources.append(brew_source)
+        
+        return sources
+    
+    async def _generate_provider_binaries(self, provider_name: str, software_name: str, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate provider-specific binary download configurations.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            List of provider-specific binary configurations
+        """
+        # Only generate provider-specific binaries for providers that support direct downloads
+        if provider_name not in ["winget", "scoop", "choco"]:
+            return []
+        
+        binaries = []
+        
+        # Windows-specific binary configuration
+        if provider_name in ["winget", "scoop", "choco"]:
+            windows_binary = {
+                "name": "windows",
+                "url": f"https://releases.example.com/{software_name}/{{{{version}}}}/{software_name}_{{{{version}}}}_windows_amd64.zip",
+                "platform": "windows",
+                "architecture": "amd64",
+                "install_path": "C:\\Program Files\\{software_name}",
+                "executable": f"{software_name}.exe",
+                "archive": {
+                    "format": "zip",
+                    "extract_path": "bin/"
+                }
+            }
+            binaries.append(windows_binary)
+        
+        return binaries
+    
+    async def _generate_provider_scripts(self, provider_name: str, software_name: str, context: GenerationContext) -> List[Dict[str, Any]]:
+        """Generate provider-specific script installation configurations.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            List of provider-specific script configurations
+        """
+        # Only generate provider-specific scripts for providers that commonly use scripts
+        if provider_name not in ["brew", "winget", "scoop"]:
+            return []
+        
+        scripts = []
+        
+        # Provider-specific script configuration
+        if provider_name == "brew":
+            # Homebrew cask installation script
+            brew_script = {
+                "name": "homebrew-cask",
+                "url": f"https://raw.githubusercontent.com/Homebrew/homebrew-cask/HEAD/Casks/{software_name}.rb",
+                "interpreter": "ruby",
+                "custom_commands": {
+                    "install": f"brew install --cask {software_name}"
+                }
+            }
+            scripts.append(brew_script)
+        
+        return scripts
+    
+    def _get_main_repository(self, provider_name: str) -> str:
+        """Get the main repository name for a provider.
+        
+        Args:
+            provider_name: Name of the provider
+            
+        Returns:
+            Main repository name
+        """
+        repo_names = {
+            "apt": "main",
+            "dnf": "fedora",
+            "yum": "base",
+            "pacman": "core",
+            "brew": "homebrew-core",
+            "winget": "msstore",
+            "choco": "chocolatey",
+            "scoop": "main"
+        }
+        return repo_names.get(provider_name, "main")
+    
+    def _get_repository_maintainer(self, provider_name: str) -> str:
+        """Get the repository maintainer for a provider.
+        
+        Args:
+            provider_name: Name of the provider
+            
+        Returns:
+            Repository maintainer
+        """
+        maintainers = {
+            "apt": "Ubuntu/Debian Team",
+            "dnf": "Fedora Project",
+            "yum": "Red Hat",
+            "pacman": "Arch Linux",
+            "brew": "Homebrew Team",
+            "winget": "Microsoft",
+            "choco": "Chocolatey Community",
+            "scoop": "Scoop Community"
+        }
+        return maintainers.get(provider_name, "Community")
+    
+    def _get_package_name(self, provider_name: str, software_name: str, context: GenerationContext) -> str:
+        """Get the actual package name for a provider.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            context: Generation context
+            
+        Returns:
+            Actual package name
+        """
+        # Try to find the package name from repository data
+        for package in context.repository_data:
+            if package.repository_name.lower() == provider_name.lower():
+                return package.name
+        
+        # Fallback to software name with provider-specific transformations
+        name = software_name.lower()
+        
+        # Provider-specific naming conventions
+        if provider_name == "apt":
+            # APT often uses lowercase with hyphens
+            return name.replace('_', '-')
+        elif provider_name in ["dnf", "yum"]:
+            # RPM-based often use lowercase
+            return name
+        elif provider_name == "brew":
+            # Homebrew uses lowercase
+            return name
+        elif provider_name == "winget":
+            # WinGet often uses PascalCase
+            return software_name
+        
+        return name
+    
+    def _get_package_alternatives(self, provider_name: str, software_name: str) -> List[str]:
+        """Get alternative package names for a provider.
+        
+        Args:
+            provider_name: Name of the provider
+            software_name: Software name
+            
+        Returns:
+            List of alternative package names
+        """
+        alternatives = []
+        name_lower = software_name.lower()
+        
+        # Common alternatives based on software type
+        if 'server' in name_lower:
+            alternatives.append(f"{name_lower}-server")
+            alternatives.append(f"{name_lower}-daemon")
+        
+        if 'client' in name_lower:
+            alternatives.append(f"{name_lower}-client")
+            alternatives.append(f"{name_lower}-cli")
+        
+        # Provider-specific alternatives
+        if provider_name == "apt":
+            alternatives.append(f"{name_lower}-common")
+            alternatives.append(f"{name_lower}-utils")
+        
+        return alternatives[:3]  # Limit to 3 alternatives
+
     async def cleanup(self) -> None:
         """Cleanup engine resources."""
         await self.provider_manager.cleanup()

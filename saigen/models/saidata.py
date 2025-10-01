@@ -41,6 +41,26 @@ class RepositoryType(str, Enum):
     THIRD_PARTY = "third-party"
 
 
+class BuildSystem(str, Enum):
+    """Build system types for source compilation."""
+    AUTOTOOLS = "autotools"
+    CMAKE = "cmake"
+    MAKE = "make"
+    MESON = "meson"
+    NINJA = "ninja"
+    CUSTOM = "custom"
+
+
+class ArchiveFormat(str, Enum):
+    """Archive formats for binary downloads."""
+    TAR_GZ = "tar.gz"
+    TAR_BZ2 = "tar.bz2"
+    TAR_XZ = "tar.xz"
+    ZIP = "zip"
+    SEVEN_Z = "7z"
+    NONE = "none"
+
+
 class Urls(BaseModel):
     """URL metadata."""
     website: Optional[str] = None
@@ -83,6 +103,7 @@ class Metadata(BaseModel):
 class Package(BaseModel):
     """Package definition."""
     name: str
+    package_name: str
     version: Optional[str] = None
     alternatives: Optional[List[str]] = None
     install_options: Optional[str] = None
@@ -154,6 +175,72 @@ class Container(BaseModel):
     labels: Optional[Dict[str, str]] = None
 
 
+class CustomCommands(BaseModel):
+    """Custom commands that override default behavior."""
+    download: Optional[str] = None
+    extract: Optional[str] = None
+    configure: Optional[str] = None
+    build: Optional[str] = None
+    install: Optional[str] = None
+    uninstall: Optional[str] = None
+    validation: Optional[str] = None
+    version: Optional[str] = None
+
+
+class ArchiveConfig(BaseModel):
+    """Archive extraction configuration for binary downloads."""
+    format: Optional[ArchiveFormat] = None
+    strip_prefix: Optional[str] = None
+    extract_path: Optional[str] = None
+
+
+class Source(BaseModel):
+    """Source build configuration for compiling software from source code."""
+    name: str
+    url: str
+    build_system: BuildSystem
+    version: Optional[str] = None
+    build_dir: Optional[str] = None
+    source_dir: Optional[str] = None
+    install_prefix: Optional[str] = None
+    configure_args: Optional[List[str]] = None
+    build_args: Optional[List[str]] = None
+    install_args: Optional[List[str]] = None
+    prerequisites: Optional[List[str]] = None
+    environment: Optional[Dict[str, str]] = None
+    checksum: Optional[str] = Field(None, pattern=r"^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$")
+    custom_commands: Optional[CustomCommands] = None
+
+
+class Binary(BaseModel):
+    """Binary download configuration for installing pre-compiled executables."""
+    name: str
+    url: str
+    version: Optional[str] = None
+    architecture: Optional[str] = None
+    platform: Optional[str] = None
+    checksum: Optional[str] = Field(None, pattern=r"^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$")
+    install_path: Optional[str] = None
+    executable: Optional[str] = None
+    archive: Optional[ArchiveConfig] = None
+    permissions: Optional[str] = Field(None, pattern=r"^[0-7]{3,4}$")
+    custom_commands: Optional[CustomCommands] = None
+
+
+class Script(BaseModel):
+    """Script installation configuration for executing installation scripts with security measures."""
+    name: str
+    url: str
+    version: Optional[str] = None
+    interpreter: Optional[str] = None
+    checksum: Optional[str] = Field(None, pattern=r"^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$")
+    arguments: Optional[List[str]] = None
+    environment: Optional[Dict[str, str]] = None
+    working_dir: Optional[str] = None
+    timeout: Optional[int] = Field(None, ge=1, le=3600)
+    custom_commands: Optional[CustomCommands] = None
+
+
 class PackageSource(BaseModel):
     """Package source definition."""
     name: str
@@ -182,6 +269,9 @@ class Repository(BaseModel):
     commands: Optional[List[Command]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
+    sources: Optional[List[Source]] = None
+    binaries: Optional[List[Binary]] = None
+    scripts: Optional[List[Script]] = None
 
 
 class ProviderConfig(BaseModel):
@@ -197,6 +287,9 @@ class ProviderConfig(BaseModel):
     commands: Optional[List[Command]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
+    sources: Optional[List[Source]] = None
+    binaries: Optional[List[Binary]] = None
+    scripts: Optional[List[Script]] = None
 
 
 class CompatibilityEntry(BaseModel):
@@ -227,7 +320,7 @@ class Compatibility(BaseModel):
 
 class SaiData(BaseModel):
     """Complete SaiData structure."""
-    version: str = Field(pattern=r"^\d+\.\d+(\.\d+)?$")
+    version: str = Field(default="0.3", pattern=r"^\d+\.\d+(\.\d+)?$")
     metadata: Metadata
     packages: Optional[List[Package]] = None
     services: Optional[List[Service]] = None
@@ -236,6 +329,9 @@ class SaiData(BaseModel):
     commands: Optional[List[Command]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
+    sources: Optional[List[Source]] = None
+    binaries: Optional[List[Binary]] = None
+    scripts: Optional[List[Script]] = None
     providers: Optional[Dict[str, ProviderConfig]] = None
     compatibility: Optional[Compatibility] = None
 

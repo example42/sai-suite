@@ -1,0 +1,338 @@
+version: "0.3"
+
+metadata:
+  name: "nodejs"
+  display_name: "Node.js"
+  description: "JavaScript runtime built on Chrome's V8 JavaScript engine"
+  version: "20.8.0"
+  category: "runtime"
+  subcategory: "javascript"
+  tags: ["nodejs", "javascript", "runtime", "v8", "npm", "web-development"]
+  license: "MIT"
+  language: "C++"
+  maintainer: "Node.js Foundation"
+  urls:
+    website: "https://nodejs.org"
+    documentation: "https://nodejs.org/en/docs"
+    source: "https://github.com/nodejs/node"
+    issues: "https://github.com/nodejs/node/issues"
+    support: "https://nodejs.org/en/get-help"
+    download: "https://nodejs.org/en/download"
+    changelog: "https://github.com/nodejs/node/blob/main/CHANGELOG.md"
+    license: "https://github.com/nodejs/node/blob/main/LICENSE"
+    sbom: "https://nodejs.org/dist/v{{version}}/SHASUMS256.txt.sig"
+    icon: "https://nodejs.org/static/images/logo.svg"
+  security:
+    security_contact: "security@nodejs.org"
+    vulnerability_disclosure: "https://nodejs.org/en/security"
+    signing_key: "https://github.com/nodejs/node#release-keys"
+
+# Source compilation for custom builds
+sources:
+  - name: "main"
+    url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}.tar.gz"
+    version: "20.8.0"
+    build_system: "autotools"
+    build_dir: "/tmp/sai-build-nodejs"
+    source_dir: "node-v{{version}}"
+    install_prefix: "/usr/local"
+    configure_args:
+      - "--shared-openssl"
+      - "--shared-zlib"
+      - "--with-intl=system-icu"
+    build_args:
+      - "-j$(nproc)"
+    prerequisites:
+      - "build-essential"
+      - "python3"
+      - "libssl-dev"
+      - "zlib1g-dev"
+      - "libicu-dev"
+    environment:
+      CC: "gcc"
+      CXX: "g++"
+      PYTHON: "python3"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+    custom_commands:
+      configure: "./configure --prefix=/usr/local --shared-openssl --shared-zlib"
+      validation: "node --version && npm --version"
+      version: "node --version | sed 's/v//'"
+
+# Binary downloads - primary installation method
+binaries:
+  - name: "main"
+    url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}-{{platform}}-{{architecture}}.tar.xz"
+    version: "20.8.0"
+    checksum: "sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5"
+    install_path: "/usr/local"
+    archive:
+      format: "tar.xz"
+      strip_prefix: "node-v{{version}}-{{platform}}-{{architecture}}/"
+      extract_path: ""
+    permissions: "0755"
+    custom_commands:
+      install: "tar -xJf node-v{{version}}-{{platform}}-{{architecture}}.tar.xz --strip-components=1 -C /usr/local"
+      validation: "node --version && npm --version"
+      version: "node --version | sed 's/v//'"
+
+  - name: "lts"
+    url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}-{{platform}}-{{architecture}}.tar.xz"
+    version: "18.18.0"
+    checksum: "sha256:abc123def456789012345678901234567890123456789012345678901234567890"
+    install_path: "/usr/local"
+    archive:
+      format: "tar.xz"
+      strip_prefix: "node-v{{version}}-{{platform}}-{{architecture}}/"
+
+# Script installations for version managers
+scripts:
+  - name: "nvm-install"
+    url: "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh"
+    checksum: "sha256:def456abc789012345678901234567890123456789012345678901234567890123"
+    interpreter: "bash"
+    timeout: 300
+    arguments: []
+    environment:
+      NVM_VERSION: "v0.39.0"
+      NODE_VERSION: "20.8.0"
+    working_dir: "$HOME"
+    custom_commands:
+      install: "bash install.sh && source ~/.bashrc && nvm install 20.8.0 && nvm use 20.8.0"
+      validation: "nvm --version && node --version"
+
+  - name: "fnm-install"
+    url: "https://raw.githubusercontent.com/Schniz/fnm/master/.ci/install.sh"
+    checksum: "sha256:ghi789abc012345678901234567890123456789012345678901234567890123456"
+    interpreter: "bash"
+    timeout: 300
+    environment:
+      FNM_VERSION: "latest"
+    custom_commands:
+      install: "bash install.sh && fnm install 20.8.0 && fnm use 20.8.0"
+
+# Package installations
+packages:
+  - name: "nodejs"
+    package_name: "nodejs"
+    version: "20.8.0"
+    alternatives: ["node"]
+  - name: "npm"
+    package_name: "npm"
+    version: "10.1.0"
+
+commands:
+  - name: "node"
+    path: "/usr/bin/node"
+    shell_completion: false
+    man_page: "node(1)"
+    aliases: ["nodejs"]
+  - name: "npm"
+    path: "/usr/bin/npm"
+    shell_completion: true
+    man_page: "npm(1)"
+  - name: "npx"
+    path: "/usr/bin/npx"
+    shell_completion: true
+    man_page: "npx(1)"
+
+providers:
+  # Source compilation with platform-specific configurations
+  source:
+    prerequisites:
+      - "build-essential"
+      - "python3"
+      - "libssl-dev"
+      - "zlib1g-dev"
+      - "libicu-dev"
+    sources:
+      - name: "main"
+        configure_args:
+          - "--prefix=/usr/local"
+          - "--shared-openssl"
+          - "--shared-zlib"
+          - "--with-intl=system-icu"
+
+  # Binary installations with platform-specific URLs
+  binary:
+    binaries:
+      - name: "main"
+        url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}-{{platform}}-{{architecture}}.tar.xz"
+        install_path: "/usr/local"
+        custom_commands:
+          install: "tar -xJf node-v{{version}}-{{platform}}-{{architecture}}.tar.xz --strip-components=1 -C /usr/local"
+
+  # Package manager installations
+  apt:
+    repositories:
+      - name: "nodesource"
+        url: "https://deb.nodesource.com/node_20.x"
+        key: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nodejs"
+            package_name: "nodejs"
+            version: "20.8.0-1nodesource1"
+      - name: "ubuntu-default"
+        type: "os-default"
+        packages:
+          - name: "nodejs"
+            package_name: "nodejs"
+          - name: "npm"
+            package_name: "npm"
+        notes: "Older version, use NodeSource for latest"
+
+  dnf:
+    repositories:
+      - name: "nodesource"
+        url: "https://rpm.nodesource.com/pub_20.x/nodistro/repo"
+        key: "https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nodejs"
+            package_name: "nodejs"
+            version: "20.8.0-1nodesource"
+          - name: "npm"
+            package_name: "npm"
+            version: "10.1.0-1.20.8.0.1nodesource"
+
+  brew:
+    packages:
+      - name: "nodejs"
+        package_name: "node"
+        version: "20.8.0"
+    binaries:
+      - name: "main"
+        url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}-darwin-{{architecture}}.tar.xz"
+        install_path: "/opt/homebrew"
+
+  choco:
+    packages:
+      - name: "nodejs"
+        package_name: "nodejs"
+        version: "20.8.0"
+    binaries:
+      - name: "main"
+        url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}-win-{{architecture}}.zip"
+        install_path: "C:\\Program Files\\nodejs"
+        executable: "node.exe"
+
+  winget:
+    packages:
+      - name: "nodejs"
+        package_name: "OpenJS.NodeJS"
+        version: "20.8.0"
+
+  # Container-based installations
+  docker:
+    containers:
+      - name: "nodejs"
+        image: "node"
+        tag: "20.8.0"
+        registry: "docker.io"
+        volumes: ["/app:/app"]
+        environment:
+          NODE_ENV: "production"
+        labels:
+          purpose: "javascript-runtime"
+      - name: "nodejs-alpine"
+        image: "node"
+        tag: "20.8.0-alpine"
+        registry: "docker.io"
+        volumes: ["/app:/app"]
+        labels:
+          purpose: "lightweight-runtime"
+
+  # Version managers
+  nvm:
+    scripts:
+      - name: "nvm-install"
+        url: "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh"
+        custom_commands:
+          install: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash && nvm install 20.8.0"
+
+  fnm:
+    binaries:
+      - name: "fnm"
+        url: "https://github.com/Schniz/fnm/releases/download/v1.35.1/fnm-{{platform}}.zip"
+        install_path: "/usr/local/bin"
+        custom_commands:
+          install: "fnm install 20.8.0 && fnm use 20.8.0"
+
+compatibility:
+  matrix:
+    - provider: "source"
+      platform: ["linux", "darwin"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: false
+      tested: true
+      notes: "For custom builds and development"
+    
+    - provider: "binary"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "Official binaries from Node.js releases"
+    
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      tested: true
+      notes: "NodeSource repository recommended for latest versions"
+    
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "brew"
+      platform: "darwin"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+      recommended: true
+    
+    - provider: "winget"
+      platform: "windows"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    
+    - provider: "docker"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Containerized runtime for development and deployment"
+    
+    - provider: "nvm"
+      platform: ["linux", "darwin"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Version manager for multiple Node.js versions"
+    
+    - provider: "fnm"
+      platform: ["linux", "darwin", "windows"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+      notes: "Fast Node.js version manager"
+
+  versions:
+    latest: "20.8.0"
+    minimum: "16.0.0"
+    latest_lts: "18.18.0"
+    latest_minimum: "20.8.0"

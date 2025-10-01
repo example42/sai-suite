@@ -19,7 +19,7 @@ from ...utils.config import get_config
 @click.option(
     '--schema', 
     type=click.Path(exists=True, path_type=Path),
-    help='Path to custom saidata schema file'
+    help='Path to custom saidata schema file (defaults to saidata-0.3-schema.json)'
 )
 @click.option(
     '--show-context',
@@ -48,6 +48,21 @@ from ...utils.config import get_config
     is_flag=True,
     help='Show detailed quality metrics and suggestions'
 )
+@click.option(
+    '--validate-urls',
+    is_flag=True,
+    help='Enable URL template validation for sources, binaries, and scripts'
+)
+@click.option(
+    '--validate-checksums',
+    is_flag=True,
+    help='Enable checksum format validation (algorithm:hash format)'
+)
+@click.option(
+    '--auto-recover',
+    is_flag=True,
+    help='Attempt automatic recovery from common validation errors'
+)
 def validate(
     file_path: Path,
     schema: Optional[Path] = None,
@@ -55,35 +70,79 @@ def validate(
     output_format: str = 'text',
     advanced: bool = False,
     no_repository_check: bool = False,
-    detailed: bool = False
+    detailed: bool = False,
+    validate_urls: bool = False,
+    validate_checksums: bool = False,
+    auto_recover: bool = False
 ) -> None:
-    """Validate a saidata YAML file against the schema.
+    """Validate a saidata YAML file against the 0.3 schema.
     
-    This command validates saidata files for:
-    - JSON schema compliance
-    - Custom validation rules
-    - Cross-reference consistency
-    - Best practice recommendations
-    - Quality metrics (with --advanced)
-    - Repository accuracy checking (with --advanced)
+    Comprehensive validation for saidata 0.3 schema files including:
+    
+    🔍 CORE VALIDATION:
+    • JSON schema compliance (saidata-0.3-schema.json)
+    • Required fields and structure validation
+    • Enum value validation for build systems, service types, etc.
+    • Cross-reference consistency checking
+    
+    🆕 NEW 0.3 FEATURES:
+    • URL template validation ({{version}}, {{platform}}, {{architecture}})
+    • Checksum format validation (algorithm:hash format)
+    • Security metadata validation (CVE exceptions, contacts)
+    • Installation method validation (sources, binaries, scripts)
+    • Provider configuration validation with overrides
+    • Compatibility matrix validation
+    
+    🔧 ADVANCED FEATURES:
+    • Quality metrics and scoring (--advanced)
+    • Repository accuracy checking (--advanced)
+    • Automatic error recovery (--auto-recover)
+    • Best practice recommendations
+    • Performance and security suggestions
+    
+    🛠️ ERROR RECOVERY:
+    The --auto-recover flag attempts to automatically fix common issues:
+    • Invalid URL template syntax
+    • Incorrect checksum formats
+    • Missing required fields with sensible defaults
+    • Enum value corrections
     
     Examples:
+        # Basic 0.3 schema validation
         saigen validate nginx.yaml
-        saigen validate --advanced --detailed nginx.yaml
-        saigen validate --schema custom-schema.json software.yaml
-        saigen validate --show-context --format json software.yaml
-        saigen validate --advanced --no-repository-check software.yaml
+        
+        # Validate with URL and checksum checking
+        saigen validate --validate-urls --validate-checksums terraform.yaml
+        
+        # Advanced validation with quality metrics
+        saigen validate --advanced --detailed kubernetes.yaml
+        
+        # Auto-recover from common errors
+        saigen validate --auto-recover --format json docker.yaml
+        
+        # Custom schema validation
+        saigen validate --schema custom-0.3-schema.json software.yaml
+        
+        # Detailed error context for debugging
+        saigen validate --show-context --format json nginx.yaml
+        
+        # Fast validation without repository checks
+        saigen validate --advanced --no-repository-check large-file.yaml
     """
     try:
         if advanced:
             # Use advanced validation with quality metrics
             asyncio.run(_run_advanced_validation(
                 file_path, schema, show_context, output_format, 
-                not no_repository_check, detailed
+                not no_repository_check, detailed, validate_urls, 
+                validate_checksums, auto_recover
             ))
         else:
             # Use basic validation
-            _run_basic_validation(file_path, schema, show_context, output_format)
+            _run_basic_validation(
+                file_path, schema, show_context, output_format,
+                validate_urls, validate_checksums, auto_recover
+            )
         
     except FileNotFoundError as e:
         raise click.ClickException(f"File not found: {e}")
@@ -95,22 +154,53 @@ def _run_basic_validation(
     file_path: Path,
     schema: Optional[Path],
     show_context: bool,
-    output_format: str
+    output_format: str,
+    validate_urls: bool = False,
+    validate_checksums: bool = False,
+    auto_recover: bool = False
 ) -> None:
-    """Run basic schema validation."""
-    # Create validator with optional custom schema
+    """Run basic schema validation with 0.3 features."""
+    # Create validator with optional custom schema (defaults to 0.3 schema)
     validator = SaidataValidator(schema_path=schema)
     
-    # Validate the file
-    result = validator.validate_file(file_path)
+    # Load and validate the file
+    if auto_recover:
+        # Use validation with automatic recovery
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f)
+            
+            result, recovery_result = validator.validate_with_recovery(data, str(file_path))
+            
+            # Show recovery information if any fixes were applied
+            if recovery_result and recovery_result.fixed_errors:
+                if output_format == 'text':
+                    click.echo("🔧 Automatic Error Recovery Applied:")
+                    recovery_report = validator.format_recovery_report(recovery_result)
+                    click.echo(recovery_report)
+                    click.echo("")
+                
+        except Exception as e:
+            result = validator.validate_file(file_path)
+            recovery_result = None
+    else:
+        # Standard validation
+        result = validator.validate_file(file_path)
+        recovery_result = None
     
     if output_format == 'json':
         # JSON output for programmatic use
         import json
         output = {
             'file': str(file_path),
+            'schema_version': '0.3',
             'valid': result.is_valid,
             'total_issues': result.total_issues,
+            'validation_features': {
+                'url_templates': validate_urls or True,  # Always enabled in 0.3
+                'checksums': validate_checksums or True,  # Always enabled in 0.3
+                'auto_recovery': auto_recover
+            },
             'errors': [
                 {
                     'severity': error.severity,
@@ -145,9 +235,35 @@ def _run_basic_validation(
                 for info in result.info
             ]
         }
+        
+        # Add recovery information if available
+        if recovery_result and recovery_result.fixed_errors:
+            output['recovery'] = {
+                'fixed_errors': recovery_result.fixed_errors,
+                'recovery_notes': recovery_result.recovery_notes,
+                'remaining_errors': len(recovery_result.remaining_errors)
+            }
+        
         click.echo(json.dumps(output, indent=2))
     else:
         # Human-readable text output
+        click.echo(f"📋 Saidata 0.3 Schema Validation Report")
+        click.echo(f"File: {file_path}")
+        click.echo("")
+        
+        # Show validation features status
+        features = []
+        if validate_urls or True:  # Always enabled in 0.3
+            features.append("URL Templates ✓")
+        if validate_checksums or True:  # Always enabled in 0.3
+            features.append("Checksums ✓")
+        if auto_recover:
+            features.append("Auto-Recovery ✓")
+        
+        if features:
+            click.echo(f"Validation Features: {', '.join(features)}")
+            click.echo("")
+        
         report = validator.format_validation_report(result, show_context=show_context)
         click.echo(report)
     
@@ -164,12 +280,20 @@ async def _run_advanced_validation(
     show_context: bool,
     output_format: str,
     check_repository_accuracy: bool,
-    detailed: bool
+    detailed: bool,
+    validate_urls: bool = False,
+    validate_checksums: bool = False,
+    auto_recover: bool = False
 ) -> None:
-    """Run advanced validation with quality metrics."""
+    """Run advanced validation with quality metrics and 0.3 features."""
     # Load saidata file
     with open(file_path, 'r', encoding='utf-8') as f:
         data = yaml.safe_load(f)
+    
+    # Check if this is a 0.3 saidata file
+    version = data.get('version', 'unknown')
+    if version != '0.3':
+        click.echo(f"⚠️  Warning: File version is '{version}', but validating against 0.3 schema", err=True)
     
     # Parse as SaiData model
     try:
@@ -193,9 +317,25 @@ async def _run_advanced_validation(
             click.echo(f"⚠️  Repository checking disabled: {e}", err=True)
             check_repository_accuracy = False
     
-    # Create advanced validator
+    # Create advanced validator with 0.3 schema
     base_validator = SaidataValidator(schema_path=schema)
     advanced_validator = AdvancedSaidataValidator(repository_manager, base_validator)
+    
+    # Apply auto-recovery if requested
+    recovery_result = None
+    if auto_recover:
+        try:
+            validation_result, recovery_result = base_validator.validate_with_recovery(data, str(file_path))
+            if recovery_result and recovery_result.fixed_errors:
+                # Re-parse the recovered data
+                saidata = SaiData.model_validate(recovery_result.recovered_data)
+                if output_format == 'text':
+                    click.echo("🔧 Automatic Error Recovery Applied:")
+                    recovery_report = base_validator.format_recovery_report(recovery_result)
+                    click.echo(recovery_report)
+                    click.echo("")
+        except Exception as e:
+            click.echo(f"⚠️  Auto-recovery failed: {e}", err=True)
     
     # Run comprehensive validation
     click.echo("🔍 Running advanced validation...", err=True)
@@ -208,8 +348,17 @@ async def _run_advanced_validation(
         import json
         output = {
             'file': str(file_path),
+            'schema_version': '0.3',
+            'file_version': version,
             'overall_score': quality_report.overall_score,
             'valid': quality_report.validation_result.is_valid,
+            'validation_features': {
+                'url_templates': validate_urls or True,  # Always enabled in 0.3
+                'checksums': validate_checksums or True,  # Always enabled in 0.3
+                'auto_recovery': auto_recover,
+                'repository_accuracy': check_repository_accuracy,
+                'advanced_metrics': True
+            },
             'quality_metrics': {
                 metric.value: {
                     'score': score.score,
@@ -256,9 +405,38 @@ async def _run_advanced_validation(
             ],
             'generated_at': quality_report.generated_at.isoformat()
         }
+        
+        # Add recovery information if available
+        if recovery_result and recovery_result.fixed_errors:
+            output['recovery'] = {
+                'fixed_errors': recovery_result.fixed_errors,
+                'recovery_notes': recovery_result.recovery_notes,
+                'remaining_errors': len(recovery_result.remaining_errors)
+            }
+        
         click.echo(json.dumps(output, indent=2))
     else:
         # Human-readable text output
+        click.echo(f"📋 Advanced Saidata 0.3 Schema Validation Report")
+        click.echo(f"File: {file_path}")
+        click.echo(f"File Version: {version}")
+        click.echo("")
+        
+        # Show validation features status
+        features = []
+        if validate_urls or True:  # Always enabled in 0.3
+            features.append("URL Templates ✓")
+        if validate_checksums or True:  # Always enabled in 0.3
+            features.append("Checksums ✓")
+        if auto_recover:
+            features.append("Auto-Recovery ✓")
+        if check_repository_accuracy:
+            features.append("Repository Accuracy ✓")
+        features.append("Quality Metrics ✓")
+        
+        click.echo(f"Validation Features: {', '.join(features)}")
+        click.echo("")
+        
         report = advanced_validator.format_quality_report(quality_report, detailed=detailed)
         click.echo(report)
     

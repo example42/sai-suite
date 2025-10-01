@@ -12,7 +12,7 @@ import click
 @click.option('--output', '-o', type=click.Path(path_type=Path), 
               help='Output file path (default: <software_name>.yaml)')
 @click.option('--providers', multiple=True, 
-              help='Target providers for saidata (e.g., apt, brew, winget)')
+              help='Target providers for saidata (e.g., apt, brew, winget, binary, source, script)')
 @click.option('--no-rag', is_flag=True, help='Disable RAG context injection')
 @click.option('--force', is_flag=True, help='Overwrite existing files')
 @click.option('--log-file', type=click.Path(path_type=Path),
@@ -20,10 +20,26 @@ import click
 @click.pass_context
 def generate(ctx: click.Context, software_name: str, output: Optional[Path], 
              providers: tuple, no_rag: bool, force: bool, log_file: Optional[Path]):
-    """Generate saidata for a software package.
+    """Generate saidata for a software package using 0.3 schema.
     
-    Creates a comprehensive saidata YAML file by combining LLM knowledge
-    with repository data and existing saidata examples.
+    Creates a comprehensive saidata YAML file using the latest 0.3 schema format
+    by combining LLM knowledge with repository data and existing saidata examples.
+    
+    🆕 NEW IN 0.3 SCHEMA:
+    • Sources: Build from source with autotools, cmake, make, meson, ninja
+    • Binaries: Download pre-compiled binaries with URL templating
+    • Scripts: Execute installation scripts with security validation
+    • Security metadata: CVE exceptions, security contacts, SBOM URLs
+    • URL templating: {{version}}, {{platform}}, {{architecture}} placeholders
+    • Enhanced providers: Provider-specific overrides for all resource types
+    • Compatibility matrix: Cross-platform compatibility tracking
+    
+    INSTALLATION METHODS:
+    • Package managers: apt, brew, winget, npm, pypi, cargo, etc.
+    • Binary downloads: Cross-platform binaries with automatic detection
+    • Source compilation: Custom builds with various build systems
+    • Script installation: Secure script execution with validation
+    • Container deployment: Docker, Kubernetes, Helm configurations
     
     The --log-file option enables detailed logging of the entire generation
     process, including all LLM interactions, data operations, and timing
@@ -31,10 +47,20 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
     assurance.
     
     Examples:
+        # Basic generation with 0.3 schema
         saigen generate nginx
-        saigen generate --providers apt,brew --output custom.yaml nginx
-        saigen generate --no-rag --dry-run postgresql
-        saigen generate --log-file ./nginx-gen.json --verbose nginx
+        
+        # Target specific providers including new installation methods
+        saigen generate --providers apt,brew,binary,source terraform
+        
+        # Generate with comprehensive logging
+        saigen generate --log-file ./generation.json --verbose kubernetes
+        
+        # Dry run to preview 0.3 features
+        saigen generate --dry-run --verbose docker
+        
+        # Force overwrite with custom output
+        saigen generate --force --output custom-nginx.yaml nginx
     """
     # Input validation for security
     if not software_name or not software_name.strip():
@@ -69,6 +95,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
     
     if verbose:
         click.echo(f"Generating saidata for: {software_name}")
+        click.echo(f"Schema version: 0.3")
         click.echo(f"LLM Provider: {llm_provider or 'default'}")
         click.echo(f"Target providers: {list(providers) if providers else 'default'}")
         click.echo(f"RAG enabled: {not no_rag}")
@@ -91,7 +118,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
             click.echo(f"Generation log: {log_file}")
     
     if dry_run:
-        click.echo(f"[DRY RUN] Would generate saidata for '{software_name}'")
+        click.echo(f"[DRY RUN] Would generate saidata 0.3 for '{software_name}'")
         if output:
             click.echo(f"[DRY RUN] Would save to: {output}")
         else:
@@ -186,6 +213,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         
         if verbose:
             click.echo(f"Generating saidata for: {software_name}")
+            click.echo(f"Schema version: 0.3")
             click.echo(f"LLM Provider: {provider_enum.value}")
             click.echo(f"Target providers: {request.target_providers}")
             click.echo(f"RAG enabled: {request.use_rag}")
@@ -212,7 +240,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
             )
         
         if result.success:
-            click.echo(f"✓ Successfully generated saidata for '{software_name}'")
+            click.echo(f"✓ Successfully generated saidata 0.3 for '{software_name}'")
             click.echo(f"✓ Saved to: {output}")
             
             if verbose:
