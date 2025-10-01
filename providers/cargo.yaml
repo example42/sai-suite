@@ -8,66 +8,47 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   executable: "cargo"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Cargo"
-    template: "cargo install {{sai_packages(saidata, 'cargo')}}"
+    template: "cargo install {{sai_package('*', 'package_name', 'cargo')}}"
     timeout: 600
-    detection: "cargo search {{sai_package(saidata, 'cargo')}} >/dev/null 2>&1"
+    detection: "cargo search {{sai_package(0, 'package_name', 'cargo')}} >/dev/null 2>&1"
     validation:
-      command: "cargo install --list | grep {{sai_package(saidata, 'cargo')}}"
+      command: "cargo install --list | grep {{sai_package(0, 'package_name', 'cargo')}}"
       expected_exit_code: 0
-    rollback: "cargo uninstall {{sai_packages(saidata, 'cargo')}}"
+    rollback: "cargo uninstall {{sai_package('*', 'package_name', 'cargo')}}"
 
   uninstall:
     description: "Remove packages via Cargo"
-    template: "cargo uninstall {{sai_packages(saidata, 'cargo')}}"
-    detection: "cargo search {{sai_package(saidata, 'cargo')}} >/dev/null 2>&1"
+    template: "cargo uninstall {{sai_package('*', 'package_name', 'cargo')}}"
+    detection: "cargo search {{sai_package(0, 'package_name', 'cargo')}} >/dev/null 2>&1"
     validation:
-      command: "! cargo install --list | grep {{sai_package(saidata, 'cargo')}}"
+      command: "! cargo install --list | grep {{sai_package(0, 'package_name', 'cargo')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Cargo"
-    template: "cargo install --force {{sai_packages(saidata, 'cargo')}}"
+    template: "cargo install --force {{sai_package('*', 'package_name', 'cargo')}}"
     timeout: 600
-    detection: "cargo search {{sai_package(saidata, 'cargo')}} >/dev/null 2>&1"
+    detection: "cargo search {{sai_package(0, 'package_name', 'cargo')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start Rust application"
-    template: "{{sai_command(saidata, 'default')}}"
 
-  stop:
-    description: "Stop Rust application"
-    template: "pkill -f {{sai_package(saidata, 'cargo')}}"
-
-  restart:
-    description: "Restart Rust application"
-    steps:
-      - name: "stop-app"
-        command: "pkill -f {{sai_package(saidata, 'cargo')}}"
-        ignore_failure: true
-      - name: "start-app"
-        command: "{{sai_command(saidata, 'default')}}"
-
-  status:
-    description: "Check application status"
-    template: "pgrep -f {{sai_package(saidata, 'cargo')}}"
 
   info:
     description: "Show package information"
-    template: "cargo search {{sai_package(saidata, 'cargo')}} --limit 1"
+    template: "cargo search {{sai_package(0, 'package_name', 'cargo')}} --limit 1"
 
   search:
     description: "Search for packages"
-    template: "cargo search {{sai_package(saidata, 'cargo')}}"
+    template: "cargo search {{sai_package(0, 'package_name', 'cargo')}}"
 
   list:
     description: "List installed packages"
-    template: "cargo install --list | grep {{sai_package(saidata, 'cargo')}}"
+    template: "cargo install --list | grep {{sai_package(0, 'package_name', 'cargo')}}"
 
   version:
     description: "Show package version"
-    template: "cargo install --list | grep '^{{sai_package(saidata, 'cargo')}} '"
+    template: "cargo install --list | grep '^{{sai_package(0, 'package_name', 'cargo')}} '"

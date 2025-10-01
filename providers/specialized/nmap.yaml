@@ -13,31 +13,31 @@ provider:
 actions:
   search:
     description: "Port scan target"
-    template: "nmap -p {{sai_port(saidata)}} {{target_host}}"
+    template: "nmap -p {{sai_port()}} {{target_host}}"
     variables:
       target_host: "localhost"
 
   info:
     description: "Service discovery"
-    template: "nmap -sV -p {{sai_port(saidata)}} {{target_host}}"
+    template: "nmap -sV -p {{sai_port()}} {{target_host}}"
     variables:
       target_host: "localhost"
 
   logs:
     description: "Script scan"
-    template: "nmap -sC -p {{sai_port(saidata) or '80'}} {{target_host}}"
+    template: "nmap -sC -p {{sai_port()}} {{target_host}}"
     variables:
       target_host: "localhost"
 
   list:
     description: "Timing and performance"
-    template: "nmap -T4 -p {{sai_port(saidata) or '80'}} {{target_host}}"
+    template: "nmap -T4 -p {{sai_port()}} {{target_host}}"
     variables:
       target_host: "localhost"
 
   version:
     description: "Detect service versions on target"
-    template: "nmap -sV -p {{sai_port(saidata) or '80'}} {{target_host}}"
+    template: "nmap -sV -p {{sai_port()}} {{target_host}}"
     variables:
       target_host: "localhost"
 

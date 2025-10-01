@@ -1,0 +1,65 @@
+# Service Provider Data - SysV init service management for older Linux distributions
+version: "1.0"
+
+provider:
+  name: "service"
+  display_name: "SysV Service Manager"
+  description: "Service management for SysV init-based Linux distributions"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "service"
+  priority: 85  # Lower priority than systemctl, used as fallback
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test service command availability"
+    template: "service --help"
+    timeout: 10
+    validation:
+      command: "service --help"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via service command"
+    template: "service {{sai_service(0, 'service_name', 'service')}} start"
+    validation:
+      command: "service {{sai_service(0, 'service_name', 'service')}} status | grep running"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via service command"
+    template: "service {{sai_service(0, 'service_name', 'service')}} stop"
+    validation:
+      command: "service {{sai_service(0, 'service_name', 'service')}} status | grep stopped"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via service command"
+    template: "service {{sai_service(0, 'service_name', 'service')}} restart"
+    validation:
+      command: "service {{sai_service(0, 'service_name', 'service')}} status | grep running"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start"
+    template: "chkconfig {{sai_service(0, 'service_name', 'service')}} on"
+    validation:
+      command: "chkconfig --list {{sai_service(0, 'service_name', 'service')}} | grep on"
+      expected_exit_code: 0
+
+  disable:
+    description: "Disable service auto-start"
+    template: "chkconfig {{sai_service(0, 'service_name', 'service')}} off"
+    validation:
+      command: "chkconfig --list {{sai_service(0, 'service_name', 'service')}} | grep off"
+      expected_exit_code: 0
+
+  status:
+    description: "Check service status"
+    template: "service {{sai_service(0, 'service_name', 'service')}} status"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 /var/log/{{sai_service(0, 'service_name', 'service')}}.log"

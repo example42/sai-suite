@@ -8,81 +8,84 @@ provider:
   type: "package_manager"
   platforms: ["ubuntu", "fedora", "debian", "opensuse", "arch"]
   executable: "snap"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install snap package"
-    template: "snap install {{sai_package(saidata, 'snap')}} {{install_options}}"
+    template: "snap install {{sai_package(0, 'package_name', 'snap')}} {{install_options}}"
     timeout: 600
-    detection: "snap find {{sai_package(saidata, 'snap')}} | grep -q '^{{sai_package(saidata, 'snap')}}'"
+    detection: "snap find {{sai_package(0, 'package_name', 'snap')}} | grep -q '^{{sai_package(0, 'package_name', 'snap')}}'"
     validation:
-      command: "snap list | grep {{sai_package(saidata, 'snap')}}"
+      command: "snap list | grep {{sai_package(0, 'package_name', 'snap')}}"
       expected_exit_code: 0
-    rollback: "snap remove {{sai_package(saidata, 'snap')}}"
+    rollback: "snap remove {{sai_package(0, 'package_name', 'snap')}}"
     variables:
       install_options: "--classic"
 
   uninstall:
     description: "Remove snap package"
-    template: "snap remove {{sai_package(saidata, 'snap')}}"
-    detection: "snap list | grep -q '^{{sai_package(saidata, 'snap')}}'"
+    template: "snap remove {{sai_package(0, 'package_name', 'snap')}}"
+    detection: "snap list | grep -q '^{{sai_package(0, 'package_name', 'snap')}}'"
     validation:
-      command: "! snap list | grep {{sai_package(saidata, 'snap')}}"
+      command: "! snap list | grep {{sai_package(0, 'package_name', 'snap')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Refresh snap package"
-    template: "snap refresh {{sai_package(saidata, 'snap')}}"
+    template: "snap refresh {{sai_package(0, 'package_name', 'snap')}}"
     timeout: 600
-    detection: "snap list | grep -q '^{{sai_package(saidata, 'snap')}}'"
+    detection: "snap list | grep -q '^{{sai_package(0, 'package_name', 'snap')}}'"
+    validation:
+      command: "snap list | grep {{sai_package(0, 'package_name', 'snap')}}"
+      expected_exit_code: 0
 
   start:
     description: "Start snap service"
-    template: "snap start {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}}"
+    template: "snap start {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}}"
     validation:
-      command: "snap services | grep {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}} | grep active"
+      command: "snap services | grep {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}} | grep active"
       expected_exit_code: 0
 
   stop:
     description: "Stop snap service"
-    template: "snap stop {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}}"
+    template: "snap stop {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}}"
     validation:
-      command: "snap services | grep {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}} | grep inactive"
+      command: "snap services | grep {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}} | grep inactive"
       expected_exit_code: 0
 
   restart:
     description: "Restart snap service"
-    template: "snap restart {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}}"
+    template: "snap restart {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}}"
 
   enable:
     description: "Enable snap service"
-    template: "snap start --enable {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}}"
+    template: "snap start --enable {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}}"
 
   disable:
     description: "Disable snap service"
-    template: "snap stop --disable {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}}"
+    template: "snap stop --disable {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}}"
 
   status:
     description: "Check snap service status"
-    template: "snap services {{sai_package(saidata, 'snap')}}"
+    template: "snap services {{sai_package(0, 'package_name', 'snap')}}"
 
   logs:
     description: "Show snap service logs"
-    template: "snap logs {{sai_package(saidata, 'snap')}}.{{sai_service(saidata, 'service_name') or sai_package(saidata, 'snap')}}"
+    template: "snap logs {{sai_package(0, 'package_name', 'snap')}}.{{sai_service(0, 'service_name', 'snap')}}"
 
   info:
     description: "Show snap information"
-    template: "snap info {{sai_package(saidata, 'snap')}}"
+    template: "snap info {{sai_package(0, 'package_name', 'snap')}}"
 
   search:
     description: "Search for snaps"
-    template: "snap find {{sai_package(saidata, 'snap')}}"
+    template: "snap find {{sai_package(0, 'package_name', 'snap')}}"
 
   list:
     description: "List installed snaps"
-    template: "snap list | grep {{sai_package(saidata, 'snap')}}"
+    template: "snap list | grep {{sai_package(0, 'package_name', 'snap')}}"
 
   version:
     description: "Show package version"
-    template: "snap list {{sai_package(saidata, 'snap')}}"
+    template: "snap list {{sai_package(0, 'package_name', 'snap')}}"

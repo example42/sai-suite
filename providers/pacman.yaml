@@ -8,25 +8,25 @@ provider:
   type: "package_manager"
   platforms: ["arch", "manjaro", "endeavouros"]
   executable: "pacman"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Pacman"
-    template: "pacman -S --noconfirm {{sai_packages(saidata, 'pacman')}}"
+    template: "pacman -S --noconfirm {{sai_package('*', 'package_name', 'pacman')}}"
     timeout: 600
-    detection: "pacman -Si {{sai_package(saidata, 'pacman')}} >/dev/null 2>&1"
+    detection: "pacman -Si {{sai_package(0, 'package_name', 'pacman')}} >/dev/null 2>&1"
     validation:
-      command: "pacman -Q | grep {{sai_package(saidata, 'pacman')}}"
+      command: "pacman -Q | grep {{sai_package(0, 'package_name', 'pacman')}}"
       expected_exit_code: 0
-    rollback: "pacman -R --noconfirm {{sai_packages(saidata, 'pacman')}}"
+    rollback: "pacman -R --noconfirm {{sai_package('*', 'package_name', 'pacman')}}"
 
   uninstall:
     description: "Remove packages via Pacman"
-    template: "pacman -R --noconfirm {{sai_packages(saidata, 'pacman')}}"
-    detection: "pacman -Si {{sai_package(saidata, 'pacman')}} >/dev/null 2>&1"
+    template: "pacman -R --noconfirm {{sai_package('*', 'package_name', 'pacman')}}"
+    detection: "pacman -Si {{sai_package(0, 'package_name', 'pacman')}} >/dev/null 2>&1"
     validation:
-      command: "! pacman -Q | grep {{sai_package(saidata, 'pacman')}}"
+      command: "! pacman -Q | grep {{sai_package(0, 'package_name', 'pacman')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -35,55 +35,27 @@ actions:
       - name: "sync-database"
         command: "pacman -Sy"
       - name: "upgrade-packages"
-        command: "pacman -S --noconfirm {{sai_packages(saidata, 'pacman')}}"
+        command: "pacman -S --noconfirm {{sai_package('*', 'package_name', 'pacman')}}"
     timeout: 600
-
-  start:
-    description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
+    detection: "pacman -Q | grep -q {{sai_package(0, 'package_name', 'pacman')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-      expected_output: "active"
+      command: "pacman -Q | grep {{sai_package(0, 'package_name', 'pacman')}}"
+      expected_exit_code: 0
 
-  stop:
-    description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-    validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-      expected_output: "inactive"
 
-  restart:
-    description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-
-  status:
-    description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}}"
-
-  logs:
-    description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pacman')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "pacman -Si {{sai_package(saidata, 'pacman')}}"
+    template: "pacman -Si {{sai_package(0, 'package_name', 'pacman')}}"
 
   search:
     description: "Search for packages"
-    template: "pacman -Ss {{sai_package(saidata, 'pacman')}}"
+    template: "pacman -Ss {{sai_package(0, 'package_name', 'pacman')}}"
 
   list:
     description: "List installed packages"
-    template: "pacman -Q | grep {{sai_package(saidata, 'pacman')}}"
+    template: "pacman -Q | grep {{sai_package(0, 'package_name', 'pacman')}}"
 
   version:
     description: "Show package version"
-    template: "pacman -Q {{sai_package(saidata, 'pacman')}}"
+    template: "pacman -Q {{sai_package(0, 'package_name', 'pacman')}}"

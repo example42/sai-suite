@@ -8,76 +8,76 @@ provider:
   type: "package_manager"
   platforms: ["freebsd", "dragonfly"]
   executable: "pkg"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via PKG"
-    template: "pkg install -y {{sai_packages(saidata, 'pkg')}}"
+    template: "pkg install -y {{sai_package('*', 'package_name', 'pkg')}}"
     timeout: 600
-    detection: "pkg info {{sai_package(saidata, 'pkg')}} >/dev/null 2>&1"
+    detection: "pkg info {{sai_package(0, 'package_name', 'pkg')}} >/dev/null 2>&1"
     validation:
-      command: "pkg info | grep {{sai_package(saidata, 'pkg')}}"
+      command: "pkg info | grep {{sai_package(0, 'package_name', 'pkg')}}"
       expected_exit_code: 0
-    rollback: "pkg delete -y {{sai_packages(saidata, 'pkg')}}"
+    rollback: "pkg delete -y {{sai_package('*', 'package_name', 'pkg')}}"
 
   uninstall:
     description: "Remove packages via PKG"
-    template: "pkg delete -y {{sai_packages(saidata, 'pkg')}}"
-    detection: "pkg info {{sai_package(saidata, 'pkg')}} >/dev/null 2>&1"
+    template: "pkg delete -y {{sai_package('*', 'package_name', 'pkg')}}"
+    detection: "pkg info {{sai_package(0, 'package_name', 'pkg')}} >/dev/null 2>&1"
     validation:
-      command: "! pkg info | grep {{sai_package(saidata, 'pkg')}}"
+      command: "! pkg info | grep {{sai_package(0, 'package_name', 'pkg')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via PKG"
-    template: "pkg upgrade -y {{sai_packages(saidata, 'pkg')}}"
+    template: "pkg upgrade -y {{sai_package('*', 'package_name', 'pkg')}}"
     timeout: 600
-    detection: "pkg info {{sai_package(saidata, 'pkg')}} >/dev/null 2>&1"
+    detection: "pkg info {{sai_package(0, 'package_name', 'pkg')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via service command"
-    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} start"
+    template: "service {{sai_service(0, 'service_name', 'pkg')}} start"
     validation:
-      command: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} status"
+      command: "service {{sai_service(0, 'service_name', 'pkg')}} status"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via service command"
-    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} stop"
+    template: "service {{sai_service(0, 'service_name', 'pkg')}} stop"
 
   restart:
     description: "Restart service via service command"
-    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} restart"
+    template: "service {{sai_service(0, 'service_name', 'pkg')}} restart"
 
   enable:
     description: "Enable service auto-start"
-    template: "sysrc {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}}_enable=YES"
+    template: "sysrc {{sai_service(0, 'service_name', 'pkg')}}_enable=YES"
 
   disable:
     description: "Disable service auto-start"
-    template: "sysrc {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}}_enable=NO"
+    template: "sysrc {{sai_service(0, 'service_name', 'pkg')}}_enable=NO"
 
   status:
     description: "Check service status"
-    template: "service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'pkg')}} status"
+    template: "service {{sai_service(0, 'service_name', 'pkg')}} status"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
+    template: "tail -n 50 {{sai_file('log', 'path', 'pkg')}}"
 
   info:
     description: "Show package information"
-    template: "pkg info {{sai_package(saidata, 'pkg')}}"
+    template: "pkg info {{sai_package(0, 'package_name', 'pkg')}}"
 
   search:
     description: "Search for packages"
-    template: "pkg search {{sai_package(saidata, 'pkg')}}"
+    template: "pkg search {{sai_package(0, 'package_name', 'pkg')}}"
 
   list:
     description: "List installed packages"
-    template: "pkg info | grep {{sai_package(saidata, 'pkg')}}"
+    template: "pkg info | grep {{sai_package(0, 'package_name', 'pkg')}}"
 
   version:
     description: "Show package version"
-    template: "pkg info {{sai_package(saidata, 'pkg')}} | grep Version"
+    template: "pkg info {{sai_package(0, 'package_name', 'pkg')}} | grep Version"

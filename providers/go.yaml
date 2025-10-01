@@ -8,72 +8,53 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   executable: "go"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Go"
-    template: "go install {{sai_packages(saidata, 'go')}}@latest"
+    template: "go install {{sai_package('*', 'package_name', 'go')}}@latest"
     timeout: 300
-    detection: "go list -m {{sai_package(saidata, 'go')}} >/dev/null 2>&1"
+    detection: "go list -m {{sai_package(0, 'package_name', 'go')}} >/dev/null 2>&1"
     validation:
-      command: "ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
+      command: "ls {{gopath}}/bin/ | grep {{sai_package(0, 'package_name', 'go')}}"
       expected_exit_code: 0
-    rollback: "rm -f {{gopath}}/bin/{{sai_package(saidata, 'go')}}*"
+    rollback: "rm -f {{gopath}}/bin/{{sai_package(0, 'package_name', 'go')}}*"
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"
 
   uninstall:
     description: "Remove packages via Go"
-    template: "rm -f {{gopath}}/bin/{{sai_package(saidata, 'go')}}*"
-    detection: "go list -m {{sai_package(saidata, 'go')}} >/dev/null 2>&1"
+    template: "rm -f {{gopath}}/bin/{{sai_package(0, 'package_name', 'go')}}*"
+    detection: "go list -m {{sai_package(0, 'package_name', 'go')}} >/dev/null 2>&1"
     validation:
-      command: "! ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
+      command: "! ls {{gopath}}/bin/ | grep {{sai_package(0, 'package_name', 'go')}}"
       expected_exit_code: 0
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"
 
   upgrade:
     description: "Upgrade packages via Go"
-    template: "go install {{sai_packages(saidata, 'go')}}@latest"
+    template: "go install {{sai_package('*', 'package_name', 'go')}}@latest"
     timeout: 300
-    detection: "go list -m {{sai_package(saidata, 'go')}} >/dev/null 2>&1"
+    detection: "go list -m {{sai_package(0, 'package_name', 'go')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start Go application"
-    template: "{{sai_command(saidata, 'default')}}"
 
-  stop:
-    description: "Stop Go application"
-    template: "pkill -f {{sai_package(saidata, 'go')}}"
-
-  restart:
-    description: "Restart Go application"
-    steps:
-      - name: "stop-app"
-        command: "pkill -f {{sai_package(saidata, 'go')}}"
-        ignore_failure: true
-      - name: "start-app"
-        command: "{{sai_command(saidata, 'default')}}"
-
-  status:
-    description: "Check application status"
-    template: "pgrep -f {{sai_package(saidata, 'go')}}"
 
   info:
     description: "Show package information"
-    template: "go list -m {{sai_package(saidata, 'go')}}"
+    template: "go list -m {{sai_package(0, 'package_name', 'go')}}"
 
   search:
     description: "Search for packages"
-    template: "go list -m {{sai_package(saidata, 'go')}}"
+    template: "go list -m {{sai_package(0, 'package_name', 'go')}}"
 
   list:
     description: "List installed packages"
-    template: "ls {{gopath}}/bin/ | grep {{sai_package(saidata, 'go')}}"
+    template: "ls {{gopath}}/bin/ | grep {{sai_package(0, 'package_name', 'go')}}"
     variables:
       gopath: "${GOPATH:-$(go env GOPATH)}"
 
   version:
     description: "Show package version"
-    template: "go list -m {{sai_package(saidata, 'go')}}"
+    template: "go list -m {{sai_package(0, 'package_name', 'go')}}"

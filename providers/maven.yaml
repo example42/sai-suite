@@ -8,72 +8,72 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos", "windows"]
   executable: "mvn"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Maven"
-    template: "mvn dependency:get -Dartifact={{sai_packages(saidata, 'maven')}}:{{saidata.packages.default.version}}"
+    template: "mvn dependency:get -Dartifact={{sai_package(0, 'package_name', 'maven')}}:{{sai_package(0, 'version', 'maven')}}"
     timeout: 300
-    detection: "mvn dependency:get -Dartifact={{sai_package(saidata, 'maven')}} >/dev/null 2>&1"
+    detection: "mvn dependency:get -Dartifact={{sai_package(0, 'package_name', 'maven')}} >/dev/null 2>&1"
     validation:
-      command: "find {{maven_repo}} -name '*{{sai_package(saidata, 'maven')}}*' -type f"
+      command: "find {{maven_repo}} -name '*{{sai_package(0, 'package_name', 'maven')}}*' -type f"
       expected_exit_code: 0
-    rollback: "rm -rf {{maven_repo}}/{{sai_packages(saidata, 'maven')}}"
+    rollback: "rm -rf {{maven_repo}}/{{sai_package(0, 'package_name', 'maven')}}"
     variables:
       maven_repo: "~/.m2/repository"
 
   uninstall:
     description: "Remove packages via Maven"
-    template: "rm -rf {{maven_repo}}/{{sai_packages(saidata, 'maven')}}"
-    detection: "mvn dependency:get -Dartifact={{sai_package(saidata, 'maven')}} >/dev/null 2>&1"
+    template: "rm -rf {{maven_repo}}/{{sai_package(0, 'package_name', 'maven')}}"
+    detection: "mvn dependency:get -Dartifact={{sai_package(0, 'package_name', 'maven')}} >/dev/null 2>&1"
     validation:
-      command: "! find {{maven_repo}} -name '*{{sai_package(saidata, 'maven')}}*' -type f"
+      command: "! find {{maven_repo}} -name '*{{sai_package(0, 'package_name', 'maven')}}*' -type f"
       expected_exit_code: 0
     variables:
       maven_repo: "~/.m2/repository"
 
   upgrade:
     description: "Upgrade packages via Maven"
-    template: "mvn dependency:get -Dartifact={{sai_packages(saidata, 'maven')}}:LATEST"
+    template: "mvn dependency:get -Dartifact={{sai_package(0, 'package_name', 'maven')}}:LATEST"
     timeout: 300
-    detection: "mvn dependency:get -Dartifact={{sai_package(saidata, 'maven')}} >/dev/null 2>&1"
+    detection: "mvn dependency:get -Dartifact={{sai_package(0, 'package_name', 'maven')}} >/dev/null 2>&1"
 
   start:
     description: "Start Java application"
-    template: "java -jar {{sai_command(saidata, 'default')}}"
+    template: "java -jar {{sai_command(0, 'path', 'maven')}}"
 
   stop:
     description: "Stop Java application"
-    template: "pkill -f {{sai_package(saidata, 'maven')}}"
+    template: "pkill -f {{sai_package(0, 'package_name', 'maven')}}"
 
   restart:
     description: "Restart Java application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{sai_package(saidata, 'maven')}}"
+        command: "pkill -f {{sai_package(0, 'package_name', 'maven')}}"
         ignore_failure: true
       - name: "start-app"
-        command: "java -jar {{sai_command(saidata, 'default')}}"
+        command: "java -jar {{sai_command(0, 'path', 'maven')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{sai_package(saidata, 'maven')}}"
+    template: "pgrep -f {{sai_package(0, 'package_name', 'maven')}}"
 
   info:
     description: "Show package information"
-    template: "mvn dependency:tree | grep {{sai_package(saidata, 'maven')}}"
+    template: "mvn dependency:tree | grep {{sai_package(0, 'package_name', 'maven')}}"
 
   search:
     description: "Search for packages"
-    template: "mvn dependency:resolve-sources | grep {{sai_package(saidata, 'maven')}}"
+    template: "mvn dependency:resolve-sources | grep {{sai_package(0, 'package_name', 'maven')}}"
 
   list:
     description: "List installed packages"
-    template: "find {{maven_repo}} -name '*{{sai_package(saidata, 'maven')}}*' -type f"
+    template: "find {{maven_repo}} -name '*{{sai_package(0, 'package_name', 'maven')}}*' -type f"
     variables:
       maven_repo: "~/.m2/repository"
 
   version:
     description: "Show package version"
-    template: "mvn dependency:tree | grep '{{sai_package(saidata, 'maven')}}:' | head -1"
+    template: "mvn dependency:tree | grep '{{sai_package(0, 'package_name', 'maven')}}:' | head -1"

@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["openwrt", "embedded"]
   executable: "opkg"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
@@ -17,20 +17,20 @@ actions:
       - name: "update-package-list"
         command: "opkg update"
       - name: "install-packages"
-        command: "opkg install {{sai_packages(saidata, 'opkg')}}"
+        command: "opkg install {{sai_package('*', 'package_name', 'opkg')}}"
     timeout: 300
-    detection: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}} >/dev/null 2>&1"
+    detection: "opkg list-installed | grep {{sai_package(0, 'package_name', 'opkg')}} >/dev/null 2>&1"
     validation:
-      command: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}}"
+      command: "opkg list-installed | grep {{sai_package(0, 'package_name', 'opkg')}}"
       expected_exit_code: 0
-    rollback: "opkg remove {{sai_packages(saidata, 'opkg')}}"
+    rollback: "opkg remove {{sai_package('*', 'package_name', 'opkg')}}"
 
   uninstall:
     description: "Remove packages via OPKG"
-    template: "opkg remove {{sai_packages(saidata, 'opkg')}}"
-    detection: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}} >/dev/null 2>&1"
+    template: "opkg remove {{sai_package('*', 'package_name', 'opkg')}}"
+    detection: "opkg list-installed | grep {{sai_package(0, 'package_name', 'opkg')}} >/dev/null 2>&1"
     validation:
-      command: "! opkg list-installed | grep {{sai_package(saidata, 'opkg')}}"
+      command: "! opkg list-installed | grep {{sai_package(0, 'package_name', 'opkg')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -39,53 +39,24 @@ actions:
       - name: "update-package-list"
         command: "opkg update"
       - name: "upgrade-packages"
-        command: "opkg upgrade {{sai_packages(saidata, 'opkg')}}"
+        command: "opkg upgrade {{sai_package('*', 'package_name', 'opkg')}}"
     timeout: 300
-    detection: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}} >/dev/null 2>&1"
+    detection: "opkg list-installed | grep {{sai_package(0, 'package_name', 'opkg')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start service via init script"
-    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} start"
-    validation:
-      command: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} status"
-      expected_exit_code: 0
 
-  stop:
-    description: "Stop service via init script"
-    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} stop"
-
-  restart:
-    description: "Restart service via init script"
-    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} restart"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} enable"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} disable"
-
-  status:
-    description: "Check service status"
-    template: "/etc/init.d/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}} status"
-
-  logs:
-    description: "Show service logs"
-    template: "logread | grep {{sai_service(saidata, 'service_name') or sai_package(saidata, 'opkg')}}"
 
   info:
     description: "Show package information"
-    template: "opkg info {{sai_package(saidata, 'opkg')}}"
+    template: "opkg info {{sai_package(0, 'package_name', 'opkg')}}"
 
   search:
     description: "Search for packages"
-    template: "opkg find {{sai_package(saidata, 'opkg')}}"
+    template: "opkg find {{sai_package(0, 'package_name', 'opkg')}}"
 
   list:
     description: "List installed packages"
-    template: "opkg list-installed | grep {{sai_package(saidata, 'opkg')}}"
+    template: "opkg list-installed | grep {{sai_package(0, 'package_name', 'opkg')}}"
 
   version:
     description: "Show package version"
-    template: "opkg list-installed {{sai_package(saidata, 'opkg')}} | awk '{print $1\" \"$3}'"
+    template: "opkg list-installed {{sai_package(0, 'package_name', 'opkg')}} | awk '{print $1\" \"$3}'"

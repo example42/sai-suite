@@ -12,22 +12,22 @@ provider:
 actions:
   info:
     description: "Show memory mapping"
-    template: "pmap $(pgrep -f {{saidata.metadata.name}})"
+    template: "pmap $(pgrep -f {{metadata.name}})"
 
   list:
     description: "Extended memory information"
-    template: "pmap -x $(pgrep -f {{saidata.metadata.name}})"
+    template: "pmap -x $(pgrep -f {{metadata.name}})"
 
   status:
     description: "Device format mapping"
-    template: "pmap -d $(pgrep -f {{saidata.metadata.name}})"
+    template: "pmap -d $(pgrep -f {{metadata.name}})"
 
   search:
     description: "Quiet mode mapping"
-    template: "pmap -q $(pgrep -f {{saidata.metadata.name}})"
+    template: "pmap -q $(pgrep -f {{metadata.name}})"
 
   logs:
     description: "Address range mapping"
-    template: "pmap -A {{address_range}} $(pgrep -f {{saidata.metadata.name}})"
+    template: "pmap -A {{address_range}} $(pgrep -f {{metadata.name}})"
     variables:
       address_range: "low,high"

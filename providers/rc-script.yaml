@@ -1,0 +1,65 @@
+# RC Script Provider Data - Slackware service management via rc scripts
+version: "1.0"
+
+provider:
+  name: "rc-script"
+  display_name: "Slackware RC Scripts"
+  description: "Service management for Slackware Linux via rc scripts"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "ls"  # Check for /etc/rc.d directory existence
+  priority: 90  # High priority for Slackware systems
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test rc script availability"
+    template: "test -d /etc/rc.d"
+    timeout: 10
+    validation:
+      command: "test -d /etc/rc.d"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via rc script"
+    template: "/etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}} start"
+    validation:
+      command: "pgrep {{sai_service(0, 'service_name', 'rc-script')}}"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via rc script"
+    template: "/etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}} stop"
+    validation:
+      command: "! pgrep {{sai_service(0, 'service_name', 'rc-script')}}"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via rc script"
+    template: "/etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}} restart"
+    validation:
+      command: "pgrep {{sai_service(0, 'service_name', 'rc-script')}}"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start (make executable)"
+    template: "chmod +x /etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}}"
+    validation:
+      command: "test -x /etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}}"
+      expected_exit_code: 0
+
+  disable:
+    description: "Disable service auto-start (remove executable)"
+    template: "chmod -x /etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}}"
+    validation:
+      command: "! test -x /etc/rc.d/rc.{{sai_service(0, 'service_name', 'rc-script')}}"
+      expected_exit_code: 0
+
+  status:
+    description: "Check service status"
+    template: "pgrep {{sai_service(0, 'service_name', 'rc-script')}} && echo 'running' || echo 'stopped'"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 /var/log/{{sai_service(0, 'service_name', 'rc-script')}}.log"

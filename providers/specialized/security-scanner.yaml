@@ -18,53 +18,53 @@ actions:
       vuln_target: "{{scan_target_type}} {{scan_target_path}}"
       vuln_options: "--severity HIGH,CRITICAL"
       output_format: "json"
-      vuln_output: "/tmp/vulns-{{saidata.metadata.name}}.json"
+      vuln_output: "/tmp/vulns-{{metadata.name}}.json"
       scan_target_type: "fs"  # Options: "image", "fs", "repo"
-      scan_target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      scan_target_path: "{{sai_file(0, 'path') or '/tmp'}}"
 
   sbom:
     description: "Generate Software Bill of Materials"
     template: "{{sbom_tool}} {{sbom_target}} -o {{sbom_format}} --output {{sbom_output}}"
     variables:
       sbom_tool: "syft"  # Options: "syft", "trivy"
-      sbom_target: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      sbom_target: "{{sai_file(0, 'path') or '/tmp'}}"
       sbom_format: "spdx-json"  # Options: "spdx-json", "cyclonedx-json", "table"
-      sbom_output: "/tmp/sbom-{{saidata.metadata.name}}.json"
+      sbom_output: "/tmp/sbom-{{metadata.name}}.json"
 
   secrets:
     description: "Scan for exposed secrets and credentials"
     template: "trivy fs --scanners secret {{scan_path}} -o json --output {{secrets_output}}"
     variables:
-      scan_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
-      secrets_output: "/tmp/secrets-{{saidata.metadata.name}}.json"
+      scan_path: "{{sai_file(0, 'path') or '/tmp'}}"
+      secrets_output: "/tmp/secrets-{{metadata.name}}.json"
 
   config:
     description: "Scan configuration files for security issues"
     template: "trivy config {{config_path}} --severity {{severity}} -o json --output {{config_output}}"
     variables:
-      config_path: "{{sai_file(saidata, 1, 'path') or '/etc'}}"
+      config_path: "{{sai_file(1, 'path') or '/etc'}}"
       severity: "HIGH,CRITICAL"
-      config_output: "/tmp/config-scan-{{saidata.metadata.name}}.json"
+      config_output: "/tmp/config-scan-{{metadata.name}}.json"
 
   licenses:
     description: "Scan for license compliance issues"
     template: "{{license_tool}} {{license_target}} {{license_options}} -o json --output {{license_output}}"
     variables:
       license_tool: "trivy"  # Options: "trivy", "syft"
-      license_target: "fs {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      license_target: "fs {{sai_file(0, 'path') or '/tmp'}}"
       license_options: "--scanners license"
-      license_output: "/tmp/licenses-{{saidata.metadata.name}}.json"
+      license_output: "/tmp/licenses-{{metadata.name}}.json"
 
   compliance:
     description: "Comprehensive security and compliance scan"
     steps:
       - name: "vulnerability-scan"
-        command: "trivy fs {{sai_file(saidata, 0, 'path') or '/tmp'}} --severity HIGH,CRITICAL -o json --output /tmp/vulns-{{saidata.metadata.name}}.json"
+        command: "trivy fs {{sai_file(0, 'path') or '/tmp'}} --severity HIGH,CRITICAL -o json --output /tmp/vulns-{{metadata.name}}.json"
       - name: "secret-scan"
-        command: "trivy fs --scanners secret {{sai_file(saidata, 0, 'path') or '/tmp'}} -o json --output /tmp/secrets-{{saidata.metadata.name}}.json"
+        command: "trivy fs --scanners secret {{sai_file(0, 'path') or '/tmp'}} -o json --output /tmp/secrets-{{metadata.name}}.json"
       - name: "config-scan"
-        command: "trivy config {{sai_file(saidata, 1, 'path') or '/etc'}} --severity HIGH,CRITICAL -o json --output /tmp/config-scan-{{saidata.metadata.name}}.json"
+        command: "trivy config {{sai_file(1, 'path') or '/etc'}} --severity HIGH,CRITICAL -o json --output /tmp/config-scan-{{metadata.name}}.json"
       - name: "license-scan"
-        command: "trivy fs --scanners license {{sai_file(saidata, 0, 'path') or '/tmp'}} -o json --output /tmp/licenses-{{saidata.metadata.name}}.json"
+        command: "trivy fs --scanners license {{sai_file(0, 'path') or '/tmp'}} -o json --output /tmp/licenses-{{metadata.name}}.json"
       - name: "generate-report"
-        command: "echo 'Compliance scan completed for {{saidata.metadata.name}}'"
+        command: "echo 'Compliance scan completed for {{metadata.name}}'"

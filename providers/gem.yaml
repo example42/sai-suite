@@ -9,66 +9,66 @@ provider:
   platforms: ["linux", "macos", "windows"]
   priority: 30  # Lower priority, more specialized
   executable: "gem"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Gem"
-    template: "gem install {{sai_packages(saidata, 'gem')}}"
+    template: "gem install {{sai_package('*', 'package_name', 'gem')}}"
     timeout: 300
-    detection: "gem search '^{{sai_package(saidata, 'gem')}}$' | grep -q '^{{sai_package(saidata, 'gem')}}'"
+    detection: "gem search '^{{sai_package(0, 'package_name', 'gem')}}' | grep -q '^{{sai_package(0, 'package_name', 'gem')}}'"
     validation:
-      command: "gem list | grep {{sai_package(saidata, 'gem')}}"
+      command: "gem list | grep {{sai_package(0, 'package_name', 'gem')}}"
       expected_exit_code: 0
-    rollback: "gem uninstall {{sai_packages(saidata, 'gem')}}"
+    rollback: "gem uninstall {{sai_package('*', 'package_name', 'gem')}}"
 
   uninstall:
     description: "Remove packages via Gem"
-    template: "gem uninstall {{sai_packages(saidata, 'gem')}}"
-    detection: "gem list | grep -q '^{{sai_package(saidata, 'gem')}}'"
+    template: "gem uninstall {{sai_package('*', 'package_name', 'gem')}}"
+    detection: "gem list | grep -q '^{{sai_package(0, 'package_name', 'gem')}}'"
     validation:
-      command: "! gem list | grep {{sai_package(saidata, 'gem')}}"
+      command: "! gem list | grep {{sai_package(0, 'package_name', 'gem')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Gem"
-    template: "gem update {{sai_packages(saidata, 'gem')}}"
+    template: "gem update {{sai_package('*', 'package_name', 'gem')}}"
     timeout: 300
-    detection: "gem list | grep -q '^{{sai_package(saidata, 'gem')}}'"
+    detection: "gem list | grep -q '^{{sai_package(0, 'package_name', 'gem')}}'"
 
   start:
     description: "Start Ruby application"
-    template: "{{sai_command(saidata, 'default')}}"
+    template: "{{sai_command(0, 'path', 'gem')}}"
 
   stop:
     description: "Stop Ruby application"
-    template: "pkill -f {{sai_package(saidata, 'gem')}}"
+    template: "pkill -f {{sai_package(0, 'package_name', 'gem')}}"
 
   restart:
     description: "Restart Ruby application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{sai_package(saidata, 'gem')}}"
+        command: "pkill -f {{sai_package(0, 'package_name', 'gem')}}"
         ignore_failure: true
       - name: "start-app"
-        command: "{{sai_command(saidata, 'default')}}"
+        command: "{{sai_command(0, 'path', 'gem')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{sai_package(saidata, 'gem')}}"
+    template: "pgrep -f {{sai_package(0, 'package_name', 'gem')}}"
 
   info:
     description: "Show package information"
-    template: "gem info {{sai_package(saidata, 'gem')}}"
+    template: "gem info {{sai_package(0, 'package_name', 'gem')}}"
 
   search:
     description: "Search for packages"
-    template: "gem search {{sai_package(saidata, 'gem')}}"
+    template: "gem search {{sai_package(0, 'package_name', 'gem')}}"
 
   list:
     description: "List installed packages"
-    template: "gem list | grep {{sai_package(saidata, 'gem')}}"
+    template: "gem list | grep {{sai_package(0, 'package_name', 'gem')}}"
 
   version:
     description: "Show package version"
-    template: "gem list {{sai_package(saidata, 'gem')}} | grep '^{{sai_package(saidata, 'gem')}}'"
+    template: "gem list {{sai_package(0, 'package_name', 'gem')}} | grep '^{{sai_package(0, 'package_name', 'gem')}}'"

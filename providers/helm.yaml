@@ -15,32 +15,32 @@ actions:
     description: "Install Helm chart"
     steps:
       - name: "add-repo"
-        command: "helm repo add {{chart_repo}} {{saidata.urls.repository}}"
+        command: "helm repo add {{chart_repo}} {{urls.repository}}"
         ignore_failure: true
       - name: "update-repo"
         command: "helm repo update"
       - name: "install-chart"
-        command: "helm install {{release_name}} {{chart_repo}}/{{sai_package(saidata, 'helm')}} --namespace {{namespace}} --create-namespace"
+        command: "helm install {{release_name}} {{chart_repo}}/{{sai_package(0, 'package_name', 'helm')}} --namespace {{namespace}} --create-namespace"
     timeout: 600
     validation:
       command: "helm list -n {{namespace}} | grep {{release_name}}"
       expected_exit_code: 0
     rollback: "helm uninstall {{release_name}} -n {{namespace}}"
     variables:
-      release_name: "{{sai_package(saidata, 'helm')}}-release"
-      namespace: "{{sai_package(saidata, 'helm')}}"
-      chart_repo: "{{sai_package(saidata, 'helm')}}-repo"
+      release_name: "{{sai_package(0, 'package_name', 'helm')}}-release"
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+      chart_repo: "{{sai_package(0, 'package_name', 'helm')}}-repo"
 
   uninstall:
     description: "Remove Helm chart"
     template: "helm uninstall {{release_name}} -n {{namespace}}"
-    detection: "helm search repo {{sai_package(saidata, 'helm')}} >/dev/null 2>&1"
+    detection: "helm search repo {{sai_package(0, 'package_name', 'helm')}} >/dev/null 2>&1"
     validation:
       command: "! helm list -n {{namespace}} | grep {{release_name}}"
       expected_exit_code: 0
     variables:
-      release_name: "{{sai_package(saidata, 'helm')}}-release"
-      namespace: "{{sai_package(saidata, 'helm')}}"
+      release_name: "{{sai_package(0, 'package_name', 'helm')}}-release"
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
 
   upgrade:
     description: "Upgrade Helm chart"
@@ -48,64 +48,66 @@ actions:
       - name: "update-repo"
         command: "helm repo update"
       - name: "upgrade-chart"
-        command: "helm upgrade {{release_name}} {{chart_repo}}/{{sai_package(saidata, 'helm')}} -n {{namespace}}"
+        command: "helm upgrade {{release_name}} {{chart_repo}}/{{sai_package(0, 'package_name', 'helm')}} -n {{namespace}}"
     timeout: 600
-    detection: "helm search repo {{sai_package(saidata, 'helm')}} >/dev/null 2>&1"
+    detection: "helm search repo {{sai_package(0, 'package_name', 'helm')}} >/dev/null 2>&1"
     variables:
-      release_name: "{{sai_package(saidata, 'helm')}}-release"
-      namespace: "{{sai_package(saidata, 'helm')}}"
-      chart_repo: "{{sai_package(saidata, 'helm')}}-repo"
+      release_name: "{{sai_package(0, 'package_name', 'helm')}}-release"
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+      chart_repo: "{{sai_package(0, 'package_name', 'helm')}}-repo"
 
-  start:
-    description: "Scale up Kubernetes deployment"
-    template: "kubectl scale deployment {{sai_package(saidata, 'helm')}} --replicas=1 -n {{namespace}}"
-    variables:
-      namespace: "{{sai_package(saidata, 'helm')}}"
 
-  stop:
-    description: "Scale down Kubernetes deployment"
-    template: "kubectl scale deployment {{sai_package(saidata, 'helm')}} --replicas=0 -n {{namespace}}"
-    variables:
-      namespace: "{{sai_package(saidata, 'helm')}}"
-
-  restart:
-    description: "Restart Kubernetes deployment"
-    template: "kubectl rollout restart deployment/{{sai_package(saidata, 'helm')}} -n {{namespace}}"
-    variables:
-      namespace: "{{sai_package(saidata, 'helm')}}"
-
-  status:
-    description: "Check Helm release status"
-    template: "helm status {{release_name}} -n {{namespace}}"
-    variables:
-      release_name: "{{sai_package(saidata, 'helm')}}-release"
-      namespace: "{{sai_package(saidata, 'helm')}}"
-
-  logs:
-    description: "Show Kubernetes pod logs"
-    template: "kubectl logs -l app={{sai_package(saidata, 'helm')}} -n {{namespace}} --tail=50"
-    variables:
-      namespace: "{{sai_package(saidata, 'helm')}}"
 
   info:
     description: "Show Helm chart information"
-    template: "helm show chart {{chart_repo}}/{{sai_package(saidata, 'helm')}}"
+    template: "helm show chart {{chart_repo}}/{{sai_package(0, 'package_name', 'helm')}}"
     variables:
-      chart_repo: "{{sai_package(saidata, 'helm')}}-repo"
+      chart_repo: "{{sai_package(0, 'package_name', 'helm')}}-repo"
 
   search:
     description: "Search for Helm charts"
-    template: "helm search repo {{sai_package(saidata, 'helm')}}"
+    template: "helm search repo {{sai_package(0, 'package_name', 'helm')}}"
 
   list:
     description: "List Helm releases"
-    template: "helm list -n {{namespace}} | grep {{sai_package(saidata, 'helm')}}"
+    template: "helm list -n {{namespace}} | grep {{sai_package(0, 'package_name', 'helm')}}"
     variables:
-      namespace: "{{sai_package(saidata, 'helm')}}"
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
 
   version:
     description: "Show Helm release version"
     template: "helm list -n {{namespace}} -o json | jq '.[] | select(.name==\"{{release_name}}\") | .app_version'"
     variables:
-      release_name: "{{sai_package(saidata, 'helm')}}-release"
-      namespace: "{{sai_package(saidata, 'helm')}}"
+      release_name: "{{sai_package(0, 'package_name', 'helm')}}-release"
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+
+  start:
+    description: "Scale up Kubernetes deployment"
+    template: "kubectl scale deployment {{sai_package(0, 'package_name', 'helm')}} --replicas=1 -n {{namespace}}"
+    variables:
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+
+  stop:
+    description: "Scale down Kubernetes deployment"
+    template: "kubectl scale deployment {{sai_package(0, 'package_name', 'helm')}} --replicas=0 -n {{namespace}}"
+    variables:
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+
+  restart:
+    description: "Restart Kubernetes deployment"
+    template: "kubectl rollout restart deployment/{{sai_package(0, 'package_name', 'helm')}} -n {{namespace}}"
+    variables:
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+
+  status:
+    description: "Check Helm release status"
+    template: "helm status {{release_name}} -n {{namespace}}"
+    variables:
+      release_name: "{{sai_package(0, 'package_name', 'helm')}}-release"
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"
+
+  logs:
+    description: "Show Kubernetes pod logs"
+    template: "kubectl logs -l app={{sai_package(0, 'package_name', 'helm')}} -n {{namespace}} --tail=50"
+    variables:
+      namespace: "{{sai_package(0, 'package_name', 'helm')}}"

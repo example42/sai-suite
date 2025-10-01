@@ -12,35 +12,35 @@ provider:
 actions:
   search:
     description: "Search network traffic patterns"
-    template: "ngrep -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or '80'}}"
+    template: "ngrep -d {{interface}} '{{search_pattern}}' port {{sai_port()}}"
     variables:
       interface: "any"
-      search_pattern: "{{saidata.metadata.name}}"
+      search_pattern: "{{metadata.name}}"
 
   info:
     description: "Search on specific interface"
     template: "ngrep -d {{interface}} '{{search_pattern}}'"
     variables:
       interface: "eth0"
-      search_pattern: "{{saidata.metadata.name}}"
+      search_pattern: "{{metadata.name}}"
 
   logs:
     description: "Hex pattern search"
-    template: "ngrep -x -d {{interface}} '{{hex_pattern}}' port {{sai_port(saidata) or '80'}}"
+    template: "ngrep -x -d {{interface}} '{{hex_pattern}}' port {{sai_port()}}"
     variables:
       interface: "any"
       hex_pattern: "474554"
 
   list:
     description: "List matching packets"
-    template: "ngrep -l -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or '80'}}"
+    template: "ngrep -l -d {{interface}} '{{search_pattern}}' port {{sai_port()}}"
     variables:
       interface: "any"
-      search_pattern: "{{saidata.metadata.name}}"
+      search_pattern: "{{metadata.name}}"
 
   status:
     description: "Quiet mode search"
-    template: "ngrep -q -d {{interface}} '{{search_pattern}}' port {{sai_port(saidata) or '80'}}"
+    template: "ngrep -q -d {{interface}} '{{search_pattern}}' port {{sai_port()}}"
     variables:
       interface: "any"
-      search_pattern: "{{saidata.metadata.name}}"
+      search_pattern: "{{metadata.name}}"

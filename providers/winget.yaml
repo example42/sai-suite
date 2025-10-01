@@ -8,83 +8,47 @@ provider:
   type: "package_manager"
   platforms: ["windows"]
   executable: "winget"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Winget"
-    template: "winget install --id {{sai_package(saidata, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
+    template: "winget install --id {{sai_package(0, 'package_name', 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
     timeout: 600
-    detection: "winget show {{sai_package(saidata, 'winget')}} >/dev/null 2>&1"
+    detection: "winget show {{sai_package(0, 'package_name', 'winget')}} >/dev/null 2>&1"
     validation:
-      command: "winget list | findstr {{sai_package(saidata, 'winget')}}"
+      command: "winget list | findstr {{sai_package(0, 'package_name', 'winget')}}"
       expected_exit_code: 0
-    rollback: "winget uninstall --id {{sai_package(saidata, 'winget')}} --silent"
+    rollback: "winget uninstall --id {{sai_package(0, 'package_name', 'winget')}} --silent"
 
   uninstall:
     description: "Remove packages via Winget"
-    template: "winget uninstall --id {{sai_package(saidata, 'winget')}} --silent"
-    detection: "winget show {{sai_package(saidata, 'winget')}} >/dev/null 2>&1"
+    template: "winget uninstall --id {{sai_package(0, 'package_name', 'winget')}} --silent"
+    detection: "winget show {{sai_package(0, 'package_name', 'winget')}} >/dev/null 2>&1"
     validation:
-      command: "winget list | findstr {{sai_package(saidata, 'winget')}} || exit 1"
+      command: "winget list | findstr {{sai_package(0, 'package_name', 'winget')}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Winget"
-    template: "winget upgrade --id {{sai_package(saidata, 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
+    template: "winget upgrade --id {{sai_package(0, 'package_name', 'winget')}} --silent --accept-package-agreements --accept-source-agreements"
     timeout: 600
-    detection: "winget show {{sai_package(saidata, 'winget')}} >/dev/null 2>&1"
+    detection: "winget show {{sai_package(0, 'package_name', 'winget')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start service via sc command"
-    template: "sc start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
-    validation:
-      command: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} | findstr RUNNING"
-      expected_exit_code: 0
 
-  stop:
-    description: "Stop service via sc command"
-    template: "sc stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
-    validation:
-      command: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} | findstr STOPPED"
-      expected_exit_code: 0
-
-  restart:
-    description: "Restart service via sc command"
-    steps:
-      - name: "stop-service"
-        command: "sc stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
-      - name: "start-service"
-        command: "sc start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "sc config {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} start= auto"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "sc config {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}} start= disabled"
-
-  status:
-    description: "Check service status"
-    template: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'winget')}}"
-
-  logs:
-    description: "Show service logs"
-    template: "Get-WinEvent -LogName Application | Where-Object {$_.ProviderName -eq '{{sai_package(saidata, 'winget')}}'} | Select-Object -First 50"
 
   info:
     description: "Show package information"
-    template: "winget show --id {{sai_package(saidata, 'winget')}}"
+    template: "winget show --id {{sai_package(0, 'package_name', 'winget')}}"
 
   search:
     description: "Search for packages"
-    template: "winget search {{sai_package(saidata, 'winget')}}"
+    template: "winget search {{sai_package(0, 'package_name', 'winget')}}"
 
   list:
     description: "List installed packages"
-    template: "winget list | findstr {{sai_package(saidata, 'winget')}}"
+    template: "winget list | findstr {{sai_package(0, 'package_name', 'winget')}}"
 
   version:
     description: "Show package version"
-    template: "winget list --id {{sai_package(saidata, 'winget')}} --exact"
+    template: "winget list --id {{sai_package(0, 'package_name', 'winget')}} --exact"

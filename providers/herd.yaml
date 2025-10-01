@@ -1,0 +1,59 @@
+# Herd Provider Data - GNU Guix service management via herd
+version: "1.0"
+
+provider:
+  name: "herd"
+  display_name: "GNU Shepherd (herd)"
+  description: "Service management for GNU Guix System via herd"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "herd"
+  priority: 95  # High priority for Guix systems
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test herd availability"
+    template: "herd --version"
+    timeout: 10
+    validation:
+      command: "herd --version"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via herd"
+    template: "herd start {{sai_service(0, 'service_name', 'herd')}}"
+    validation:
+      command: "herd status {{sai_service(0, 'service_name', 'herd')}} | grep started"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via herd"
+    template: "herd stop {{sai_service(0, 'service_name', 'herd')}}"
+    validation:
+      command: "herd status {{sai_service(0, 'service_name', 'herd')}} | grep stopped"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via herd"
+    template: "herd restart {{sai_service(0, 'service_name', 'herd')}}"
+    validation:
+      command: "herd status {{sai_service(0, 'service_name', 'herd')}} | grep started"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start"
+    template: "herd enable {{sai_service(0, 'service_name', 'herd')}}"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "herd disable {{sai_service(0, 'service_name', 'herd')}}"
+
+  status:
+    description: "Check service status"
+    template: "herd status {{sai_service(0, 'service_name', 'herd')}}"
+
+  logs:
+    description: "Show service logs"
+    template: "herd log {{sai_service(0, 'service_name', 'herd')}}"

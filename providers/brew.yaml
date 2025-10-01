@@ -23,74 +23,88 @@ actions:
 
   install:
     description: "Install packages via Homebrew"
-    template: "brew install {{sai_packages(saidata, 'brew')}}"
+    template: "brew install {{sai_package('*', 'package_name', 'brew')}}"
     timeout: 600
-    detection: "brew search {{sai_package(saidata, 'brew')}} | grep -q '^{{sai_package(saidata, 'brew')}}$'"
+    detection: "brew search {{sai_package(0, 'package_name', 'brew')}} | grep -q '^{{sai_package(0, 'package_name', 'brew')}}'"
     validation:
-      command: "brew list | grep {{sai_package(saidata, 'brew')}}"
+      command: "brew list | grep {{sai_package(0, 'package_name', 'brew')}}"
       expected_exit_code: 0
-    rollback: "brew uninstall {{sai_packages(saidata, 'brew')}}"
+    rollback: "brew uninstall {{sai_package('*', 'package_name', 'brew')}}"
 
   uninstall:
     description: "Remove packages via Homebrew"
-    template: "brew uninstall {{sai_packages(saidata, 'brew')}}"
-    detection: "brew list | grep -q '^{{sai_package(saidata, 'brew')}}$'"
+    template: "brew uninstall {{sai_package('*', 'package_name', 'brew')}}"
+    detection: "brew list | grep -q '^{{sai_package(0, 'package_name', 'brew')}}'"
     validation:
-      command: "! brew list | grep {{sai_package(saidata, 'brew')}}"
+      command: "! brew list | grep {{sai_package(0, 'package_name', 'brew')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Homebrew"
-    template: "brew upgrade {{sai_packages(saidata, 'brew')}}"
+    template: "brew upgrade {{sai_package('*', 'package_name', 'brew')}}"
     timeout: 600
-    detection: "brew list | grep -q '^{{sai_package(saidata, 'brew')}}$'"
+    detection: "brew list | grep -q '^{{sai_package(0, 'package_name', 'brew')}}'"
+    validation:
+      command: "brew list | grep {{sai_package(0, 'package_name', 'brew')}}"
+      expected_exit_code: 0
 
   start:
     description: "Start service via brew services"
-    template: "brew services start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}}"
+    template: "brew services start {{sai_service(0, 'service_name', 'brew')}}"
     validation:
-      command: "brew services list | grep {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}} | grep started"
+      command: "brew services list | grep {{sai_service(0, 'service_name', 'brew')}} | grep started"
       expected_exit_code: 0
 
   stop:
     description: "Stop service via brew services"
-    template: "brew services stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}}"
+    template: "brew services stop {{sai_service(0, 'service_name', 'brew')}}"
     validation:
-      command: "brew services list | grep {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}} | grep stopped"
+      command: "brew services list | grep {{sai_service(0, 'service_name', 'brew')}} | grep stopped"
       expected_exit_code: 0
 
   restart:
     description: "Restart service via brew services"
-    template: "brew services restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}}"
+    template: "brew services restart {{sai_service(0, 'service_name', 'brew')}}"
+    validation:
+      command: "brew services list | grep {{sai_service(0, 'service_name', 'brew')}} | grep started"
+      expected_exit_code: 0
 
   enable:
     description: "Enable service auto-start"
-    template: "brew services start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}}"
+    template: "brew services start {{sai_service(0, 'service_name', 'brew')}}"
+    validation:
+      command: "brew services list | grep {{sai_service(0, 'service_name', 'brew')}} | grep started"
+      expected_exit_code: 0
 
   disable:
     description: "Disable service auto-start"
-    template: "brew services stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}}"
+    template: "brew services stop {{sai_service(0, 'service_name', 'brew')}}"
+    validation:
+      command: "brew services list | grep {{sai_service(0, 'service_name', 'brew')}} | grep stopped"
+      expected_exit_code: 0
 
   status:
     description: "Check service status"
-    template: "brew services list | grep {{sai_service(saidata, 'service_name') or sai_package(saidata, 'brew')}}"
+    template: "brew services list | grep {{sai_service(0, 'service_name', 'brew')}}"
 
   logs:
     description: "Show service logs"
-    template: "tail -n 50 {{sai_file(saidata) or '/usr/local/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
+    template: "tail -n 50 {{sai_file('log', 'path', 'brew')}}"
+
+
 
   info:
     description: "Show package information"
-    template: "brew info {{sai_package(saidata, 'brew')}}"
+    template: "brew info {{sai_package(0, 'package_name', 'brew')}}"
 
   search:
     description: "Search for packages"
-    template: "brew search {{sai_package(saidata, 'brew')}}"
+    template: "brew search {{sai_package(0, 'package_name', 'brew')}}"
 
   list:
     description: "List installed packages"
-    template: "brew list | grep {{sai_package(saidata, 'brew')}}"
+    template: "brew list | grep {{sai_package(0, 'package_name', 'brew')}}"
 
   version:
     description: "Show package version"
-    template: "brew list --versions {{sai_package(saidata, 'brew')}}"
+    template: "brew list --versions {{sai_package(0, 'package_name', 'brew')}}"

@@ -1,0 +1,97 @@
+# Script Provider Data - Execute installation scripts
+version: "1.0"
+
+provider:
+  name: "script"
+  display_name: "Script Installation"
+  description: "Install software using custom installation scripts"
+  type: "script"
+  platforms: ["linux", "macos", "windows"]
+  executable: "bash"  # Script interpreter for availability detection
+  capabilities: ["install", "uninstall", "upgrade", "version", "info"]
+
+actions:
+  install:
+    description: "Download and execute installation script"
+    steps:
+      - name: "create-temp-dir"
+        command: "mkdir -p {{sai_script(0, 'temp_dir')}}"
+      - name: "download-script"
+        command: "cd {{sai_script(0, 'temp_dir')}} && {{sai_script(0, 'download_cmd')}}"
+      - name: "verify-checksum"
+        command: "cd {{sai_script(0, 'temp_dir')}} && {{sai_script(0, 'checksum_cmd')}}"
+        ignore_failure: true
+      - name: "set-script-permissions"
+        command: "chmod +x {{sai_script(0, 'temp_dir')}}/{{sai_script(0, 'script_name')}}"
+      - name: "execute-script"
+        command: "cd {{sai_script(0, 'working_dir')}} && {{sai_script(0, 'execute_cmd')}}"
+        environment: "{{sai_script(0, 'environment')}}"
+        timeout: "{{sai_script(0, 'timeout')}}"
+      - name: "create-manifest"
+        command: "echo 'Installed via script: {{sai_script(0, 'script_name')}}' > {{sai_script(0, 'manifest_file')}}"
+      - name: "cleanup-temp"
+        command: "rm -rf {{sai_script(0, 'temp_dir')}}"
+        ignore_failure: true
+    timeout: 1800
+    validation:
+      command: "{{sai_script(0, 'validation_cmd')}}"
+      expected_exit_code: 0
+    rollback: "{{sai_script(0, 'rollback_cmd')}}"
+
+  uninstall:
+    description: "Remove script-installed software"
+    steps:
+      - name: "execute-uninstall-script"
+        command: "{{sai_script(0, 'uninstall_cmd')}}"
+        ignore_failure: true
+      - name: "remove-manifest"
+        command: "rm -f {{sai_script(0, 'manifest_file')}}"
+        ignore_failure: true
+    validation:
+      command: "! {{sai_script(0, 'validation_cmd')}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade script-installed software"
+    steps:
+      - name: "backup-current-state"
+        command: "{{sai_script(0, 'backup_cmd')}}"
+        ignore_failure: true
+      - name: "create-temp-dir"
+        command: "mkdir -p {{sai_script(0, 'temp_dir')}}"
+      - name: "download-new-script"
+        command: "cd {{sai_script(0, 'temp_dir')}} && {{sai_script(0, 'download_cmd')}}"
+      - name: "verify-new-checksum"
+        command: "cd {{sai_script(0, 'temp_dir')}} && {{sai_script(0, 'checksum_cmd')}}"
+        ignore_failure: true
+      - name: "set-new-script-permissions"
+        command: "chmod +x {{sai_script(0, 'temp_dir')}}/{{sai_script(0, 'script_name')}}"
+      - name: "execute-upgrade-script"
+        command: "cd {{sai_script(0, 'working_dir')}} && {{sai_script(0, 'execute_cmd')}}"
+        environment: "{{sai_script(0, 'environment')}}"
+        timeout: "{{sai_script(0, 'timeout')}}"
+      - name: "cleanup-backup"
+        command: "{{sai_script(0, 'cleanup_backup_cmd')}}"
+        ignore_failure: true
+      - name: "cleanup-temp"
+        command: "rm -rf {{sai_script(0, 'temp_dir')}}"
+        ignore_failure: true
+    timeout: 1800
+    validation:
+      command: "{{sai_script(0, 'validation_cmd')}}"
+      expected_exit_code: 0
+    rollback: "{{sai_script(0, 'restore_backup_cmd')}}"
+
+  version:
+    description: "Show installed version"
+    template: "{{sai_script(0, 'version_cmd')}}"
+
+  info:
+    description: "Show script installation information"
+    template: "cat {{sai_script(0, 'manifest_file')}} 2>/dev/null || echo 'Not installed via script'"
+
+  # Helper action for checking script interpreter availability
+  test:
+    description: "Test script execution availability"
+    template: "which {{sai_script(0, 'interpreter')}} >/dev/null 2>&1"
+    timeout: 10

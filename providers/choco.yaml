@@ -8,83 +8,47 @@ provider:
   type: "package_manager"
   platforms: ["windows"]
   executable: "choco"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Chocolatey"
-    template: "choco install {{sai_packages(saidata, 'choco')}} -y"
+    template: "choco install {{sai_package('*', 'package_name', 'choco')}} -y"
     timeout: 600
-    detection: "choco info {{sai_package(saidata, 'choco')}} >/dev/null 2>&1"
+    detection: "choco info {{sai_package(0, 'package_name', 'choco')}} >/dev/null 2>&1"
     validation:
-      command: "choco list --local-only | findstr {{sai_package(saidata, 'choco')}}"
+      command: "choco list --local-only | findstr {{sai_package(0, 'package_name', 'choco')}}"
       expected_exit_code: 0
-    rollback: "choco uninstall {{sai_packages(saidata, 'choco')}} -y"
+    rollback: "choco uninstall {{sai_package('*', 'package_name', 'choco')}} -y"
 
   uninstall:
     description: "Remove packages via Chocolatey"
-    template: "choco uninstall {{sai_packages(saidata, 'choco')}} -y"
-    detection: "choco info {{sai_package(saidata, 'choco')}} >/dev/null 2>&1"
+    template: "choco uninstall {{sai_package('*', 'package_name', 'choco')}} -y"
+    detection: "choco info {{sai_package(0, 'package_name', 'choco')}} >/dev/null 2>&1"
     validation:
-      command: "choco list --local-only | findstr {{sai_package(saidata, 'choco')}} || exit 1"
+      command: "choco list --local-only | findstr {{sai_package(0, 'package_name', 'choco')}} || exit 1"
       expected_exit_code: 1
 
   upgrade:
     description: "Upgrade packages via Chocolatey"
-    template: "choco upgrade {{sai_packages(saidata, 'choco')}} -y"
+    template: "choco upgrade {{sai_package('*', 'package_name', 'choco')}} -y"
     timeout: 600
-    detection: "choco info {{sai_package(saidata, 'choco')}} >/dev/null 2>&1"
+    detection: "choco info {{sai_package(0, 'package_name', 'choco')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start service via sc command"
-    template: "sc start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}}"
-    validation:
-      command: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}} | findstr RUNNING"
-      expected_exit_code: 0
 
-  stop:
-    description: "Stop service via sc command"
-    template: "sc stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}}"
-    validation:
-      command: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}} | findstr STOPPED"
-      expected_exit_code: 0
-
-  restart:
-    description: "Restart service via sc command"
-    steps:
-      - name: "stop-service"
-        command: "sc stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}}"
-      - name: "start-service"
-        command: "sc start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}}"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "sc config {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}} start= auto"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "sc config {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}} start= disabled"
-
-  status:
-    description: "Check service status"
-    template: "sc query {{sai_service(saidata, 'service_name') or sai_package(saidata, 'choco')}}"
-
-  logs:
-    description: "Show service logs"
-    template: "Get-WinEvent -LogName Application | Where-Object {$_.ProviderName -eq '{{sai_package(saidata, 'choco')}}'} | Select-Object -First 50"
 
   info:
     description: "Show package information"
-    template: "choco info {{sai_package(saidata, 'choco')}}"
+    template: "choco info {{sai_package(0, 'package_name', 'choco')}}"
 
   search:
     description: "Search for packages"
-    template: "choco search {{sai_package(saidata, 'choco')}}"
+    template: "choco search {{sai_package(0, 'package_name', 'choco')}}"
 
   list:
     description: "List installed packages"
-    template: "choco list --local-only | findstr {{sai_package(saidata, 'choco')}}"
+    template: "choco list --local-only | findstr {{sai_package(0, 'package_name', 'choco')}}"
 
   version:
     description: "Show package version"
-    template: "choco list --local-only --exact {{sai_package(saidata, 'choco')}}"
+    template: "choco list --local-only --exact {{sai_package(0, 'package_name', 'choco')}}"

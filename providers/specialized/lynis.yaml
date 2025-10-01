@@ -14,21 +14,21 @@ actions:
     description: "Perform full security audit"
     template: "lynis audit system --logfile {{audit_log}} --reportfile {{audit_report}}"
     variables:
-      audit_log: "/tmp/lynis-audit-{{saidata.metadata.name}}.log"
-      audit_report: "/tmp/lynis-report-{{saidata.metadata.name}}.dat"
+      audit_log: "/tmp/lynis-audit-{{metadata.name}}.log"
+      audit_report: "/tmp/lynis-report-{{metadata.name}}.dat"
 
   compliance:
     description: "Check compliance standards"
     template: "lynis audit system --compliance {{compliance_standard}} --logfile {{compliance_log}}"
     variables:
       compliance_standard: "pci"
-      compliance_log: "/tmp/lynis-compliance-{{saidata.metadata.name}}.log"
+      compliance_log: "/tmp/lynis-compliance-{{metadata.name}}.log"
 
   hardening:
     description: "Check system hardening"
     template: "lynis audit system --tests-from-group hardening --logfile {{hardening_log}}"
     variables:
-      hardening_log: "/tmp/lynis-hardening-{{saidata.metadata.name}}.log"
+      hardening_log: "/tmp/lynis-hardening-{{metadata.name}}.log"
 
   report:
     description: "Generate detailed report"
@@ -38,20 +38,20 @@ actions:
       - name: "generate-html"
         command: "lynis show report --report-file {{audit_report}} > {{html_report}}"
     variables:
-      audit_log: "/tmp/lynis-audit-{{saidata.metadata.name}}.log"
-      audit_report: "/tmp/lynis-report-{{saidata.metadata.name}}.dat"
-      html_report: "/tmp/lynis-report-{{saidata.metadata.name}}.html"
+      audit_log: "/tmp/lynis-audit-{{metadata.name}}.log"
+      audit_report: "/tmp/lynis-report-{{metadata.name}}.dat"
+      html_report: "/tmp/lynis-report-{{metadata.name}}.html"
 
   baseline:
     description: "Create security baseline"
     template: "lynis audit system --logfile {{baseline_log}} --reportfile {{baseline_report}} --upload"
     variables:
-      baseline_log: "/tmp/lynis-baseline-{{saidata.metadata.name}}.log"
-      baseline_report: "/tmp/lynis-baseline-{{saidata.metadata.name}}.dat"
+      baseline_log: "/tmp/lynis-baseline-{{metadata.name}}.log"
+      baseline_report: "/tmp/lynis-baseline-{{metadata.name}}.dat"
 
   custom:
     description: "Run custom test groups"
     template: "lynis audit system --tests-from-group {{test_groups}} --logfile {{custom_log}}"
     variables:
       test_groups: "authentication,networking,storage"
-      custom_log: "/tmp/lynis-custom-{{saidata.metadata.name}}.log"
+      custom_log: "/tmp/lynis-custom-{{metadata.name}}.log"

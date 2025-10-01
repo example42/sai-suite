@@ -13,25 +13,25 @@ provider:
 actions:
   status:
     description: "Interactive process monitoring"
-    template: "htop -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    template: "htop -p $(pgrep -f {{metadata.name}} | tr '\\n' ',')"
 
   list:
     description: "List processes in tree view"
-    template: "htop --tree -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    template: "htop --tree -p $(pgrep -f {{metadata.name}} | tr '\\n' ',')"
 
   info:
     description: "Show detailed process information"
-    template: "htop -d {{delay}} -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    template: "htop -d {{delay}} -p $(pgrep -f {{metadata.name}} | tr '\\n' ',')"
     variables:
       delay: "10"
 
   search:
     description: "Search and filter processes"
-    template: "htop --filter={{saidata.metadata.name}}"
+    template: "htop --filter={{metadata.name}}"
 
   stop:
     description: "Kill process interactively"
-    template: "kill -TERM $(pgrep -f {{saidata.metadata.name}})"
+    template: "kill -TERM $(pgrep -f {{metadata.name}})"
     validation:
-      command: "! pgrep -f {{saidata.metadata.name}}"
+      command: "! pgrep -f {{metadata.name}}"
       expected_exit_code: 0

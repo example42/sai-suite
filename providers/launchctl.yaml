@@ -1,0 +1,69 @@
+# Launchctl Provider Data - macOS service management via launchd
+version: "1.0"
+
+provider:
+  name: "launchctl"
+  display_name: "Launch Control"
+  description: "Service management for macOS via launchd"
+  type: "service_manager"
+  platforms: ["macos"]
+  executable: "launchctl"
+  priority: 95  # High priority for service management on macOS
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test launchctl availability"
+    template: "launchctl version"
+    timeout: 10
+    validation:
+      command: "launchctl version"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via launchctl"
+    template: "launchctl start {{sai_service(0, 'service_name', 'launchctl')}}"
+    validation:
+      command: "launchctl list | grep {{sai_service(0, 'service_name', 'launchctl')}}"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via launchctl"
+    template: "launchctl stop {{sai_service(0, 'service_name', 'launchctl')}}"
+    validation:
+      command: "! launchctl list | grep {{sai_service(0, 'service_name', 'launchctl')}}"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via launchctl"
+    steps:
+      - name: "stop-service"
+        command: "launchctl stop {{sai_service(0, 'service_name', 'launchctl')}}"
+      - name: "start-service"
+        command: "launchctl start {{sai_service(0, 'service_name', 'launchctl')}}"
+    validation:
+      command: "launchctl list | grep {{sai_service(0, 'service_name', 'launchctl')}}"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start (load)"
+    template: "launchctl load {{sai_service(0, 'service_name', 'launchctl')}}"
+    validation:
+      command: "launchctl list | grep {{sai_service(0, 'service_name', 'launchctl')}}"
+      expected_exit_code: 0
+
+  disable:
+    description: "Disable service auto-start (unload)"
+    template: "launchctl unload {{sai_service(0, 'service_name', 'launchctl')}}"
+    validation:
+      command: "! launchctl list | grep {{sai_service(0, 'service_name', 'launchctl')}}"
+      expected_exit_code: 0
+
+  status:
+    description: "Check service status"
+    template: "launchctl list | grep {{sai_service(0, 'service_name', 'launchctl')}}"
+
+  logs:
+    description: "Show service logs"
+    template: "log show --predicate 'subsystem == \"{{sai_service(0, 'service_name', 'launchctl')}}\"' --last 1h --style compact"

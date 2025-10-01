@@ -14,19 +14,19 @@ actions:
     description: "Show filesystem space usage summary"
     template: "df -h {{target_path}}"
     variables:
-      target_path: "{{sai_file(saidata, 0, 'path') or '/'}}"
+      target_path: "{{sai_file(0, 'path') or '/'}}"
 
   list:
     description: "Show directory usage breakdown"
     template: "du -sh {{target_path}}/* | sort -hr"
     variables:
-      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      target_path: "{{sai_file(0, 'path') or '/tmp'}}"
 
   analyze:
     description: "Detailed usage analysis with exclusions"
     template: "du -h --max-depth={{max_depth}} {{exclude_options}} {{target_path}} | sort -hr"
     variables:
-      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      target_path: "{{sai_file(0, 'path') or '/tmp'}}"
       max_depth: "2"
       exclude_options: "--exclude='*.log' --exclude='*.tmp'"
 
@@ -36,12 +36,12 @@ actions:
     variables:
       interactive_tool: "ncdu"
       interactive_options: "-x"
-      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
+      target_path: "{{sai_file(0, 'path') or '/tmp'}}"
     fallback: "du -sh {{target_path}}/* | sort -hr"
 
   export:
     description: "Export usage analysis to file"
-    template: "ncdu -o /tmp/disk-usage-{{saidata.metadata.name}}.json {{target_path}}"
+    template: "ncdu -o /tmp/disk-usage-{{metadata.name}}.json {{target_path}}"
     variables:
-      target_path: "{{sai_file(saidata, 0, 'path') or '/tmp'}}"
-    fallback: "du -h {{target_path}} > /tmp/disk-usage-{{saidata.metadata.name}}.txt"
+      target_path: "{{sai_file(0, 'path') or '/tmp'}}"
+    fallback: "du -h {{target_path}} > /tmp/disk-usage-{{metadata.name}}.txt"

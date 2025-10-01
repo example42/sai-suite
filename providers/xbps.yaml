@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["void"]
   executable: "xbps-install"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
@@ -17,20 +17,20 @@ actions:
       - name: "sync-repos"
         command: "xbps-install -S"
       - name: "install-packages"
-        command: "xbps-install -y {{sai_packages(saidata, 'xbps')}}"
+        command: "xbps-install -y {{sai_package('*', 'package_name', 'xbps')}}"
     timeout: 600
-    detection: "xbps-query -l | grep {{sai_package(saidata, 'xbps')}} >/dev/null 2>&1"
+    detection: "xbps-query -l | grep {{sai_package(0, 'package_name', 'xbps')}} >/dev/null 2>&1"
     validation:
-      command: "xbps-query -l | grep {{sai_package(saidata, 'xbps')}}"
+      command: "xbps-query -l | grep {{sai_package(0, 'package_name', 'xbps')}}"
       expected_exit_code: 0
-    rollback: "xbps-remove -y {{sai_packages(saidata, 'xbps')}}"
+    rollback: "xbps-remove -y {{sai_package('*', 'package_name', 'xbps')}}"
 
   uninstall:
     description: "Remove packages via XBPS"
-    template: "xbps-remove -y {{sai_packages(saidata, 'xbps')}}"
-    detection: "xbps-query -l | grep {{sai_package(saidata, 'xbps')}} >/dev/null 2>&1"
+    template: "xbps-remove -y {{sai_package('*', 'package_name', 'xbps')}}"
+    detection: "xbps-query -l | grep {{sai_package(0, 'package_name', 'xbps')}} >/dev/null 2>&1"
     validation:
-      command: "! xbps-query -l | grep {{sai_package(saidata, 'xbps')}}"
+      command: "! xbps-query -l | grep {{sai_package(0, 'package_name', 'xbps')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -39,56 +39,24 @@ actions:
       - name: "sync-repos"
         command: "xbps-install -S"
       - name: "upgrade-packages"
-        command: "xbps-install -u {{sai_packages(saidata, 'xbps')}}"
+        command: "xbps-install -u {{sai_package('*', 'package_name', 'xbps')}}"
     timeout: 600
-    detection: "xbps-query -l | grep {{sai_package(saidata, 'xbps')}} >/dev/null 2>&1"
+    detection: "xbps-query -l | grep {{sai_package(0, 'package_name', 'xbps')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start service via sv"
-    template: "sv start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-    validation:
-      command: "sv status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-      expected_output: "run"
 
-  stop:
-    description: "Stop service via sv"
-    template: "sv stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-    validation:
-      command: "sv status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-      expected_output: "down"
-
-  restart:
-    description: "Restart service via sv"
-    template: "sv restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "ln -sf /etc/sv/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}} /var/service/"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "rm -f /var/service/{{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-
-  status:
-    description: "Check service status"
-    template: "sv status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
-
-  logs:
-    description: "Show service logs"
-    template: "svlogtail {{sai_service(saidata, 'service_name') or sai_package(saidata, 'xbps')}}"
 
   info:
     description: "Show package information"
-    template: "xbps-query -R {{sai_package(saidata, 'xbps')}}"
+    template: "xbps-query -R {{sai_package(0, 'package_name', 'xbps')}}"
 
   search:
     description: "Search for packages"
-    template: "xbps-query -Rs {{sai_package(saidata, 'xbps')}}"
+    template: "xbps-query -Rs {{sai_package(0, 'package_name', 'xbps')}}"
 
   list:
     description: "List installed packages"
-    template: "xbps-query -l | grep {{sai_package(saidata, 'xbps')}}"
+    template: "xbps-query -l | grep {{sai_package(0, 'package_name', 'xbps')}}"
 
   version:
     description: "Show package version"
-    template: "xbps-query {{sai_package(saidata, 'xbps')}} | grep pkgver"
+    template: "xbps-query {{sai_package(0, 'package_name', 'xbps')}} | grep pkgver"

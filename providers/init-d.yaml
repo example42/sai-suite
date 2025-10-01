@@ -1,0 +1,59 @@
+# Init.d Provider Data - OpenWrt/embedded service management via init scripts
+version: "1.0"
+
+provider:
+  name: "init-d"
+  display_name: "Init.d Scripts"
+  description: "Service management for OpenWrt and embedded systems via /etc/init.d scripts"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "ls"  # Check for /etc/init.d directory existence
+  priority: 85  # Lower priority, used for embedded systems
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test init.d availability"
+    template: "test -d /etc/init.d"
+    timeout: 10
+    validation:
+      command: "test -d /etc/init.d"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via init script"
+    template: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} start"
+    validation:
+      command: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} status"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via init script"
+    template: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} stop"
+    validation:
+      command: "! /etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} status"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via init script"
+    template: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} restart"
+    validation:
+      command: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} status"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start"
+    template: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} enable"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} disable"
+
+  status:
+    description: "Check service status"
+    template: "/etc/init.d/{{sai_service(0, 'service_name', 'init-d')}} status"
+
+  logs:
+    description: "Show service logs"
+    template: "logread | grep {{sai_service(0, 'service_name', 'init-d')}}"

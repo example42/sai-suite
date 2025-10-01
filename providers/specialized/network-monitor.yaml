@@ -16,7 +16,7 @@ actions:
     variables:
       network_tool: "{{preferred_network_tool}}"
       connection_options: "{{connection_flags}}"
-      target_port: "{{sai_port(saidata) or saidata.metadata.name}}"
+      target_port: "{{sai_port()}}"
 
   listening:
     description: "Show listening ports and services"
@@ -24,7 +24,7 @@ actions:
     variables:
       network_tool: "{{preferred_network_tool}}"
       listening_options: "{{listening_flags}}"
-      target_port: "{{sai_port(saidata) or saidata.metadata.name}}"
+      target_port: "{{sai_port()}}"
 
   statistics:
     description: "Show network statistics and summary"
@@ -35,7 +35,7 @@ actions:
 
   processes:
     description: "Show processes using network connections"
-    template: "{{network_tool}} {{process_options}} | grep {{saidata.metadata.name}}"
+    template: "{{network_tool}} {{process_options}} | grep {{metadata.name}}"
     variables:
       network_tool: "{{preferred_network_tool}}"
       process_options: "{{process_flags}}"

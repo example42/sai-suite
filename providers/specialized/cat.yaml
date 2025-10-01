@@ -1,0 +1,16 @@
+# FIND Provider Data - Find files and directories
+version: "1.0"
+
+provider:
+  name: "cat"
+  display_name: "Show file"
+  description: "Show files contents using cat command"
+  type: "filesystem"
+  platforms: ["linux", "macos", "windows"]
+  executable: "cat"  # Main executable for availability detection
+  capabilities: ["config"]
+
+actions:
+  config:
+    description: "Show configuration file contents"
+    template: "cat '{{sai_file('config', 'path')}}'"

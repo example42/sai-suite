@@ -9,66 +9,66 @@ provider:
   platforms: ["linux", "macos", "windows"]
   priority: 25  # Lower priority, language-specific
   executable: "pip"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via pip"
-    template: "pip install {{sai_packages(saidata, 'pypi')}}"
+    template: "pip install {{sai_package('*', 'package_name', 'pypi')}}"
     timeout: 300
-    detection: "pip index versions {{sai_package(saidata, 'pypi')}} >/dev/null 2>&1"
+    detection: "pip index versions {{sai_package(0, 'package_name', 'pypi')}} >/dev/null 2>&1"
     validation:
-      command: "pip list | grep {{sai_package(saidata, 'pypi')}}"
+      command: "pip list | grep {{sai_package(0, 'package_name', 'pypi')}}"
       expected_exit_code: 0
-    rollback: "pip uninstall -y {{sai_packages(saidata, 'pypi')}}"
+    rollback: "pip uninstall -y {{sai_package('*', 'package_name', 'pypi')}}"
 
   uninstall:
     description: "Remove packages via pip"
-    template: "pip uninstall -y {{sai_packages(saidata, 'pypi')}}"
-    detection: "pip list | grep -q '^{{sai_package(saidata, 'pypi')}}'"
+    template: "pip uninstall -y {{sai_package('*', 'package_name', 'pypi')}}"
+    detection: "pip list | grep -q '^{{sai_package(0, 'package_name', 'pypi')}}'"
     validation:
-      command: "! pip list | grep {{sai_package(saidata, 'pypi')}}"
+      command: "! pip list | grep {{sai_package(0, 'package_name', 'pypi')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via pip"
-    template: "pip install --upgrade {{sai_packages(saidata, 'pypi')}}"
+    template: "pip install --upgrade {{sai_package('*', 'package_name', 'pypi')}}"
     timeout: 300
-    detection: "pip list | grep -q '^{{sai_package(saidata, 'pypi')}}'"
+    detection: "pip list | grep -q '^{{sai_package(0, 'package_name', 'pypi')}}'"
 
   start:
     description: "Start Python application"
-    template: "python -m {{sai_package(saidata, 'pypi')}}"
+    template: "python -m {{sai_package(0, 'package_name', 'pypi')}}"
 
   stop:
     description: "Stop Python application"
-    template: "pkill -f {{sai_package(saidata, 'pypi')}}"
+    template: "pkill -f {{sai_package(0, 'package_name', 'pypi')}}"
 
   restart:
     description: "Restart Python application"
     steps:
       - name: "stop-app"
-        command: "pkill -f {{sai_package(saidata, 'pypi')}}"
+        command: "pkill -f {{sai_package(0, 'package_name', 'pypi')}}"
         ignore_failure: true
       - name: "start-app"
-        command: "python -m {{sai_package(saidata, 'pypi')}}"
+        command: "python -m {{sai_package(0, 'package_name', 'pypi')}}"
 
   status:
     description: "Check application status"
-    template: "pgrep -f {{sai_package(saidata, 'pypi')}}"
+    template: "pgrep -f {{sai_package(0, 'package_name', 'pypi')}}"
 
   info:
     description: "Show package information"
-    template: "pip show {{sai_package(saidata, 'pypi')}}"
+    template: "pip show {{sai_package(0, 'package_name', 'pypi')}}"
 
   search:
     description: "Search for packages"
-    template: "pip search {{sai_package(saidata, 'pypi')}}"
+    template: "pip search {{sai_package(0, 'package_name', 'pypi')}}"
 
   list:
     description: "List installed packages"
-    template: "pip list | grep {{sai_package(saidata, 'pypi')}}"
+    template: "pip list | grep {{sai_package(0, 'package_name', 'pypi')}}"
 
   version:
     description: "Show package version"
-    template: "pip show {{sai_package(saidata, 'pypi')}} | grep Version"
+    template: "pip show {{sai_package(0, 'package_name', 'pypi')}} | grep Version"

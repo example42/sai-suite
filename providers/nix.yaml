@@ -8,75 +8,75 @@ provider:
   type: "package_manager"
   platforms: ["nixos", "linux", "macos"]
   executable: "nix-env"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Nix"
-    template: "nix-env -iA nixpkgs.{{sai_packages(saidata, 'nix')}}"
+    template: "nix-env -iA nixpkgs.{{sai_package(0, 'package_name', 'nix')}}"
     timeout: 600
-    detection: "nix-env -q | grep {{sai_package(saidata, 'nix')}} >/dev/null 2>&1"
+    detection: "nix-env -q | grep {{sai_package(0, 'package_name', 'nix')}} >/dev/null 2>&1"
     validation:
-      command: "nix-env -q | grep {{sai_package(saidata, 'nix')}}"
+      command: "nix-env -q | grep {{sai_package(0, 'package_name', 'nix')}}"
       expected_exit_code: 0
-    rollback: "nix-env -e {{sai_packages(saidata, 'nix')}}"
+    rollback: "nix-env -e {{sai_package('*', 'package_name', 'nix')}}"
 
   uninstall:
     description: "Remove packages via Nix"
-    template: "nix-env -e {{sai_packages(saidata, 'nix')}}"
-    detection: "nix-env -q | grep {{sai_package(saidata, 'nix')}} >/dev/null 2>&1"
+    template: "nix-env -e {{sai_package('*', 'package_name', 'nix')}}"
+    detection: "nix-env -q | grep {{sai_package(0, 'package_name', 'nix')}} >/dev/null 2>&1"
     validation:
-      command: "! nix-env -q | grep {{sai_package(saidata, 'nix')}}"
+      command: "! nix-env -q | grep {{sai_package(0, 'package_name', 'nix')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Nix"
-    template: "nix-env -u {{sai_packages(saidata, 'nix')}}"
+    template: "nix-env -u {{sai_package('*', 'package_name', 'nix')}}"
     timeout: 600
-    detection: "nix-env -q | grep {{sai_package(saidata, 'nix')}} >/dev/null 2>&1"
+    detection: "nix-env -q | grep {{sai_package(0, 'package_name', 'nix')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+    template: "systemctl start {{sai_service(0, 'service_name', 'nix')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'nix')}}"
       expected_output: "active"
 
   stop:
     description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+    template: "systemctl stop {{sai_service(0, 'service_name', 'nix')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'nix')}}"
       expected_output: "inactive"
 
   restart:
     description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+    template: "systemctl restart {{sai_service(0, 'service_name', 'nix')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+    template: "systemctl enable {{sai_service(0, 'service_name', 'nix')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+    template: "systemctl disable {{sai_service(0, 'service_name', 'nix')}}"
 
   status:
     description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}}"
+    template: "systemctl status {{sai_service(0, 'service_name', 'nix')}}"
 
   logs:
     description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'nix')}} --no-pager -n 50"
+    template: "journalctl -u {{sai_service(0, 'service_name', 'nix')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "nix-env -qa --description {{sai_package(saidata, 'nix')}}"
+    template: "nix-env -qa --description {{sai_package(0, 'package_name', 'nix')}}"
 
   search:
     description: "Search for packages"
-    template: "nix-env -qa | grep {{sai_package(saidata, 'nix')}}"
+    template: "nix-env -qa | grep {{sai_package(0, 'package_name', 'nix')}}"
 
   list:
     description: "List installed packages"
-    template: "nix-env -q | grep {{sai_package(saidata, 'nix')}}"
+    template: "nix-env -q | grep {{sai_package(0, 'package_name', 'nix')}}"

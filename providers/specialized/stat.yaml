@@ -12,20 +12,20 @@ provider:
 actions:
   info:
     description: "Show file information"
-    template: "stat {{sai_file(saidata, 0, 'path') or '/etc/config'}}"
+    template: "stat {{sai_file(0, 'path') or '/etc/config'}}"
 
   list:
     description: "Custom format output"
-    template: "stat --format='%n %s %y' {{sai_file(saidata, 0, 'path') or '/etc/config'}}"
+    template: "stat --format='%n %s %y' {{sai_file(0, 'path') or '/etc/config'}}"
 
   logs:
     description: "Filesystem information"
-    template: "stat -f {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    template: "stat -f {{sai_file(0, 'path') or '/tmp'}}"
 
   search:
     description: "Dereference symbolic links"
-    template: "stat -L {{sai_file(saidata, 0, 'path') or '/etc/config'}}"
+    template: "stat -L {{sai_file(0, 'path') or '/etc/config'}}"
 
   status:
     description: "Terse format output"
-    template: "stat -t {{sai_file(saidata, 0, 'path') or '/etc/config'}}"
+    template: "stat -t {{sai_file(0, 'path') or '/etc/config'}}"

@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["gentoo"]
   executable: "emerge"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
@@ -18,20 +18,20 @@ actions:
         command: "emaint sync -a"
         timeout: 300
       - name: "install-packages"
-        command: "emerge {{sai_packages(saidata, 'portage')}}"
+        command: "emerge {{sai_package('*', 'package_name', 'portage')}}"
         timeout: 3600
-    detection: "equery list {{sai_package(saidata, 'portage')}} >/dev/null 2>&1"
+    detection: "equery list {{sai_package(0, 'package_name', 'portage')}} >/dev/null 2>&1"
     validation:
-      command: "equery list {{sai_package(saidata, 'portage')}}"
+      command: "equery list {{sai_package(0, 'package_name', 'portage')}}"
       expected_exit_code: 0
-    rollback: "emerge --depclean {{sai_packages(saidata, 'portage')}}"
+    rollback: "emerge --depclean {{sai_package('*', 'package_name', 'portage')}}"
 
   uninstall:
     description: "Remove packages via Portage"
-    template: "emerge --depclean {{sai_packages(saidata, 'portage')}}"
-    detection: "equery list {{sai_package(saidata, 'portage')}} >/dev/null 2>&1"
+    template: "emerge --depclean {{sai_package('*', 'package_name', 'portage')}}"
+    detection: "equery list {{sai_package(0, 'package_name', 'portage')}} >/dev/null 2>&1"
     validation:
-      command: "! equery list {{sai_package(saidata, 'portage')}}"
+      command: "! equery list {{sai_package(0, 'package_name', 'portage')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -41,56 +41,24 @@ actions:
         command: "emaint sync -a"
         timeout: 300
       - name: "upgrade-packages"
-        command: "emerge -uDN {{sai_packages(saidata, 'portage')}}"
+        command: "emerge -uDN {{sai_package('*', 'package_name', 'portage')}}"
         timeout: 3600
-    detection: "equery list {{sai_package(saidata, 'portage')}} >/dev/null 2>&1"
+    detection: "equery list {{sai_package(0, 'package_name', 'portage')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start service via rc-service"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} start"
-    validation:
-      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} status"
-      expected_output: "started"
 
-  stop:
-    description: "Stop service via rc-service"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} stop"
-    validation:
-      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} status"
-      expected_output: "stopped"
-
-  restart:
-    description: "Restart service via rc-service"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} restart"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "rc-update add {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} default"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "rc-update del {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} default"
-
-  status:
-    description: "Check service status"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'portage')}} status"
-
-  logs:
-    description: "Show service logs"
-    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "equery meta {{sai_package(saidata, 'portage')}}"
+    template: "equery meta {{sai_package(0, 'package_name', 'portage')}}"
 
   search:
     description: "Search for packages"
-    template: "equery list -p {{sai_package(saidata, 'portage')}}"
+    template: "equery list -p {{sai_package(0, 'package_name', 'portage')}}"
 
   list:
     description: "List installed packages"
-    template: "equery list {{sai_package(saidata, 'portage')}}"
+    template: "equery list {{sai_package(0, 'package_name', 'portage')}}"
 
   version:
     description: "Show package version"
-    template: "equery list {{sai_package(saidata, 'portage')}} | head -1"
+    template: "equery list {{sai_package(0, 'package_name', 'portage')}} | head -1"

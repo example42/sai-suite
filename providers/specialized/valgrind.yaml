@@ -12,22 +12,22 @@ provider:
 actions:
   info:
     description: "Memory check analysis"
-    template: "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}} {{memcheck_args}}"
+    template: "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes {{commands[0].path if commands else metadata.name}} {{memcheck_args}}"
     variables:
-      memcheck_args: "--log-file=/tmp/valgrind-memcheck-{{saidata.metadata.name}}.log"
+      memcheck_args: "--log-file=/tmp/valgrind-memcheck-{{metadata.name}}.log"
 
   logs:
     description: "Call graph profiling"
-    template: "valgrind --tool=callgrind --callgrind-out-file=/tmp/callgrind-{{saidata.metadata.name}}.out {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
+    template: "valgrind --tool=callgrind --callgrind-out-file=/tmp/callgrind-{{metadata.name}}.out {{commands[0].path if commands else metadata.name}}"
 
   status:
     description: "Thread error detection"
-    template: "valgrind --tool=helgrind --log-file=/tmp/valgrind-helgrind-{{saidata.metadata.name}}.log {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
+    template: "valgrind --tool=helgrind --log-file=/tmp/valgrind-helgrind-{{metadata.name}}.log {{commands[0].path if commands else metadata.name}}"
 
   upgrade:
     description: "Heap profiling"
-    template: "valgrind --tool=massif --massif-out-file=/tmp/massif-{{saidata.metadata.name}}.out {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
+    template: "valgrind --tool=massif --massif-out-file=/tmp/massif-{{metadata.name}}.out {{commands[0].path if commands else metadata.name}}"
 
   search:
     description: "Cache profiling"
-    template: "valgrind --tool=cachegrind --cachegrind-out-file=/tmp/cachegrind-{{saidata.metadata.name}}.out {{saidata.commands[0].path if saidata.commands else saidata.metadata.name}}"
+    template: "valgrind --tool=cachegrind --cachegrind-out-file=/tmp/cachegrind-{{metadata.name}}.out {{commands[0].path if commands else metadata.name}}"

@@ -12,7 +12,7 @@ provider:
 actions:
   search:
     description: "Search files by name"
-    template: "locate {{saidata.metadata.name}}"
+    template: "locate {{metadata.name}}"
 
   info:
     description: "Update locate database"
@@ -24,8 +24,8 @@ actions:
 
   list:
     description: "Case insensitive search"
-    template: "locate -i {{saidata.metadata.name}}"
+    template: "locate -i {{metadata.name}}"
 
   logs:
     description: "Regex pattern search"
-    template: "locate --regex '.*{{saidata.metadata.name}}.*'"
+    template: "locate --regex '.*{{metadata.name}}.*'"

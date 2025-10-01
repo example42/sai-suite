@@ -13,43 +13,42 @@ provider:
 actions:
   files:
     description: "List open files for process"
-    template: "lsof -p $(pgrep -f {{saidata.metadata.name}}) | tee {{files_output}}"
+    template: "lsof -p $(pgrep -f {{metadata.name}}) | tee {{files_output}}"
     variables:
-      files_output: "/tmp/lsof-files-{{saidata.metadata.name}}.txt"
+      files_output: "/tmp/lsof-files-{{metadata.name}}.txt"
 
   network:
     description: "List network connections"
-    template: "lsof -i -p $(pgrep -f {{saidata.metadata.name}}) | tee {{network_output}}"
+    template: "lsof -i -p $(pgrep -f {{metadata.name}}) | tee {{network_output}}"
     variables:
-      network_output: "/tmp/lsof-network-{{saidata.metadata.name}}.txt"
+      network_output: "/tmp/lsof-network-{{metadata.name}}.txt"
 
   processes:
     description: "List all resources for process"
-    template: "lsof -p $(pgrep -f {{saidata.metadata.name}}) +c 0 | tee {{processes_output}}"
+    template: "lsof -p $(pgrep -f {{metadata.name}}) +c 0 | tee {{processes_output}}"
     variables:
-      processes_output: "/tmp/lsof-processes-{{saidata.metadata.name}}.txt"
+      processes_output: "/tmp/lsof-processes-{{metadata.name}}.txt"
 
   ports:
     description: "Check specific port usage"
-    template: "lsof -i :{{port_number}} | tee {{ports_output}}"
+    template: "lsof -i :{{sai_port(0, 'port')}} | tee {{ports_output}}"
     variables:
-      port_number: "{{sai_port(saidata) or '80'}}"
-      ports_output: "/tmp/lsof-ports-{{saidata.metadata.name}}.txt"
+      ports_output: "/tmp/lsof-ports-{{metadata.name}}.txt"
 
   sockets:
     description: "List Unix domain sockets"
-    template: "lsof -U -p $(pgrep -f {{saidata.metadata.name}}) | tee {{sockets_output}}"
+    template: "lsof -U -p $(pgrep -f {{metadata.name}}) | tee {{sockets_output}}"
     variables:
-      sockets_output: "/tmp/lsof-sockets-{{saidata.metadata.name}}.txt"
+      sockets_output: "/tmp/lsof-sockets-{{metadata.name}}.txt"
 
   locks:
     description: "Show file locks"
-    template: "lsof +L1 -p $(pgrep -f {{saidata.metadata.name}}) | tee {{locks_output}}"
+    template: "lsof +L1 -p $(pgrep -f {{metadata.name}}) | tee {{locks_output}}"
     variables:
-      locks_output: "/tmp/lsof-locks-{{saidata.metadata.name}}.txt"
+      locks_output: "/tmp/lsof-locks-{{metadata.name}}.txt"
 
   memory:
     description: "Show memory-mapped files"
-    template: "lsof -d mem -p $(pgrep -f {{saidata.metadata.name}}) | tee {{memory_output}}"
+    template: "lsof -d mem -p $(pgrep -f {{metadata.name}}) | tee {{memory_output}}"
     variables:
-      memory_output: "/tmp/lsof-memory-{{saidata.metadata.name}}.txt"
+      memory_output: "/tmp/lsof-memory-{{metadata.name}}.txt"

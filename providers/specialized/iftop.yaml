@@ -24,7 +24,7 @@ actions:
 
   logs:
     description: "Monitor specific port"
-    template: "iftop -i {{interface}} -f 'port {{sai_port(saidata) or '80'}}'"
+    template: "iftop -i {{interface}} -f 'port {{sai_port()}}'"
     variables:
       interface: "any"
 
@@ -40,4 +40,4 @@ actions:
     template: "iftop -i {{interface}} -f '{{filter_expression}}'"
     variables:
       interface: "any"
-      filter_expression: "port {{sai_port(saidata) or '80'}}"
+      filter_expression: "port {{sai_port()}}"

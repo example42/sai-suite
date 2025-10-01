@@ -8,79 +8,50 @@ provider:
   type: "package_manager"
   platforms: ["fedora", "rhel", "centos", "rocky", "alma"]
   executable: "dnf"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via DNF"
-    template: "dnf install -y {{sai_packages(saidata, 'dnf')}}"
+    template: "dnf install -y {{sai_package('*', 'package_name', 'dnf')}}"
     timeout: 600
-    detection: "dnf info {{sai_package(saidata, 'dnf')}} >/dev/null 2>&1"
+    detection: "dnf info {{sai_package(0, 'package_name', 'dnf')}} >/dev/null 2>&1"
     validation:
-      command: "rpm -qa | grep {{sai_package(saidata, 'dnf')}}"
+      command: "rpm -qa | grep {{sai_package(0, 'package_name', 'dnf')}}"
       expected_exit_code: 0
-    rollback: "dnf remove -y {{sai_packages(saidata, 'dnf')}}"
+    rollback: "dnf remove -y {{sai_package('*', 'package_name', 'dnf')}}"
 
   uninstall:
     description: "Remove packages via DNF"
-    template: "dnf remove -y {{sai_packages(saidata, 'dnf')}}"
-    detection: "rpm -qa | grep -q {{sai_package(saidata, 'dnf')}}"
+    template: "dnf remove -y {{sai_package('*', 'package_name', 'dnf')}}"
+    detection: "rpm -qa | grep -q {{sai_package(0, 'package_name', 'dnf')}}"
     validation:
-      command: "! rpm -qa | grep {{sai_package(saidata, 'dnf')}}"
+      command: "! rpm -qa | grep {{sai_package(0, 'package_name', 'dnf')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via DNF"
-    template: "dnf upgrade -y {{sai_packages(saidata, 'dnf')}}"
+    template: "dnf upgrade -y {{sai_package('*', 'package_name', 'dnf')}}"
     timeout: 600
-    detection: "rpm -qa | grep -q {{sai_package(saidata, 'dnf')}}"
-
-  start:
-    description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
+    detection: "rpm -qa | grep -q {{sai_package(0, 'package_name', 'dnf')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-      expected_output: "active"
+      command: "rpm -qa | grep {{sai_package(0, 'package_name', 'dnf')}}"
+      expected_exit_code: 0
 
-  stop:
-    description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-    validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-      expected_output: "inactive"
 
-  restart:
-    description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-
-  status:
-    description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}}"
-
-  logs:
-    description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'dnf')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "dnf info {{sai_package(saidata, 'dnf')}}"
+    template: "dnf info {{sai_package(0, 'package_name', 'dnf')}}"
 
   search:
     description: "Search for packages"
-    template: "dnf search {{sai_package(saidata, 'dnf')}}"
+    template: "dnf search {{sai_package(0, 'package_name', 'dnf')}}"
 
   list:
     description: "List installed packages"
-    template: "rpm -qa | grep {{sai_package(saidata, 'dnf')}}"
+    template: "rpm -qa | grep {{sai_package(0, 'package_name', 'dnf')}}"
 
   version:
     description: "Show package version"
-    template: "rpm -q {{sai_package(saidata, 'dnf')}} --queryformat '%{NAME} %{VERSION}-%{RELEASE}'"
+    template: "rpm -q {{sai_package(0, 'package_name', 'dnf')}} --queryformat '%{NAME} %{VERSION}-%{RELEASE}'"

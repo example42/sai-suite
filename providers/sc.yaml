@@ -1,0 +1,60 @@
+# SC Provider Data - Windows service management via Service Control Manager
+version: "1.0"
+
+provider:
+  name: "sc"
+  display_name: "Service Control Manager"
+  description: "Service management for Windows via sc.exe"
+  type: "service_manager"
+  platforms: ["windows"]
+  executable: "sc"
+  priority: 95  # High priority for service management on Windows
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test sc availability"
+    template: "sc query"
+    timeout: 10
+    validation:
+      command: "sc query"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via sc"
+    template: "sc start {{sai_service(0, 'service_name', 'sc')}}"
+    validation:
+      command: "sc query {{sai_service(0, 'service_name', 'sc')}} | findstr RUNNING"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via sc"
+    template: "sc stop {{sai_service(0, 'service_name', 'sc')}}"
+    validation:
+      command: "sc query {{sai_service(0, 'service_name', 'sc')}} | findstr STOPPED"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via sc"
+    steps:
+      - name: "stop-service"
+        command: "sc stop {{sai_service(0, 'service_name', 'sc')}}"
+      - name: "start-service"
+        command: "sc start {{sai_service(0, 'service_name', 'sc')}}"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "sc config {{sai_service(0, 'service_name', 'sc')}} start= auto"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "sc config {{sai_service(0, 'service_name', 'sc')}} start= disabled"
+
+  status:
+    description: "Check service status"
+    template: "sc query {{sai_service(0, 'service_name', 'sc')}}"
+
+  logs:
+    description: "Show service logs via Event Viewer"
+    template: "wevtutil qe System /q:\"*[System[Provider[@Name='Service Control Manager'] and EventID=7036 and EventData[Data='{{sai_service(0, 'service_name', 'sc')}}']]]\" /f:text /c:50"

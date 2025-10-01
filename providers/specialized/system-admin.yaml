@@ -1,0 +1,117 @@
+# System Administration Provider - Comprehensive system management
+version: "1.0"
+
+provider:
+  name: "system-admin"
+  display_name: "System Administration"
+  description: "Comprehensive system administration tasks using standardized SAI functions"
+  type: "system"
+  platforms: ["linux", "macos", "windows"]
+  capabilities: ["backup", "permissions", "monitoring", "logs", "network", "files", "services", "containers"]
+
+actions:
+  backup:
+    description: "Backup all configuration files"
+    template: "tar -czf /tmp/{{metadata.name}}-config-backup-$(date +%Y%m%d).tar.gz {{sai_file('*', 'path', 'system-admin')}}"
+    validation:
+      command: "test -f /tmp/{{metadata.name}}-config-backup-$(date +%Y%m%d).tar.gz"
+      expected_exit_code: 0
+
+  permissions:
+    description: "Set proper file permissions"
+    steps:
+      - name: "set-config-permissions"
+        command: "chown {{sai_file('config', 'owner', 'system-admin')}}:{{sai_file('config', 'group', 'system-admin')}} {{sai_file('config', 'path', 'system-admin')}}"
+      - name: "set-config-mode"
+        command: "chmod {{sai_file('config', 'mode', 'system-admin')}} {{sai_file('config', 'path', 'system-admin')}}"
+      - name: "set-log-permissions"
+        command: "chown {{sai_file('log', 'owner', 'system-admin')}}:{{sai_file('log', 'group', 'system-admin')}} {{sai_file('log', 'path', 'system-admin')}}"
+      - name: "set-log-mode"
+        command: "chmod {{sai_file('log', 'mode', 'system-admin')}} {{sai_file('log', 'path', 'system-admin')}}"
+
+  monitoring:
+    description: "Monitor all service ports"
+    template: "ss -tlnp | grep -E ':({{sai_port('*', 'port')}})'| head -20"
+
+  logs:
+    description: "Show logs from all log files"
+    template: "tail -n 50 {{sai_file('*', 'path')}} | grep -E '\\.(log|err)$'"
+
+  network:
+    description: "Check network connectivity on all ports"
+    steps:
+      - name: "check-http-port"
+        command: "nc -zv localhost {{sai_port('http', 'port')}}"
+        ignore_failure: true
+      - name: "check-https-port"
+        command: "nc -zv localhost {{sai_port('https', 'port')}}"
+        ignore_failure: true
+      - name: "list-all-ports"
+        command: "netstat -tlnp | grep -E ':({{sai_port('*', 'port')}})''"
+
+  files:
+    description: "Verify all critical files exist"
+    template: "ls -la {{sai_file('*', 'path')}} && echo 'All files verified'"
+    validation:
+      command: "test -f {{sai_file('config', 'path')}}"
+      expected_exit_code: 0
+
+  services:
+    description: "Check status of all services"
+    template: "systemctl status {{sai_service('*', 'service_name')}}"
+
+  containers:
+    description: "Manage all containers"
+    steps:
+      - name: "list-containers"
+        command: "docker ps -a | grep {{sai_container('*', 'name')}}"
+      - name: "check-images"
+        command: "docker images | grep {{sai_container('*', 'image')}}"
+      - name: "inspect-container"
+        command: "docker inspect {{sai_container(0, 'name')}}"
+
+  directories:
+    description: "Verify directory structure and permissions"
+    steps:
+      - name: "check-directories"
+        command: "ls -ld {{sai_directory('*', 'path')}}"
+      - name: "set-directory-permissions"
+        command: "chmod {{sai_directory('config', 'mode')}} {{sai_directory('config', 'path')}}"
+      - name: "verify-ownership"
+        command: "chown {{sai_directory('data', 'owner')}}:{{sai_directory('data', 'group')}} {{sai_directory('data', 'path')}}"
+
+  commands:
+    description: "Test all available commands"
+    template: "{{sai_command('*', 'path')}} --version || {{sai_command('*', 'path')}} --help | head -5"
+
+  full-status:
+    description: "Complete system status check"
+    steps:
+      - name: "service-status"
+        command: "systemctl is-active {{sai_service('*', 'service_name')}}"
+      - name: "port-check"
+        command: "ss -tlnp | grep -E ':({{sai_port('*', 'port')}})''"
+      - name: "file-check"
+        command: "ls -la {{sai_file('*', 'path')}}"
+      - name: "container-check"
+        command: "docker ps | grep {{sai_container('*', 'name')}}"
+        ignore_failure: true
+      - name: "directory-check"
+        command: "ls -ld {{sai_directory('*', 'path')}}"
+
+  health-check:
+    description: "Comprehensive health check using all SAI functions"
+    template: |
+      echo "=== Service Health ===" &&
+      systemctl is-active {{sai_service(0, 'service_name')}} &&
+      echo "=== Port Connectivity ===" &&
+      nc -zv localhost {{sai_port(0, 'port')}} &&
+      echo "=== File Integrity ===" &&
+      test -f {{sai_file('config', 'path')}} &&
+      echo "=== Directory Structure ===" &&
+      test -d {{sai_directory('config', 'path')}} &&
+      echo "=== Command Availability ===" &&
+      which {{sai_command(0, 'path')}} &&
+      echo "=== Container Status ===" &&
+      docker ps | grep {{sai_container(0, 'name')}} || echo "No containers" &&
+      echo "=== All Systems Operational ==="

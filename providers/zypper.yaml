@@ -8,79 +8,79 @@ provider:
   type: "package_manager"
   platforms: ["opensuse", "sles"]
   executable: "zypper"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Zypper"
-    template: "zypper install -y {{sai_packages(saidata, 'zypper')}}"
+    template: "zypper install -y {{sai_package('*', 'package_name', 'zypper')}}"
     timeout: 600
-    detection: "zypper info {{sai_package(saidata, 'zypper')}} >/dev/null 2>&1"
+    detection: "zypper info {{sai_package(0, 'package_name', 'zypper')}} >/dev/null 2>&1"
     validation:
-      command: "rpm -qa | grep {{sai_package(saidata, 'zypper')}}"
+      command: "rpm -qa | grep {{sai_package(0, 'package_name', 'zypper')}}"
       expected_exit_code: 0
-    rollback: "zypper remove -y {{sai_packages(saidata, 'zypper')}}"
+    rollback: "zypper remove -y {{sai_package('*', 'package_name', 'zypper')}}"
 
   uninstall:
     description: "Remove packages via Zypper"
-    template: "zypper remove -y {{sai_packages(saidata, 'zypper')}}"
-    detection: "rpm -qa | grep -q {{sai_package(saidata, 'zypper')}}"
+    template: "zypper remove -y {{sai_package('*', 'package_name', 'zypper')}}"
+    detection: "rpm -qa | grep -q {{sai_package(0, 'package_name', 'zypper')}}"
     validation:
-      command: "! rpm -qa | grep {{sai_package(saidata, 'zypper')}}"
+      command: "! rpm -qa | grep {{sai_package(0, 'package_name', 'zypper')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Zypper"
-    template: "zypper update -y {{sai_packages(saidata, 'zypper')}}"
+    template: "zypper update -y {{sai_package('*', 'package_name', 'zypper')}}"
     timeout: 600
-    detection: "zypper info {{sai_package(saidata, 'zypper')}} >/dev/null 2>&1"
+    detection: "zypper info {{sai_package(0, 'package_name', 'zypper')}} >/dev/null 2>&1"
 
   start:
     description: "Start service via systemctl"
-    template: "systemctl start {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+    template: "systemctl start {{sai_service(0, 'service_name', 'zypper')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'zypper')}}"
       expected_output: "active"
 
   stop:
     description: "Stop service via systemctl"
-    template: "systemctl stop {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+    template: "systemctl stop {{sai_service(0, 'service_name', 'zypper')}}"
     validation:
-      command: "systemctl is-active {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'zypper')}}"
       expected_output: "inactive"
 
   restart:
     description: "Restart service via systemctl"
-    template: "systemctl restart {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+    template: "systemctl restart {{sai_service(0, 'service_name', 'zypper')}}"
 
   enable:
     description: "Enable service auto-start"
-    template: "systemctl enable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+    template: "systemctl enable {{sai_service(0, 'service_name', 'zypper')}}"
 
   disable:
     description: "Disable service auto-start"
-    template: "systemctl disable {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+    template: "systemctl disable {{sai_service(0, 'service_name', 'zypper')}}"
 
   status:
     description: "Check service status"
-    template: "systemctl status {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}}"
+    template: "systemctl status {{sai_service(0, 'service_name', 'zypper')}}"
 
   logs:
     description: "Show service logs"
-    template: "journalctl -u {{sai_service(saidata, 'service_name') or sai_package(saidata, 'zypper')}} --no-pager -n 50"
+    template: "journalctl -u {{sai_service(0, 'service_name', 'zypper')}} --no-pager -n 50"
 
   info:
     description: "Show package information"
-    template: "zypper info {{sai_package(saidata, 'zypper')}}"
+    template: "zypper info {{sai_package(0, 'package_name', 'zypper')}}"
 
   search:
     description: "Search for packages"
-    template: "zypper search {{sai_package(saidata, 'zypper')}}"
+    template: "zypper search {{sai_package(0, 'package_name', 'zypper')}}"
 
   list:
     description: "List installed packages"
-    template: "rpm -qa | grep {{sai_package(saidata, 'zypper')}}"
+    template: "rpm -qa | grep {{sai_package(0, 'package_name', 'zypper')}}"
 
   version:
     description: "Show package version"
-    template: "rpm -q {{sai_package(saidata, 'zypper')}} --queryformat '%{NAME} %{VERSION}-%{RELEASE}'"
+    template: "rpm -q {{sai_package(0, 'package_name', 'zypper')}} --queryformat '%{NAME} %{VERSION}-%{RELEASE}'"

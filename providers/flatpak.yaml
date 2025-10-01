@@ -13,48 +13,52 @@ provider:
 actions:
   install:
     description: "Install Flatpak application"
-    template: "flatpak install -y flathub {{sai_packages(saidata, 'flatpak')}}"
+    template: "flatpak install -y flathub {{sai_package('*', 'package_name', 'flatpak')}}"
     timeout: 900
-    detection: "flatpak info {{sai_package(saidata, 'flatpak')}} >/dev/null 2>&1"
+    detection: "flatpak info {{sai_package(0, 'package_name', 'flatpak')}} >/dev/null 2>&1"
     validation:
-      command: "flatpak list | grep {{sai_package(saidata, 'flatpak')}}"
+      command: "flatpak list | grep {{sai_package(0, 'package_name', 'flatpak')}}"
       expected_exit_code: 0
-    rollback: "flatpak uninstall -y {{sai_packages(saidata, 'flatpak')}}"
+    rollback: "flatpak uninstall -y {{sai_package('*', 'package_name', 'flatpak')}}"
 
   uninstall:
     description: "Remove Flatpak application"
-    template: "flatpak uninstall -y {{sai_packages(saidata, 'flatpak')}}"
-    detection: "flatpak info {{sai_package(saidata, 'flatpak')}} >/dev/null 2>&1"
+    template: "flatpak uninstall -y {{sai_package('*', 'package_name', 'flatpak')}}"
+    detection: "flatpak info {{sai_package(0, 'package_name', 'flatpak')}} >/dev/null 2>&1"
     validation:
-      command: "! flatpak list | grep {{sai_package(saidata, 'flatpak')}}"
+      command: "! flatpak list | grep {{sai_package(0, 'package_name', 'flatpak')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Update Flatpak application"
-    template: "flatpak update -y {{sai_packages(saidata, 'flatpak')}}"
+    template: "flatpak update -y {{sai_package('*', 'package_name', 'flatpak')}}"
     timeout: 900
-    detection: "flatpak info {{sai_package(saidata, 'flatpak')}} >/dev/null 2>&1"
+    detection: "flatpak info {{sai_package(0, 'package_name', 'flatpak')}} >/dev/null 2>&1"
+    validation:
+      command: "flatpak list | grep {{sai_package(0, 'package_name', 'flatpak')}}"
+      expected_exit_code: 0
 
   start:
     description: "Run Flatpak application"
-    template: "flatpak run {{sai_package(saidata, 'flatpak')}}"
+    template: "flatpak run {{sai_package(0, 'package_name', 'flatpak')}}"
 
   stop:
     description: "Kill Flatpak application"
-    template: "flatpak kill {{sai_package(saidata, 'flatpak')}}"
+    template: "flatpak kill {{sai_package(0, 'package_name', 'flatpak')}}"
+
 
   info:
     description: "Show Flatpak application information"
-    template: "flatpak info {{sai_package(saidata, 'flatpak')}}"
+    template: "flatpak info {{sai_package(0, 'package_name', 'flatpak')}}"
 
   search:
     description: "Search for Flatpak applications"
-    template: "flatpak search {{sai_package(saidata, 'flatpak')}}"
+    template: "flatpak search {{sai_package(0, 'package_name', 'flatpak')}}"
 
   list:
     description: "List installed Flatpak applications"
-    template: "flatpak list | grep {{sai_package(saidata, 'flatpak')}}"
+    template: "flatpak list | grep {{sai_package(0, 'package_name', 'flatpak')}}"
 
   version:
     description: "Show package version"
-    template: "flatpak list --app {{sai_package(saidata, 'flatpak')}} --columns=version"
+    template: "flatpak list --app {{sai_package(0, 'package_name', 'flatpak')}} --columns=version"

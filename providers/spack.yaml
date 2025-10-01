@@ -8,70 +8,51 @@ provider:
   type: "package_manager"
   platforms: ["linux", "macos"]
   executable: "spack"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "status"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
     description: "Install packages via Spack"
-    template: "spack install {{sai_packages(saidata, 'spack')}}"
+    template: "spack install {{sai_package('*', 'package_name', 'spack')}}"
     timeout: 3600
-    detection: "spack find | grep {{sai_package(saidata, 'spack')}} >/dev/null 2>&1"
+    detection: "spack find | grep {{sai_package(0, 'package_name', 'spack')}} >/dev/null 2>&1"
     validation:
-      command: "spack find | grep {{sai_package(saidata, 'spack')}}"
+      command: "spack find | grep {{sai_package(0, 'package_name', 'spack')}}"
       expected_exit_code: 0
-    rollback: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
+    rollback: "spack uninstall -y {{sai_package('*', 'package_name', 'spack')}}"
 
   uninstall:
     description: "Remove packages via Spack"
-    template: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
-    detection: "spack find | grep {{sai_package(saidata, 'spack')}} >/dev/null 2>&1"
+    template: "spack uninstall -y {{sai_package('*', 'package_name', 'spack')}}"
+    detection: "spack find | grep {{sai_package(0, 'package_name', 'spack')}} >/dev/null 2>&1"
     validation:
-      command: "! spack find | grep {{sai_package(saidata, 'spack')}}"
+      command: "! spack find | grep {{sai_package(0, 'package_name', 'spack')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade packages via Spack"
     steps:
       - name: "uninstall-old"
-        command: "spack uninstall -y {{sai_packages(saidata, 'spack')}}"
+        command: "spack uninstall -y {{sai_package('*', 'package_name', 'spack')}}"
         ignore_failure: true
       - name: "install-new"
-        command: "spack install {{sai_packages(saidata, 'spack')}}"
+        command: "spack install {{sai_package('*', 'package_name', 'spack')}}"
     timeout: 3600
 
-  start:
-    description: "Start application"
-    template: "spack load {{sai_package(saidata, 'spack')}} && {{sai_command(saidata, 'default')}}"
 
-  stop:
-    description: "Stop application"
-    template: "pkill -f {{sai_package(saidata, 'spack')}}"
-
-  restart:
-    description: "Restart application"
-    steps:
-      - name: "stop-app"
-        command: "pkill -f {{sai_package(saidata, 'spack')}}"
-        ignore_failure: true
-      - name: "start-app"
-        command: "spack load {{sai_package(saidata, 'spack')}} && {{sai_command(saidata, 'default')}}"
-
-  status:
-    description: "Check application status"
-    template: "pgrep -f {{sai_package(saidata, 'spack')}}"
 
   info:
     description: "Show package information"
-    template: "spack info {{sai_package(saidata, 'spack')}}"
+    template: "spack info {{sai_package(0, 'package_name', 'spack')}}"
 
   search:
     description: "Search for packages"
-    template: "spack list | grep {{sai_package(saidata, 'spack')}}"
+    template: "spack list | grep {{sai_package(0, 'package_name', 'spack')}}"
 
   list:
     description: "List installed packages"
-    template: "spack find | grep {{sai_package(saidata, 'spack')}}"
+    template: "spack find | grep {{sai_package(0, 'package_name', 'spack')}}"
 
   version:
     description: "Show package version"
-    template: "spack find --format '{name}@{version}' {{sai_package(saidata, 'spack')}}"
+    template: "spack find --format '{name}@{version}' {{sai_package(0, 'package_name', 'spack')}}"

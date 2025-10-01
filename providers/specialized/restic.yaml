@@ -19,36 +19,36 @@ actions:
       - name: "create-backup"
         command: "restic -r {{repository}} backup {{backup_paths}} --tag {{backup_tag}}"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
-      backup_paths: "{{sai_file(saidata, 0, 'path') or '/tmp'}} {{sai_file(saidata, 1, 'path') or '/etc'}}"
-      backup_tag: "{{saidata.metadata.name}}-$(date +%Y%m%d)"
+      repository: "/tmp/restic-{{metadata.name}}"
+      backup_paths: "{{sai_file(0, 'path') or '/tmp'}} {{sai_file(1, 'path') or '/etc'}}"
+      backup_tag: "{{metadata.name}}-$(date +%Y%m%d)"
 
   restore:
     description: "Restore from backup"
     template: "restic -r {{repository}} restore {{snapshot_id}} --target {{restore_path}}"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
+      repository: "/tmp/restic-{{metadata.name}}"
       snapshot_id: "latest"
-      restore_path: "/tmp/restore-{{saidata.metadata.name}}"
+      restore_path: "/tmp/restore-{{metadata.name}}"
 
   list:
     description: "List snapshots"
     template: "restic -r {{repository}} snapshots --tag {{backup_tag}}"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
-      backup_tag: "{{saidata.metadata.name}}"
+      repository: "/tmp/restic-{{metadata.name}}"
+      backup_tag: "{{metadata.name}}"
 
   check:
     description: "Check repository integrity"
     template: "restic -r {{repository}} check --read-data"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
+      repository: "/tmp/restic-{{metadata.name}}"
 
   prune:
     description: "Remove old snapshots"
     template: "restic -r {{repository}} forget --keep-daily {{keep_daily}} --keep-weekly {{keep_weekly}} --prune"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
+      repository: "/tmp/restic-{{metadata.name}}"
       keep_daily: "7"
       keep_weekly: "4"
 
@@ -56,13 +56,13 @@ actions:
     description: "Mount repository as filesystem"
     template: "restic -r {{repository}} mount {{mount_point}}"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
-      mount_point: "/tmp/restic-mount-{{saidata.metadata.name}}"
+      repository: "/tmp/restic-{{metadata.name}}"
+      mount_point: "/tmp/restic-mount-{{metadata.name}}"
 
   diff:
     description: "Compare snapshots"
     template: "restic -r {{repository}} diff {{snapshot1}} {{snapshot2}}"
     variables:
-      repository: "/tmp/restic-{{saidata.metadata.name}}"
+      repository: "/tmp/restic-{{metadata.name}}"
       snapshot1: "latest"
       snapshot2: "latest~1"

@@ -8,37 +8,14 @@ provider:
   type: "network"
   platforms: ["linux", "macos", "windows"]
   executable: "tshark"  # Main executable for availability detection
-  capabilities: ["logs", "info", "search", "list", "upgrade", "version"]
+  capabilities: ["logs"]
 
 actions:
   logs:
     description: "Capture packets with tshark"
-    template: "tshark -i {{interface}} -f 'port {{sai_port(saidata) or '80'}}' -c {{packet_count}}"
+    template: "tshark -i {{interface}} -f 'port {{sai_port()}}' -c {{packet_count}}"
     variables:
       interface: "any"
       packet_count: "100"
 
-  info:
-    description: "Analyze captured packets"
-    template: "tshark -r /tmp/capture-{{saidata.metadata.name}}.pcap -Y 'tcp.port == {{sai_port(saidata) or '80'}}'"
 
-  search:
-    description: "Filter and search packets"
-    template: "tshark -i {{interface}} -f 'host {{target_host}} and port {{sai_port(saidata) or '80'}}'"
-    variables:
-      interface: "any"
-      target_host: "localhost"
-
-  list:
-    description: "Decode protocols"
-    template: "tshark -r /tmp/capture-{{saidata.metadata.name}}.pcap -V"
-
-  upgrade:
-    description: "Export to file"
-    template: "tshark -i {{interface}} -w /tmp/capture-{{saidata.metadata.name}}.pcap -f 'port {{sai_port(saidata) or '80'}}'"
-    variables:
-      interface: "any"
-
-  version:
-    description: "Show Wireshark/tshark version"
-    template: "tshark --version"

@@ -1,0 +1,65 @@
+# RC Service Provider Data - OpenRC service management for Alpine Linux and Gentoo
+version: "1.0"
+
+provider:
+  name: "rc-service"
+  display_name: "OpenRC Service Manager"
+  description: "Service management for OpenRC-based Linux distributions (Alpine, Gentoo)"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "rc-service"
+  priority: 95  # High priority for service management on OpenRC systems
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test rc-service availability"
+    template: "rc-service --help"
+    timeout: 10
+    validation:
+      command: "rc-service --help"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via rc-service"
+    template: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} start"
+    validation:
+      command: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} status | grep started"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via rc-service"
+    template: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} stop"
+    validation:
+      command: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} status | grep stopped"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via rc-service"
+    template: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} restart"
+    validation:
+      command: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} status | grep started"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start"
+    template: "rc-update add {{sai_service(0, 'service_name', 'rc-service')}} default"
+    validation:
+      command: "rc-update show default | grep {{sai_service(0, 'service_name', 'rc-service')}}"
+      expected_exit_code: 0
+
+  disable:
+    description: "Disable service auto-start"
+    template: "rc-update del {{sai_service(0, 'service_name', 'rc-service')}} default"
+    validation:
+      command: "! rc-update show default | grep {{sai_service(0, 'service_name', 'rc-service')}}"
+      expected_exit_code: 0
+
+  status:
+    description: "Check service status"
+    template: "rc-service {{sai_service(0, 'service_name', 'rc-service')}} status"
+
+  logs:
+    description: "Show service logs"
+    template: "tail -n 50 /var/log/{{sai_service(0, 'service_name', 'rc-service')}}.log"

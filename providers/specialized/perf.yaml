@@ -14,66 +14,66 @@ actions:
     description: "Record performance data"
     steps:
       - name: "start-recording"
-        command: "perf record {{record_options}} -p $(pgrep -f {{saidata.metadata.name}}) sleep {{duration}}"
+        command: "perf record {{record_options}} -p $(pgrep -f {{metadata.name}}) sleep {{duration}}"
       - name: "save-data"
         command: "mv perf.data {{perf_output}}"
     variables:
       record_options: "-g --call-graph dwarf"
       duration: "30"
-      perf_output: "/tmp/perf-{{saidata.metadata.name}}.data"
+      perf_output: "/tmp/perf-{{metadata.name}}.data"
 
   report:
     description: "Generate performance report"
     template: "perf report -i {{perf_input}} --stdio > {{report_output}}"
     variables:
-      perf_input: "/tmp/perf-{{saidata.metadata.name}}.data"
-      report_output: "/tmp/perf-report-{{saidata.metadata.name}}.txt"
+      perf_input: "/tmp/perf-{{metadata.name}}.data"
+      report_output: "/tmp/perf-report-{{metadata.name}}.txt"
 
   stat:
     description: "Show performance statistics"
-    template: "perf stat {{stat_options}} -p $(pgrep -f {{saidata.metadata.name}}) sleep {{duration}} 2>&1 | tee {{stat_output}}"
+    template: "perf stat {{stat_options}} -p $(pgrep -f {{metadata.name}}) sleep {{duration}} 2>&1 | tee {{stat_output}}"
     variables:
       stat_options: "-e cycles,instructions,cache-references,cache-misses"
       duration: "10"
-      stat_output: "/tmp/perf-stat-{{saidata.metadata.name}}.txt"
+      stat_output: "/tmp/perf-stat-{{metadata.name}}.txt"
 
   top:
     description: "Real-time performance monitoring"
-    template: "perf top {{top_options}} -p $(pgrep -f {{saidata.metadata.name}})"
+    template: "perf top {{top_options}} -p $(pgrep -f {{metadata.name}})"
     variables:
       top_options: "-g --call-graph dwarf"
 
   trace:
     description: "Trace system events"
-    template: "perf trace {{trace_options}} -p $(pgrep -f {{saidata.metadata.name}}) 2>&1 | tee {{trace_output}}"
+    template: "perf trace {{trace_options}} -p $(pgrep -f {{metadata.name}}) 2>&1 | tee {{trace_output}}"
     variables:
       trace_options: "--duration 30000"
-      trace_output: "/tmp/perf-trace-{{saidata.metadata.name}}.log"
+      trace_output: "/tmp/perf-trace-{{metadata.name}}.log"
 
   flamegraph:
     description: "Generate flame graph"
     steps:
       - name: "record-data"
-        command: "perf record -g -p $(pgrep -f {{saidata.metadata.name}}) sleep 30"
+        command: "perf record -g -p $(pgrep -f {{metadata.name}}) sleep 30"
       - name: "generate-stacks"
         command: "perf script | stackcollapse-perf.pl > {{stacks_file}}"
       - name: "create-flamegraph"
         command: "flamegraph.pl {{stacks_file}} > {{flamegraph_output}}"
     variables:
-      stacks_file: "/tmp/stacks-{{saidata.metadata.name}}.txt"
-      flamegraph_output: "/tmp/flamegraph-{{saidata.metadata.name}}.svg"
+      stacks_file: "/tmp/stacks-{{metadata.name}}.txt"
+      flamegraph_output: "/tmp/flamegraph-{{metadata.name}}.svg"
 
   annotate:
     description: "Annotate source code with performance data"
     template: "perf annotate -i {{perf_input}} --stdio > {{annotate_output}}"
     variables:
-      perf_input: "/tmp/perf-{{saidata.metadata.name}}.data"
-      annotate_output: "/tmp/perf-annotate-{{saidata.metadata.name}}.txt"
+      perf_input: "/tmp/perf-{{metadata.name}}.data"
+      annotate_output: "/tmp/perf-annotate-{{metadata.name}}.txt"
 
   diff:
     description: "Compare performance data"
     template: "perf diff {{baseline_data}} {{comparison_data}} --stdio > {{diff_output}}"
     variables:
-      baseline_data: "/tmp/perf-baseline-{{saidata.metadata.name}}.data"
-      comparison_data: "/tmp/perf-current-{{saidata.metadata.name}}.data"
-      diff_output: "/tmp/perf-diff-{{saidata.metadata.name}}.txt"
+      baseline_data: "/tmp/perf-baseline-{{metadata.name}}.data"
+      comparison_data: "/tmp/perf-current-{{metadata.name}}.data"
+      diff_output: "/tmp/perf-diff-{{metadata.name}}.txt"

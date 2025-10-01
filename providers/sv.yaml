@@ -1,0 +1,65 @@
+# SV Provider Data - Void Linux service management via runit
+version: "1.0"
+
+provider:
+  name: "sv"
+  display_name: "Runit Service Manager"
+  description: "Service management for Void Linux via runit/sv"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "sv"
+  priority: 95  # High priority for Void Linux systems
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test sv availability"
+    template: "sv --help"
+    timeout: 10
+    validation:
+      command: "sv --help"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via sv"
+    template: "sv start {{sai_service(0, 'service_name', 'sv')}}"
+    validation:
+      command: "sv status {{sai_service(0, 'service_name', 'sv')}} | grep run"
+      expected_exit_code: 0
+
+  stop:
+    description: "Stop service via sv"
+    template: "sv stop {{sai_service(0, 'service_name', 'sv')}}"
+    validation:
+      command: "sv status {{sai_service(0, 'service_name', 'sv')}} | grep down"
+      expected_exit_code: 0
+
+  restart:
+    description: "Restart service via sv"
+    template: "sv restart {{sai_service(0, 'service_name', 'sv')}}"
+    validation:
+      command: "sv status {{sai_service(0, 'service_name', 'sv')}} | grep run"
+      expected_exit_code: 0
+
+  enable:
+    description: "Enable service auto-start"
+    template: "ln -sf /etc/sv/{{sai_service(0, 'service_name', 'sv')}} /var/service/"
+    validation:
+      command: "test -L /var/service/{{sai_service(0, 'service_name', 'sv')}}"
+      expected_exit_code: 0
+
+  disable:
+    description: "Disable service auto-start"
+    template: "rm -f /var/service/{{sai_service(0, 'service_name', 'sv')}}"
+    validation:
+      command: "! test -L /var/service/{{sai_service(0, 'service_name', 'sv')}}"
+      expected_exit_code: 0
+
+  status:
+    description: "Check service status"
+    template: "sv status {{sai_service(0, 'service_name', 'sv')}}"
+
+  logs:
+    description: "Show service logs"
+    template: "svlogtail {{sai_service(0, 'service_name', 'sv')}}"

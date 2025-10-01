@@ -13,24 +13,24 @@ provider:
 actions:
   list:
     description: "Show directory tree"
-    template: "tree {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    template: "tree {{sai_file(0, 'path') or '/tmp'}}"
 
   info:
     description: "Tree with depth limit"
-    template: "tree -L {{max_depth}} {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    template: "tree -L {{max_depth}} {{sai_file(0, 'path') or '/tmp'}}"
     variables:
       max_depth: "3"
 
   logs:
     description: "Tree with file sizes"
-    template: "tree -s {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    template: "tree -s {{sai_file(0, 'path') or '/tmp'}}"
 
   search:
     description: "Tree with permissions"
-    template: "tree -p {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    template: "tree -p {{sai_file(0, 'path') or '/tmp'}}"
 
   upgrade:
     description: "Tree with pattern matching"
-    template: "tree -P '{{file_pattern}}' {{sai_file(saidata, 0, 'path') or '/tmp'}}"
+    template: "tree -P '{{file_pattern}}' {{sai_file(0, 'path') or '/tmp'}}"
     variables:
       file_pattern: "*.conf"

@@ -1,0 +1,154 @@
+# Source Provider Data - Build software from source code
+version: "1.0"
+
+provider:
+  name: "source"
+  display_name: "Source Build"
+  description: "Build and install software from source code with multi-build system support"
+  type: "source"
+  platforms: ["linux", "macos", "windows"]
+  executable: "make"  # Basic build tool for availability detection
+  capabilities: ["install", "uninstall", "upgrade", "version", "info", "check"]
+
+actions:
+  install:
+    description: "Build and install from source with comprehensive workflow"
+    steps:
+      - name: "detect-build-system"
+        command: "{{sai_source(0, 'build_system_detection_cmd')}}"
+        ignore_failure: true
+      - name: "install-prerequisites"
+        command: "{{sai_source(0, 'prerequisites_install_cmd')}}"
+        ignore_failure: true
+      - name: "create-build-dir"
+        command: "mkdir -p {{sai_source(0, 'build_dir')}}"
+      - name: "download-source"
+        command: "cd {{sai_source(0, 'build_dir')}} && {{sai_source(0, 'download_cmd')}}"
+      - name: "verify-checksum"
+        command: "cd {{sai_source(0, 'build_dir')}} && {{sai_source(0, 'checksum_cmd')}}"
+        ignore_failure: true
+      - name: "extract-source"
+        command: "cd {{sai_source(0, 'build_dir')}} && {{sai_source(0, 'extract_cmd')}}"
+        ignore_failure: true
+      - name: "prepare-build-environment"
+        command: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'prepare_cmd')}}"
+        ignore_failure: true
+      - name: "configure"
+        command: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'configure_cmd')}}"
+        ignore_failure: true
+      - name: "build"
+        command: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'build_cmd')}}"
+      - name: "test-build"
+        command: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'test_cmd')}}"
+        ignore_failure: true
+      - name: "install"
+        command: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'install_cmd')}}"
+      - name: "post-install"
+        command: "{{sai_source(0, 'post_install_cmd')}}"
+        ignore_failure: true
+      - name: "create-manifest"
+        command: "echo 'Build System: {{sai_source(0, 'build_system')}}' > {{sai_source(0, 'manifest_file')}} && echo 'Source Dir: {{sai_source(0, 'source_dir')}}' >> {{sai_source(0, 'manifest_file')}} && echo 'Install Prefix: {{sai_source(0, 'install_prefix')}}' >> {{sai_source(0, 'manifest_file')}}"
+    timeout: 3600
+    validation:
+      command: "{{sai_source(0, 'validation_cmd')}}"
+      expected_exit_code: 0
+    rollback: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'uninstall_cmd')}} && rm -rf {{sai_source(0, 'build_dir')}}"
+
+  uninstall:
+    description: "Remove source-built software with comprehensive cleanup"
+    steps:
+      - name: "pre-uninstall"
+        command: "{{sai_source(0, 'pre_uninstall_cmd')}}"
+        ignore_failure: true
+      - name: "uninstall-files"
+        command: "cd {{sai_source(0, 'source_dir')}} && {{sai_source(0, 'uninstall_cmd')}}"
+        ignore_failure: true
+      - name: "remove-installed-files"
+        command: "{{sai_source(0, 'remove_installed_files_cmd')}}"
+        ignore_failure: true
+      - name: "remove-build-dir"
+        command: "rm -rf {{sai_source(0, 'build_dir')}}"
+        ignore_failure: true
+      - name: "remove-manifest"
+        command: "rm -f {{sai_source(0, 'manifest_file')}}"
+        ignore_failure: true
+      - name: "post-uninstall"
+        command: "{{sai_source(0, 'post_uninstall_cmd')}}"
+        ignore_failure: true
+    validation:
+      command: "! {{sai_source(0, 'validation_cmd')}}"
+      expected_exit_code: 0
+
+  upgrade:
+    description: "Upgrade source-built software with rollback support"
+    steps:
+      - name: "backup-current-installation"
+        command: "{{sai_source(0, 'backup_installation_cmd')}}"
+        ignore_failure: true
+      - name: "backup-source-dir"
+        command: "cp -r {{sai_source(0, 'source_dir')}} {{sai_source(0, 'source_dir')}}.backup"
+        ignore_failure: true
+      - name: "create-new-build-dir"
+        command: "mkdir -p {{sai_source(0, 'build_dir')}}.new"
+      - name: "download-new-source"
+        command: "cd {{sai_source(0, 'build_dir')}}.new && {{sai_source(0, 'download_cmd')}}"
+      - name: "verify-new-checksum"
+        command: "cd {{sai_source(0, 'build_dir')}}.new && {{sai_source(0, 'checksum_cmd')}}"
+        ignore_failure: true
+      - name: "extract-new-source"
+        command: "cd {{sai_source(0, 'build_dir')}}.new && {{sai_source(0, 'extract_cmd')}}"
+        ignore_failure: true
+      - name: "prepare-new-build"
+        command: "cd {{sai_source(0, 'source_dir')}}.new && {{sai_source(0, 'prepare_cmd')}}"
+        ignore_failure: true
+      - name: "configure-new"
+        command: "cd {{sai_source(0, 'source_dir')}}.new && {{sai_source(0, 'configure_cmd')}}"
+        ignore_failure: true
+      - name: "build-new"
+        command: "cd {{sai_source(0, 'source_dir')}}.new && {{sai_source(0, 'build_cmd')}}"
+      - name: "test-new-build"
+        command: "cd {{sai_source(0, 'source_dir')}}.new && {{sai_source(0, 'test_cmd')}}"
+        ignore_failure: true
+      - name: "install-new"
+        command: "cd {{sai_source(0, 'source_dir')}}.new && {{sai_source(0, 'install_cmd')}}"
+      - name: "post-install-new"
+        command: "{{sai_source(0, 'post_install_cmd')}}"
+        ignore_failure: true
+      - name: "update-manifest"
+        command: "echo 'Build System: {{sai_source(0, 'build_system')}}' > {{sai_source(0, 'manifest_file')}} && echo 'Source Dir: {{sai_source(0, 'source_dir')}}.new' >> {{sai_source(0, 'manifest_file')}} && echo 'Install Prefix: {{sai_source(0, 'install_prefix')}}' >> {{sai_source(0, 'manifest_file')}}"
+      - name: "cleanup-old-source"
+        command: "rm -rf {{sai_source(0, 'source_dir')}}.backup && mv {{sai_source(0, 'source_dir')}}.new {{sai_source(0, 'source_dir')}} && rm -rf {{sai_source(0, 'build_dir')}}.new"
+        ignore_failure: true
+    timeout: 3600
+    validation:
+      command: "{{sai_source(0, 'validation_cmd')}}"
+      expected_exit_code: 0
+    rollback: "{{sai_source(0, 'restore_installation_cmd')}} && mv {{sai_source(0, 'source_dir')}}.backup {{sai_source(0, 'source_dir')}} && rm -rf {{sai_source(0, 'source_dir')}}.new && rm -rf {{sai_source(0, 'build_dir')}}.new"
+
+  version:
+    description: "Show installed version"
+    template: "{{sai_source(0, 'version_cmd')}}"
+
+  info:
+    description: "Show source build information"
+    template: "cat {{sai_source(0, 'manifest_file')}} 2>/dev/null || echo 'Not installed from source'"
+
+  check:
+    description: "Check source build prerequisites and dependencies"
+    steps:
+      - name: "check-build-system"
+        command: "{{sai_source(0, 'check_build_system_cmd')}}"
+      - name: "check-prerequisites"
+        command: "{{sai_source(0, 'check_prerequisites_cmd')}}"
+      - name: "check-dependencies"
+        command: "{{sai_source(0, 'check_dependencies_cmd')}}"
+        ignore_failure: true
+    validation:
+      command: "echo 'Build environment check completed'"
+      expected_exit_code: 0
+
+  # Helper action for checking build system availability
+  test:
+    description: "Test source build availability and build system detection"
+    template: "{{sai_source(0, 'build_system_test_cmd')}}"
+    timeout: 10

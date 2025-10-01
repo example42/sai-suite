@@ -33,11 +33,11 @@ actions:
 
   processes:
     description: "Process-specific I/O monitoring"
-    template: "{{process_tool}} {{process_options}} $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    template: "{{process_tool}} {{process_options}} $(pgrep -f {{metadata.name}} | tr '\\n' ',')"
     variables:
       process_tool: "iotop"
       process_options: "-a -o -p"
-    fallback: "ps -p $(pgrep -f {{saidata.metadata.name}}) -o pid,cpu,mem,vsz,rss"
+    fallback: "ps -p $(pgrep -f {{metadata.name}}) -o pid,cpu,mem,vsz,rss"
 
   continuous:
     description: "Continuous system monitoring"

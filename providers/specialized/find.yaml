@@ -13,19 +13,19 @@ provider:
 actions:
   search:
     description: "Search for files by name"
-    template: "find {{search_path}} -name '*{{saidata.metadata.name}}*'"
+    template: "find {{search_path}} -name '*{{metadata.name}}*'"
     variables:
       search_path: "/usr /etc /var"
 
   list:
     description: "Execute command on found files"
-    template: "find {{search_path}} -name '*{{saidata.metadata.name}}*' -exec ls -la {} \\;"
+    template: "find {{search_path}} -name '*{{metadata.name}}*' -exec ls -la {} \\;"
     variables:
       search_path: "/usr /etc /var"
 
   info:
     description: "Find by file type"
-    template: "find {{search_path}} -name '*{{saidata.metadata.name}}*' -type {{file_type}}"
+    template: "find {{search_path}} -name '*{{metadata.name}}*' -type {{file_type}}"
     variables:
       search_path: "/usr /etc /var"
       file_type: "f"

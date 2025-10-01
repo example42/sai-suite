@@ -8,7 +8,7 @@ provider:
   type: "package_manager"
   platforms: ["gentoo"]
   executable: "emerge"  # Main executable for availability detection
-  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version", "start", "stop", "restart", "enable", "disable", "status", "logs"]
+  capabilities: ["install", "uninstall", "upgrade", "search", "info", "list", "version"]
 
 actions:
   install:
@@ -18,19 +18,19 @@ actions:
         command: "emerge --sync"
         timeout: 300
       - name: "install-packages"
-        command: "emerge {{sai_packages(saidata, 'emerge')}}"
+        command: "emerge {{sai_package('*', 'package_name', 'emerge')}}"
         timeout: 3600
     validation:
-      command: "qlist -I | grep {{sai_package(saidata, 'emerge')}}"
+      command: "qlist -I | grep {{sai_package(0, 'package_name', 'emerge')}}"
       expected_exit_code: 0
-    rollback: "emerge --unmerge {{sai_packages(saidata, 'emerge')}}"
+    rollback: "emerge --unmerge {{sai_package('*', 'package_name', 'emerge')}}"
 
   uninstall:
     description: "Remove packages via Emerge"
-    template: "emerge --unmerge {{sai_packages(saidata, 'emerge')}}"
-    detection: "emerge --search {{sai_package(saidata, 'emerge')}} >/dev/null 2>&1"
+    template: "emerge --unmerge {{sai_package('*', 'package_name', 'emerge')}}"
+    detection: "emerge --search {{sai_package(0, 'package_name', 'emerge')}} >/dev/null 2>&1"
     validation:
-      command: "! qlist -I | grep {{sai_package(saidata, 'emerge')}}"
+      command: "! qlist -I | grep {{sai_package(0, 'package_name', 'emerge')}}"
       expected_exit_code: 0
 
   upgrade:
@@ -40,56 +40,24 @@ actions:
         command: "emerge --sync"
         timeout: 300
       - name: "upgrade-packages"
-        command: "emerge -u {{sai_packages(saidata, 'emerge')}}"
+        command: "emerge -u {{sai_package('*', 'package_name', 'emerge')}}"
         timeout: 3600
-    detection: "emerge --search {{sai_package(saidata, 'emerge')}} >/dev/null 2>&1"
+    detection: "emerge --search {{sai_package(0, 'package_name', 'emerge')}} >/dev/null 2>&1"
 
-  start:
-    description: "Start service via rc-service"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} start"
-    validation:
-      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} status"
-      expected_output: "started"
 
-  stop:
-    description: "Stop service via rc-service"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} stop"
-    validation:
-      command: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} status"
-      expected_output: "stopped"
-
-  restart:
-    description: "Restart service via rc-service"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} restart"
-
-  enable:
-    description: "Enable service auto-start"
-    template: "rc-update add {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} default"
-
-  disable:
-    description: "Disable service auto-start"
-    template: "rc-update del {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} default"
-
-  status:
-    description: "Check service status"
-    template: "rc-service {{sai_service(saidata, 'service_name') or sai_package(saidata, 'emerge')}} status"
-
-  logs:
-    description: "Show service logs"
-    template: "tail -n 50 {{sai_file(saidata) or '/var/log/' + saidata.metadata.name + '/' + saidata.metadata.name + '.log'}}"
 
   info:
     description: "Show package information"
-    template: "emerge --info {{sai_package(saidata, 'emerge')}}"
+    template: "emerge --info {{sai_package(0, 'package_name', 'emerge')}}"
 
   search:
     description: "Search for packages"
-    template: "emerge --search {{sai_package(saidata, 'emerge')}}"
+    template: "emerge --search {{sai_package(0, 'package_name', 'emerge')}}"
 
   list:
     description: "List installed packages"
-    template: "qlist -I | grep {{sai_package(saidata, 'emerge')}}"
+    template: "qlist -I | grep {{sai_package(0, 'package_name', 'emerge')}}"
 
   version:
     description: "Show package version"
-    template: "qlist -I {{sai_package(saidata, 'emerge')}} | head -1"
+    template: "qlist -I {{sai_package(0, 'package_name', 'emerge')}} | head -1"

@@ -1,0 +1,65 @@
+# Systemctl Provider Data - Linux service management via systemd
+version: "1.0"
+
+provider:
+  name: "systemctl"
+  display_name: "Systemd Service Manager"
+  description: "Service management for systemd-based Linux distributions"
+  type: "service_manager"
+  platforms: ["linux"]
+  executable: "systemctl"
+  priority: 95  # High priority for service management on Linux
+  capabilities: ["start", "stop", "restart", "enable", "disable", "status", "logs"]
+
+actions:
+  # Simple availability test action (used for provider detection)
+  test:
+    description: "Test systemctl availability"
+    template: "systemctl --version"
+    timeout: 10
+    validation:
+      command: "systemctl --version"
+      expected_exit_code: 0
+
+  start:
+    description: "Start service via systemctl"
+    template: "systemctl start {{sai_service(0, 'service_name', 'systemctl')}}"
+    validation:
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'systemctl')}}"
+      expected_output: "active"
+
+  stop:
+    description: "Stop service via systemctl"
+    template: "systemctl stop {{sai_service(0, 'service_name', 'systemctl')}}"
+    validation:
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'systemctl')}}"
+      expected_output: "inactive"
+
+  restart:
+    description: "Restart service via systemctl"
+    template: "systemctl restart {{sai_service(0, 'service_name', 'systemctl')}}"
+    validation:
+      command: "systemctl is-active {{sai_service(0, 'service_name', 'systemctl')}}"
+      expected_output: "active"
+
+  enable:
+    description: "Enable service auto-start"
+    template: "systemctl enable {{sai_service(0, 'service_name', 'systemctl')}}"
+    validation:
+      command: "systemctl is-enabled {{sai_service(0, 'service_name', 'systemctl')}}"
+      expected_output: "enabled"
+
+  disable:
+    description: "Disable service auto-start"
+    template: "systemctl disable {{sai_service(0, 'service_name', 'systemctl')}}"
+    validation:
+      command: "systemctl is-enabled {{sai_service(0, 'service_name', 'systemctl')}}"
+      expected_output: "disabled"
+
+  status:
+    description: "Check service status"
+    template: "systemctl status {{sai_service(0, 'service_name', 'systemctl')}}"
+
+  logs:
+    description: "Show service logs"
+    template: "journalctl -u {{sai_service(0, 'service_name', 'systemctl')}} --no-pager -n 50"

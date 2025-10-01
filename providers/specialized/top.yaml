@@ -13,25 +13,25 @@ provider:
 actions:
   status:
     description: "Monitor processes in real-time"
-    template: "top -p $(pgrep -f {{saidata.metadata.name}} | tr '\\n' ',')"
+    template: "top -p $(pgrep -f {{metadata.name}} | tr '\\n' ',')"
 
   list:
     description: "List top processes"
-    template: "top -b -n1 | grep {{saidata.metadata.name}}"
+    template: "top -b -n1 | grep {{metadata.name}}"
 
   info:
     description: "Show process information from top"
-    template: "top -b -n1 -p $(pgrep -f {{saidata.metadata.name}})"
+    template: "top -b -n1 -p $(pgrep -f {{metadata.name}})"
 
   logs:
     description: "Monitor process continuously"
-    template: "top -d {{monitor_interval}} -p $(pgrep -f {{saidata.metadata.name}})"
+    template: "top -d {{monitor_interval}} -p $(pgrep -f {{metadata.name}})"
     variables:
       monitor_interval: "2"
 
   stop:
     description: "Kill process from top interface"
-    template: "kill -TERM $(pgrep -f {{saidata.metadata.name}})"
+    template: "kill -TERM $(pgrep -f {{metadata.name}})"
     validation:
-      command: "! pgrep -f {{saidata.metadata.name}}"
+      command: "! pgrep -f {{metadata.name}}"
       expected_exit_code: 0
