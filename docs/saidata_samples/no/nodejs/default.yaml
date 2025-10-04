@@ -1,0 +1,182 @@
+version: "0.3"
+
+metadata:
+  name: "nodejs"
+  display_name: "Node.js"
+  description: "JavaScript runtime built on Chrome's V8 JavaScript engine"
+  version: "20.10.0"
+  category: "runtime"
+  subcategory: "javascript"
+  tags: ["nodejs", "javascript", "runtime", "v8", "npm"]
+  license: "MIT"
+  language: "C++"
+  maintainer: "Node.js Foundation"
+  urls:
+    website: "https://nodejs.org"
+    documentation: "https://nodejs.org/docs"
+    source: "https://github.com/nodejs/node"
+    issues: "https://github.com/nodejs/node/issues"
+    download: "https://nodejs.org/dist"
+    changelog: "https://github.com/nodejs/node/blob/main/CHANGELOG.md"
+    license: "https://github.com/nodejs/node/blob/main/LICENSE"
+  security:
+    security_contact: "security@nodejs.org"
+    vulnerability_disclosure: "https://nodejs.org/en/security"
+
+packages:
+  - name: "nodejs"
+    package_name: "nodejs"
+    version: "20.10.0"
+  - name: "npm"
+    package_name: "npm"
+    version: "10.2.3"
+
+# Source compilation
+sources:
+  - name: "nodejs-source"
+    url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}.tar.gz"
+    version: "20.10.0"
+    checksum: "sha256:8a1b8f6b7f6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e"
+    build_system: "autotools"
+    configure_args:
+      - "--prefix=/usr/local"
+      - "--with-intl=system-icu"
+    prerequisites: ["python3", "gcc", "g++", "make", "libicu-dev"]
+    install_prefix: "/usr/local"
+
+# Binary installation (recommended for most users)
+binaries:
+  - name: "nodejs-binary"
+    url: "https://nodejs.org/dist/v{{version}}/node-v{{version}}-{{platform}}-{{architecture}}.tar.xz"
+    version: "20.10.0"
+    checksum: "sha256:b2f6b9f8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0"
+    archive:
+      format: "tar.xz"
+      strip_components: 1
+    install_path: "/usr/local"
+    platform_map:
+      linux: "linux"
+      darwin: "darwin"
+      windows: "win"
+    architecture_map:
+      amd64: "x64"
+      arm64: "arm64"
+      armv7l: "armv7l"
+    post_install:
+      - "npm config set prefix /usr/local"
+    verification:
+      command: "node --version"
+      expected_output: "v{{version}}"
+
+# NVM installation script
+scripts:
+  - name: "nvm-installer"
+    url: "https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh"
+    checksum: "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    interpreter: "/bin/bash"
+    arguments: []
+    timeout: 300
+    requires_root: false
+    idempotent: true
+    post_install:
+      - "source ~/.nvm/nvm.sh"
+      - "nvm install {{version}}"
+      - "nvm use {{version}}"
+      - "nvm alias default {{version}}"
+    verification:
+      command: "node --version"
+      expected_output: "v{{version}}"
+    environment:
+      NVM_DIR: "$HOME/.nvm"
+
+files:
+  - name: "npm-config"
+    path: "$HOME/.npmrc"
+    type: "config"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0644"
+
+directories:
+  - name: "npm-global"
+    path: "/usr/local/lib/node_modules"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "npm-cache"
+    path: "$HOME/.npm"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0755"
+
+commands:
+  - name: "node"
+    path: "/usr/local/bin/node"
+    shell_completion: false
+    man_page: "node(1)"
+  - name: "npm"
+    path: "/usr/local/bin/npm"
+    shell_completion: true
+    man_page: "npm(1)"
+  - name: "npx"
+    path: "/usr/local/bin/npx"
+    shell_completion: true
+
+providers:
+  apt:
+    repositories:
+      - name: "nodesource"
+        url: "https://deb.nodesource.com/node_20.x"
+        key: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nodejs"
+            package_name: "nodejs"
+            version: "20.10.0"
+
+  dnf:
+    repositories:
+      - name: "nodesource"
+        url: "https://rpm.nodesource.com/pub_20.x/nodistro/repo"
+        key: "https://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL"
+        type: "upstream"
+        recommended: true
+        packages:
+          - name: "nodejs"
+            package_name: "nodejs"
+            version: "20.10.0"
+
+  brew:
+    packages:
+      - name: "nodejs"
+        package_name: "node"
+        version: "20.10.0"
+
+  choco:
+    packages:
+      - name: "nodejs"
+        package_name: "nodejs"
+        version: "20.10.0"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+

@@ -33,7 +33,7 @@ class TestGenerationEngine:
             "llm_providers": {
                 "openai": {
                     "api_key": "test-api-key",
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             }
         }
@@ -120,7 +120,7 @@ providers:
             content=sample_saidata_yaml,
             tokens_used=1000,
             cost_estimate=0.002,
-            model_used="gpt-3.5-turbo",
+            model_used="gpt-4o-mini",
             finish_reason="stop"
         )
         
@@ -351,7 +351,7 @@ metadata:
         """Test getting provider information."""
         # Mock model info
         mock_model_info = ModelInfo(
-            name="gpt-3.5-turbo",
+            name="gpt-4o-mini",
             provider="openai",
             max_tokens=4096,
             context_window=4096,
@@ -367,7 +367,7 @@ metadata:
         
         assert info is not None
         assert info["name"] == "openai"
-        assert info["model"] == "gpt-3.5-turbo"
+        assert info["model"] == "gpt-4o-mini"
         assert info["max_tokens"] == 4096
         assert info["available"] is True
     
@@ -456,7 +456,7 @@ async def test_generation_engine_integration():
         "llm_providers": {
             "openai": {
                 "api_key": "test-key",
-                "model": "gpt-3.5-turbo"
+                "model": "gpt-4o-mini"
             }
         }
     }

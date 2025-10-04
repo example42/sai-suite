@@ -26,7 +26,7 @@ log_file: ~/.saigen/logs/saigen.log  # Optional log file
 llm_providers:
   openai:
     provider: openai
-    model: gpt-3.5-turbo
+    model: gpt-4o-mini
     max_tokens: 4000
     temperature: 0.1
     timeout: 30

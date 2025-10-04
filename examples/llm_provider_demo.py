@@ -82,7 +82,7 @@ def demo_openai_provider():
     # In real usage, you would use a valid OpenAI API key
     config = {
         "api_key": "sk-dummy-key-for-demo",
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4o-mini",
         "max_tokens": 4000,
         "temperature": 0.1
     }

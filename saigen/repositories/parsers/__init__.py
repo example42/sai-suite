@@ -39,6 +39,10 @@ class ParserRegistry:
         self.register_parser('html', parse_html_format)
         self.register_parser('csv', parse_csv_format)
         self.register_parser('tsv', parse_tsv_format)
+        
+        # GitHub-specific parsers
+        from saigen.repositories.parsers.github import parse_github_directory
+        self.register_parser('github_directory', parse_github_directory)
     
     def register_parser(self, format_name: str, parser_func: ParserFunction) -> None:
         """Register a parser function for a format.

@@ -1,0 +1,168 @@
+version: "0.3"
+
+metadata:
+  name: "golang"
+  display_name: "Go Programming Language"
+  description: "Open source programming language that makes it easy to build simple, reliable, and efficient software"
+  version: "1.21.5"
+  category: "programming-language"
+  subcategory: "compiler"
+  tags: ["go", "golang", "programming", "compiler", "language"]
+  license: "BSD-3-Clause"
+  language: "Go"
+  maintainer: "The Go Authors"
+  urls:
+    website: "https://go.dev"
+    documentation: "https://go.dev/doc"
+    source: "https://github.com/golang/go"
+    issues: "https://github.com/golang/go/issues"
+    download: "https://go.dev/dl"
+    changelog: "https://go.dev/doc/devel/release"
+    license: "https://github.com/golang/go/blob/master/LICENSE"
+  security:
+    security_contact: "security@golang.org"
+    vulnerability_disclosure: "https://go.dev/security"
+
+packages:
+  - name: "golang"
+    package_name: "golang"
+    version: "1.21.5"
+
+# Source compilation option
+sources:
+  - name: "golang-source"
+    url: "https://go.dev/dl/go{{version}}.src.tar.gz"
+    version: "1.21.5"
+    checksum: "sha256:285cbbdf4b6e6e62ed58f370f3f6d8c30825d6e56c5853c66d3c23bcdb09db19"
+    build_system: "custom"
+    custom_commands:
+      build: "cd src && ./make.bash"
+      install: "mkdir -p /usr/local/go && cp -r . /usr/local/go/"
+      validation: "cd src && ./run.bash"
+    prerequisites: ["gcc", "make"]
+    install_prefix: "/usr/local/go"
+    environment:
+      GOROOT: "/usr/local/go"
+      PATH: "$PATH:/usr/local/go/bin"
+
+# Binary download option (recommended)
+binaries:
+  - name: "golang-binary"
+    url: "https://go.dev/dl/go{{version}}.{{platform}}-{{architecture}}.tar.gz"
+    version: "1.21.5"
+    checksum: "sha256:e2bc0b3e4b64111ec117295c088bde5f00eeed1567999ff77bc859d7df70078e"
+    archive:
+      format: "tar.gz"
+      strip_components: 0
+    install_path: "/usr/local"
+    platform_map:
+      linux: "linux"
+      darwin: "darwin"
+      windows: "windows"
+      freebsd: "freebsd"
+    architecture_map:
+      amd64: "amd64"
+      arm64: "arm64"
+      i386: "386"
+      armv6l: "armv6l"
+    post_install:
+      - "ln -sf /usr/local/go/bin/go /usr/local/bin/go"
+      - "ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt"
+    environment:
+      GOROOT: "/usr/local/go"
+      PATH: "$PATH:/usr/local/go/bin"
+
+# Script installation option
+scripts:
+  - name: "golang-installer"
+    url: "https://raw.githubusercontent.com/example/go-installer/main/install.sh"
+    checksum: "sha256:abc123def456789012345678901234567890123456789012345678901234abcd"
+    interpreter: "/bin/bash"
+    arguments: ["--version={{version}}", "--prefix=/usr/local"]
+    timeout: 600
+    requires_root: true
+    idempotent: true
+    verification:
+      command: "go version"
+      expected_output: "go version go{{version}}"
+
+files:
+  - name: "go-env"
+    path: "/etc/profile.d/go.sh"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    content: |
+      export GOROOT=/usr/local/go
+      export PATH=$PATH:$GOROOT/bin
+
+directories:
+  - name: "goroot"
+    path: "/usr/local/go"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  - name: "gopath"
+    path: "$HOME/go"
+    owner: "$(whoami)"
+    group: "$(whoami)"
+    mode: "0755"
+
+commands:
+  - name: "go"
+    path: "/usr/local/go/bin/go"
+    shell_completion: true
+    man_page: "go(1)"
+  - name: "gofmt"
+    path: "/usr/local/go/bin/gofmt"
+    shell_completion: false
+    man_page: "gofmt(1)"
+
+providers:
+  apt:
+    packages:
+      - name: "golang"
+        package_name: "golang-go"
+        version: "1.21.5"
+        alternatives: ["golang"]
+
+  dnf:
+    packages:
+      - name: "golang"
+        package_name: "golang"
+        version: "1.21.5"
+
+  brew:
+    packages:
+      - name: "golang"
+        package_name: "go"
+        version: "1.21.5"
+
+  choco:
+    packages:
+      - name: "golang"
+        package_name: "golang"
+        version: "1.21.5"
+
+compatibility:
+  matrix:
+    - provider: "apt"
+      platform: ["ubuntu", "debian"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "dnf"
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
+      architecture: ["amd64", "arm64"]
+      supported: true
+    - provider: "brew"
+      platform: "macos"
+      architecture: ["amd64", "arm64"]
+      supported: true
+      recommended: true
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
+      supported: true
+

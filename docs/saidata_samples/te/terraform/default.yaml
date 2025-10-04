@@ -1,4 +1,4 @@
-version: "0.2"
+version: "0.3"
 
 metadata:
   name: "terraform"
@@ -26,9 +26,25 @@ metadata:
 
 packages:
   - name: "terraform"
+    package_name: "terraform"
     version: "1.5.0"
-    checksum: "sha256:..."
-    download_url: "https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip"
+
+binaries:
+  - name: "terraform"
+    url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip"
+    version: "1.5.0"
+    checksum: "sha256:9e9f3e6750a640d3f27f9b5f6b1e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e"
+    archive:
+      format: "zip"
+      strip_components: 0
+    install_path: "/usr/local/bin/terraform"
+    platform_map:
+      linux: "linux"
+      darwin: "darwin"
+      windows: "windows"
+    architecture_map:
+      amd64: "amd64"
+      arm64: "arm64"
 
 files:
   - name: "config"
@@ -38,19 +54,6 @@ files:
     group: "$(whoami)"
     mode: "0644"
     backup: true
-  - name: "credentials"
-    path: "~/.terraform.d/credentials.tfrc.json"
-    type: "config"
-    owner: "$(whoami)"
-    group: "$(whoami)"
-    mode: "0600"
-    backup: true
-  - name: "log"
-    path: "/tmp/terraform.log"
-    type: "log"
-    owner: "$(whoami)"
-    group: "$(whoami)"
-    mode: "0644"
 
 directories:
   - name: "config"
@@ -60,11 +63,6 @@ directories:
     mode: "0755"
   - name: "plugins"
     path: "~/.terraform.d/plugins"
-    owner: "$(whoami)"
-    group: "$(whoami)"
-    mode: "0755"
-  - name: "cache"
-    path: "~/.terraform.d/plugin-cache"
     owner: "$(whoami)"
     group: "$(whoami)"
     mode: "0755"
@@ -78,46 +76,38 @@ commands:
 providers:
   apt:
     repositories:
-      - name: "hashicorp-official"
+      - name: "hashicorp"
         url: "https://apt.releases.hashicorp.com"
         key: "https://apt.releases.hashicorp.com/gpg"
         type: "upstream"
         recommended: true
         packages:
           - name: "terraform"
+            package_name: "terraform"
             version: "1.5.0"
 
   dnf:
     repositories:
-      - name: "hashicorp-official"
+      - name: "hashicorp"
         url: "https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
         type: "upstream"
         recommended: true
         packages:
           - name: "terraform"
+            package_name: "terraform"
             version: "1.5.0"
 
   brew:
     packages:
       - name: "terraform"
-        alternatives: ["terraform"]
+        package_name: "terraform"
+        version: "1.5.0"
 
-  snap:
+  choco:
     packages:
       - name: "terraform"
-        alternatives: ["terraform"]
-
-  docker:
-    containers:
-      - name: "terraform"
-        image: "hashicorp/terraform"
-        tag: "1.5.0"
-        registry: "docker.io"
-        volumes: ["/workspace:/workspace"]
-        environment:
-          TF_LOG: "INFO"
-        labels:
-          purpose: "infrastructure-as-code"
+        package_name: "terraform"
+        version: "1.5.0"
 
 compatibility:
   matrix:
@@ -126,23 +116,16 @@ compatibility:
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-      tested: true
     - provider: "dnf"
-      platform: ["fedora", "rhel", "centos"]
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
       architecture: ["amd64", "arm64"]
       supported: true
-      recommended: true
     - provider: "brew"
       platform: "macos"
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-    - provider: "snap"
-      platform: "linux"
-      architecture: ["amd64", "arm64"]
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
       supported: true
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      notes: "Containerized execution environment"

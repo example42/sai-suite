@@ -10,7 +10,7 @@ import click
 @click.command()
 @click.argument('software_name')
 @click.option('--output', '-o', type=click.Path(path_type=Path), 
-              help='Output file path (default: <software_name>.yaml)')
+              help='Output file path (default: hierarchical structure in configured output_directory)')
 @click.option('--providers', multiple=True, 
               help='Target providers for saidata (e.g., apt, brew, winget, binary, source, script)')
 @click.option('--no-rag', is_flag=True, help='Disable RAG context injection')
@@ -164,7 +164,13 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         
         # Determine output path
         if not output:
-            output = Path(f"{software_name}.yaml")
+            # Use configured output_directory with hierarchical structure
+            from ...utils.path_utils import get_hierarchical_output_path
+            base_output_dir = config.generation.output_directory
+            output = get_hierarchical_output_path(software_name, base_output_dir)
+            
+            # Create parent directories if they don't exist
+            output.parent.mkdir(parents=True, exist_ok=True)
         
         # Check if file exists and force flag
         if output.exists() and not force:
@@ -187,8 +193,17 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         else:
             # Use default from config or fallback
             if hasattr(config, 'llm_providers') and config.llm_providers:
-                # Get first available provider from config
-                first_provider = next(iter(config.llm_providers.keys()), 'openai')
+                # Get first enabled provider from config
+                first_provider = None
+                for provider_name, provider_config in config.llm_providers.items():
+                    if provider_config.enabled:
+                        first_provider = provider_name
+                        break
+                
+                if not first_provider:
+                    # No enabled providers, use first one anyway
+                    first_provider = next(iter(config.llm_providers.keys()), 'openai')
+                
                 try:
                     provider_enum = LLMProvider(first_provider)
                 except ValueError:

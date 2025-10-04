@@ -26,7 +26,7 @@ async def demo_generation_engine():
         "llm_providers": {
             "openai": {
                 "api_key": "demo-api-key",  # In real usage, use environment variable
-                "model": "gpt-3.5-turbo"
+                "model": "gpt-4o-mini"
             }
         }
     }
@@ -75,7 +75,7 @@ providers:
             content=sample_saidata_yaml,
             tokens_used=1200,
             cost_estimate=0.0024,
-            model_used="gpt-3.5-turbo",
+            model_used="gpt-4o-mini",
             finish_reason="stop"
         ))
         mock_provider_class.return_value = mock_provider

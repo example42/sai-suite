@@ -77,7 +77,7 @@ request = GenerationRequest(
 llm_providers:
   openai:
     provider: openai
-    model: gpt-3.5-turbo
+    model: gpt-4o-mini
     max_tokens: 4000
     temperature: 0.1
     timeout: 30
@@ -199,7 +199,7 @@ config = {
     "llm_providers": {
         "openai": {
             "api_key": "sk-...",
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o-mini",
             "max_tokens": 4000,
             "temperature": 0.1
         }
@@ -278,7 +278,7 @@ from saigen.models.generation import GenerationContext
 # Initialize provider
 config = {
     "api_key": "sk-...",
-    "model": "gpt-3.5-turbo",
+    "model": "gpt-4o-mini",
     "max_tokens": 4000,
     "temperature": 0.1
 }

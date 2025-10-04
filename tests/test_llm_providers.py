@@ -235,11 +235,11 @@ class TestOpenAIProvider:
         """Test model information retrieval."""
         provider = OpenAIProvider({
             "api_key": "test-key",
-            "model": "gpt-3.5-turbo"
+            "model": "gpt-4o-mini"
         })
         
         model_info = provider.get_model_info()
-        assert model_info.name == "gpt-3.5-turbo"
+        assert model_info.name == "gpt-4o-mini"
         assert model_info.provider == "openai"
         assert ModelCapability.TEXT_GENERATION in model_info.capabilities
     
@@ -250,7 +250,7 @@ class TestOpenAIProvider:
         })
         
         models = provider.get_available_models()
-        assert "gpt-3.5-turbo" in models
+        assert "gpt-4o-mini" in models
         assert "gpt-4" in models
     
     def test_set_model(self):
@@ -296,7 +296,7 @@ class TestOpenAIProvider:
         assert isinstance(result, LLMResponse)
         assert "nginx" in result.content
         assert result.tokens_used == 100
-        assert result.model_used == "gpt-3.5-turbo"
+        assert result.model_used == "gpt-4o-mini"
     
     def test_is_available(self):
         """Test availability checking."""

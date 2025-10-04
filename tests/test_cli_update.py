@@ -46,7 +46,7 @@ def mock_config():
         'llm_providers': {
             'openai': {
                 'api_key': 'test-key',
-                'model': 'gpt-3.5-turbo'
+                'model': 'gpt-4o-mini'
             }
         }
     }

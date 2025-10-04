@@ -44,7 +44,7 @@ class TestOpenAIIntegration:
             "llm_providers": {
                 "openai": {
                     "api_key": OPENAI_API_KEY,
-                    "model": "gpt-3.5-turbo",
+                    "model": "gpt-4o-mini",
                     "max_tokens": 2000,
                     "temperature": 0.1
                 }
@@ -267,7 +267,7 @@ class TestAnthropicIntegration:
             "llm_providers": {
                 "openai": {
                     "api_key": OPENAI_API_KEY,
-                    "model": "gpt-3.5-turbo",
+                    "model": "gpt-4o-mini",
                     "temperature": 0.1
                 }
             }
@@ -416,7 +416,7 @@ class TestRepositoryIntegration:
             "llm_providers": {
                 "openai": {
                     "api_key": OPENAI_API_KEY,
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             },
             "repositories": {
@@ -486,7 +486,7 @@ class TestEndToEndWorkflows:
             "llm_providers": {
                 "openai": {
                     "api_key": OPENAI_API_KEY,
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             },
             "output_directory": str(temp_workspace / "output"),
@@ -530,7 +530,7 @@ class TestEndToEndWorkflows:
             "llm_providers": {
                 "openai": {
                     "api_key": OPENAI_API_KEY,
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             },
             "batch": {
@@ -574,7 +574,7 @@ class TestEndToEndWorkflows:
             "llm_providers": {
                 "openai": {
                     "api_key": "invalid-key",
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             }
         }

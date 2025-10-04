@@ -26,7 +26,7 @@ async def demonstrate_retry_generation():
         "llm_providers": {
             "openai": {
                 "api_key": "demo-key",
-                "model": "gpt-3.5-turbo"
+                "model": "gpt-4o-mini"
             }
         }
     }

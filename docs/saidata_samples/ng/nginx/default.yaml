@@ -1,4 +1,4 @@
-version: "0.2"
+version: "0.3"
 
 metadata:
   name: "nginx"
@@ -26,6 +26,7 @@ metadata:
 
 packages:
   - name: "nginx"
+    package_name: "nginx"
     version: "1.24.0"
     alternatives: ["nginx-full", "nginx-light", "nginx-extras"]
 
@@ -122,11 +123,13 @@ providers:
         recommended: true
         packages:
           - name: "nginx"
+            package_name: "nginx"
             version: "1.24.0-1~jammy"
       - name: "ubuntu-default"
         type: "os-default"
         packages:
           - name: "nginx"
+            package_name: "nginx"
             alternatives: ["nginx-full", "nginx-light", "nginx-extras"]
         notes: "Ubuntu maintained packages with additional modules"
 
@@ -139,20 +142,24 @@ providers:
         recommended: true
         packages:
           - name: "nginx"
+            package_name: "nginx"
             version: "1.24.0-1.el8.ngx"
       - name: "epel"
         type: "third-party"
         packages:
           - name: "nginx"
+            package_name: "nginx"
 
   brew:
     packages:
       - name: "nginx"
+        package_name: "nginx"
         alternatives: ["nginx"]
 
   choco:
     packages:
       - name: "nginx"
+        package_name: "nginx"
         version: "1.24.0"
 
   docker:
@@ -173,6 +180,7 @@ providers:
         type: "upstream"
         packages:
           - name: "nginx-ingress"
+            package_name: "nginx-ingress"
             alternatives: ["ingress-nginx"]
 
 compatibility:

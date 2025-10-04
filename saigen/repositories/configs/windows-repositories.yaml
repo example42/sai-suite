@@ -11,8 +11,10 @@ repositories:
       search: "https://api.github.com/search/code?q=repo:microsoft/winget-pkgs+{query}+in:file+filename:*.yaml"
       info: "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/{package}"
     parsing:
-      format: "yaml"
+      format: "github_directory"
       encoding: "utf-8"
+      patterns:
+        file_extension: ""  # winget uses directory names, not files
       fields:
         name: "PackageIdentifier"
         version: "PackageVersion"
@@ -81,8 +83,10 @@ repositories:
       packages: "https://api.github.com/repos/ScoopInstaller/Main/contents/bucket"
       search: "https://api.github.com/search/code?q=repo:ScoopInstaller/Main+{query}+in:file+extension:json"
     parsing:
-      format: "json"
+      format: "github_directory"
       encoding: "utf-8"
+      patterns:
+        file_extension: ".json"
       fields:
         name: "name"
         version: "version"
@@ -111,8 +115,10 @@ repositories:
       packages: "https://api.github.com/repos/ScoopInstaller/Extras/contents/bucket"
       search: "https://api.github.com/search/code?q=repo:ScoopInstaller/Extras+{query}+in:file+extension:json"
     parsing:
-      format: "json"
+      format: "github_directory"
       encoding: "utf-8"
+      patterns:
+        file_extension: ".json"
       fields:
         name: "name"
         version: "version"

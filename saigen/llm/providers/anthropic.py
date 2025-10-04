@@ -97,9 +97,9 @@ class AnthropicProvider(BaseLLMProvider):
             max_retries=self.config.get("max_retries", 3)
         )
         
-        self.model = self.config.get("model", "claude-3-5-sonnet-20241022")
-        self.max_tokens = self.config.get("max_tokens", 4000)
-        self.temperature = self.config.get("temperature", 0.1)
+        self.model = self.config.get("model") or "claude-3-5-sonnet-20241022"
+        self.max_tokens = self.config.get("max_tokens") or 4000
+        self.temperature = self.config.get("temperature") if self.config.get("temperature") is not None else 0.1
         
         # Initialize prompt manager
         self.prompt_manager = PromptManager()
@@ -113,8 +113,8 @@ class AnthropicProvider(BaseLLMProvider):
                 raise ConfigurationError(f"Missing required configuration field: {field}")
         
         # Validate model
-        model = self.config.get("model", "claude-3-5-sonnet-20241022")
-        if model not in self.MODELS:
+        model = self.config.get("model") or "claude-3-5-sonnet-20241022"
+        if model and model not in self.MODELS:
             logger.warning(f"Unknown model '{model}', using default configuration")
         
         # Validate numeric parameters

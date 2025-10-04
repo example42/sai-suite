@@ -1,4 +1,4 @@
-version: "0.2"
+version: "0.3"
 
 metadata:
   name: "mongodb"
@@ -26,14 +26,16 @@ metadata:
 
 packages:
   - name: "server"
+    package_name: "mongodb-org-server"
     version: "7.0.0"
-    alternatives: ["mongodb-org-server", "mongod"]
+    alternatives: ["mongod"]
   - name: "shell"
+    package_name: "mongodb-org-shell"
     version: "7.0.0"
-    alternatives: ["mongodb-org-shell", "mongosh"]
+    alternatives: ["mongosh"]
   - name: "tools"
+    package_name: "mongodb-org-tools"
     version: "7.0.0"
-    alternatives: ["mongodb-org-tools"]
 
 services:
   - name: "mongod"
@@ -50,18 +52,6 @@ files:
     group: "root"
     mode: "0644"
     backup: true
-  - name: "log"
-    path: "/var/log/mongodb/mongod.log"
-    type: "log"
-    owner: "mongodb"
-    group: "mongodb"
-    mode: "0644"
-  - name: "pid"
-    path: "/var/run/mongodb/mongod.pid"
-    type: "temp"
-    owner: "mongodb"
-    group: "mongodb"
-    mode: "0644"
 
 directories:
   - name: "data"
@@ -74,40 +64,22 @@ directories:
     owner: "mongodb"
     group: "mongodb"
     mode: "0755"
-  - name: "run"
-    path: "/var/run/mongodb"
-    owner: "mongodb"
-    group: "mongodb"
-    mode: "0755"
 
 commands:
   - name: "mongod"
     path: "/usr/bin/mongod"
+    shell_completion: false
     man_page: "mongod(1)"
   - name: "mongosh"
     path: "/usr/bin/mongosh"
     shell_completion: true
     man_page: "mongosh(1)"
-  - name: "mongodump"
-    path: "/usr/bin/mongodump"
-    man_page: "mongodump(1)"
-  - name: "mongorestore"
-    path: "/usr/bin/mongorestore"
-    man_page: "mongorestore(1)"
 
 ports:
   - port: 27017
     protocol: "tcp"
     service: "mongodb"
     description: "MongoDB server"
-  - port: 27018
-    protocol: "tcp"
-    service: "mongodb-shard"
-    description: "MongoDB shard server"
-  - port: 27019
-    protocol: "tcp"
-    service: "mongodb-config"
-    description: "MongoDB config server"
 
 providers:
   apt:
@@ -119,18 +91,23 @@ providers:
         recommended: true
         packages:
           - name: "server"
+            package_name: "mongodb-org-server"
             version: "7.0.0"
             alternatives: ["mongodb-org-server"]
           - name: "shell"
+            package_name: "mongodb-mongosh"
+            version: "7.0.0"
             alternatives: ["mongodb-mongosh"]
           - name: "tools"
+            package_name: "mongodb-org-tools"
+            version: "7.0.0"
             alternatives: ["mongodb-org-tools"]
       - name: "ubuntu-default"
         type: "os-default"
         packages:
           - name: "server"
+            package_name: "mongodb"
             alternatives: ["mongodb"]
-        notes: "Usually older version"
 
   dnf:
     repositories:
@@ -141,46 +118,41 @@ providers:
         recommended: true
         packages:
           - name: "server"
+            package_name: "mongodb-org-server"
+            version: "7.0.0"
             alternatives: ["mongodb-org-server"]
           - name: "shell"
+            package_name: "mongodb-mongosh"
+            version: "7.0.0"
             alternatives: ["mongodb-mongosh"]
           - name: "tools"
+            package_name: "mongodb-org-tools"
+            version: "7.0.0"
             alternatives: ["mongodb-org-tools"]
 
   brew:
     packages:
       - name: "server"
-        alternatives: ["mongodb-community@7.0", "mongodb/brew/mongodb-community"]
+        package_name: "mongodb-community"
+        version: "7.0.0"
+        alternatives: ["mongodb-community@7.0"]
         recommended: true
 
   choco:
     packages:
       - name: "server"
+        package_name: "mongodb"
         version: "7.0.0"
         alternatives: ["mongodb"]
-
-  docker:
-    containers:
-      - name: "mongodb"
-        image: "mongo"
-        tag: "7.0.0"
-        registry: "docker.io"
-        ports: ["27017:27017"]
-        volumes: ["/data/db:/data/db"]
-        environment:
-          MONGO_INITDB_ROOT_USERNAME: "admin"
-          MONGO_INITDB_ROOT_PASSWORD: "password"
-        labels:
-          purpose: "document-database"
 
   helm:
     repositories:
       - name: "bitnami"
         url: "https://charts.bitnami.com/bitnami"
         type: "third-party"
-        recommended: true
         packages:
           - name: "mongodb"
+            package_name: "mongodb"
             alternatives: ["mongodb"]
 
 compatibility:
@@ -190,7 +162,6 @@ compatibility:
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-      tested: true
     - provider: "dnf"
       platform: ["fedora", "rhel", "centos", "rocky", "alma"]
       architecture: ["amd64", "arm64"]
@@ -205,24 +176,7 @@ compatibility:
       platform: "windows"
       architecture: ["amd64"]
       supported: true
-      notes: "Windows service configuration differs"
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-      notes: "Recommended for development and containerized deployments"
     - provider: "helm"
-      platform: ["linux", "macos", "windows"]
+      platform: ["linux"]
       architecture: ["amd64", "arm64"]
       supported: true
-      notes: "Kubernetes deployment with replica sets and sharding"
-
-requirements:
-  system:
-    memory_min: "1GB"
-    memory_recommended: "4GB"
-    disk_space: "10GB"
-  performance:
-    wired_tiger_cache: "50% of available RAM"
-    file_descriptors: "64000"

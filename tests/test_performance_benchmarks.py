@@ -67,7 +67,7 @@ class TestGenerationEnginePerformance:
             "llm_providers": {
                 "openai": {
                     "api_key": "test-key",
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             }
         }
@@ -86,7 +86,7 @@ class TestGenerationEnginePerformance:
                 content="version: '0.2'\nmetadata:\n  name: test",
                 tokens_used=100,
                 cost_estimate=0.001,
-                model_used="gpt-3.5-turbo",
+                model_used="gpt-4o-mini",
                 finish_reason="stop"
             )
         

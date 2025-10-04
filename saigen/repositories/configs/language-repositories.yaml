@@ -7,20 +7,17 @@ repositories:
     distribution: ["universal"]
     architecture: ["all"]
     endpoints:
-      packages: "https://registry.npmjs.org/-/all"
+      packages: "https://replicate.npmjs.com/_all_docs?include_docs=true"
       search: "https://registry.npmjs.org/-/v1/search?text={query}&size=250"
       info: "https://registry.npmjs.org/{package}"
     parsing:
       format: "json"
-      encoding: "utf-8"
+      patterns:
+        json_path: "rows"
       fields:
-        name: "name"
-        version: "dist-tags.latest"
-        description: "description"
-        homepage: "homepage"
-        license: "license"
-        maintainer: "maintainers"
-        dependencies: "dependencies"
+        name: "doc.name"
+        version: "doc.dist-tags.latest"
+        description: "doc.description"
     cache:
       ttl_hours: 6
       max_size_mb: 500
@@ -76,18 +73,17 @@ repositories:
     distribution: ["universal"]
     architecture: ["all"]
     endpoints:
-      packages: "https://conda.anaconda.org/conda-forge/channeldata.json"
+      packages: "https://conda.anaconda.org/conda-forge/linux-64/repodata.json"
       search: "https://anaconda.org/search?q={query}"
       info: "https://anaconda.org/conda-forge/{package}"
     parsing:
       format: "json"
-      encoding: "utf-8"
+      patterns:
+        json_path: "packages"
       fields:
         name: "name"
         version: "version"
         description: "summary"
-        homepage: "home"
-        license: "license"
     cache:
       ttl_hours: 24
       max_size_mb: 200
@@ -106,19 +102,17 @@ repositories:
     distribution: ["universal"]
     architecture: ["all"]
     endpoints:
-      packages: "https://crates.io/api/v1/crates"
+      packages: "https://crates.io/api/v1/crates?page=1&per_page=100&sort=alphabetical"
       search: "https://crates.io/api/v1/crates?q={query}&per_page=100"
       info: "https://crates.io/api/v1/crates/{package}"
     parsing:
       format: "json"
-      encoding: "utf-8"
+      patterns:
+        json_path: "crates"
       fields:
-        name: "crate.name"
-        version: "crate.newest_version"
-        description: "crate.description"
-        homepage: "crate.homepage"
-        license: "crate.license"
-        category: "crate.categories"
+        name: "name"
+        version: "max_version"
+        description: "description"
     cache:
       ttl_hours: 12
       max_size_mb: 100
@@ -197,19 +191,13 @@ repositories:
     distribution: ["universal"]
     architecture: ["all"]
     endpoints:
-      packages: "https://packagist.org/packages/list.json"
+      packages: "https://packagist.org/packages/list.json?type=library"
       search: "https://packagist.org/search.json?q={query}&per_page=100"
       info: "https://packagist.org/packages/{package}.json"
     parsing:
       format: "json"
-      encoding: "utf-8"
-      fields:
-        name: "name"
-        version: "version"
-        description: "description"
-        homepage: "homepage"
-        license: "license"
-        maintainer: "authors"
+      patterns:
+        json_path: "packageNames"
     cache:
       ttl_hours: 12
       max_size_mb: 200
@@ -228,20 +216,17 @@ repositories:
     distribution: ["universal"]
     architecture: ["all"]
     endpoints:
-      packages: "https://api.nuget.org/v3-flatcontainer/"
+      packages: "https://azuresearch-usnc.nuget.org/query?q=*&take=1000&prerelease=false"
       search: "https://azuresearch-usnc.nuget.org/query?q={query}&take=100"
       info: "https://api.nuget.org/v3-flatcontainer/{package}/index.json"
     parsing:
       format: "json"
-      encoding: "utf-8"
+      patterns:
+        json_path: "data"
       fields:
         name: "id"
         version: "version"
         description: "description"
-        homepage: "projectUrl"
-        license: "licenseUrl"
-        maintainer: "authors"
-        tags: "tags"
     cache:
       ttl_hours: 12
       max_size_mb: 200

@@ -5,7 +5,7 @@ import json
 import pickle
 import logging
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Tuple, Union
+from typing import List, Optional, Dict, Any, Tuple, Union, TYPE_CHECKING
 from datetime import datetime, timedelta
 
 try:
@@ -18,6 +18,9 @@ except ImportError:
     np = None
     SentenceTransformer = None
     faiss = None
+
+if TYPE_CHECKING:
+    import faiss
 
 from ..models.repository import RepositoryPackage, SearchResult
 from ..models.saidata import SaiData
@@ -63,9 +66,9 @@ class RAGIndexer:
         self._model_lock = asyncio.Lock()
         
         # Index storage
-        self._package_index: Optional[faiss.Index] = None
+        self._package_index: Optional["faiss.Index"] = None
         self._package_metadata: List[Dict[str, Any]] = []
-        self._saidata_index: Optional[faiss.Index] = None
+        self._saidata_index: Optional["faiss.Index"] = None
         self._saidata_metadata: List[Dict[str, Any]] = []
         
         # Index file paths
@@ -585,7 +588,7 @@ class RAGIndexer:
         
         logger.info("All indices cleared")
     
-    async def _save_package_index(self, index: faiss.Index, metadata: List[Dict[str, Any]]) -> None:
+    async def _save_package_index(self, index: "faiss.Index", metadata: List[Dict[str, Any]]) -> None:
         """Save package index and metadata to disk."""
         # Save FAISS index
         faiss.write_index(index, str(self._package_index_path))
@@ -598,7 +601,7 @@ class RAGIndexer:
         self._package_index = index
         self._package_metadata = metadata
     
-    async def _save_saidata_index(self, index: faiss.Index, metadata: List[Dict[str, Any]]) -> None:
+    async def _save_saidata_index(self, index: "faiss.Index", metadata: List[Dict[str, Any]]) -> None:
         """Save saidata index and metadata to disk."""
         # Save FAISS index
         faiss.write_index(index, str(self._saidata_index_path))

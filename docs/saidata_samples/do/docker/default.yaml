@@ -1,4 +1,4 @@
-version: "0.2"
+version: "0.3"
 
 metadata:
   name: "docker"
@@ -26,14 +26,15 @@ metadata:
 
 packages:
   - name: "engine"
+    package_name: "docker-ce"
     version: "24.0.0"
-    alternatives: ["docker-ce", "docker.io"]
+    alternatives: ["docker.io"]
   - name: "cli"
+    package_name: "docker-ce-cli"
     version: "24.0.0"
-    alternatives: ["docker-ce-cli"]
   - name: "compose"
+    package_name: "docker-compose-plugin"
     version: "2.20.0"
-    alternatives: ["docker-compose-plugin"]
 
 services:
   - name: "daemon"
@@ -56,12 +57,6 @@ files:
     owner: "root"
     group: "docker"
     mode: "0660"
-  - name: "log"
-    path: "/var/log/docker.log"
-    type: "log"
-    owner: "root"
-    group: "root"
-    mode: "0644"
 
 directories:
   - name: "config"
@@ -74,30 +69,12 @@ directories:
     owner: "root"
     group: "root"
     mode: "0711"
-  - name: "log"
-    path: "/var/log/docker"
-    owner: "root"
-    group: "root"
-    mode: "0755"
 
 commands:
   - name: "docker"
     path: "/usr/bin/docker"
     shell_completion: true
     man_page: "docker(1)"
-  - name: "dockerd"
-    path: "/usr/bin/dockerd"
-    man_page: "dockerd(8)"
-
-ports:
-  - port: 2375
-    protocol: "tcp"
-    service: "docker-api"
-    description: "Docker API (insecure)"
-  - port: 2376
-    protocol: "tcp"
-    service: "docker-api-tls"
-    description: "Docker API (TLS)"
 
 providers:
   apt:
@@ -109,57 +86,32 @@ providers:
         recommended: true
         packages:
           - name: "engine"
-            version: "5:24.0.0-1~ubuntu.22.04~jammy"
-            alternatives: ["docker-ce"]
+            package_name: "docker-ce"
+            version: "24.0.0"
           - name: "cli"
-            version: "5:24.0.0-1~ubuntu.22.04~jammy"
-            alternatives: ["docker-ce-cli"]
-          - name: "compose"
-            version: "2.20.0-1~ubuntu.22.04~jammy"
-            alternatives: ["docker-compose-plugin"]
-      - name: "ubuntu-default"
-        type: "os-default"
-        packages:
-          - name: "engine"
-            alternatives: ["docker.io"]
-          - name: "compose"
-            alternatives: ["docker-compose"]
-        notes: "Older version, not recommended for production"
+            package_name: "docker-ce-cli"
+            version: "24.0.0"
 
   dnf:
     repositories:
       - name: "docker-official"
-        url: "https://download.docker.com/linux/fedora"
-        key: "https://download.docker.com/linux/fedora/gpg"
+        url: "https://download.docker.com/linux/centos/docker-ce.repo"
         type: "upstream"
         recommended: true
         packages:
           - name: "engine"
-            alternatives: ["docker-ce"]
-          - name: "cli"
-            alternatives: ["docker-ce-cli"]
-          - name: "compose"
-            alternatives: ["docker-compose-plugin"]
+            package_name: "docker-ce"
+            version: "24.0.0"
 
   brew:
-    packages:
-      - name: "engine"
-        alternatives: ["docker"]
-      - name: "compose"
-        alternatives: ["docker-compose"]
+    casks:
+      - name: "docker"
+        cask_name: "docker"
 
-  docker:
-    containers:
-      - name: "dind"
-        image: "docker"
-        tag: "24.0-dind"
-        registry: "docker.io"
-        ports: ["2376:2376"]
-        volumes: ["/var/lib/docker"]
-        environment:
-          DOCKER_TLS_CERTDIR: "/certs"
-        labels:
-          purpose: "docker-in-docker"
+  choco:
+    packages:
+      - name: "docker"
+        package_name: "docker-desktop"
 
 compatibility:
   matrix:
@@ -168,19 +120,17 @@ compatibility:
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-      tested: true
     - provider: "dnf"
-      platform: ["fedora", "rhel", "centos"]
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
       architecture: ["amd64", "arm64"]
       supported: true
-      recommended: true
     - provider: "brew"
       platform: "macos"
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
+    - provider: "choco"
+      platform: "windows"
+      architecture: ["amd64"]
       supported: true
-      notes: "Docker-in-Docker for containerized environments"
+      recommended: true

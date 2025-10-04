@@ -307,7 +307,7 @@ def sample_saigen_config(temp_dir):
         llm_providers={
             "openai": LLMConfig(
                 api_key="test-key",
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 max_tokens=2000,
                 temperature=0.1
             )
@@ -343,7 +343,7 @@ providers:
 """,
         tokens_used=150,
         cost_estimate=0.003,
-        model_used="gpt-3.5-turbo",
+        model_used="gpt-4o-mini",
         finish_reason="stop"
     )
 
@@ -419,7 +419,7 @@ def mock_generation_engine():
     engine.get_available_providers.return_value = ["openai"]
     engine.get_provider_info.return_value = {
         "name": "openai",
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4o-mini",
         "available": True
     }
     

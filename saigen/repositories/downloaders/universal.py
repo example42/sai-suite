@@ -222,23 +222,45 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
         if compression == 'gzip':
             import gzip
             try:
+                # Try to decompress, but if it fails, check if content is already decompressed
                 content = gzip.decompress(content)
-            except Exception as e:
-                raise RepositoryError(f"Failed to decompress gzip content: {e}")
+            except (gzip.BadGzipFile, OSError) as e:
+                # Content might not be gzipped - check if it looks like valid text/JSON
+                try:
+                    # Try to decode as UTF-8 to see if it's already decompressed
+                    content.decode('utf-8', errors='strict')
+                    # If successful, content is already decompressed, just return it
+                    logger.debug(f"Content appears to be already decompressed despite gzip config")
+                    return content
+                except UnicodeDecodeError:
+                    # Not valid UTF-8, so it's probably a real gzip error
+                    raise RepositoryError(f"Failed to decompress gzip content: {e}")
         
         elif compression == 'bzip2':
             import bz2
             try:
                 content = bz2.decompress(content)
             except Exception as e:
-                raise RepositoryError(f"Failed to decompress bzip2 content: {e}")
+                # Try to handle already decompressed content
+                try:
+                    content.decode('utf-8', errors='strict')
+                    logger.debug(f"Content appears to be already decompressed despite bzip2 config")
+                    return content
+                except UnicodeDecodeError:
+                    raise RepositoryError(f"Failed to decompress bzip2 content: {e}")
         
         elif compression == 'xz':
             import lzma
             try:
                 content = lzma.decompress(content)
             except Exception as e:
-                raise RepositoryError(f"Failed to decompress xz content: {e}")
+                # Try to handle already decompressed content
+                try:
+                    content.decode('utf-8', errors='strict')
+                    logger.debug(f"Content appears to be already decompressed despite xz config")
+                    return content
+                except UnicodeDecodeError:
+                    raise RepositoryError(f"Failed to decompress xz content: {e}")
         
         return content
     

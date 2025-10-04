@@ -360,19 +360,23 @@ class BatchGenerationEngine:
         )
     
     def _get_output_path(self, software_name: str, output_directory: Optional[Path]) -> Optional[Path]:
-        """Get output path for a software package.
+        """Get output path for a software package using hierarchical structure.
+        
+        Creates paths following the structure:
+        {first_two_letters}/{software_name}/default.yaml
         
         Args:
             software_name: Name of the software
             output_directory: Base output directory
             
         Returns:
-            Full output path or None if no output directory specified
+            Full hierarchical output path or None if no output directory specified
         """
         if not output_directory:
             return None
         
-        return output_directory / f"{software_name}.yaml"
+        from ..utils.path_utils import get_hierarchical_output_path
+        return get_hierarchical_output_path(software_name, output_directory)
     
     async def generate_from_file(
         self,

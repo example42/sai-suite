@@ -33,7 +33,7 @@ class TestSaigenCLIMain:
             "llm_providers": {
                 "openai": {
                     "api_key": "test-key",
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4o-mini"
                 }
             },
             "output_directory": str(temp_config_dir / "output"),
@@ -312,7 +312,7 @@ class TestSaigenCLICommands:
         with patch('saigen.utils.config.ConfigManager') as mock_config_class:
             mock_config = Mock()
             mock_config.get_config.return_value = {
-                "llm_providers": {"openai": {"model": "gpt-3.5-turbo"}},
+                "llm_providers": {"openai": {"model": "gpt-4o-mini"}},
                 "output_directory": "/tmp/saigen"
             }
             mock_config_class.return_value = mock_config

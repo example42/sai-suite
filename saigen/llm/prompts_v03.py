@@ -80,7 +80,7 @@ sources:
     build_system: autotools
     configure_args: ["--enable-ssl", "--with-modules"]
     prerequisites: ["build-essential", "libssl-dev"]
-    checksum: "sha256:abc123..."
+    
 """
 
     BINARIES_PROMPT = """
@@ -99,7 +99,7 @@ binaries:
     url: "https://releases.example.com/{{{{version}}}}/binary_{{{{platform}}}}_{{{{architecture}}}}.zip"
     install_path: "/usr/local/bin"
     executable: "binary_name"
-    checksum: "sha256:def456..."
+    
 """
 
     SCRIPTS_PROMPT = """
@@ -116,7 +116,7 @@ Example:
 scripts:
   - name: official
     url: "https://get.example.com/install.sh"
-    checksum: "sha256:ghi789..."
+    
     interpreter: "bash"
     timeout: 600
     arguments: ["--channel", "stable"]
@@ -196,7 +196,7 @@ The 0.3 schema introduces three new installation methods that should be included
 - Add configure_args, build_args, install_args as needed
 - Include prerequisites for build dependencies
 - Use URL templating: https://example.com/software-{{version}}.tar.gz
-- Always include checksum for security
+- OMIT checksum field (will be calculated separately if needed)
 
 **BINARIES** - For pre-compiled executables:
 - Use when official binaries are available
@@ -204,12 +204,12 @@ The 0.3 schema introduces three new installation methods that should be included
 - Set install_path (default: /usr/local/bin)
 - Configure archive extraction if needed
 - Set proper permissions (default: 0755)
-- Always include checksum for security
+- OMIT checksum field (will be calculated separately if needed)
 
 **SCRIPTS** - For installation scripts:
 - Use when official installation scripts exist
 - Always use HTTPS URLs for security
-- Include checksum for script verification
+- Omit checksum field (will be calculated separately if needed)
 - Set appropriate timeout (default 300, max 3600 seconds)
 - Specify interpreter (bash, sh, python, etc.)
 - Add arguments and environment variables as needed
@@ -387,8 +387,7 @@ class ContextBuilderV03:
                         'url': 'https://nginx.org/download/nginx-{{version}}.tar.gz',
                         'build_system': 'autotools',
                         'configure_args': ['--with-http_ssl_module', '--with-http_v2_module'],
-                        'prerequisites': ['build-essential', 'libssl-dev', 'libpcre3-dev'],
-                        'checksum': 'sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7'
+                        'prerequisites': ['build-essential', 'libssl-dev', 'libpcre3-dev']
                     }
                 },
                 {
@@ -411,7 +410,6 @@ class ContextBuilderV03:
                         'url': 'https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip',
                         'install_path': '/usr/local/bin',
                         'executable': 'terraform',
-                        'checksum': 'sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5',
                         'archive': {
                             'format': 'zip'
                         }
@@ -437,8 +435,7 @@ class ContextBuilderV03:
                         'name': 'official',
                         'url': 'https://get.docker.com',
                         'interpreter': 'bash',
-                        'timeout': 600,
-                        'checksum': 'sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7'
+                        'timeout': 600
                     }
                 },
                 {

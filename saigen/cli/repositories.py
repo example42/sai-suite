@@ -258,10 +258,11 @@ async def _search_packages(query: str, platform: Optional[str], repo_type: Optio
 @click.option('--format', 'output_format', default='table', 
               type=click.Choice(['table', 'json', 'yaml']), 
               help='Output format')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed error messages')
 @click.option('--cache-dir', help='Cache directory path')
 @click.option('--config-dir', help='Configuration directory path')
 def stats(platform: Optional[str], repo_type: Optional[str], output_format: str,
-          cache_dir: Optional[str], config_dir: Optional[str]):
+          verbose: bool, cache_dir: Optional[str], config_dir: Optional[str]):
     """Show comprehensive repository statistics and health information.
     
     Displays statistics for all repositories including package counts, cache status,
@@ -271,12 +272,13 @@ def stats(platform: Optional[str], repo_type: Optional[str], output_format: str,
       saigen repositories stats
       saigen repositories stats --platform linux
       saigen repositories stats --format json
+      saigen repositories stats --verbose
     """
-    asyncio.run(_show_statistics(platform, repo_type, output_format, cache_dir, config_dir))
+    asyncio.run(_show_statistics(platform, repo_type, output_format, verbose, cache_dir, config_dir))
 
 
 async def _show_statistics(platform: Optional[str], repo_type: Optional[str],
-                         output_format: str, cache_dir: Optional[str], 
+                         output_format: str, verbose: bool, cache_dir: Optional[str], 
                          config_dir: Optional[str]):
     """Async implementation of show statistics."""
     manager = None
@@ -319,6 +321,7 @@ async def _show_statistics(platform: Optional[str], repo_type: Optional[str],
                     
                     headers = ['Repository', 'Packages', 'Status', 'Last Updated']
                     rows = []
+                    errors_detail = []
                     
                     for repo_name, repo_data in repo_stats.items():
                         if isinstance(repo_data, dict):
@@ -336,9 +339,22 @@ async def _show_statistics(platform: Optional[str], repo_type: Optional[str],
                                     pass
                             
                             rows.append([repo_name, package_count, status, last_updated])
+                            
+                            # Collect error details for verbose output
+                            if error and verbose:
+                                errors_detail.append((repo_name, error))
                     
                     if rows:
                         click.echo(tabulate(rows, headers=headers, tablefmt='grid'))
+                    
+                    # Show detailed error messages in verbose mode
+                    if errors_detail and verbose:
+                        click.echo("\n" + "=" * 50)
+                        click.echo("Detailed Error Messages:")
+                        click.echo("=" * 50)
+                        for repo_name, error_msg in errors_detail:
+                            click.echo(f"\n{repo_name}:")
+                            click.echo(f"  {error_msg}")
     
     except Exception as e:
         logger.error(f"Failed to get statistics: {e}")

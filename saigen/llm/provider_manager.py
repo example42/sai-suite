@@ -99,15 +99,28 @@ class LLMProviderManager:
                     logger.warning(f"Provider '{provider_name}' not available or not installed")
                     continue
                 
+                # Handle both dict and Pydantic model configs
+                if hasattr(provider_config, 'model_dump'):
+                    # Pydantic model
+                    config_dict = provider_config.model_dump()
+                elif hasattr(provider_config, 'dict'):
+                    # Pydantic v1 model
+                    config_dict = provider_config.dict()
+                else:
+                    # Regular dict
+                    config_dict = provider_config.copy() if hasattr(provider_config, 'copy') else dict(provider_config)
+                
                 # Extract provider-specific config
-                config_copy = provider_config.copy()
-                priority = ProviderPriority(config_copy.pop("priority", "medium"))
-                enabled = config_copy.pop("enabled", True)
-                max_retries = config_copy.pop("max_retries", 2)
+                priority = ProviderPriority(config_dict.pop("priority", "medium"))
+                enabled = config_dict.pop("enabled", True)
+                max_retries = config_dict.pop("max_retries", 2)
+                
+                # Remove provider field if present (not needed for provider initialization)
+                config_dict.pop("provider", None)
                 
                 self.providers[provider_name] = ProviderConfig(
                     provider_class=provider_class,
-                    config=config_copy,
+                    config=config_dict,
                     priority=priority,
                     enabled=enabled,
                     max_retries=max_retries

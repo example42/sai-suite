@@ -1,4 +1,4 @@
-version: "0.2"
+version: "0.3"
 
 metadata:
   name: "grafana"
@@ -26,8 +26,8 @@ metadata:
 
 packages:
   - name: "grafana"
+    package_name: "grafana"
     version: "10.0.0"
-    alternatives: ["grafana"]
 
 services:
   - name: "grafana"
@@ -44,101 +44,63 @@ files:
     group: "grafana"
     mode: "0640"
     backup: true
-  - name: "ldap-config"
-    path: "/etc/grafana/ldap.toml"
-    type: "config"
-    owner: "root"
-    group: "grafana"
-    mode: "0640"
-    backup: true
-  - name: "log"
-    path: "/var/log/grafana/grafana.log"
-    type: "log"
-    owner: "grafana"
-    group: "grafana"
-    mode: "0644"
 
 directories:
   - name: "config"
     path: "/etc/grafana"
     owner: "root"
     group: "grafana"
-    mode: "0755"
+    mode: "0750"
   - name: "data"
     path: "/var/lib/grafana"
     owner: "grafana"
     group: "grafana"
-    mode: "0755"
-  - name: "log"
-    path: "/var/log/grafana"
-    owner: "grafana"
-    group: "grafana"
-    mode: "0755"
-  - name: "plugins"
-    path: "/var/lib/grafana/plugins"
-    owner: "grafana"
-    group: "grafana"
-    mode: "0755"
-  - name: "dashboards"
-    path: "/var/lib/grafana/dashboards"
-    owner: "grafana"
-    group: "grafana"
-    mode: "0755"
+    mode: "0750"
 
 commands:
   - name: "grafana-server"
     path: "/usr/sbin/grafana-server"
-    man_page: "grafana-server(1)"
+    shell_completion: false
   - name: "grafana-cli"
     path: "/usr/sbin/grafana-cli"
     shell_completion: true
-    man_page: "grafana-cli(1)"
 
 ports:
   - port: 3000
     protocol: "tcp"
-    service: "grafana-web"
+    service: "http"
     description: "Grafana web interface"
-
-containers:
-  - name: "grafana"
-    image: "grafana/grafana"
-    tag: "10.0.0"
-    registry: "docker.io"
-    ports: ["3000:3000"]
-    volumes: ["/var/lib/grafana:/var/lib/grafana"]
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: "admin"
-    labels:
-      purpose: "visualization-platform"
 
 providers:
   apt:
     repositories:
       - name: "grafana-official"
-        url: "https://packages.grafana.com/oss/deb"
-        key: "https://packages.grafana.com/gpg.key"
+        url: "https://apt.grafana.com"
+        key: "https://apt.grafana.com/gpg.key"
         type: "upstream"
         recommended: true
         packages:
           - name: "grafana"
+            package_name: "grafana"
             version: "10.0.0"
 
   dnf:
     repositories:
       - name: "grafana-official"
-        url: "https://packages.grafana.com/oss/rpm"
-        key: "https://packages.grafana.com/gpg.key"
+        url: "https://rpm.grafana.com"
+        key: "https://rpm.grafana.com/gpg.key"
         type: "upstream"
         recommended: true
         packages:
           - name: "grafana"
+            package_name: "grafana"
             version: "10.0.0"
 
   brew:
     packages:
       - name: "grafana"
-        alternatives: ["grafana"]
+        package_name: "grafana"
+        version: "10.0.0"
 
   docker:
     containers:
@@ -147,19 +109,6 @@ providers:
         tag: "10.0.0"
         registry: "docker.io"
         ports: ["3000:3000"]
-        volumes: ["/var/lib/grafana:/var/lib/grafana"]
-        environment:
-          GF_SECURITY_ADMIN_PASSWORD: "admin"
-
-  helm:
-    repositories:
-      - name: "grafana"
-        url: "https://grafana.github.io/helm-charts"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "grafana"
-            alternatives: ["grafana"]
 
 compatibility:
   matrix:
@@ -168,26 +117,16 @@ compatibility:
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-      tested: true
     - provider: "dnf"
-      platform: ["fedora", "rhel", "centos"]
+      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
       architecture: ["amd64", "arm64"]
       supported: true
-      recommended: true
     - provider: "brew"
       platform: "macos"
       architecture: ["amd64", "arm64"]
       supported: true
-      recommended: true
     - provider: "docker"
       platform: ["linux", "macos", "windows"]
       architecture: ["amd64", "arm64"]
       supported: true
       recommended: true
-      notes: "Recommended for development and testing"
-    - provider: "helm"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-      notes: "Kubernetes deployment"

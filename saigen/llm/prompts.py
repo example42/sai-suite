@@ -528,7 +528,7 @@ The saidata YAML must follow this exact JSON schema structure for version 0.3:
 - url: string (required) - should use HTTPS for security
 - version: string (optional)
 - interpreter: string (optional) - bash, sh, python, python3
-- checksum: string (required for security) - format "algorithm:hash"
+- checksum: string (optional - OMIT if not known) - format "algorithm:hash"
 - arguments: array of strings (optional)
 - environment: object (optional)
 - working_dir: string (optional)
@@ -559,7 +559,7 @@ Each provider can now contain all resource types including:
 **CRITICAL DATA TYPE REQUIREMENTS:**
 - version must be "0.3" (string)
 - All resource arrays (packages, services, sources, binaries, scripts, etc.) must be ARRAYS of OBJECTS
-- checksum must follow format "algorithm:hash" (e.g., "sha256:abc123...")
+- checksum (if provided) must follow format "algorithm:hash" (e.g., "sha256:abc123...")
 - timeout must be integer between 1 and 3600
 - permissions must be octal string (e.g., "0755")
 - port numbers must be INTEGERS
@@ -583,17 +583,17 @@ sources:
     build_system: "autotools"
     configure_args: ["--enable-ssl", "--with-modules"]
     prerequisites: ["build-essential", "libssl-dev"]
-    checksum: "sha256:abc123..."
+    
 binaries:
   - name: "main"
     url: "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip"
     install_path: "/usr/local/bin"
-    checksum: "sha256:def456..."
+    
 scripts:
   - name: "official"
     url: "https://get.example.com/install.sh"
     interpreter: "bash"
-    checksum: "sha256:ghi789..."
+    
     timeout: 600
 providers:
   apt:
@@ -819,7 +819,7 @@ The saidata YAML must follow this exact JSON schema structure for version 0.3:
 - url: string (required) - should use HTTPS for security
 - version: string (optional)
 - interpreter: string (optional) - bash, sh, python, python3
-- checksum: string (required for security) - format "algorithm:hash"
+- checksum: string (optional - OMIT if not known) - format "algorithm:hash"
 - arguments: array of strings (optional)
 - environment: object (optional)
 - working_dir: string (optional)
@@ -850,7 +850,7 @@ Each provider can now contain all resource types including:
 **CRITICAL DATA TYPE REQUIREMENTS:**
 - version must be "0.3" (string, not "0.2")
 - All resource arrays (packages, services, sources, binaries, scripts, etc.) must be ARRAYS of OBJECTS
-- checksum must follow format "algorithm:hash" (e.g., "sha256:abc123...")
+- checksum (if provided) must follow format "algorithm:hash" (e.g., "sha256:abc123...")
 - timeout must be integer between 1 and 3600
 - permissions must be octal string (e.g., "0755")
 - port numbers must be INTEGERS
@@ -872,17 +872,17 @@ sources:
   - name: "main"
     url: "https://example.com/software-{{version}}.tar.gz"
     build_system: "autotools"
-    checksum: "sha256:abc123..."
+    
 binaries:
   - name: "main"
     url: "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip"
     install_path: "/usr/local/bin"
-    checksum: "sha256:def456..."
+    
 scripts:
   - name: "official"
     url: "https://get.example.com/install.sh"
     interpreter: "bash"
-    checksum: "sha256:ghi789..."
+    
 providers:
   apt:
     packages:
