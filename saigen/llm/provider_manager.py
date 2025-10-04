@@ -402,66 +402,6 @@ class LLMProviderManager:
                 # Don't retry these errors
                 raise
     
-    def get_provider_models(self, provider_name: str) -> List[str]:
-        """Get available models for a provider.
-        
-        Args:
-            provider_name: Name of the provider
-            
-        Returns:
-            List of available model names
-        """
-        provider = self.get_provider(provider_name)
-        if not provider:
-            return []
-        
-        try:
-            if hasattr(provider, 'get_available_models'):
-                return provider.get_available_models()
-            return []
-        except Exception as e:
-            logger.error(f"Failed to get models for provider {provider_name}: {e}")
-            return []
-    
-    def set_provider_model(self, provider_name: str, model: str) -> bool:
-        """Set model for a specific provider.
-        
-        Args:
-            provider_name: Name of the provider
-            model: Model name to set
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        provider = self.get_provider(provider_name)
-        if not provider:
-            return False
-        
-        try:
-            if hasattr(provider, 'set_model'):
-                provider.set_model(model)
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Failed to set model for provider {provider_name}: {e}")
-            return False
-    
-    def get_cost_estimate(self, provider_name: str, tokens: int) -> Optional[float]:
-        """Get cost estimate for a provider.
-        
-        Args:
-            provider_name: Name of the provider
-            tokens: Number of tokens
-            
-        Returns:
-            Estimated cost or None if not available
-        """
-        provider = self.get_provider(provider_name)
-        if not provider:
-            return None
-        
-        return provider.estimate_cost(tokens)
-    
     async def cleanup(self) -> None:
         """Cleanup provider resources."""
         for provider in self.provider_instances.values():

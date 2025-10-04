@@ -7,6 +7,7 @@ from .cache import cache
 from .test import test
 from .batch import batch
 from .update import update
+from .refresh_versions import refresh_versions
 
 __all__ = [
     "validate",
@@ -15,5 +16,6 @@ __all__ = [
     "cache",
     "test",
     "batch",
-    "update"
+    "update",
+    "refresh_versions"
 ]

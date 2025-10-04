@@ -821,8 +821,8 @@ class RAGContextBuilder:
         max_samples = self.config.get('max_sample_examples', 3)
         
         try:
-            # Load YAML files from sample directory
-            yaml_files = list(sample_dir.glob("*.yaml")) + list(sample_dir.glob("*.yml"))
+            # Load YAML files from sample directory (including subdirectories)
+            yaml_files = list(sample_dir.glob("**/*.yaml")) + list(sample_dir.glob("**/*.yml"))
             
             for yaml_file in yaml_files[:max_samples]:
                 try:

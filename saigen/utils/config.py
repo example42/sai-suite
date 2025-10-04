@@ -229,16 +229,6 @@ class ConfigManager:
         """Get current configuration."""
         return self.load_config()
     
-    def update_config(self, updates: Dict[str, Any]) -> None:
-        """Update configuration with new values."""
-        if not self._config:
-            self.load_config()
-        
-        # Apply updates (simplified - in practice would need deep merge)
-        for key, value in updates.items():
-            if hasattr(self._config, key):
-                setattr(self._config, key, value)
-    
     def validate_config(self) -> List[str]:
         """Validate current configuration and return any issues."""
         issues = []

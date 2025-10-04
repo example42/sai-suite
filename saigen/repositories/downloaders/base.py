@@ -141,30 +141,6 @@ class BaseRepositoryDownloader(ABC):
         for i in range(0, len(packages), batch_size):
             yield packages[i:i + batch_size]
     
-    def normalize_package_name(self, name: str) -> str:
-        """Normalize package name for consistent comparison.
-        
-        Args:
-            name: Raw package name
-            
-        Returns:
-            Normalized package name
-        """
-        # Basic normalization - subclasses can override
-        return name.lower().strip()
-    
-    def extract_package_metadata(self, raw_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract and normalize package metadata from raw repository data.
-        
-        Args:
-            raw_data: Raw package data from repository
-            
-        Returns:
-            Normalized metadata dictionary
-        """
-        # Base implementation - subclasses should override
-        return raw_data
-    
     async def __aenter__(self):
         """Async context manager entry."""
         return self

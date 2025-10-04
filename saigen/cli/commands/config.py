@@ -222,8 +222,8 @@ def config_samples(ctx: click.Context, directory: Optional[Path], auto_detect: b
             click.echo(f"Directory does not exist: {directory}", err=True)
             ctx.exit(1)
         
-        # Check if directory contains YAML files
-        yaml_files = list(directory.glob("*.yaml")) + list(directory.glob("*.yml"))
+        # Check if directory contains YAML files (including subdirectories)
+        yaml_files = list(directory.glob("**/*.yaml")) + list(directory.glob("**/*.yml"))
         if not yaml_files:
             click.echo(f"Warning: No YAML files found in {directory}")
         
@@ -244,7 +244,7 @@ def config_samples(ctx: click.Context, directory: Optional[Path], auto_detect: b
         sample_dir = setup_default_sample_directory(config_obj)
         
         if sample_dir.exists():
-            yaml_files = list(sample_dir.glob("*.yaml")) + list(sample_dir.glob("*.yml"))
+            yaml_files = list(sample_dir.glob("**/*.yaml")) + list(sample_dir.glob("**/*.yml"))
             config_obj.rag.use_default_samples = True
             config_manager.save_config(config_obj)
             
@@ -275,13 +275,16 @@ def config_samples(ctx: click.Context, directory: Optional[Path], auto_detect: b
         click.echo(f"  Directory: {current_dir or 'Not configured'}")
         
         if current_dir and Path(current_dir).exists():
-            yaml_files = list(Path(current_dir).glob("*.yaml")) + list(Path(current_dir).glob("*.yml"))
+            yaml_files = list(Path(current_dir).glob("**/*.yaml")) + list(Path(current_dir).glob("**/*.yml"))
+            # Filter out README files
+            yaml_files = [f for f in yaml_files if f.name.lower() != 'readme.yaml' and f.name.lower() != 'readme.yml']
             click.echo(f"  Available samples: {len(yaml_files)}")
             if verbose and yaml_files:
-                for yaml_file in yaml_files[:5]:
-                    click.echo(f"    - {yaml_file.name}")
-                if len(yaml_files) > 5:
-                    click.echo(f"    ... and {len(yaml_files) - 5} more")
+                click.echo("\n  Sample files:")
+                for yaml_file in sorted(yaml_files):
+                    # Show relative path from sample directory
+                    rel_path = yaml_file.relative_to(current_dir)
+                    click.echo(f"    - {rel_path}")
         elif current_dir:
             click.echo(f"  Status: Directory not found")
         

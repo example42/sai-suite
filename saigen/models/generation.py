@@ -49,7 +49,16 @@ class GenerationContext(BaseModel):
     target_providers: List[str] = Field(default_factory=list)
     existing_saidata: Optional[SaiData] = None
     
-    model_config = ConfigDict(validate_assignment=True)
+    # Enhanced context fields for 0.3 schema generation
+    installation_method_examples: Optional[Dict[str, Any]] = None
+    likely_installation_methods: Optional[List[str]] = None
+    security_metadata_template: Optional[Dict[str, Any]] = None
+    software_category: Optional[str] = None
+    compatibility_matrix_template: Optional[List[Dict[str, Any]]] = None
+    url_templating_examples: Optional[Dict[str, Any]] = None
+    provider_enhancement_examples: Optional[Dict[str, Any]] = None
+    
+    model_config = ConfigDict(validate_assignment=True, extra='allow')
 
 
 class ValidationError(BaseModel):

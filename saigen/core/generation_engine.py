@@ -23,7 +23,7 @@ from .validator import SaidataValidator, ValidationResult, ValidationSeverity
 from ..repositories.indexer import RAGIndexer, RAGContextBuilder
 from ..repositories.cache import RepositoryCache
 from ..utils.errors import RAGError
-from .context_builder_v03 import EnhancedContextBuilderV03
+from .context_builder import EnhancedContextBuilder
 
 
 logger = logging.getLogger(__name__)
@@ -75,8 +75,8 @@ class GenerationEngine:
         self.repository_cache: Optional[RepositoryCache] = None
         self._initialize_rag_components()
         
-        # Initialize enhanced context builder for 0.3 schema
-        self.enhanced_context_builder = EnhancedContextBuilderV03(self.rag_context_builder)
+        # Initialize enhanced context builder
+        self.enhanced_context_builder = EnhancedContextBuilder(self.rag_context_builder)
         
         # Backward compatibility: expose providers dict for tests
         self._llm_providers = {}
@@ -514,6 +514,9 @@ class GenerationEngine:
                     
                     raise ValidationFailedError(validation_error)
             
+            # Deduplicate provider configurations before returning
+            saidata = self._deduplicate_provider_configs(saidata)
+            
             return saidata
             
         except yaml.YAMLError as e:
@@ -817,6 +820,229 @@ class GenerationEngine:
         content = content.strip('`').strip()
         
         return content
+    
+    def _deduplicate_provider_configs(self, saidata: SaiData) -> SaiData:
+        """Remove redundant provider configurations that duplicate top-level definitions.
+        
+        This function compares provider-specific resources (packages, services, files, directories,
+        commands, ports) with top-level definitions and removes entries that are identical.
+        
+        Args:
+            saidata: SaiData instance to deduplicate
+            
+        Returns:
+            SaiData instance with deduplicated provider configurations
+        """
+        if not saidata.providers:
+            return saidata
+        
+        # Build lookup indexes for all top-level resources
+        top_level_packages = self._build_resource_index(saidata.packages, lambda p: (p.name, p.package_name))
+        top_level_services = self._build_resource_index(saidata.services, lambda s: (s.name, s.service_name))
+        top_level_files = self._build_resource_index(saidata.files, lambda f: (f.name, f.path))
+        top_level_directories = self._build_resource_index(saidata.directories, lambda d: (d.name, d.path))
+        top_level_commands = self._build_resource_index(saidata.commands, lambda c: (c.name, c.path))
+        top_level_ports = self._build_resource_index(saidata.ports, lambda p: (p.port, p.protocol))
+        
+        # Process each provider
+        for provider_name, provider_config in saidata.providers.items():
+            # Deduplicate packages
+            if provider_config.packages:
+                provider_config.packages = self._deduplicate_packages(
+                    provider_config.packages, top_level_packages, provider_name
+                )
+            
+            # Deduplicate services
+            if provider_config.services:
+                provider_config.services = self._deduplicate_services(
+                    provider_config.services, top_level_services, provider_name
+                )
+            
+            # Deduplicate files
+            if provider_config.files:
+                provider_config.files = self._deduplicate_files(
+                    provider_config.files, top_level_files, provider_name
+                )
+            
+            # Deduplicate directories
+            if provider_config.directories:
+                provider_config.directories = self._deduplicate_directories(
+                    provider_config.directories, top_level_directories, provider_name
+                )
+            
+            # Deduplicate commands
+            if provider_config.commands:
+                provider_config.commands = self._deduplicate_commands(
+                    provider_config.commands, top_level_commands, provider_name
+                )
+            
+            # Deduplicate ports
+            if provider_config.ports:
+                provider_config.ports = self._deduplicate_ports(
+                    provider_config.ports, top_level_ports, provider_name
+                )
+        
+        return saidata
+    
+    def _build_resource_index(self, resources, key_func):
+        """Build an index of resources for quick lookup."""
+        if not resources:
+            return {}
+        index = {}
+        for resource in resources:
+            try:
+                key = key_func(resource)
+                index[key] = resource
+            except (AttributeError, TypeError):
+                continue
+        return index
+    
+    def _deduplicate_packages(self, provider_packages, top_level_index, provider_name):
+        """Deduplicate provider packages against top-level."""
+        filtered = []
+        for pkg in provider_packages:
+            key = (pkg.name, pkg.package_name)
+            if key in top_level_index:
+                top_pkg = top_level_index[key]
+                if self._package_has_differences(pkg, top_pkg):
+                    filtered.append(pkg)
+                else:
+                    logger.debug(f"Removing duplicate package '{pkg.name}' from provider '{provider_name}'")
+            else:
+                filtered.append(pkg)
+        return filtered if filtered else None
+    
+    def _deduplicate_services(self, provider_services, top_level_index, provider_name):
+        """Deduplicate provider services against top-level."""
+        filtered = []
+        for svc in provider_services:
+            key = (svc.name, svc.service_name)
+            if key in top_level_index:
+                top_svc = top_level_index[key]
+                if self._service_has_differences(svc, top_svc):
+                    filtered.append(svc)
+                else:
+                    logger.debug(f"Removing duplicate service '{svc.name}' from provider '{provider_name}'")
+            else:
+                filtered.append(svc)
+        return filtered if filtered else None
+    
+    def _deduplicate_files(self, provider_files, top_level_index, provider_name):
+        """Deduplicate provider files against top-level."""
+        filtered = []
+        for file in provider_files:
+            key = (file.name, file.path)
+            if key in top_level_index:
+                top_file = top_level_index[key]
+                if self._file_has_differences(file, top_file):
+                    filtered.append(file)
+                else:
+                    logger.debug(f"Removing duplicate file '{file.name}' from provider '{provider_name}'")
+            else:
+                filtered.append(file)
+        return filtered if filtered else None
+    
+    def _deduplicate_directories(self, provider_dirs, top_level_index, provider_name):
+        """Deduplicate provider directories against top-level."""
+        filtered = []
+        for dir in provider_dirs:
+            key = (dir.name, dir.path)
+            if key in top_level_index:
+                top_dir = top_level_index[key]
+                if self._directory_has_differences(dir, top_dir):
+                    filtered.append(dir)
+                else:
+                    logger.debug(f"Removing duplicate directory '{dir.name}' from provider '{provider_name}'")
+            else:
+                filtered.append(dir)
+        return filtered if filtered else None
+    
+    def _deduplicate_commands(self, provider_commands, top_level_index, provider_name):
+        """Deduplicate provider commands against top-level."""
+        filtered = []
+        for cmd in provider_commands:
+            key = (cmd.name, cmd.path)
+            if key in top_level_index:
+                top_cmd = top_level_index[key]
+                if self._command_has_differences(cmd, top_cmd):
+                    filtered.append(cmd)
+                else:
+                    logger.debug(f"Removing duplicate command '{cmd.name}' from provider '{provider_name}'")
+            else:
+                filtered.append(cmd)
+        return filtered if filtered else None
+    
+    def _deduplicate_ports(self, provider_ports, top_level_index, provider_name):
+        """Deduplicate provider ports against top-level."""
+        filtered = []
+        for port in provider_ports:
+            key = (port.port, port.protocol)
+            if key in top_level_index:
+                top_port = top_level_index[key]
+                if self._port_has_differences(port, top_port):
+                    filtered.append(port)
+                else:
+                    logger.debug(f"Removing duplicate port {port.port} from provider '{provider_name}'")
+            else:
+                filtered.append(port)
+        return filtered if filtered else None
+    
+    def _package_has_differences(self, pkg, top_pkg):
+        """Check if package has differences from top-level."""
+        return (
+            (pkg.version and pkg.version != getattr(top_pkg, 'version', None)) or
+            (pkg.alternatives and pkg.alternatives != getattr(top_pkg, 'alternatives', None)) or
+            (pkg.install_options and pkg.install_options != getattr(top_pkg, 'install_options', None)) or
+            (pkg.repository and pkg.repository != getattr(top_pkg, 'repository', None)) or
+            (hasattr(pkg, 'checksum') and pkg.checksum and pkg.checksum != getattr(top_pkg, 'checksum', None)) or
+            (hasattr(pkg, 'signature') and pkg.signature and pkg.signature != getattr(top_pkg, 'signature', None)) or
+            (hasattr(pkg, 'download_url') and pkg.download_url and pkg.download_url != getattr(top_pkg, 'download_url', None))
+        )
+    
+    def _service_has_differences(self, svc, top_svc):
+        """Check if service has differences from top-level."""
+        return (
+            (hasattr(svc, 'type') and svc.type != getattr(top_svc, 'type', None)) or
+            (hasattr(svc, 'enabled') and svc.enabled != getattr(top_svc, 'enabled', None)) or
+            (hasattr(svc, 'config_files') and svc.config_files != getattr(top_svc, 'config_files', None)) or
+            (hasattr(svc, 'start_command') and svc.start_command != getattr(top_svc, 'start_command', None)) or
+            (hasattr(svc, 'stop_command') and svc.stop_command != getattr(top_svc, 'stop_command', None))
+        )
+    
+    def _file_has_differences(self, file, top_file):
+        """Check if file has differences from top-level."""
+        return (
+            (hasattr(file, 'type') and file.type != getattr(top_file, 'type', None)) or
+            (hasattr(file, 'owner') and file.owner != getattr(top_file, 'owner', None)) or
+            (hasattr(file, 'group') and file.group != getattr(top_file, 'group', None)) or
+            (hasattr(file, 'mode') and file.mode != getattr(top_file, 'mode', None)) or
+            (hasattr(file, 'backup') and file.backup != getattr(top_file, 'backup', None)) or
+            (hasattr(file, 'template') and file.template != getattr(top_file, 'template', None))
+        )
+    
+    def _directory_has_differences(self, dir, top_dir):
+        """Check if directory has differences from top-level."""
+        return (
+            (hasattr(dir, 'owner') and dir.owner != getattr(top_dir, 'owner', None)) or
+            (hasattr(dir, 'group') and dir.group != getattr(top_dir, 'group', None)) or
+            (hasattr(dir, 'mode') and dir.mode != getattr(top_dir, 'mode', None)) or
+            (hasattr(dir, 'create') and dir.create != getattr(top_dir, 'create', None))
+        )
+    
+    def _command_has_differences(self, cmd, top_cmd):
+        """Check if command has differences from top-level."""
+        return (
+            (hasattr(cmd, 'shell_completion') and cmd.shell_completion != getattr(top_cmd, 'shell_completion', None)) or
+            (hasattr(cmd, 'man_page') and cmd.man_page != getattr(top_cmd, 'man_page', None)) or
+            (hasattr(cmd, 'description') and cmd.description != getattr(top_cmd, 'description', None))
+        )
+    
+    def _port_has_differences(self, port, top_port):
+        """Check if port has differences from top-level."""
+        return (
+            (hasattr(port, 'service') and port.service != getattr(top_port, 'service', None)) or
+            (hasattr(port, 'description') and port.description != getattr(top_port, 'description', None))
+        )
     
     def _update_metrics(self, llm_response) -> None:
         """Update generation metrics.

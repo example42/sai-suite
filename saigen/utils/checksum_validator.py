@@ -47,24 +47,6 @@ class ChecksumValidator:
     # Pattern for checksum format: algorithm:hash
     CHECKSUM_FORMAT_PATTERN = re.compile(r'^([a-zA-Z0-9]+):([a-fA-F0-9]+)$')
     
-    def is_valid_format(self, checksum: str) -> bool:
-        """Check if checksum string follows the correct format.
-        
-        Args:
-            checksum: Checksum string in format "algorithm:hash"
-            
-        Returns:
-            True if format is valid, False otherwise
-        """
-        if not checksum or not isinstance(checksum, str):
-            return False
-        
-        try:
-            algorithm, hash_value = self.parse_checksum(checksum)
-            return self._validate_algorithm_and_hash(algorithm, hash_value)
-        except (ChecksumValidationError, ValueError):
-            return False
-    
     def parse_checksum(self, checksum: str) -> Tuple[ChecksumAlgorithm, str]:
         """Parse checksum string into algorithm and hash components.
         
@@ -157,34 +139,6 @@ class ChecksumValidator:
         hash_value = hasher.hexdigest()
         
         return f"{algorithm.value}:{hash_value}"
-    
-    def verify_checksum(self, data: bytes, expected_checksum: str) -> bool:
-        """Verify that data matches the expected checksum.
-        
-        Args:
-            data: Binary data to verify
-            expected_checksum: Expected checksum in format "algorithm:hash"
-            
-        Returns:
-            True if checksum matches, False otherwise
-            
-        Raises:
-            ChecksumValidationError: If checksum format is invalid
-        """
-        algorithm, expected_hash = self.parse_checksum(expected_checksum)
-        computed_checksum = self.compute_checksum(data, algorithm)
-        _, computed_hash = self.parse_checksum(computed_checksum)
-        
-        # Use constant-time comparison to prevent timing attacks
-        return self._constant_time_compare(expected_hash.lower(), computed_hash.lower())
-    
-    def get_supported_algorithms(self) -> List[str]:
-        """Get list of supported checksum algorithms.
-        
-        Returns:
-            List of supported algorithm names
-        """
-        return [alg.value for alg in ChecksumAlgorithm]
     
     def _validate_algorithm_and_hash(self, algorithm: ChecksumAlgorithm, hash_value: str) -> bool:
         """Validate that hash value matches the expected format for the algorithm.

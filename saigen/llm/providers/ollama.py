@@ -389,20 +389,6 @@ class OllamaProvider(BaseLLMProvider):
         """
         return 0.0
     
-    def get_usage_stats(self) -> Dict[str, Any]:
-        """Get usage statistics for the provider.
-        
-        Returns:
-            Dictionary with usage statistics
-        """
-        return {
-            "provider": "ollama",
-            "model": self.model,
-            "base_url": self.base_url,
-            "temperature": self.temperature,
-            "available": self.is_available()
-        }
-    
     async def __aenter__(self):
         """Async context manager entry."""
         return self

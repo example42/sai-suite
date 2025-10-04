@@ -259,13 +259,13 @@ class PromptTemplate:
             sample_saidata: List of sample saidata files
             
         Returns:
-            Formatted sample saidata string
+            Formatted sample saidata string with full structure examples
         """
         if not sample_saidata:
             return "No sample saidata available."
         
         examples = []
-        for i, saidata in enumerate(sample_saidata[:3], 1):  # Limit to 3 examples
+        for i, saidata in enumerate(sample_saidata[:2], 1):  # Limit to 2 full examples
             example_parts = [f"Sample {i}: {saidata.metadata.name}"]
             
             if saidata.metadata.description:
@@ -274,39 +274,61 @@ class PromptTemplate:
             if saidata.metadata.category:
                 example_parts.append(f"  Category: {saidata.metadata.category}")
             
+            # Show top-level structure
+            structure_parts = []
+            if saidata.packages:
+                structure_parts.append(f"packages ({len(saidata.packages)})")
+            if saidata.services:
+                structure_parts.append(f"services ({len(saidata.services)})")
+            if saidata.files:
+                structure_parts.append(f"files ({len(saidata.files)})")
+            if saidata.directories:
+                structure_parts.append(f"directories ({len(saidata.directories)})")
+            if saidata.commands:
+                structure_parts.append(f"commands ({len(saidata.commands)})")
+            if saidata.ports:
+                structure_parts.append(f"ports ({len(saidata.ports)})")
+            
+            if structure_parts:
+                example_parts.append(f"  Top-level sections: {', '.join(structure_parts)}")
+            
+            # Show example top-level package
+            if saidata.packages:
+                pkg = saidata.packages[0]
+                pkg_str = f"name: {pkg.name}, package_name: {pkg.package_name}"
+                if pkg.version:
+                    pkg_str += f", version: {pkg.version}"
+                example_parts.append(f"  Example package: {pkg_str}")
+            
+            # Show example service
+            if saidata.services:
+                svc = saidata.services[0]
+                svc_str = f"name: {svc.name}, service_name: {svc.service_name}"
+                if hasattr(svc, 'type') and svc.type:
+                    svc_str += f", type: {svc.type}"
+                example_parts.append(f"  Example service: {svc_str}")
+            
+            # Show provider structure
             if saidata.providers:
                 providers = list(saidata.providers.keys())
                 example_parts.append(f"  Providers: {', '.join(providers)}")
                 
-                # Show complete structure for one provider as example
+                # Show one provider example
                 first_provider = list(saidata.providers.items())[0]
                 provider_name, provider_config = first_provider
                 
                 config_details = []
                 if provider_config.packages:
-                    pkg_details = []
-                    for pkg in provider_config.packages[:2]:
-                        pkg_str = f"name: {pkg.name}"
-                        if pkg.version:
-                            pkg_str += f", version: {pkg.version}"
-                        pkg_details.append(pkg_str)
-                    config_details.append(f"packages: [{'; '.join(pkg_details)}]")
-                
-                if provider_config.services:
-                    svc_details = []
-                    for svc in provider_config.services[:2]:
-                        svc_str = f"name: {svc.name}"
-                        if hasattr(svc, 'enabled') and svc.enabled is not None:
-                            svc_str += f", enabled: {svc.enabled}"
-                        svc_details.append(svc_str)
-                    config_details.append(f"services: [{'; '.join(svc_details)}]")
+                    config_details.append(f"packages ({len(provider_config.packages)})")
+                if provider_config.repositories:
+                    config_details.append(f"repositories ({len(provider_config.repositories)})")
                 
                 if config_details:
-                    example_parts.append(f"  {provider_name} config: {', '.join(config_details)}")
+                    example_parts.append(f"  {provider_name}: {', '.join(config_details)}")
             
             examples.append("\n".join(example_parts))
         
-        return "Reference saidata samples:\n\n" + "\n\n".join(examples)
+        return "Reference saidata samples showing proper structure:\n\n" + "\n\n".join(examples) + "\n\nNOTE: These samples demonstrate the correct pattern - top-level sections define defaults, provider sections contain overrides."
     
     def _format_user_hints(self, user_hints: Optional[Dict[str, Any]]) -> str:
         """Format user hints for prompt inclusion.
@@ -465,22 +487,31 @@ Incorporate these user preferences and hints into the generated saidata.""",
             name="schema_requirements",
             template="""SAIDATA SCHEMA REQUIREMENTS (VERSION 0.3):
 
+**CRITICAL: DO NOT INCLUDE CHECKSUM FIELDS**
+Never include checksum fields in sources, binaries, or scripts sections. Omit them completely.
+
 The saidata YAML must follow this exact JSON schema structure for version 0.3:
 
 **Root Level (Required):**
 - version: string (must be "0.3")
 - metadata: object (required)
-- packages: array of package objects (optional)
-- services: array of service objects (optional)
-- files: array of file objects (optional)
-- directories: array of directory objects (optional)
-- commands: array of command objects (optional)
-- ports: array of port objects (optional)
+
+**Top-Level Resource Sections (Define defaults/common configuration - INCLUDE WHEN RELEVANT):**
+- packages: array of package objects (IMPORTANT - almost always needed)
+- services: array of service objects (IMPORTANT - for daemon/service software)
+- files: array of file objects (IMPORTANT - for config files, logs, etc.)
+- directories: array of directory objects (IMPORTANT - for data/config directories)
+- commands: array of command objects (IMPORTANT - for CLI tools)
+- ports: array of port objects (IMPORTANT - for network services)
 - containers: array of container objects (optional)
-- sources: array of source build objects (NEW in 0.3)
-- binaries: array of binary download objects (NEW in 0.3)
-- scripts: array of script installation objects (NEW in 0.3)
-- providers: object (provider configurations)
+
+**Optional Installation Method Sections (NEW in 0.3 - only include with valid, verified data):**
+- sources: array of source build objects (only if you have verified build info)
+- binaries: array of binary download objects (only if you have verified download URLs)
+- scripts: array of script installation objects (only if you have verified install scripts)
+
+**Provider and Compatibility Sections:**
+- providers: object (provider-specific configurations and overrides)
 - compatibility: object (compatibility matrix)
 
 **Enhanced Metadata Object (Required):**
@@ -565,6 +596,13 @@ Each provider can now contain all resource types including:
 - port numbers must be INTEGERS
 - enabled must be BOOLEAN (true/false)
 
+**CRITICAL STRUCTURE PATTERN:**
+
+The 0.3 schema follows this pattern:
+1. **Top-level sections** define default/common configuration (packages, services, files, directories, commands, ports)
+2. **Provider sections** contain provider-specific overrides or additional configurations
+3. **New optional sections** (sources, binaries, scripts) are only included when you have valid, verified data
+
 **EXAMPLE 0.3 STRUCTURE:**
 ```yaml
 version: "0.3"
@@ -577,29 +615,148 @@ metadata:
     documentation: "https://docs.example.com"
   security:
     security_contact: "security@example.com"
+
+# TOP-LEVEL SECTIONS (define defaults/common config)
+packages:
+  - name: "main"
+    package_name: "example-software"
+    version: "1.0.0"
+
+services:
+  - name: "main"
+    service_name: "example-software"
+    type: "systemd"
+    enabled: true
+    config_files: ["/etc/example/config.conf"]
+
+files:
+  - name: "config"
+    path: "/etc/example/config.conf"
+    type: "config"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+
+directories:
+  - name: "config"
+    path: "/etc/example"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+commands:
+  - name: "example"
+    path: "/usr/bin/example"
+    shell_completion: true
+    man_page: "example(1)"
+
+ports:
+  - port: 8080
+    protocol: "tcp"
+    service: "http"
+    description: "Example service"
+
+# OPTIONAL: Only include if you have valid, verified data
 sources:
   - name: "main"
     url: "https://example.com/software-{{version}}.tar.gz"
     build_system: "autotools"
-    configure_args: ["--enable-ssl", "--with-modules"]
     prerequisites: ["build-essential", "libssl-dev"]
-    
-binaries:
-  - name: "main"
-    url: "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip"
-    install_path: "/usr/local/bin"
-    
-scripts:
-  - name: "official"
-    url: "https://get.example.com/install.sh"
-    interpreter: "bash"
-    
-    timeout: 600
+
+# PROVIDER SECTIONS (overrides and provider-specific configs)
 providers:
   apt:
     packages:
       - name: "main"
         package_name: "example-software"
+    # Only include repositories if upstream/third-party repos exist
+    repositories:
+      - name: "official"
+        url: "https://repo.example.com/apt"
+        key: "https://repo.example.com/key.gpg"
+        type: "upstream"
+        recommended: true
+  
+  dnf:
+    packages:
+      - name: "main"
+        package_name: "example-software"
+  
+  brew:
+    packages:
+      - name: "main"
+        package_name: "example-software"
+```
+
+**IMPORTANT RULES:**
+1. ALWAYS include top-level packages, services, files, directories, commands, ports sections when relevant
+2. Provider sections should reference the same logical names from top-level sections
+3. Only include sources/binaries/scripts if you have valid, complete data (don't guess URLs or checksums)
+4. Provider repositories are only needed for upstream/third-party repos, not for default OS repos
+
+**WHEN TO USE PROVIDER OVERRIDES:**
+Provider overrides are needed when resources differ across platforms. Common cases:
+
+1. **Different package names**: 
+   - Top-level: package_name: "apache2" (Debian/Ubuntu default)
+   - dnf override: package_name: "httpd" (RHEL/CentOS uses different name)
+
+2. **Different paths**:
+   - Top-level: path: "/etc/apache2/apache2.conf" (Debian/Ubuntu)
+   - dnf override: path: "/etc/httpd/conf/httpd.conf" (RHEL/CentOS)
+
+3. **Different service names**:
+   - Top-level: service_name: "apache2" (Debian/Ubuntu)
+   - dnf override: service_name: "httpd" (RHEL/CentOS)
+
+4. **Different directory structures**:
+   - Top-level: path: "/etc/apache2" (Debian/Ubuntu)
+   - dnf override: path: "/etc/httpd" (RHEL/CentOS)
+
+**EXAMPLE WITH PROVIDER OVERRIDES (Apache):**
+```yaml
+# Top-level uses Debian/Ubuntu conventions (most common)
+packages:
+  - name: "main"
+    package_name: "apache2"
+
+services:
+  - name: "main"
+    service_name: "apache2"
+    config_files: ["/etc/apache2/apache2.conf"]
+
+files:
+  - name: "config"
+    path: "/etc/apache2/apache2.conf"
+
+directories:
+  - name: "config"
+    path: "/etc/apache2"
+
+commands:
+  - name: "apachectl"
+    path: "/usr/sbin/apachectl"
+
+# Provider overrides for RHEL/CentOS (different names/paths)
+providers:
+  dnf:
+    packages:
+      - name: "main"
+        package_name: "httpd"  # Different package name
+    services:
+      - name: "main"
+        service_name: "httpd"  # Different service name
+        config_files: ["/etc/httpd/conf/httpd.conf"]
+    files:
+      - name: "config"
+        path: "/etc/httpd/conf/httpd.conf"  # Different path
+    directories:
+      - name: "config"
+        path: "/etc/httpd"  # Different path
+    commands:
+      - name: "apachectl"
+        path: "/usr/sbin/apachectl"  # Same path, no override needed
 ```
 
 Generate complete, valid YAML following this 0.3 structure exactly.""",
@@ -610,13 +767,16 @@ Generate complete, valid YAML following this 0.3 structure exactly.""",
             template="""OUTPUT INSTRUCTIONS:
 1. Generate ONLY the YAML content - no explanations or markdown formatting
 2. Start directly with the YAML (version: "0.3")
-3. Ensure all YAML syntax is correct and properly indented
-4. Include comprehensive provider configurations with 0.3 features
-5. Use accurate package names from repository data
-6. Include relevant metadata, services, and configuration details
-7. Include sources, binaries, and/or scripts sections when appropriate
-8. Include enhanced metadata with security information when relevant
-9. Ensure the output is production-ready and follows 0.3 schema best practices
+3. ALWAYS include top-level sections: packages, services, files, directories, commands, ports (when relevant)
+4. Use top-level for the most common/default configuration (usually Debian/Ubuntu conventions)
+5. Add provider overrides ONLY when resources differ (different package names, paths, service names)
+6. Provider sections should contain provider-specific overrides or additional configurations
+7. Only include sources/binaries/scripts if you have valid, verified data (don't guess)
+8. Use accurate package names from repository data
+9. Ensure all YAML syntax is correct and properly indented
+10. Include enhanced metadata with security information when relevant
+11. Follow the structure pattern from the reference samples provided
+12. Ensure the output is production-ready and follows 0.3 schema best practices
 
 Generate the saidata YAML now:""",
             required=True
@@ -756,22 +916,31 @@ This is the complete JSON schema that your YAML output must validate against. Pa
             name="schema_requirements",
             template="""SAIDATA SCHEMA REQUIREMENTS (VERSION 0.3):
 
+**CRITICAL: DO NOT INCLUDE CHECKSUM FIELDS**
+Never include checksum fields in sources, binaries, or scripts sections. Omit them completely.
+
 The saidata YAML must follow this exact JSON schema structure for version 0.3:
 
 **Root Level (Required):**
 - version: string (must be "0.3")
 - metadata: object (required)
-- packages: array of package objects (optional)
-- services: array of service objects (optional)
-- files: array of file objects (optional)
-- directories: array of directory objects (optional)
-- commands: array of command objects (optional)
-- ports: array of port objects (optional)
+
+**Top-Level Resource Sections (Define defaults/common configuration - INCLUDE WHEN RELEVANT):**
+- packages: array of package objects (IMPORTANT - almost always needed)
+- services: array of service objects (IMPORTANT - for daemon/service software)
+- files: array of file objects (IMPORTANT - for config files, logs, etc.)
+- directories: array of directory objects (IMPORTANT - for data/config directories)
+- commands: array of command objects (IMPORTANT - for CLI tools)
+- ports: array of port objects (IMPORTANT - for network services)
 - containers: array of container objects (optional)
-- sources: array of source build objects (NEW in 0.3)
-- binaries: array of binary download objects (NEW in 0.3)
-- scripts: array of script installation objects (NEW in 0.3)
-- providers: object (provider configurations)
+
+**Optional Installation Method Sections (NEW in 0.3 - only include with valid, verified data):**
+- sources: array of source build objects (only if you have verified build info)
+- binaries: array of binary download objects (only if you have verified download URLs)
+- scripts: array of script installation objects (only if you have verified install scripts)
+
+**Provider and Compatibility Sections:**
+- providers: object (provider-specific configurations and overrides)
 - compatibility: object (compatibility matrix)
 
 **Enhanced Metadata Object (Required):**

@@ -161,6 +161,18 @@ class GenerationLogger:
         self.log_data["generation_context"] = context_data
         self._write_log()
     
+    def log_generation_context_enhancement(self, enhancement_info: Dict[str, Any]) -> None:
+        """Log context enhancement information for 0.3 schema.
+        
+        Args:
+            enhancement_info: Information about context enhancements
+        """
+        if "generation_context" not in self.log_data:
+            self.log_data["generation_context"] = {}
+        
+        self.log_data["generation_context"]["enhancement_v03"] = enhancement_info
+        self._write_log()
+    
     def log_process_step(self, step_name: str, description: str, status: str = "started", 
                         metadata: Optional[Dict[str, Any]] = None) -> ProcessStep:
         """Log a process step.

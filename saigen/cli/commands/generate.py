@@ -104,7 +104,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
         if not no_rag and config.rag.use_default_samples:
             sample_dir = config.rag.default_samples_directory
             if sample_dir and Path(sample_dir).exists():
-                yaml_files = list(Path(sample_dir).glob("*.yaml")) + list(Path(sample_dir).glob("*.yml"))
+                yaml_files = list(Path(sample_dir).glob("**/*.yaml")) + list(Path(sample_dir).glob("**/*.yml"))
                 click.echo(f"Sample data: {len(yaml_files)} files from {sample_dir}")
             else:
                 click.echo("Sample data: Configured but directory not found")
@@ -139,7 +139,7 @@ def generate(ctx: click.Context, software_name: str, output: Optional[Path],
                     if config.rag.use_default_samples:
                         sample_dir = config.rag.default_samples_directory
                         if sample_dir and Path(sample_dir).exists():
-                            yaml_files = list(Path(sample_dir).glob("*.yaml")) + list(Path(sample_dir).glob("*.yml"))
+                            yaml_files = list(Path(sample_dir).glob("**/*.yaml")) + list(Path(sample_dir).glob("**/*.yml"))
                             click.echo(f"[DRY RUN] Would use {len(yaml_files)} sample saidata files as examples")
                         else:
                             click.echo("[DRY RUN] Sample data configured but directory not found")

@@ -130,55 +130,6 @@ class URLTemplateProcessor:
             warnings=warnings
         )
     
-    def render_template(self, url_template: str, context: TemplateContext) -> str:
-        """Render URL template with provided context.
-        
-        Args:
-            url_template: The URL template string to render
-            context: Template context with placeholder values
-            
-        Returns:
-            Rendered URL string
-            
-        Raises:
-            TemplateValidationError: If template validation fails
-            ValueError: If required placeholders are missing from context
-        """
-        # Validate template first
-        validation_result = self.validate_template(url_template)
-        if not validation_result.is_valid:
-            raise TemplateValidationError(f"Invalid template: {', '.join(validation_result.errors)}")
-        
-        # Extract placeholders
-        placeholders = self.extract_placeholders(url_template)
-        
-        # Build substitution dictionary
-        substitutions = {}
-        context_dict = {
-            'version': context.version,
-            'platform': context.platform,
-            'architecture': context.architecture
-        }
-        
-        # Check for missing required values
-        missing_values = []
-        for placeholder in placeholders:
-            value = context_dict.get(placeholder)
-            if value is None:
-                missing_values.append(placeholder)
-            else:
-                substitutions[placeholder] = value
-        
-        if missing_values:
-            raise ValueError(f"Missing values for placeholders: {', '.join(missing_values)}")
-        
-        # Perform substitution
-        rendered_url = url_template
-        for placeholder, value in substitutions.items():
-            rendered_url = rendered_url.replace(f'{{{{{placeholder}}}}}', value)
-        
-        return rendered_url
-    
     def extract_placeholders(self, url_template: str) -> List[str]:
         """Extract all placeholders from URL template.
         
@@ -213,11 +164,3 @@ class URLTemplateProcessor:
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         
         return bool(url_pattern.match(temp_url))
-    
-    def get_supported_placeholders(self) -> Dict[str, str]:
-        """Get dictionary of supported placeholders and their descriptions.
-        
-        Returns:
-            Dictionary mapping placeholder names to descriptions
-        """
-        return self.SUPPORTED_PLACEHOLDERS.copy()

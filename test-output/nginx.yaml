@@ -1,0 +1,78 @@
+version: '0.3'
+metadata:
+  name: nginx
+  display_name: Nginx
+  description: High-performance HTTP server and reverse proxy
+  version: 1.20.1
+  category: web-server
+  urls:
+    website: https://nginx.org
+    documentation: https://nginx.org/en/docs/
+    source: https://nginx.org/en/download.html
+    issues: https://trac.nginx.org/nginx/
+    support: https://nginx.org/en/support.html
+  security:
+    security_contact: security@nginx.org
+    vulnerability_disclosure: https://nginx.org/en/security.html
+packages:
+- name: nginx
+  package_name: nginx
+  version: 1.20.1
+services:
+- name: nginx
+  service_name: nginx
+  type: !!python/object/apply:saigen.models.saidata.ServiceType
+  - systemd
+  enabled: true
+  config_files:
+  - /etc/nginx/nginx.conf
+files:
+- name: nginx config
+  path: /etc/nginx/nginx.conf
+  type: !!python/object/apply:saigen.models.saidata.FileType
+  - config
+  owner: root
+  group: root
+  mode: '0644'
+  backup: true
+directories:
+- name: nginx config
+  path: /etc/nginx
+  owner: root
+  group: root
+  mode: '0755'
+commands:
+- name: nginx
+  path: /usr/sbin/nginx
+  shell_completion: true
+  man_page: nginx(8)
+ports:
+- port: 80
+  protocol: !!python/object/apply:saigen.models.saidata.Protocol
+  - tcp
+  service: http
+  description: HTTP service
+- port: 443
+  protocol: !!python/object/apply:saigen.models.saidata.Protocol
+  - tcp
+  service: https
+  description: HTTPS service
+providers:
+  apt:
+    repositories:
+    - name: official
+      url: http://nginx.org/packages/ubuntu/
+      type: !!python/object/apply:saigen.models.saidata.RepositoryType
+      - upstream
+      recommended: true
+  dnf: {}
+  brew: {}
+  choco: {}
+  docker:
+    containers:
+    - name: nginx
+      image: nginx:1.20.1
+  snap: {}
+  yum: {}
+  winget: {}
+  zypper: {}

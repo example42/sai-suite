@@ -64,10 +64,6 @@ class ParserRegistry:
             Parser function or None if not found
         """
         return self._parsers.get(format_name)
-    
-    def get_available_formats(self) -> List[str]:
-        """Get list of available parser formats."""
-        return list(self._parsers.keys())
 
 
 # Built-in parser functions
