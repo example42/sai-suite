@@ -40,7 +40,7 @@
 ## 📂 Directory Structure
 
 ```
-sai-python/
+sai-suite/
 ├── docs/                      # General documentation
 │   ├── README.md             # Documentation index
 │   ├── installation.md       # Installation guide

@@ -5,7 +5,7 @@ This repository contains both SAI and SAIGEN as separate pip packages in a monor
 ## Repository Structure
 
 ```
-sai-python/
+sai-suite/
 ├── sai/                    # SAI package (lightweight execution tool)
 │   ├── pyproject.toml     # SAI package configuration
 │   ├── sai/               # SAI source code
@@ -51,8 +51,8 @@ pip install saigen[all]
 
 ```bash
 # Clone the repository
-git clone https://github.com/example42/sai-python.git
-cd sai-python
+git clone https://github.com/example42/sai-suite.git
+cd sai-suite
 
 # Install both in editable mode
 ./scripts/install-local.sh both

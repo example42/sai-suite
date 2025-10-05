@@ -5,7 +5,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    SAI Python Monorepo                      │
-│                  github.com/example42/sai-python            │
+│                  github.com/example42/sai-suite             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               │
@@ -208,8 +208,8 @@ Users Install
 └─────────────────────────────────────────────────────────────┘
 
 1. Clone Repository
-   git clone https://github.com/example42/sai-python.git
-   cd sai-python
+   git clone https://github.com/example42/sai-suite.git
+   cd sai-suite
         │
         ▼
 2. Setup Environment
@@ -252,7 +252,7 @@ Users Install
 ## File Organization
 
 ```
-sai-python/
+sai-suite/
 │
 ├── sai/                    ← SAI Package
 │   ├── sai/               ← Source code

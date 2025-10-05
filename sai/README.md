@@ -56,8 +56,8 @@ pip install sai[dev]
 ## Documentation
 
 - [Full Documentation](https://sai.software/docs)
-- [When to Use What](https://github.com/example42/sai-python/blob/main/docs/when-to-use-what.md)
-- [Installation Guide](https://github.com/example42/sai-python/blob/main/docs/installation.md)
+- [When to Use What](https://github.com/example42/sai-suite/blob/main/docs/when-to-use-what.md)
+- [Installation Guide](https://github.com/example42/sai-suite/blob/main/docs/installation.md)
 - [CLI Guide](https://sai.software/docs/sai-cli-guide)
 
 ## Related Tools
@@ -68,10 +68,10 @@ pip install sai[dev]
 ## Links
 
 - **Homepage**: https://sai.software
-- **Repository**: https://github.com/example42/sai-python
-- **Issues**: https://github.com/example42/sai-python/issues
+- **Repository**: https://github.com/example42/sai-suite
+- **Issues**: https://github.com/example42/sai-suite/issues
 - **PyPI**: https://pypi.org/project/sai/
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/example42/sai-python/blob/main/LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.

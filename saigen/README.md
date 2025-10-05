@@ -78,8 +78,8 @@ SAIGEN supports 50+ package managers including:
 ## Documentation
 
 - [Full Documentation](https://sai.software/docs/saigen)
-- [When to Use What](https://github.com/example42/sai-python/blob/main/docs/when-to-use-what.md)
-- [Installation Guide](https://github.com/example42/sai-python/blob/main/docs/installation.md)
+- [When to Use What](https://github.com/example42/sai-suite/blob/main/docs/when-to-use-what.md)
+- [Installation Guide](https://github.com/example42/sai-suite/blob/main/docs/installation.md)
 - [SAIGEN Guide](https://sai.software/docs/saigen-guide)
 
 ## Related Tools
@@ -90,10 +90,10 @@ SAIGEN supports 50+ package managers including:
 ## Links
 
 - **Homepage**: https://sai.software
-- **Repository**: https://github.com/example42/sai-python
-- **Issues**: https://github.com/example42/sai-python/issues
+- **Repository**: https://github.com/example42/sai-suite
+- **Issues**: https://github.com/example42/sai-suite/issues
 - **PyPI**: https://pypi.org/project/saigen/
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/example42/sai-python/blob/main/LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.

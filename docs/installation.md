@@ -83,8 +83,8 @@ For contributing to the project:
 
 ```bash
 # Clone the repository
-git clone https://github.com/example42/sai-python.git
-cd sai-python
+git clone https://github.com/example42/sai-suite.git
+cd sai-suite
 
 # Install both packages in editable mode with dev dependencies
 pip install -e ./sai[dev]

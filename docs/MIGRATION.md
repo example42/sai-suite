@@ -94,7 +94,7 @@ sai/
 
 **After:**
 ```
-sai-python/
+sai-suite/
 ├── sai/
 │   ├── sai/
 │   └── pyproject.toml  # SAI config
@@ -291,8 +291,8 @@ pip install sai saigen
 
 ## Getting Help
 
-- **Questions?** Open a [discussion](https://github.com/example42/sai-python/discussions)
-- **Issues?** Report a [bug](https://github.com/example42/sai-python/issues)
+- **Questions?** Open a [discussion](https://github.com/example42/sai-suite/discussions)
+- **Issues?** Report a [bug](https://github.com/example42/sai-suite/issues)
 - **Documentation**: See [docs/](.)
 
 ## Summary

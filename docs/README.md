@@ -70,7 +70,7 @@ The **[summaries/](summaries/)** directory contains detailed implementation note
 - **Not sure which tool?** → [When to Use What](when-to-use-what.md)
 - **Installation issues?** → [Installation Guide](installation.md)
 - **Upgrading?** → [Migration Guide](MIGRATION.md)
-- **Found a bug?** → [Open an issue](https://github.com/example42/sai-python/issues)
+- **Found a bug?** → [Open an issue](https://github.com/example42/sai-suite/issues)
 
 ## 📋 Archive
 

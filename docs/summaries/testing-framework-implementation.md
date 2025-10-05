@@ -146,7 +146,7 @@ Updated Makefile with new targets:
 └─────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────┐
-│ sai-python repo (this one)                          │
+│ sai-suite repo (this one)                           │
 │                                                      │
 │  saigen package includes:                           │
 │  - Testing framework (saigen/testing/)              │
@@ -213,7 +213,7 @@ docker run --rm -v $(pwd):/data ghcr.io/example42/sai-test-ubuntu:latest \
 
 ## Next Steps
 
-### For sai-python repo:
+### For sai-suite repo:
 1. ✅ Testing framework implemented
 2. ✅ CLI command added
 3. ✅ Docker images created
@@ -248,7 +248,7 @@ docker run --rm -v $(pwd):/data ghcr.io/example42/sai-test-ubuntu:latest \
 
 ## Technical Decisions
 
-1. **Separate Repos** - Keep testing framework in sai-python, use in saidata
+1. **Separate Repos** - Keep testing framework in sai-suite, use in saidata
    - Rationale: Framework is a tool, saidata is data
    - Benefit: Can version and release independently
 
@@ -270,7 +270,7 @@ docker run --rm -v $(pwd):/data ghcr.io/example42/sai-test-ubuntu:latest \
 
 ## Files Created
 
-### sai-python repo:
+### sai-suite repo:
 - `saigen/testing/__init__.py`
 - `saigen/testing/models.py`
 - `saigen/testing/validator.py`

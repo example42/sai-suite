@@ -108,7 +108,7 @@ Successfully completed a comprehensive reorganization of the SAI Python reposito
 ## Final Structure
 
 ```
-sai-python/
+sai-suite/
 ├── sai/                          # SAI package
 │   ├── sai/                      # Source code
 │   ├── docs/                     # SAI documentation

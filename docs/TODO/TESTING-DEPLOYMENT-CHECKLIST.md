@@ -2,7 +2,7 @@
 
 This checklist guides you through deploying the testing framework to production.
 
-## Phase 1: sai-python Repository
+## Phase 1: sai-suite Repository
 
 ### Development
 - [x] Implement testing framework (`saigen/testing/`)
@@ -99,7 +99,7 @@ This checklist guides you through deploying the testing framework to production.
 - [ ] Copy GitHub Actions workflow
   ```bash
   mkdir -p .github/workflows
-  cp /path/to/sai-python/examples/ci-cd/github-actions-test-saidata.yml \
+  cp /path/to/sai-suite/examples/ci-cd/github-actions-test-saidata.yml \
      .github/workflows/test-saidata.yml
   ```
 
@@ -132,7 +132,7 @@ This checklist guides you through deploying the testing framework to production.
 
 - [ ] Create TESTING.md
   ```bash
-  cp /path/to/sai-python/examples/saidata-repo/TESTING-SETUP.md \
+  cp /path/to/sai-suite/examples/saidata-repo/TESTING-SETUP.md \
      TESTING.md
   ```
 
@@ -157,7 +157,7 @@ This checklist guides you through deploying the testing framework to production.
 
 - [ ] Run setup script on each machine
   ```bash
-  curl -sSL https://raw.githubusercontent.com/example42/sai-python/main/scripts/development/setup-test-runner.sh | bash
+  curl -sSL https://raw.githubusercontent.com/example42/sai-suite/main/scripts/development/setup-test-runner.sh | bash
   ```
 
 - [ ] Configure runners
@@ -218,7 +218,7 @@ This checklist guides you through deploying the testing framework to production.
 
 ## Verification Checklist
 
-### sai-python
+### sai-suite
 - [ ] `saigen test-system --help` works
 - [ ] Can test example files
 - [ ] Docker images build successfully
@@ -242,7 +242,7 @@ This checklist guides you through deploying the testing framework to production.
 
 If issues arise:
 
-### sai-python
+### sai-suite
 ```bash
 # Revert to previous version
 git revert <commit-hash>
@@ -285,14 +285,14 @@ sudo ./svc.sh stop
 
 ## Timeline
 
-- **Week 1**: Complete sai-python testing and release
+- **Week 1**: Complete sai-suite testing and release
 - **Week 2**: Deploy to saidata repository
 - **Week 3**: Set up lab machines (optional)
 - **Week 4**: Monitor, iterate, improve
 
 ## Support
 
-- Issues: https://github.com/example42/sai-python/issues
+- Issues: https://github.com/example42/sai-suite/issues
 - Discussions: https://github.com/example42/saidata/discussions
 - Documentation: https://sai.software/docs/testing
 

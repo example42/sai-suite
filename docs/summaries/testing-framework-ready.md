@@ -5,7 +5,7 @@
 
 ## Summary
 
-The saidata testing framework has been successfully implemented and tested. It's ready for use in both the sai-python and saidata repositories.
+The saidata testing framework has been successfully implemented and tested. It's ready for use in both the sai-suite and saidata repositories.
 
 ## What Was Built
 
@@ -78,7 +78,7 @@ Total: 4 | Passed: 1 | Failed: 0 | Skipped: 3 | Errors: 0
 
 ## How to Use
 
-### For Developers (sai-python)
+### For Developers (sai-suite)
 
 ```bash
 # Install in development mode
@@ -123,7 +123,7 @@ docker run --rm -v $(pwd):/data ghcr.io/example42/sai-test-ubuntu:latest \
 
 ## Next Steps
 
-### Immediate (sai-python repo)
+### Immediate (sai-suite repo)
 1. ✅ Framework implemented
 2. ✅ CLI command working
 3. ✅ Documentation complete

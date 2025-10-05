@@ -1,6 +1,28 @@
 # SAI Software Management Suite
 
-A monorepo containing two complementary tools for software management and metadata generation.
+> A comprehensive monorepo containing two complementary Python tools for software management and metadata generation.
+
+**Repository:** [github.com/example42/sai-suite](https://github.com/example42/sai-suite)  
+**Website:** [sai.software](https://sai.software)  
+**Saidata Repository:** [github.com/example42/saidata](https://github.com/example42/saidata)
+
+---
+
+## 📑 Table of Contents
+
+- [Two Packages, One Repository](#-two-packages-one-repository)
+- [Quick Start](#-quick-start)
+- [Documentation Hub](#-documentation-hub)
+- [Supported Package Managers](#supported-package-managers)
+- [Commands Overview](#commands)
+- [Configuration](#configuration)
+- [Repository Structure](#-repository-structure)
+- [Development](#-development)
+- [Use Cases](#use-cases)
+- [Troubleshooting & Support](#-troubleshooting--support)
+- [License](#-license)
+
+---
 
 ## 📦 Two Packages, One Repository
 
@@ -68,11 +90,69 @@ pip install saigen[all]
 
 **Not sure which to install?** See [When to Use What](docs/when-to-use-what.md)
 
-## 📖 Documentation
+### Quick Command Examples
 
-- **[When to Use What](docs/when-to-use-what.md)** - Choosing between SAI and SAIGEN
-- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
-- **[Monorepo Structure](MONOREPO.md)** - Understanding the repository structure
+**SAI (Execution):**
+```bash
+# Install software
+sai install nginx
+
+# Execute multiple actions
+sai apply infrastructure.yaml
+
+# View available providers
+sai providers list
+```
+
+**SAIGEN (Generation):**
+```bash
+# Generate saidata
+saigen generate nginx --providers apt brew
+
+# Search across 50+ repositories
+saigen repositories search redis
+
+# Validate saidata
+saigen validate nginx.yaml
+
+# Test saidata
+saigen test-system nginx.yaml
+```
+
+## 📖 Documentation Hub
+
+### 🚀 Getting Started
+- **[Quick Start Guide](QUICK-START.md)** - Get up and running in 5 minutes
+- **[When to Use What](docs/when-to-use-what.md)** - Choose the right tool for your needs
+- **[Installation Guide](docs/installation.md)** - Detailed installation instructions for all scenarios
+
+### 📚 Core Documentation
+- **[Documentation Index](docs/README.md)** - Complete documentation overview
+- **[Monorepo Structure](MONOREPO.md)** - Understanding the repository architecture
+- **[Architecture Diagram](docs/architecture-diagram.md)** - Visual guide to the system
+- **[Migration Guide](docs/MIGRATION.md)** - Upgrading from previous versions
+
+### 🔧 SAI Documentation
+- **[SAI README](sai/README.md)** - SAI package overview
+- **[SAI CLI Reference](sai/docs/cli-reference.md)** - Complete command reference
+- **[SAI Apply Command](sai/docs/sai-apply-command.md)** - Batch action execution
+- **[Template Engine](sai/docs/template-engine.md)** - Configuration templating
+- **[SAI Examples](sai/docs/examples/)** - Usage examples and patterns
+
+### 🤖 SAIGEN Documentation
+- **[SAIGEN README](saigen/README.md)** - SAIGEN package overview
+- **[SAIGEN CLI Reference](saigen/docs/cli-reference.md)** - Complete command reference
+- **[Generation Engine](saigen/docs/generation-engine.md)** - How generation works
+- **[Repository Management](saigen/docs/repository-management.md)** - Working with 50+ repositories
+- **[Configuration Guide](saigen/docs/configuration-guide.md)** - Advanced configuration
+- **[Testing Guide](saigen/docs/testing-guide.md)** - Testing saidata files
+- **[RAG Indexing Guide](saigen/docs/rag-indexing-guide.md)** - AI-enhanced generation
+- **[SAIGEN Examples](saigen/docs/examples/)** - Generation examples and patterns
+
+### 🛠️ Development & Contributing
+- **[Tests Organization](tests/README.md)** - Test suite structure and guidelines
+- **[Development Scripts](scripts/development/)** - Demo and development tools
+- **[Documentation Quick Reference](DOCS-QUICK-REFERENCE.md)** - Find docs fast
 
 ## 🛠️ Development
 
@@ -80,8 +160,8 @@ pip install saigen[all]
 
 ```bash
 # Clone the repository
-git clone https://github.com/example42/sai-python.git
-cd sai-python
+git clone https://github.com/example42/sai-suite.git
+cd sai-suite
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -100,63 +180,27 @@ saigen --version
 
 ```bash
 # Run tests
-make test
+make test                    # All tests
+make test-sai                # SAI tests only
+make test-saigen             # SAIGEN tests only
 
-# Format code
-make format
+# Code quality
+make format                  # Format code
+make lint                    # Run linters
 
-# Run linters
-make lint
+# Build and publish
+make build                   # Build both packages
+make publish-test            # Publish to TestPyPI
+make publish-prod            # Publish to PyPI
 
-# Build packages
-make build
-
-# See all available commands
-make help
+# Utilities
+make clean                   # Clean build artifacts
+make help                    # See all commands
 ```
 
-### Monorepo Structure
+**See [MONOREPO.md](MONOREPO.md) for complete development guide.**
 
-This repository uses a monorepo approach with separate packages:
 
-```
-sai-python/
-├── sai/              # SAI package (lightweight execution)
-│   └── pyproject.toml
-├── saigen/           # SAIGEN package (generation tool)
-│   └── pyproject.toml
-├── pyproject.toml    # Workspace configuration
-└── scripts/          # Build and deployment scripts
-```
-
-**Benefits:**
-- Install only what you need
-- Shared code and utilities
-- Independent versioning and releases
-- Unified development experience
-
-See [MONOREPO.md](MONOREPO.md) for details
-
-## 📚 Documentation
-
-**[📖 Documentation Quick Reference](DOCS-QUICK-REFERENCE.md)** - Find what you need fast!
-
-### Getting Started
-- **[Quick Start Guide](QUICK-START.md)** - Get up and running in minutes
-- **[When to Use What](docs/when-to-use-what.md)** - Choose the right tool for your needs
-- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
-
-### Package Documentation
-- **[📁 General Documentation](docs/)** - Shared documentation and guides
-- **[📁 SAI Documentation](sai/docs/)** - SAI-specific CLI reference and guides
-- **[📁 SAIGEN Documentation](saigen/docs/)** - SAIGEN-specific CLI reference and guides
-
-### Quick Links
-- **[SAI CLI Reference](sai/docs/cli-reference.md)** - SAI command reference
-- **[SAIGEN CLI Reference](saigen/docs/cli-reference.md)** - SAIGEN command reference
-- **[Architecture Diagram](docs/architecture-diagram.md)** - Visual guide to the monorepo
-- **[Migration Guide](docs/MIGRATION.md)** - Upgrading from previous versions
-- **[Monorepo Structure](MONOREPO.md)** - Repository architecture and workflows
 
 ## Supported Package Managers
 
@@ -196,232 +240,130 @@ SAIGEN now supports 50+ package managers across all major platforms:
 - **Kubernetes**: helm charts
 - **Scientific**: spack, conda-forge
 
-## Quick Start
+## 💡 Key Features at a Glance
 
-### SAI CLI Tool
+### SAI Features
+✅ Execute software actions across platforms  
+✅ Multi-provider support (apt, brew, winget, etc.)  
+✅ Batch action execution with `sai apply`  
+✅ Dry-run mode for safe testing  
+✅ Provider auto-detection and caching  
+✅ Comprehensive history and metrics  
+✅ Shell completion support  
 
-1. Execute software actions using providers:
+### SAIGEN Features
+✅ Generate saidata for 50+ package managers  
+✅ AI-powered metadata generation (OpenAI, Anthropic, Ollama)  
+✅ Search across all repositories simultaneously  
+✅ Schema validation and quality assessment  
+✅ Batch processing with concurrent operations  
+✅ RAG (Retrieval-Augmented Generation) support  
+✅ Comprehensive testing framework for saidata  
+✅ Repository cache management  
+
+---
+
+## 🎯 Quick Examples
+
+### SAI: Execute Software Actions
+
 ```bash
-# Install nginx using available providers
+# Install software using available providers
 sai install nginx
 
-# Start a service
-sai start nginx
+# Execute multiple actions from a file
+sai apply infrastructure.yaml --parallel
+
+# View available providers and statistics
+sai providers list
+sai stats --detailed
 
 # Dry run to preview actions
-sai install nginx --dry-run
+sai install postgresql --dry-run
 ```
 
-2. Execute multiple actions from a file:
+### SAIGEN: Generate & Validate Metadata
+
 ```bash
-# Apply actions from a YAML file
-sai apply actions.yaml
+# Generate saidata with AI assistance
+saigen generate nginx --providers apt brew
 
-# Apply with parallel execution
-sai apply actions.yaml --parallel
+# Search across 50+ repositories
+saigen repositories search redis --platform linux
 
-# Apply and continue on errors
-sai apply actions.yaml --continue-on-error
-```
-
-2. View available providers and statistics:
-```bash
-sai providers list
-sai actions nginx
-sai stats --detailed
-sai config-show
-```
-
-### SAIGEN AI Generation Tool
-
-1. **Explore Available Repositories** (50+ supported):
-```bash
-# List all repositories
-saigen repositories list-repos
-
-# Filter by platform
-saigen repositories list-repos --platform linux
-
-# Filter by type
-saigen repositories list-repos --type npm
-```
-
-2. **Search Packages Across All Repositories**:
-```bash
-# Search across all 50+ repositories
-saigen repositories search "redis"
-
-# Search with platform filter
-saigen repositories search "nginx" --platform linux --limit 10
-
-# Get detailed package information
-saigen repositories info "docker" --platform linux
-```
-
-3. **Repository Statistics and Management**:
-```bash
-# Show comprehensive statistics
-saigen repositories stats
-
-# Update repository caches (concurrent operations)
-saigen repositories update-cache
-
-# JSON output for automation
-saigen repositories stats --format json
-```
-
-4. **Configure LLM Provider**:
-```bash
-export OPENAI_API_KEY="your-api-key"
-# or
-export ANTHROPIC_API_KEY="your-api-key"
-```
-
-5. **Generate Saidata with Repository Data**:
-```bash
-# Generate using repository data + AI
-saigen generate nginx
-
-# Generate with specific providers
-saigen generate nginx --llm-provider openai --providers apt brew --output nginx.yaml
-
-# View current configuration
-saigen config --show
-```
-
-6. **Validate Generated Files**:
-```bash
+# Validate and test saidata
 saigen validate nginx.yaml
-saigen validate --show-context --format json nginx.yaml
+saigen test-system nginx.yaml
+
+# Batch generate multiple packages
+saigen batch --software-list "nginx,redis,postgresql"
 ```
 
-## Commands
+## 📋 Commands Overview
 
 ### SAI Commands
 
-#### Software Management
-- `sai install <software>` - Install software using available providers
-- `sai uninstall <software>` - Uninstall software using available providers
-- `sai start <software>` - Start software/service
-- `sai stop <software>` - Stop software/service
-- `sai restart <software>` - Restart software/service
-- `sai status <software>` - Show software service status
-- `sai info <software>` - Show software information
-- `sai search <term>` - Search for available software
-- `sai list` - List installed software managed through sai
-- `sai logs <software>` - Show software service logs
-- `sai version <software>` - Show software version information
-- `sai apply <action_file>` - Apply multiple actions from a YAML/JSON file
+**Software Management**
+```bash
+sai install <software>        # Install software
+sai uninstall <software>      # Uninstall software
+sai start|stop|restart <sw>   # Service management
+sai status <software>         # Check status
+sai apply <file>              # Batch actions
+```
 
-#### Provider Management
-- `sai providers list` - List available providers
-- `sai providers detect` - Detect and refresh provider availability
-- `sai providers info <provider>` - Show detailed provider information
-- `sai providers clear-cache` - Clear provider detection cache
-- `sai providers cache-status` - Show provider cache status
-- `sai providers refresh-cache` - Refresh provider detection cache
+**Provider Management**
+```bash
+sai providers list            # List providers
+sai providers detect          # Detect available providers
+sai providers info <name>     # Provider details
+```
 
-#### Configuration Management
-- `sai config show` - Display current SAI configuration
-- `sai config set <key> <value>` - Set configuration value
-- `sai config reset [key]` - Reset configuration to defaults
-- `sai config validate` - Validate configuration file
-- `sai config paths` - Show configuration file search paths
+**Configuration & Utilities**
+```bash
+sai config show               # Show configuration
+sai stats                     # Show statistics
+sai history list              # Execution history
+sai completion install        # Shell completion
+```
 
-#### History and Analytics
-- `sai history list` - Show execution history
-- `sai history metrics` - Show execution metrics and statistics
-- `sai history clear` - Clear execution history
-
-#### Shell Integration
-- `sai completion install` - Install shell completion
-- `sai completion uninstall` - Uninstall shell completion
-
-#### Specialized Tool Actions
-- `sai scan <software>` - Scan for packages/vulnerabilities (syft, grype)
-- `sai generate <software>` - Generate SBOM or reports (syft)
-- `sai debug <software>` - Start debugging session (gdb)
-- `sai attach <software>` - Attach debugger to running process (gdb)
-- `sai report <software>` - Generate vulnerability/security reports (grype)
-- `sai export <software>` - Export data in multiple formats (syft, grype)
-- `sai update <software>` - Update databases/signatures (grype)
-- `sai convert <software>` - Convert between formats (syft)
-- `sai validate <software>` - Validate generated files (syft)
-- `sai filter <software>` - Apply filters to scan results (grype)
-- `sai check <software>` - Check for specific issues/CVEs (grype)
-
-#### Service Management (systemd-based systems)
-- `sai enable <software>` - Enable service auto-start
-- `sai disable <software>` - Disable service auto-start
-
-#### Utilities
-- `sai stats` - Show comprehensive statistics about providers and actions
-- `sai validate <saidata-file>` - Validate a saidata file against the schema
-- `sai --version` - Show sai version information
+**📖 Full command reference:** [SAI CLI Reference](sai/docs/cli-reference.md)
 
 ### SAIGEN Commands
 
-#### Generation and Validation
-- `saigen generate <software>` - Generate saidata for software with AI assistance
-- `saigen validate <file>` - Validate saidata file against schema with detailed reporting
-- `saigen quality <file>` - Assess quality metrics for saidata files with comprehensive scoring
-- `saigen update <file>` - Update existing saidata with new information using intelligent merging
-- `saigen batch` - Generate saidata for multiple software packages in parallel
+**Generation & Validation**
+```bash
+saigen generate <software>    # Generate saidata
+saigen validate <file>        # Validate saidata
+saigen quality <file>         # Quality assessment
+saigen batch                  # Batch generation
+saigen test-system <file>     # Test saidata
+```
 
-#### Configuration Management
-- `saigen config show` - Display current configuration including LLM providers
-- `saigen config set <key> <value>` - Set configuration values with dot notation
-- `saigen config validate` - Validate configuration file syntax and settings
-- `saigen config init` - Initialize new configuration file with defaults
+**Repository Management**
+```bash
+saigen repositories list-repos      # List all repositories
+saigen repositories search <query>  # Search packages
+saigen repositories info <package>  # Package details
+saigen repositories stats           # Repository statistics
+saigen repositories update-cache    # Update caches
+```
 
-#### Universal Repository Management
-- `saigen repositories list-repos` - List all 50+ supported repositories with filtering
-- `saigen repositories search <query>` - Search packages across all repositories
-- `saigen repositories info <package>` - Get detailed package information
-- `saigen repositories stats` - Show comprehensive repository statistics and health
-- `saigen repositories update-cache` - Update repository caches with concurrent operations
+**Configuration**
+```bash
+saigen config show            # Show configuration
+saigen config set <key> <val> # Set configuration
+saigen config init            # Initialize config
+```
 
-#### Repository Filtering and Search
-- `--platform <linux|macos|windows|universal>` - Filter by platform
-- `--type <apt|brew|npm|pypi|cargo|...>` - Filter by repository type
-- `--limit <number>` - Limit search results
-- `--format <table|json|yaml>` - Choose output format
+**📖 Full command reference:** [SAIGEN CLI Reference](saigen/docs/cli-reference.md)
 
-#### Help and Information
-- `saigen --help` - Show all available commands and options
-- `saigen --version` - Show version information
+## 🔍 Troubleshooting & Support
 
-#### Generation Options
-- `--llm-provider` - Choose LLM provider (openai, anthropic, ollama)
-- `--providers` - Target package providers (50+ supported)
-- `--output` - Output file path
-- `--dry-run` - Preview generation without making API calls
-- `--verbose` - Enable detailed logging
-
-#### Update Options
-- `--merge-strategy` - Choose merge strategy (preserve, enhance, replace)
-- `--backup/--no-backup` - Control backup creation (default: enabled)
-- `--interactive` - Enable interactive conflict resolution
-- `--force-update` - Regenerate completely ignoring existing content
-
-#### Batch Options
-- `--input-file` - Input file containing software names
-- `--software-list` - Software names from command line
-- `--max-concurrent` - Maximum concurrent generations (default: 3)
-- `--category-filter` - Filter by category using regex patterns
-- `--preview` - Preview what would be processed without generating
-
-#### Validation Options  
-- `--format` - Output format (text, json, yaml)
-- `--show-context` - Include detailed error context
-- `--strict` - Enable strict validation mode
-- `--advanced` - Enable advanced validation with quality metrics
-- `--no-repository-check` - Skip repository accuracy checking
-- `--detailed` - Show detailed quality metrics and suggestions
-
-## Troubleshooting
-
-For common issues and solutions, see the [Troubleshooting Guide](docs/troubleshooting.md).
+- **Repository Issues:** [Repository Troubleshooting](saigen/docs/repository-troubleshooting.md)
+- **Bug Reports:** [Open an issue](https://github.com/example42/sai-suite/issues)
+- **Questions:** [GitHub Discussions](https://github.com/example42/sai-suite/discussions)
+- **Documentation:** See [Documentation Hub](#-documentation-hub) above
 
 ## Configuration
 
@@ -523,72 +465,100 @@ validation:
   auto_fix_common_issues: true
 ```
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```
-├── sai/                    # SAI CLI Tool
-│   ├── cli/               # CLI interface and commands
-│   ├── models/            # Data models (config, provider data)
-│   └── utils/             # Utilities (config management)
-├── saigen/                # SAIGEN AI Generation Tool
-│   ├── cli/               # CLI interface and commands
-│   ├── core/              # Core generation engine
-│   ├── llm/               # LLM provider integrations
-│   ├── models/            # Data models (saidata, generation)
-│   ├── repositories/      # Package repository integrations
-│   └── utils/             # Utilities and helpers
-├── cache/repositories/    # Repository-based saidata cache
-├── providers/             # Provider data files
-├── schemas/               # JSON schema definitions
-├── docs/                  # Documentation
-├── tests/                 # Test suite
-└── examples/              # Usage examples
+sai-suite/
+├── sai/                          # SAI package (lightweight execution)
+│   ├── sai/                      # Source code
+│   │   ├── cli/                  # CLI interface and commands
+│   │   ├── core/                 # Core execution engine
+│   │   ├── models/               # Data models
+│   │   ├── providers/            # Provider implementations
+│   │   └── utils/                # Utilities
+│   ├── docs/                     # SAI-specific documentation
+│   │   ├── examples/             # SAI usage examples
+│   │   └── cli-reference.md      # Command reference
+│   └── pyproject.toml            # SAI package configuration
+│
+├── saigen/                       # SAIGEN package (generation tool)
+│   ├── saigen/                   # Source code
+│   │   ├── cli/                  # CLI interface and commands
+│   │   ├── core/                 # Generation engine
+│   │   ├── llm/                  # LLM provider integrations
+│   │   ├── models/               # Data models
+│   │   ├── repositories/         # 50+ repository integrations
+│   │   ├── testing/              # Testing framework
+│   │   └── utils/                # Utilities
+│   ├── docs/                     # SAIGEN-specific documentation
+│   │   ├── examples/             # Generation examples
+│   │   ├── cli-reference.md      # Command reference
+│   │   ├── repository-management.md
+│   │   └── testing-guide.md
+│   └── pyproject.toml            # SAIGEN package configuration
+│
+├── docs/                         # Shared documentation
+│   ├── summaries/                # Implementation summaries
+│   ├── archive/                  # Archived documentation
+│   ├── TODO/                     # Pending tasks
+│   ├── installation.md
+│   ├── when-to-use-what.md
+│   └── MIGRATION.md
+│
+├── tests/                        # Comprehensive test suite
+│   ├── sai/                      # SAI-specific tests
+│   ├── saigen/                   # SAIGEN-specific tests
+│   ├── shared/                   # Shared component tests
+│   └── integration/              # Integration tests
+│
+├── scripts/                      # Build and utility scripts
+│   └── development/              # Development scripts
+│       ├── sai/                  # SAI demo scripts
+│       └── saigen/               # SAIGEN demo scripts
+│
+├── examples/                     # Shared examples (CI/CD)
+├── schemas/                      # JSON schema definitions
+├── providers/                    # Provider data files
+├── pyproject.toml                # Workspace configuration
+├── README.md                     # This file
+├── QUICK-START.md                # Quick start guide
+├── MONOREPO.md                   # Monorepo architecture
+└── DOCS-QUICK-REFERENCE.md       # Documentation index
 ```
 
-## Project Relationship
+**See [MONOREPO.md](MONOREPO.md) for detailed architecture information.**
 
-- **SAI** consumes saidata files and provider configurations to execute software management actions
-- **SAIGEN** generates saidata files using AI and repository data that SAI can then use
-- Both tools share common schemas and data formats but operate independently
+## 🔄 How SAI and SAIGEN Work Together
+
+```
+┌─────────────┐         ┌──────────────┐         ┌─────────────┐
+│   SAIGEN    │ creates │   Saidata    │  used   │     SAI     │
+│ (Generator) │────────>│    Files     │────────>│ (Executor)  │
+└─────────────┘         └──────────────┘   by    └─────────────┘
+      │                                               │
+      │ AI + Repository Data                          │ Provider-based
+      │ Schema Validation                             │ Action Execution
+      │ Quality Assessment                            │ Multi-platform
+      └───────────────────────────────────────────────┘
+                    Independent but Complementary
+```
+
+- **SAI** consumes saidata files to execute software management actions
+- **SAIGEN** generates saidata files using AI and repository data
+- Both share common schemas and data formats but operate independently
 - SAI focuses on execution and action management
 - SAIGEN focuses on metadata generation and validation
 
-## Specialized Providers
+## 🛡️ Specialized Providers
 
-SAI includes specialized providers for security, debugging, and analysis tools:
+SAI includes specialized providers for security, debugging, and analysis:
 
-### Network Security (nmap)
-- **Port scanning**: `sai search <target>` - Scan ports on target hosts
-- **Service discovery**: `sai info <target>` - Detect services and versions
-- **Script scanning**: `sai logs <target>` - Run NSE scripts
-- **Performance tuning**: `sai list <target>` - Optimized timing scans
-- **Version detection**: `sai version <target>` - Detect service versions on target
+- **Network Security (nmap)**: Port scanning, service discovery, vulnerability detection
+- **SBOM Generation (syft)**: Package scanning, SBOM generation, format conversion
+- **Vulnerability Scanning (grype)**: Security scanning, CVE checking, report generation
+- **Debugging (gdb)**: Interactive debugging, process attachment, core dump analysis
 
-### SBOM Generation (syft)
-- **Package scanning**: `sai scan <path>` - Scan directories/images for packages
-- **SBOM generation**: `sai generate <image>` - Generate SBOM from container images
-- **Format conversion**: `sai convert <sbom>` - Convert between SBOM formats
-- **Multi-format export**: `sai export <target>` - Export to SPDX, CycloneDX, table formats
-- **SBOM validation**: `sai validate <sbom>` - Validate SBOM format compliance
-- **SBOM comparison**: `sai diff <baseline> <current>` - Compare two SBOMs
-
-### Vulnerability Scanning (grype)
-- **Security scanning**: `sai scan <target>` - Scan for vulnerabilities
-- **Report generation**: `sai report <target>` - Generate vulnerability reports
-- **Severity filtering**: `sai filter <target>` - Filter by vulnerability severity
-- **Multi-format export**: `sai export <target>` - Export to JSON, SARIF, table formats
-- **Database updates**: `sai update` - Update vulnerability database
-- **CVE checking**: `sai check <target>` - Check for specific CVEs
-
-### Debugging (gdb)
-- **Interactive debugging**: `sai debug <binary>` - Start debugging session
-- **Process attachment**: `sai attach <process>` - Attach to running process
-- **Core dump analysis**: `sai core_dump <binary>` - Analyze core dumps
-- **Stack traces**: `sai backtrace <process>` - Get stack trace from running process
-- **Breakpoint debugging**: `sai breakpoint <binary>` - Set breakpoints and debug
-- **Variable watching**: `sai watch <binary>` - Watch variable changes
-- **Memory inspection**: `sai inspect <process>` - Inspect memory and variables
-- **Execution profiling**: `sai profile <binary>` - Profile application execution
+**📖 See:** [Specialized Providers Roadmap](sai/docs/specialized-providers-roadmap.md)
 
 ## Use Cases
 
@@ -606,6 +576,26 @@ SAI includes specialized providers for security, debugging, and analysis tools:
 - AI-assisted software documentation
 - Repository data analysis and enrichment
 
-## License
+## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## 🔗 Quick Links
+
+| Resource | Link |
+|----------|------|
+| **Website** | [sai.software](https://sai.software) |
+| **Repository** | [github.com/example42/sai-suite](https://github.com/example42/sai-suite) |
+| **Saidata Repo** | [github.com/example42/saidata](https://github.com/example42/saidata) |
+| **Issues** | [Report a bug](https://github.com/example42/sai-suite/issues) |
+| **Discussions** | [Ask questions](https://github.com/example42/sai-suite/discussions) |
+| **SAI on PyPI** | [pypi.org/project/sai](https://pypi.org/project/sai/) |
+| **SAIGEN on PyPI** | [pypi.org/project/saigen](https://pypi.org/project/saigen/) |
+
+---
+
+**Made with ❤️ by the SAI team**
+
+*Star ⭐ this repository if you find it useful!*

@@ -32,8 +32,8 @@ pip install sai[generation]
 
 ```bash
 # Clone repository
-git clone https://github.com/example42/sai-python.git
-cd sai-python
+git clone https://github.com/example42/sai-suite.git
+cd sai-suite
 
 # Create virtual environment
 python -m venv .venv
@@ -82,7 +82,7 @@ make build
 ## Package Structure
 
 ```
-sai-python/
+sai-suite/
 ├── sai/              # SAI package
 │   ├── sai/          # Source code
 │   ├── pyproject.toml
@@ -142,7 +142,7 @@ make publish-prod     # Publish to PyPI
 - **Which package?** → [When to Use What](docs/when-to-use-what.md)
 - **How to install?** → [Installation Guide](docs/installation.md)
 - **How to contribute?** → [MONOREPO.md](MONOREPO.md)
-- **Found a bug?** → [Open an issue](https://github.com/example42/sai-python/issues)
+- **Found a bug?** → [Open an issue](https://github.com/example42/sai-suite/issues)
 
 ## Quick Reference
 

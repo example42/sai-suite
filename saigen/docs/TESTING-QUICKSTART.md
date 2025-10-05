@@ -2,12 +2,12 @@
 
 Get started with saidata testing in 5 minutes.
 
-## For sai-python Developers
+## For sai-suite Developers
 
 ### 1. Install Development Version
 
 ```bash
-cd sai-python
+cd sai-suite
 pip install -e ".[dev]"
 ```
 
@@ -38,7 +38,7 @@ saigen test-system nginx-example.yaml
 # In saidata repo
 mkdir -p .github/workflows
 curl -o .github/workflows/test-saidata.yml \
-  https://raw.githubusercontent.com/example42/sai-python/main/examples/ci-cd/github-actions-test-saidata.yml
+  https://raw.githubusercontent.com/example42/sai-suite/main/examples/ci-cd/github-actions-test-saidata.yml
 ```
 
 ### 2. Commit and Push

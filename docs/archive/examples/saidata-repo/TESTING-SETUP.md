@@ -11,7 +11,7 @@ Copy the workflow file to your saidata repository:
 ```bash
 # In saidata repo
 mkdir -p .github/workflows
-cp /path/to/sai-python/examples/ci-cd/github-actions-test-saidata.yml \
+cp /path/to/sai-suite/examples/ci-cd/github-actions-test-saidata.yml \
    .github/workflows/test-saidata.yml
 ```
 
@@ -61,7 +61,7 @@ For real installation tests on your lab machines:
 On your lab machine:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/example42/sai-python/main/scripts/development/setup-test-runner.sh | bash
+curl -sSL https://raw.githubusercontent.com/example42/sai-suite/main/scripts/development/setup-test-runner.sh | bash
 ```
 
 ### 2. Configure Runner
@@ -204,7 +204,7 @@ Download from Actions tab > Workflow run > Artifacts
 ## Support
 
 - Documentation: https://sai.software/docs/testing
-- Issues: https://github.com/example42/sai-python/issues
+- Issues: https://github.com/example42/sai-suite/issues
 - Discussions: https://github.com/example42/saidata/discussions
 
 ## Next Steps

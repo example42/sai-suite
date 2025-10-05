@@ -95,11 +95,11 @@ all = [
 [project.urls]
 Homepage = "https://sai.software"
 Documentation = "https://sai.software/docs"
-Repository = "https://github.com/example42/sai-python"
-Issues = "https://github.com/example42/sai-python/issues"
-Changelog = "https://github.com/example42/sai-python/blob/main/CHANGELOG.md"
-"Bug Reports" = "https://github.com/example42/sai-python/issues"
-"Source Code" = "https://github.com/example42/sai-python"
+Repository = "https://github.com/example42/sai-suite"
+Issues = "https://github.com/example42/sai-suite/issues"
+Changelog = "https://github.com/example42/sai-suite/blob/main/CHANGELOG.md"
+"Bug Reports" = "https://github.com/example42/sai-suite/issues"
+"Source Code" = "https://github.com/example42/sai-suite"
 "Download" = "https://pypi.org/project/sai/"
 
 [project.scripts]

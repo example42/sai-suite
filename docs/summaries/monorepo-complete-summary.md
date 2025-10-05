@@ -124,7 +124,7 @@ Created separate READMEs for each package to avoid build issues with external fi
 ### Package Structure
 
 ```
-sai-python/
+sai-suite/
 ├── sai/                          # SAI package
 │   ├── sai/                      # Source code
 │   │   ├── cli/

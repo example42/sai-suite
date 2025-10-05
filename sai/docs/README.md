@@ -39,9 +39,9 @@ sai apply --config infrastructure.yaml
 ## 🔗 External Resources
 
 - **Homepage**: https://sai.software
-- **Repository**: https://github.com/example42/sai-python
+- **Repository**: https://github.com/example42/sai-suite
 - **PyPI**: https://pypi.org/project/sai/
-- **Issues**: https://github.com/example42/sai-python/issues
+- **Issues**: https://github.com/example42/sai-suite/issues
 
 ## 📝 Contributing
 
