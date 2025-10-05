@@ -126,13 +126,13 @@ Created separate READMEs for each package to avoid build issues with external fi
 ```
 sai-suite/
 ├── sai/                          # SAI package
-│   ├── sai/                      # Source code
-│   │   ├── cli/
-│   │   ├── core/
-│   │   ├── models/
-│   │   ├── providers/
-│   │   └── utils/
 │   ├── pyproject.toml            # SAI configuration
+│   ├── __init__.py               # Package root
+│   ├── cli/                      # Source code
+│   ├── core/
+│   ├── models/
+│   ├── providers/
+│   └── utils/
 │   └── README.md                 # SAI README
 ├── saigen/                       # SAIGEN package
 │   ├── saigen/                   # Source code

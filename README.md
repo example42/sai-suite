@@ -490,14 +490,15 @@ saigen config init            # Initialize config
 ```
 sai-suite/
 ├── sai/                          # SAI package (lightweight execution)
-│   ├── sai/                      # Source code
-│   │   ├── cli/                  # CLI interface and commands
-│   │   ├── core/                 # Core execution engine
-│   │   ├── models/               # Data models
-│   │   ├── providers/            # Provider implementations
-│   │   └── utils/                # Utilities
-│   ├── docs/                     # SAI-specific documentation
-│   │   ├── examples/             # SAI usage examples
+│   ├── pyproject.toml            # Package configuration
+│   ├── __init__.py               # Package root
+│   ├── cli/                      # CLI interface and commands
+│   ├── core/                     # Core execution engine
+│   ├── models/                   # Data models
+│   ├── providers/                # Provider implementations
+│   ├── utils/                    # Utilities
+│   └── docs/                     # SAI-specific documentation
+│       └── examples/             # SAI usage examples
 │   │   └── cli-reference.md      # Command reference
 │   └── pyproject.toml            # SAI package configuration
 │

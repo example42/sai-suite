@@ -35,12 +35,16 @@ pip install sai[generation]
 git clone https://github.com/example42/sai-suite.git
 cd sai-suite
 
-# Create virtual environment
-python -m venv .venv
+# Create virtual environment (use python3 if python not found)
+python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # Install both packages in editable mode
 make install-both
+
+# Verify installation
+sai --version
+saigen --version
 ```
 
 ### Common Tasks
@@ -84,8 +88,9 @@ make build
 ```
 sai-suite/
 ├── sai/              # SAI package
-│   ├── sai/          # Source code
 │   ├── pyproject.toml
+│   ├── __init__.py   # Package root
+│   ├── cli/          # Source code
 │   └── README.md
 ├── saigen/           # SAIGEN package
 │   ├── saigen/       # Source code

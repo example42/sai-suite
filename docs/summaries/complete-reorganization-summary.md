@@ -110,13 +110,16 @@ Successfully completed a comprehensive reorganization of the SAI Python reposito
 ```
 sai-suite/
 ├── sai/                          # SAI package
-│   ├── sai/                      # Source code
-│   ├── docs/                     # SAI documentation
-│   │   ├── README.md
-│   │   ├── cli-reference.md
-│   │   └── examples/             # SAI examples
 │   ├── pyproject.toml            # SAI configuration
-│   └── README.md                 # SAI package README
+│   ├── README.md                 # SAI package README
+│   ├── __init__.py               # Package root
+│   ├── cli/                      # Source code
+│   ├── core/
+│   ├── models/
+│   └── docs/                     # SAI documentation
+│       ├── README.md
+│       ├── cli-reference.md
+│       └── examples/             # SAI examples
 │
 ├── saigen/                       # SAIGEN package
 │   ├── saigen/                   # Source code

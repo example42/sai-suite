@@ -8,7 +8,9 @@ This repository contains both SAI and SAIGEN as separate pip packages in a monor
 sai-suite/
 ├── sai/                    # SAI package (lightweight execution tool)
 │   ├── pyproject.toml     # SAI package configuration
-│   ├── sai/               # SAI source code
+│   ├── __init__.py        # Package root
+│   ├── cli/               # SAI source code
+│   ├── core/
 │   └── ...
 ├── saigen/                # SAIGEN package (generation tool)
 │   ├── pyproject.toml     # SAIGEN package configuration
