@@ -1,0 +1,26 @@
+# Example saidata file for testing Python (schema 0.3)
+# Python is commonly installed, so this should pass on most systems
+
+version: "0.3"
+
+metadata:
+  name: python3
+  description: Python programming language
+  version: "3.11"
+  homepage: https://www.python.org
+  license: PSF
+  category: programming-language
+
+packages:
+  - name: apt
+    package_name: python3
+  - name: dnf
+    package_name: python3
+  - name: brew
+    package_name: python3
+
+# Note: Services and files are commented out since Python
+# doesn't typically run as a service and file locations vary
+
+# Test this file with:
+# saigen test-system python-example.yaml

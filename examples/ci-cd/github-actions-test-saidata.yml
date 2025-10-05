@@ -1,0 +1,176 @@
+# Example GitHub Actions workflow for testing saidata files
+# This file should be placed in the saidata repository at:
+# .github/workflows/test-saidata.yml
+
+name: Test Saidata
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**/*.yaml'
+      - 'packages/**/*.yml'
+  push:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run full test suite daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  # Quick validation on all platforms
+  validate:
+    name: Validate Schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install saigen
+        run: pip install saigen
+      
+      - name: Validate all saidata files
+        run: |
+          find packages/ -name "*.yaml" -o -name "*.yml" | \
+            xargs -I {} saigen validate {}
+
+  # Test on Linux distributions using Docker
+  test-linux-docker:
+    name: Test on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, debian, fedora, alpine]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test saidata files
+        run: |
+          docker run --rm -v $PWD:/data \
+            ghcr.io/example42/sai-test-${{ matrix.os }}:latest \
+            saigen test-system --batch --format json -o /data/test-results-${{ matrix.os }}.json /data/packages
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results-${{ matrix.os }}.json
+
+  # Test on macOS with Homebrew
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install saigen
+        run: pip install saigen
+      
+      - name: Test saidata files
+        run: |
+          saigen test-system --batch --format json -o test-results-macos.json packages/
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-macos
+          path: test-results-macos.json
+
+  # Test on Windows with winget
+  test-windows:
+    name: Test on Windows
+    runs-on: windows-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install saigen
+        run: pip install saigen
+      
+      - name: Test saidata files
+        run: |
+          saigen test-system --batch --format json -o test-results-windows.json packages/
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-windows
+          path: test-results-windows.json
+
+  # Real installation tests on self-hosted runners
+  test-real-install:
+    name: Real Installation Test
+    runs-on: [self-hosted, linux, bare-metal]
+    needs: validate
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install saigen
+        run: pip install saigen
+      
+      - name: Test with real installation
+        run: |
+          sudo saigen test-system --real-install --batch --format junit -o test-results-real.xml packages/
+      
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results-real.xml
+
+  # Generate test report
+  report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [test-linux-docker, test-macos, test-windows]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results
+      
+      - name: Generate summary report
+        run: |
+          echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          for file in test-results/*/test-results-*.json; do
+            if [ -f "$file" ]; then
+              os=$(basename "$file" | sed 's/test-results-//;s/.json//')
+              echo "## $os" >> $GITHUB_STEP_SUMMARY
+              
+              # Extract summary from JSON
+              total=$(jq -r '.summary.total_tests' "$file")
+              passed=$(jq -r '.summary.passed' "$file")
+              failed=$(jq -r '.summary.failed' "$file")
+              
+              echo "- Total: $total" >> $GITHUB_STEP_SUMMARY
+              echo "- Passed: $passed" >> $GITHUB_STEP_SUMMARY
+              echo "- Failed: $failed" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done

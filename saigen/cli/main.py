@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.
 
 from ..utils.config import get_config_manager, get_config
 from ..version import get_version
-from .commands import validate, generate, config, cache, test, update, refresh_versions
+from .commands import validate, generate, config, cache, test, update, refresh_versions, test_system
 
 
 @click.group()
@@ -94,6 +94,9 @@ cli.add_command(index)
 # Add quality command for advanced validation
 from .commands.quality import quality
 cli.add_command(quality)
+
+# Add test-system command for real system testing
+cli.add_command(test_system)
 
 
 def main():

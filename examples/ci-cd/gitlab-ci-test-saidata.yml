@@ -1,0 +1,101 @@
+# Example GitLab CI configuration for testing saidata files
+# This file should be placed in the saidata repository at:
+# .gitlab-ci.yml
+
+stages:
+  - validate
+  - test
+  - report
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
+# Validate schema on all files
+validate:
+  stage: validate
+  image: python:3.11
+  script:
+    - pip install saigen
+    - find packages/ -name "*.yaml" -o -name "*.yml" | xargs -I {} saigen validate {}
+
+# Test on Ubuntu
+test:ubuntu:
+  stage: test
+  image: ghcr.io/example42/sai-test-ubuntu:latest
+  script:
+    - saigen test-system --batch --format json -o test-results-ubuntu.json packages/
+  artifacts:
+    reports:
+      junit: test-results-ubuntu.json
+    paths:
+      - test-results-ubuntu.json
+    when: always
+
+# Test on Debian
+test:debian:
+  stage: test
+  image: ghcr.io/example42/sai-test-debian:latest
+  script:
+    - saigen test-system --batch --format json -o test-results-debian.json packages/
+  artifacts:
+    paths:
+      - test-results-debian.json
+    when: always
+
+# Test on Fedora
+test:fedora:
+  stage: test
+  image: ghcr.io/example42/sai-test-fedora:latest
+  script:
+    - saigen test-system --batch --format json -o test-results-fedora.json packages/
+  artifacts:
+    paths:
+      - test-results-fedora.json
+    when: always
+
+# Test on Alpine
+test:alpine:
+  stage: test
+  image: ghcr.io/example42/sai-test-alpine:latest
+  script:
+    - saigen test-system --batch --format json -o test-results-alpine.json packages/
+  artifacts:
+    paths:
+      - test-results-alpine.json
+    when: always
+
+# Generate test report
+report:
+  stage: report
+  image: python:3.11
+  dependencies:
+    - test:ubuntu
+    - test:debian
+    - test:fedora
+    - test:alpine
+  script:
+    - |
+      echo "# Test Results Summary" > report.md
+      for file in test-results-*.json; do
+        if [ -f "$file" ]; then
+          os=$(basename "$file" | sed 's/test-results-//;s/.json//')
+          echo "## $os" >> report.md
+          python3 -c "
+      import json
+      with open('$file') as f:
+          data = json.load(f)
+          print(f\"- Total: {data['summary']['total_tests']}\")
+          print(f\"- Passed: {data['summary']['passed']}\")
+          print(f\"- Failed: {data['summary']['failed']}\")
+      " >> report.md
+        fi
+      done
+    - cat report.md
+  artifacts:
+    paths:
+      - report.md
+    when: always

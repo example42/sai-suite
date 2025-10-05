@@ -1,0 +1,39 @@
+# Example saidata file for testing (schema 0.3)
+# This demonstrates what the testing framework validates
+
+version: "0.3"
+
+metadata:
+  name: nginx
+  description: High-performance HTTP server and reverse proxy
+  version: "1.24.0"
+  homepage: https://nginx.org
+  license: BSD-2-Clause
+  category: web-server
+
+packages:
+  - name: apt
+    package_name: nginx
+  - name: dnf
+    package_name: nginx
+  - name: brew
+    package_name: nginx
+
+services:
+  - name: nginx
+    service_name: nginx
+
+files:
+  - name: nginx_config
+    path: /etc/nginx/nginx.conf
+    type: config
+  - name: nginx_binary
+    path: /usr/sbin/nginx
+    type: binary
+
+# Test this file with:
+# saigen test-system nginx-example.yaml
+#
+# Or with Docker:
+# docker run --rm -v $(pwd):/data ghcr.io/example42/sai-test-ubuntu:latest \
+#   saigen test-system /data/nginx-example.yaml

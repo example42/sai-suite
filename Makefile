@@ -28,9 +28,11 @@ help:
 	@echo "  publish-test  Publish to Test PyPI"
 	@echo ""
 	@echo "Docker Commands:"
-	@echo "  docker-build  Build Docker image"
-	@echo "  docker-run    Run Docker container"
-	@echo "  docker-test   Test Docker image"
+	@echo "  docker-build       Build Docker image"
+	@echo "  docker-run         Run Docker container"
+	@echo "  docker-test        Test Docker image"
+	@echo "  docker-build-test  Build test environment images"
+	@echo "  docker-push-test   Push test images to registry"
 	@echo ""
 	@echo "Documentation:"
 	@echo "  docs          Generate documentation"
@@ -107,6 +109,28 @@ docker-run:
 docker-test:
 	docker run --rm sai:latest sai --version
 	docker run --rm sai:latest saigen --version
+
+# Docker Test Images
+docker-build-test:
+	@echo "Building test images..."
+	docker build -t sai-test-ubuntu docker/test-ubuntu/
+	docker build -t sai-test-debian docker/test-debian/
+	docker build -t sai-test-fedora docker/test-fedora/
+	docker build -t sai-test-alpine docker/test-alpine/
+
+docker-tag-test:
+	@echo "Tagging test images..."
+	docker tag sai-test-ubuntu ghcr.io/example42/sai-test-ubuntu:latest
+	docker tag sai-test-debian ghcr.io/example42/sai-test-debian:latest
+	docker tag sai-test-fedora ghcr.io/example42/sai-test-fedora:latest
+	docker tag sai-test-alpine ghcr.io/example42/sai-test-alpine:latest
+
+docker-push-test: docker-tag-test
+	@echo "Pushing test images..."
+	docker push ghcr.io/example42/sai-test-ubuntu:latest
+	docker push ghcr.io/example42/sai-test-debian:latest
+	docker push ghcr.io/example42/sai-test-fedora:latest
+	docker push ghcr.io/example42/sai-test-alpine:latest
 
 # Documentation
 docs:
