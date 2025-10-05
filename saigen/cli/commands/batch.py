@@ -84,7 +84,25 @@ def batch(ctx: click.Context, input_file: Optional[Path], software_list: tuple,
         except ValueError:
             raise click.BadParameter(f"Invalid LLM provider: {llm_provider_name}")
     else:
-        llm_provider = LLMProvider.OPENAI  # Default
+        # Use default from config or fallback
+        if hasattr(config, 'llm_providers') and config.llm_providers:
+            # Get first enabled provider from config
+            first_provider = None
+            for provider_name, provider_config in config.llm_providers.items():
+                if provider_config.enabled:
+                    first_provider = provider_name
+                    break
+            
+            if not first_provider:
+                # No enabled providers, use first one anyway
+                first_provider = next(iter(config.llm_providers.keys()), 'openai')
+            
+            try:
+                llm_provider = LLMProvider(first_provider)
+            except ValueError:
+                llm_provider = LLMProvider.OPENAI  # Fallback
+        else:
+            llm_provider = LLMProvider.OPENAI  # Fallback
     
     # Validate input sources
     if not input_file and not software_list:
@@ -130,6 +148,12 @@ def batch(ctx: click.Context, input_file: Optional[Path], software_list: tuple,
         click.echo(f"Error processing software list: {e}", err=True)
         ctx.exit(1)
     
+    # Use configured output directory if not specified
+    if not output_dir:
+        output_dir = config.generation.output_directory
+        if verbose:
+            click.echo(f"Using configured output directory: {output_dir}")
+    
     # Preview mode
     if preview:
         click.echo(f"Preview: Would process {len(software_names)} software packages (saidata 0.3)")
@@ -138,9 +162,7 @@ def batch(ctx: click.Context, input_file: Optional[Path], software_list: tuple,
         click.echo(f"Max concurrent: {max_concurrent}")
         click.echo(f"RAG enabled: {not no_rag}")
         click.echo(f"Continue on error: {not stop_on_error}")
-        
-        if output_dir:
-            click.echo(f"Output directory: {output_dir}")
+        click.echo(f"Output directory: {output_dir}")
         
         if verbose:
             click.echo("\nSoftware packages to process:")

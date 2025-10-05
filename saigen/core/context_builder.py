@@ -346,8 +346,11 @@ class EnhancedContextBuilder:
         """Add compatibility matrix examples to context."""
         
         try:
+            # Ensure target_providers is not None
+            target_providers = context.target_providers or []
+            
             # Determine compatibility scope based on target providers
-            compatibility_scope = self._determine_compatibility_scope(context.target_providers)
+            compatibility_scope = self._determine_compatibility_scope(target_providers)
             
             # Get compatibility matrix template
             compatibility_template = self.compatibility_templates.get(
@@ -357,9 +360,10 @@ class EnhancedContextBuilder:
             
             # Filter template based on actual target providers
             filtered_template = []
-            for entry in compatibility_template:
-                if entry['provider'] in context.target_providers:
-                    filtered_template.append(entry)
+            if target_providers:
+                for entry in compatibility_template:
+                    if entry and entry.get('provider') in target_providers:
+                        filtered_template.append(entry)
             
             # Add to context
             context.compatibility_matrix_template = filtered_template or compatibility_template
@@ -560,7 +564,7 @@ class EnhancedContextBuilder:
         """Get security metadata template for category."""
         return self.security_patterns.get(category, self.security_patterns['web_server'])
     
-    def _determine_compatibility_scope(self, target_providers: List[str]) -> str:
+    def _determine_compatibility_scope(self, target_providers: Optional[List[str]]) -> str:
         """Determine compatibility scope based on target providers."""
         if not target_providers:
             return 'cross_platform'

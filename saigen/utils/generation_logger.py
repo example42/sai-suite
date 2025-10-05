@@ -167,7 +167,7 @@ class GenerationLogger:
         Args:
             enhancement_info: Information about context enhancements
         """
-        if "generation_context" not in self.log_data:
+        if "generation_context" not in self.log_data or self.log_data["generation_context"] is None:
             self.log_data["generation_context"] = {}
         
         self.log_data["generation_context"]["enhancement_v03"] = enhancement_info

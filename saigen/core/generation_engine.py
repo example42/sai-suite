@@ -24,6 +24,7 @@ from ..repositories.indexer import RAGIndexer, RAGContextBuilder
 from ..repositories.cache import RepositoryCache
 from ..utils.errors import RAGError
 from .context_builder import EnhancedContextBuilder
+from .url_filter import URLValidationFilter
 
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,19 @@ class GenerationEngine:
         
         # Generation logger
         self.logger: Optional['GenerationLogger'] = None
+        
+        # URL validation filter configuration
+        # Try to get from generation config first, then fall back to root config
+        gen_config = self.config.get('generation', {})
+        if isinstance(gen_config, dict):
+            self.enable_url_filter = gen_config.get('enable_url_filter', True)
+            self.url_filter_timeout = gen_config.get('url_filter_timeout', 5)
+            self.url_filter_max_concurrent = gen_config.get('url_filter_max_concurrent', 10)
+        else:
+            # If generation config is a Pydantic model
+            self.enable_url_filter = getattr(gen_config, 'enable_url_filter', True)
+            self.url_filter_timeout = getattr(gen_config, 'url_filter_timeout', 5)
+            self.url_filter_max_concurrent = getattr(gen_config, 'url_filter_max_concurrent', 10)
     
     def set_logger(self, logger: 'GenerationLogger') -> None:
         """Set the generation logger.
@@ -219,6 +233,14 @@ class GenerationEngine:
                     context,
                     provider_name
                 )
+            
+            # Apply URL validation filter if enabled
+            if self.enable_url_filter:
+                if self.logger:
+                    with self.logger.log_step("url_filter", "Validating and filtering URLs"):
+                        saidata = await self._apply_url_filter(saidata)
+                else:
+                    saidata = await self._apply_url_filter(saidata)
             
             # Track generation metrics
             self._update_metrics(llm_response)
@@ -1043,6 +1065,29 @@ class GenerationEngine:
             (hasattr(port, 'service') and port.service != getattr(top_port, 'service', None)) or
             (hasattr(port, 'description') and port.description != getattr(top_port, 'description', None))
         )
+    async def _apply_url_filter(self, saidata: SaiData) -> SaiData:
+        """Apply URL validation filter to saidata.
+        
+        Args:
+            saidata: SaiData instance to filter
+            
+        Returns:
+            Filtered SaiData instance with only reachable URLs
+        """
+        try:
+            async with URLValidationFilter(
+                timeout=self.url_filter_timeout,
+                max_concurrent=self.url_filter_max_concurrent
+            ) as url_filter:
+                filtered_saidata = await url_filter.filter_saidata(saidata)
+                logger.info(f"URL filtering completed for {saidata.metadata.name}")
+                return filtered_saidata
+        except Exception as e:
+            logger.warning(f"URL filtering failed: {e}. Returning unfiltered saidata.")
+            if self.logger:
+                self.logger.log_error(f"URL filtering error: {e}")
+            # Return original saidata if filtering fails
+            return saidata
     
     def _update_metrics(self, llm_response) -> None:
         """Update generation metrics.

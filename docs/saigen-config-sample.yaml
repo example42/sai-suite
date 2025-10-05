@@ -135,6 +135,15 @@ generation:
   backup_existing: true  # Backup existing files before overwriting
   parallel_requests: 3  # Number of parallel requests to repositories
   request_timeout: 120  # Request timeout in seconds
+  
+  # URL Validation Filter Settings (NEW)
+  # The URL filter validates all HTTP/HTTPS URLs in generated saidata by making
+  # HEAD requests. Invalid/unreachable URLs are automatically filtered out.
+  # This ensures only valid, reachable URLs are included in the final output.
+  # See docs/url-validation-filter.md for more details.
+  enable_url_filter: true  # Enable automatic URL validation and filtering
+  url_filter_timeout: 5  # Timeout for URL validation requests in seconds
+  url_filter_max_concurrent: 10  # Maximum concurrent URL validation requests
 
 # Advanced Settings
 user_agent: "saigen/0.1.0"  # User agent string for HTTP requests

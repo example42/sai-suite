@@ -88,6 +88,11 @@ class GenerationConfig(BaseModel):
     backup_existing: bool = True
     parallel_requests: int = 3
     request_timeout: int = 120
+    
+    # URL validation filter settings
+    enable_url_filter: bool = True
+    url_filter_timeout: int = 5
+    url_filter_max_concurrent: int = 10
 
 
 class SaigenConfig(BaseModel):

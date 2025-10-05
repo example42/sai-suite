@@ -120,6 +120,8 @@ class Service(BaseModel):
     type: Optional[ServiceType] = None
     enabled: Optional[bool] = None
     config_files: Optional[List[str]] = None
+    
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class File(BaseModel):
@@ -131,6 +133,8 @@ class File(BaseModel):
     group: Optional[str] = None
     mode: Optional[str] = None
     backup: Optional[bool] = None
+    
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Directory(BaseModel):
@@ -159,6 +163,8 @@ class Port(BaseModel):
     protocol: Optional[Protocol] = None
     service: Optional[str] = None
     description: Optional[str] = None
+    
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Container(BaseModel):
@@ -192,6 +198,8 @@ class ArchiveConfig(BaseModel):
     format: Optional[ArchiveFormat] = None
     strip_prefix: Optional[str] = None
     extract_path: Optional[str] = None
+    
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Source(BaseModel):
@@ -210,6 +218,8 @@ class Source(BaseModel):
     environment: Optional[Dict[str, str]] = None
     checksum: Optional[str] = Field(None, pattern=r"^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$")
     custom_commands: Optional[CustomCommands] = None
+    
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Binary(BaseModel):
@@ -272,6 +282,8 @@ class Repository(BaseModel):
     sources: Optional[List[Source]] = None
     binaries: Optional[List[Binary]] = None
     scripts: Optional[List[Script]] = None
+    
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class ProviderConfig(BaseModel):

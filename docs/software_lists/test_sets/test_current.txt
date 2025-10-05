@@ -1,0 +1,15 @@
+apache
+consul
+docker
+elasticsearch
+falco
+grafana
+jenkins
+kubernetes
+mongodb
+mysql
+nginx
+prometheus
+redis
+sysdig
+terraform

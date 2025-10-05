@@ -1,5 +1,6 @@
 """RAG (Retrieval-Augmented Generation) indexer for semantic search."""
 
+import os
 import asyncio
 import json
 import pickle
@@ -7,6 +8,10 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple, Union, TYPE_CHECKING
 from datetime import datetime, timedelta
+
+# Disable tokenizers parallelism to avoid fork-related warnings
+# This must be set before importing sentence_transformers
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 try:
     import numpy as np

@@ -763,6 +763,79 @@ Generate complete, valid YAML following this 0.3 structure exactly.""",
             required=True
         ),
         PromptSection(
+            name="url_generation_emphasis",
+            template="""CRITICAL: COMPREHENSIVE URL GENERATION
+
+**URLs are EXTREMELY IMPORTANT** - provide as many as possible in metadata.urls:
+
+1. **website**: Project homepage (ALWAYS try to include)
+   - Look for official project website
+   - Common patterns: https://projectname.org, https://projectname.io, https://www.projectname.com
+
+2. **documentation**: Official documentation (ALWAYS try to include)
+   - Common patterns: https://docs.projectname.org, https://projectname.org/docs/, https://projectname.readthedocs.io
+
+3. **source**: Source code repository (ALWAYS try to include)
+   - GitHub: https://github.com/org/repo
+   - GitLab: https://gitlab.com/org/repo
+   - Other git hosting platforms
+
+4. **issues**: Bug/issue tracker (highly recommended)
+   - GitHub issues: https://github.com/org/repo/issues
+   - Bugzilla, JIRA, etc.
+
+5. **support**: Support/help resources (recommended)
+   - Forums, mailing lists, chat channels
+   - https://projectname.org/support, https://discuss.projectname.org
+
+6. **download**: Official download page (recommended)
+   - https://projectname.org/download, https://projectname.org/downloads
+
+7. **changelog**: Release notes/changelog (recommended)
+   - https://projectname.org/changelog, https://github.com/org/repo/releases, https://projectname.org/CHANGELOG
+
+8. **license**: License text URL (recommended)
+   - https://projectname.org/license, https://github.com/org/repo/blob/main/LICENSE
+
+9. **sbom**: Software Bill of Materials (if available)
+   - https://projectname.org/sbom.json
+
+10. **icon**: Project logo/icon (if available)
+    - https://projectname.org/logo.png, https://projectname.org/images/icon.png
+
+**IMPORTANT NOTES:**
+- Provide URLs even if you're not 100% certain - they will be validated automatically
+- It's better to include a potentially incorrect URL than to omit it entirely
+- Use common URL patterns based on the software name and type
+- Check repository data for homepage and source URLs
+- For well-known software, construct likely URLs based on standard patterns
+- Don't leave urls section empty - always try to populate at least website, documentation, and source
+
+**Security URLs** (in metadata.security):
+- vulnerability_disclosure: Security policy or vulnerability reporting page
+- sbom_url: SBOM file URL (if different from metadata.urls.sbom)
+- signing_key: GPG/PGP key URL for package verification
+
+**Example - comprehensive URLs:**
+```yaml
+metadata:
+  urls:
+    website: https://nginx.org
+    documentation: https://nginx.org/en/docs/
+    source: https://github.com/nginx/nginx
+    issues: https://trac.nginx.org/nginx/
+    support: https://nginx.org/en/support.html
+    download: https://nginx.org/en/download.html
+    changelog: https://nginx.org/CHANGES
+    license: https://nginx.org/LICENSE
+  security:
+    vulnerability_disclosure: https://nginx.org/en/security_advisories.html
+```
+
+Remember: URL validation happens automatically, so be generous with URL suggestions!""",
+            required=True
+        ),
+        PromptSection(
             name="output_instruction",
             template="""OUTPUT INSTRUCTIONS:
 1. Generate ONLY the YAML content - no explanations or markdown formatting
@@ -775,8 +848,9 @@ Generate complete, valid YAML following this 0.3 structure exactly.""",
 8. Use accurate package names from repository data
 9. Ensure all YAML syntax is correct and properly indented
 10. Include enhanced metadata with security information when relevant
-11. Follow the structure pattern from the reference samples provided
-12. Ensure the output is production-ready and follows 0.3 schema best practices
+11. **CRITICAL: Provide comprehensive URLs in metadata.urls - at minimum website, documentation, and source**
+12. Follow the structure pattern from the reference samples provided
+13. Ensure the output is production-ready and follows 0.3 schema best practices
 
 Generate the saidata YAML now:""",
             required=True
@@ -1084,6 +1158,22 @@ Generate complete, valid YAML following this 0.3 structure exactly and fixing al
             required=True
         ),
         PromptSection(
+            name="url_generation_emphasis",
+            template="""CRITICAL: COMPREHENSIVE URL GENERATION
+
+**URLs are EXTREMELY IMPORTANT** - provide as many as possible in metadata.urls:
+- website, documentation, source (ALWAYS include these at minimum)
+- issues, support, download, changelog, license (highly recommended)
+- sbom, icon (if available)
+
+Provide URLs even if you're not 100% certain - they will be validated automatically.
+It's better to include a potentially incorrect URL than to omit it entirely.
+Use common URL patterns based on the software name and type.
+
+Remember: URL validation happens automatically, so be generous with URL suggestions!""",
+            required=True
+        ),
+        PromptSection(
             name="output_instruction",
             template="""OUTPUT INSTRUCTIONS:
 1. Generate ONLY the corrected YAML content - no explanations or markdown formatting
@@ -1092,8 +1182,9 @@ Generate complete, valid YAML following this 0.3 structure exactly and fixing al
 4. Ensure all YAML syntax is correct and properly indented
 5. Include all required fields with correct data types for 0.3 schema
 6. Use accurate package names from repository data
-7. Include sources, binaries, and/or scripts sections when appropriate
-8. Ensure the output passes 0.3 schema validation
+7. **CRITICAL: Provide comprehensive URLs in metadata.urls - at minimum website, documentation, and source**
+8. Include sources, binaries, and/or scripts sections when appropriate
+9. Ensure the output passes 0.3 schema validation
 
 Generate the corrected saidata YAML now:""",
             required=True

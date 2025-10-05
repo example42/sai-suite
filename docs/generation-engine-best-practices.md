@@ -214,6 +214,34 @@ When updating existing code:
 - [ ] Update tests to provide mock repository data
 - [ ] Verify no diagnostics/linting errors
 
+## Post-LLM Processing
+
+### URL Validation Filter
+The generation engine includes a post-LLM URL validation filter that automatically validates and filters out unreachable URLs from generated saidata.
+
+**How it works:**
+1. After LLM generation and schema validation
+2. All HTTP/HTTPS URLs are extracted from the saidata
+3. URLs are validated concurrently using async HTTP HEAD requests
+4. Invalid/unreachable URLs are filtered out
+
+**Configuration:**
+```python
+config = {
+    'enable_url_filter': True,  # Enable/disable (default: True)
+    'url_filter_timeout': 5,     # Request timeout in seconds
+    'url_filter_max_concurrent': 10  # Max concurrent checks
+}
+engine = GenerationEngine(config)
+```
+
+**When to disable:**
+- During development/testing for faster iteration
+- When network access is limited or unreliable
+- When URLs are known to be valid
+
+For more details, see `docs/url-validation-filter.md`
+
 ## Questions?
 
 If you need to add provider-specific logic:
