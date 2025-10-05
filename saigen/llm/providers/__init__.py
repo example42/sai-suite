@@ -34,6 +34,13 @@ except ImportError:
     OLLAMA_AVAILABLE = False
     OllamaProvider = None
 
+try:
+    from .vllm import VLLMProvider
+    VLLM_AVAILABLE = True
+except ImportError:
+    VLLM_AVAILABLE = False
+    VLLMProvider = None
+
 __all__ = [
     "BaseLLMProvider",
     "LLMResponse", 
@@ -50,5 +57,7 @@ __all__ = [
     "AnthropicProvider", 
     "ANTHROPIC_AVAILABLE",
     "OllamaProvider",
-    "OLLAMA_AVAILABLE"
+    "OLLAMA_AVAILABLE",
+    "VLLMProvider",
+    "VLLM_AVAILABLE"
 ]

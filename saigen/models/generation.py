@@ -15,6 +15,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     OLLAMA = "ollama"
+    VLLM = "vllm"
 
 
 class GenerationMode(str, Enum):

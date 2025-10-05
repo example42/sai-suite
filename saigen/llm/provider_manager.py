@@ -17,8 +17,13 @@ from .providers.base import (
     RateLimitError,
     AuthenticationError
 )
-from .providers.openai import OpenAIProvider, OPENAI_AVAILABLE
 from ..models.generation import GenerationContext, LLMProvider
+
+try:
+    from .providers.openai import OpenAIProvider, OPENAI_AVAILABLE
+except ImportError:
+    OPENAI_AVAILABLE = False
+    OpenAIProvider = None
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +42,13 @@ try:
 except ImportError:
     OLLAMA_AVAILABLE = False
     OllamaProvider = None
+
+try:
+    from .providers.vllm import VLLMProvider
+    VLLM_AVAILABLE = True
+except ImportError:
+    VLLM_AVAILABLE = False
+    VLLMProvider = None
 
 
 class ProviderPriority(str, Enum):
@@ -75,6 +87,7 @@ class LLMProviderManager:
         LLMProvider.OPENAI: OpenAIProvider if OPENAI_AVAILABLE else None,
         LLMProvider.ANTHROPIC: AnthropicProvider if ANTHROPIC_AVAILABLE else None,
         LLMProvider.OLLAMA: OllamaProvider if OLLAMA_AVAILABLE else None,
+        LLMProvider.VLLM: VLLMProvider if VLLM_AVAILABLE else None,
     }
     
     def __init__(self, config: Dict[str, Dict[str, Any]]):

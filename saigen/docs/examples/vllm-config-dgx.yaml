@@ -1,0 +1,126 @@
+# SAIGEN Configuration for vLLM on NVIDIA DGX Systems
+# Optimized for high-performance local LLM inference
+
+config_version: "0.1.0"
+log_level: "info"
+
+# vLLM Provider Configuration
+llm_providers:
+  # Primary: vLLM with Llama 3 70B (high quality)
+  vllm_primary:
+    provider: "vllm"
+    base_url: "http://localhost:8000/v1"
+    model: "meta-llama/Meta-Llama-3-70B-Instruct"
+    temperature: 0.1
+    max_tokens: 4096
+    timeout: 120
+    enabled: true
+    priority: "high"
+    # Server configuration (set when starting vLLM server):
+    # --tensor-parallel-size 4
+    # --gpu-memory-utilization 0.95
+    # --max-model-len 8192
+  
+  # Fallback: vLLM with smaller model (faster, lower quality)
+  vllm_fast:
+    provider: "vllm"
+    base_url: "http://localhost:8001/v1"
+    model: "meta-llama/Meta-Llama-3-8B-Instruct"
+    temperature: 0.1
+    max_tokens: 4096
+    timeout: 60
+    enabled: false  # Enable if running second vLLM instance
+    priority: "medium"
+  
+  # Optional: Cloud fallback for when local is unavailable
+  openai_fallback:
+    provider: "openai"
+    api_key: null  # Set via OPENAI_API_KEY
+    model: "gpt-4o-mini"
+    max_tokens: 4000
+    temperature: 0.1
+    timeout: 30
+    enabled: false  # Enable if you want cloud fallback
+    priority: "low"
+
+# Repository Configurations
+repositories:
+  ubuntu_main:
+    name: "ubuntu_main"
+    type: "apt"
+    url: "http://archive.ubuntu.com/ubuntu"
+    enabled: true
+    cache_ttl: 3600
+    priority: 1
+  
+  homebrew:
+    name: "homebrew"
+    type: "brew"
+    enabled: true
+    cache_ttl: 3600
+    priority: 1
+
+# Cache Configuration (optimized for DGX)
+cache:
+  directory: "~/.saigen/cache"
+  max_size_mb: 10000  # 10GB cache for large-scale generation
+  default_ttl: 3600
+  cleanup_interval: 86400
+
+# RAG Configuration
+rag:
+  enabled: true
+  index_directory: "~/.saigen/rag_index"
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  max_context_items: 5
+  similarity_threshold: 0.7
+  rebuild_on_startup: false
+  use_default_samples: true
+  max_sample_examples: 3
+
+# Validation Configuration
+validation:
+  schema_path: null
+  strict_mode: true
+  auto_fix_common_issues: true
+  validate_repository_accuracy: true
+
+# Generation Configuration (optimized for batch processing)
+generation:
+  default_providers:
+    - "apt"
+    - "brew"
+    - "winget"
+  output_directory: "./saidata"
+  backup_existing: true
+  parallel_requests: 10  # Higher for vLLM's continuous batching
+  request_timeout: 120
+  
+  # URL Validation
+  enable_url_filter: true
+  url_filter_timeout: 5
+  url_filter_max_concurrent: 20  # Higher for DGX network bandwidth
+
+# Advanced Settings
+user_agent: "saigen/0.1.0"
+max_concurrent_requests: 10  # Leverage vLLM's batching capabilities
+request_timeout: 120
+
+# DGX-Specific Notes:
+# 
+# 1. Start vLLM server before running SAIGEN:
+#    python -m vllm.entrypoints.openai.api_server \
+#        --model meta-llama/Meta-Llama-3-70B-Instruct \
+#        --tensor-parallel-size 4 \
+#        --gpu-memory-utilization 0.95 \
+#        --max-model-len 8192 \
+#        --host 0.0.0.0 \
+#        --port 8000
+#
+# 2. For maximum throughput, increase parallel_requests to match your
+#    vLLM server's --max-num-seqs setting
+#
+# 3. Monitor GPU usage with: nvidia-smi -l 1
+#
+# 4. For batch generation of thousands of packages:
+#    saigen batch generate large-list.txt --llm-provider vllm_primary --max-concurrent 10

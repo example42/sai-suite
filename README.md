@@ -10,17 +10,18 @@
 
 ## 📑 Table of Contents
 
-- [Two Packages, One Repository](#-two-packages-one-repository)
-- [Quick Start](#-quick-start)
-- [Documentation Hub](#-documentation-hub)
-- [Supported Package Managers](#supported-package-managers)
-- [Commands Overview](#commands)
+- [Two Packages, One Repository](#two-packages-one-repository)
+- [Quick Start](#quick-start)
+- [Documentation Hub](#documentation-hub)
+- [Quick Examples](#quick-examples)
 - [Configuration](#configuration)
-- [Repository Structure](#-repository-structure)
-- [Development](#-development)
+- [Commands Overview](#commands-overview)
+- [Supported Package Managers](#supported-package-managers)
+- [Repository Structure](#repository-structure)
+- [Development](#development)
 - [Use Cases](#use-cases)
-- [Troubleshooting & Support](#-troubleshooting--support)
-- [License](#-license)
+- [Troubleshooting & Support](#troubleshooting--support)
+- [License](#license)
 
 ---
 
@@ -74,6 +75,27 @@ pip install saigen
 
 ### Choose Your Installation
 
+> **Note:** PyPI packages are coming soon. For now, use the development installation below.
+
+```bash
+# Clone the repository
+git clone https://github.com/example42/sai-suite.git
+cd sai-suite
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install both packages in editable mode
+make install-both
+# Or: ./scripts/install-local.sh both
+
+# Verify installation
+sai --version
+saigen --version
+```
+
+**Future PyPI Installation (coming soon):**
 ```bash
 # Install SAI only (lightweight, for execution)
 pip install sai
@@ -261,8 +283,6 @@ SAIGEN now supports 50+ package managers across all major platforms:
 ✅ Comprehensive testing framework for saidata  
 ✅ Repository cache management  
 
----
-
 ## 🎯 Quick Examples
 
 ### SAI: Execute Software Actions
@@ -299,73 +319,7 @@ saigen test-system nginx.yaml
 saigen batch --software-list "nginx,redis,postgresql"
 ```
 
-## 📋 Commands Overview
-
-### SAI Commands
-
-**Software Management**
-```bash
-sai install <software>        # Install software
-sai uninstall <software>      # Uninstall software
-sai start|stop|restart <sw>   # Service management
-sai status <software>         # Check status
-sai apply <file>              # Batch actions
-```
-
-**Provider Management**
-```bash
-sai providers list            # List providers
-sai providers detect          # Detect available providers
-sai providers info <name>     # Provider details
-```
-
-**Configuration & Utilities**
-```bash
-sai config show               # Show configuration
-sai stats                     # Show statistics
-sai history list              # Execution history
-sai completion install        # Shell completion
-```
-
-**📖 Full command reference:** [SAI CLI Reference](sai/docs/cli-reference.md)
-
-### SAIGEN Commands
-
-**Generation & Validation**
-```bash
-saigen generate <software>    # Generate saidata
-saigen validate <file>        # Validate saidata
-saigen quality <file>         # Quality assessment
-saigen batch                  # Batch generation
-saigen test-system <file>     # Test saidata
-```
-
-**Repository Management**
-```bash
-saigen repositories list-repos      # List all repositories
-saigen repositories search <query>  # Search packages
-saigen repositories info <package>  # Package details
-saigen repositories stats           # Repository statistics
-saigen repositories update-cache    # Update caches
-```
-
-**Configuration**
-```bash
-saigen config show            # Show configuration
-saigen config set <key> <val> # Set configuration
-saigen config init            # Initialize config
-```
-
-**📖 Full command reference:** [SAIGEN CLI Reference](saigen/docs/cli-reference.md)
-
-## 🔍 Troubleshooting & Support
-
-- **Repository Issues:** [Repository Troubleshooting](saigen/docs/repository-troubleshooting.md)
-- **Bug Reports:** [Open an issue](https://github.com/example42/sai-suite/issues)
-- **Questions:** [GitHub Discussions](https://github.com/example42/sai-suite/discussions)
-- **Documentation:** See [Documentation Hub](#-documentation-hub) above
-
-## Configuration
+## ⚙️ Configuration
 
 ### SAI Configuration
 
@@ -464,6 +418,72 @@ validation:
   strict_mode: true
   auto_fix_common_issues: true
 ```
+
+## 📋 Commands Overview
+
+### SAI Commands
+
+**Software Management**
+```bash
+sai install <software>        # Install software
+sai uninstall <software>      # Uninstall software
+sai start|stop|restart <sw>   # Service management
+sai status <software>         # Check status
+sai apply <file>              # Batch actions
+```
+
+**Provider Management**
+```bash
+sai providers list            # List providers
+sai providers detect          # Detect available providers
+sai providers info <name>     # Provider details
+```
+
+**Configuration & Utilities**
+```bash
+sai config show               # Show configuration
+sai stats                     # Show statistics
+sai history list              # Execution history
+sai completion install        # Shell completion
+```
+
+**📖 Full command reference:** [SAI CLI Reference](sai/docs/cli-reference.md)
+
+### SAIGEN Commands
+
+**Generation & Validation**
+```bash
+saigen generate <software>    # Generate saidata
+saigen validate <file>        # Validate saidata
+saigen quality <file>         # Quality assessment
+saigen batch                  # Batch generation
+saigen test-system <file>     # Test saidata
+```
+
+**Repository Management**
+```bash
+saigen repositories list-repos      # List all repositories
+saigen repositories search <query>  # Search packages
+saigen repositories info <package>  # Package details
+saigen repositories stats           # Repository statistics
+saigen repositories update-cache    # Update caches
+```
+
+**Configuration**
+```bash
+saigen config show            # Show configuration
+saigen config set <key> <val> # Set configuration
+saigen config init            # Initialize config
+```
+
+**📖 Full command reference:** [SAIGEN CLI Reference](saigen/docs/cli-reference.md)
+
+## 🔍 Troubleshooting & Support
+
+- **Repository Issues:** [Repository Troubleshooting](saigen/docs/repository-troubleshooting.md)
+- **Bug Reports:** [Open an issue](https://github.com/example42/sai-suite/issues)
+- **Questions:** [GitHub Discussions](https://github.com/example42/sai-suite/discussions)
+- **Documentation:** See [Documentation Hub](#documentation-hub) above
 
 ## 📁 Repository Structure
 

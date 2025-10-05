@@ -18,6 +18,7 @@ Documentation for SAIGEN (SAI Data Generation) - the AI-powered metadata generat
 
 ### Features
 - **[rag-indexing-guide.md](rag-indexing-guide.md)** - RAG (Retrieval-Augmented Generation)
+- **[vllm-dgx-setup.md](vllm-dgx-setup.md)** - vLLM setup for NVIDIA DGX systems
 - **[refresh-versions-command.md](refresh-versions-command.md)** - Refresh versions feature
 - **[refresh-versions-quick-reference.md](refresh-versions-quick-reference.md)** - Quick reference
 - **[retry-generation-feature.md](retry-generation-feature.md)** - Retry failed generations
@@ -31,6 +32,7 @@ Documentation for SAIGEN (SAI Data Generation) - the AI-powered metadata generat
 ### Examples
 - **[examples/](examples/)** - Configuration examples and samples
   - [saigen-config-sample.yaml](examples/saigen-config-sample.yaml) - Sample configuration
+  - [vllm-config-dgx.yaml](examples/vllm-config-dgx.yaml) - vLLM configuration for DGX
   - [software_lists/](examples/software_lists/) - Software package lists
   - [saidata_samples/](examples/saidata_samples/) - Example saidata files
 

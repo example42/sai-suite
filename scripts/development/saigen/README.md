@@ -53,6 +53,30 @@ Demonstrates working with sample data and fixtures.
 python scripts/development/saigen/sample_data_demo.py
 ```
 
+### start-vllm-dgx.sh
+Starts vLLM server optimized for NVIDIA DGX systems.
+
+```bash
+# Start with default settings (Llama 3 70B on 4 GPUs)
+./scripts/development/saigen/start-vllm-dgx.sh
+
+# Start with custom model and GPU count
+./scripts/development/saigen/start-vllm-dgx.sh meta-llama/Meta-Llama-3-8B-Instruct 1
+
+# Start with specific port
+./scripts/development/saigen/start-vllm-dgx.sh meta-llama/Meta-Llama-3-70B-Instruct 4 8000
+```
+
+### test-vllm-provider.py
+Tests vLLM provider integration and connection.
+
+```bash
+# Run full test suite
+python scripts/development/saigen/test-vllm-provider.py
+
+# Requires vLLM server to be running
+```
+
 ## Usage
 
 These scripts are for development and demonstration purposes. They show how to use SAIGEN's internal APIs and components.
