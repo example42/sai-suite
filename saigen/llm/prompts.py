@@ -1,10 +1,10 @@
 """Prompt templates for saidata generation."""
 
-from typing import Dict, List, Optional, Any
-from string import Template
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from string import Template
+from typing import Any, Dict, List, Optional
 
 from ..models.generation import GenerationContext
 from ..models.repository import RepositoryPackage
@@ -13,7 +13,7 @@ from ..models.saidata import SaiData
 
 def load_saidata_schema() -> str:
     """Load the saidata JSON schema for inclusion in prompts.
-    
+
     Returns:
         JSON schema as formatted string, or fallback text if schema not found
     """
@@ -21,23 +21,23 @@ def load_saidata_schema() -> str:
         # Try to find the 0.3 schema file relative to this module
         current_dir = Path(__file__).parent
         schema_path = current_dir.parent.parent / "schemas" / "saidata-0.3-schema.json"
-        
+
         if schema_path.exists():
-            with open(schema_path, 'r', encoding='utf-8') as f:
+            with open(schema_path, "r", encoding="utf-8") as f:
                 schema_data = json.load(f)
-            
+
             # Format the schema for better readability in prompts
             return json.dumps(schema_data, indent=2)
         else:
             return "Schema file not found - using basic requirements"
     except Exception:
         return "Schema loading failed - using basic requirements"
-from pathlib import Path
 
 
 @dataclass
 class PromptSection:
     """A section of a prompt template."""
+
     name: str
     template: str
     required: bool = True
@@ -46,56 +46,56 @@ class PromptSection:
 
 class PromptTemplate:
     """Template for generating LLM prompts."""
-    
+
     def __init__(self, name: str, sections: List[PromptSection]):
         """Initialize prompt template.
-        
+
         Args:
             name: Template name
             sections: List of prompt sections
         """
         self.name = name
         self.sections = sections
-    
+
     def render(self, context: GenerationContext) -> str:
         """Render prompt with context data.
-        
+
         Args:
             context: Generation context
-            
+
         Returns:
             Rendered prompt string
         """
         rendered_sections = []
-        
+
         for section in self.sections:
             if self._should_include_section(section, context):
                 rendered_content = self._render_section(section, context)
                 if rendered_content.strip():
                     rendered_sections.append(rendered_content)
-        
+
         return "\n\n".join(rendered_sections)
-    
+
     def _should_include_section(self, section: PromptSection, context: GenerationContext) -> bool:
         """Check if section should be included based on conditions.
-        
+
         Args:
             section: Prompt section
             context: Generation context
-            
+
         Returns:
             True if section should be included
         """
         if not section.condition:
             return True
-        
+
         # Simple condition evaluation
         if section.condition == "has_repository_data":
             return bool(context.repository_data)
         elif section.condition == "has_similar_saidata":
             return bool(context.similar_saidata)
         elif section.condition == "has_sample_saidata":
-            return bool(getattr(context, 'sample_saidata', []))
+            return bool(getattr(context, "sample_saidata", []))
         elif section.condition == "has_user_hints":
             return bool(context.user_hints)
         elif section.condition == "has_existing_saidata":
@@ -104,90 +104,95 @@ class PromptTemplate:
             return bool(context.user_hints and context.user_hints.get("validation_feedback"))
         elif section.condition == "include_json_schema":
             return True  # Always include when requested
-        
+
         return True
-    
+
     def _render_section(self, section: PromptSection, context: GenerationContext) -> str:
         """Render a single section.
-        
+
         Args:
             section: Prompt section to render
             context: Generation context
-            
+
         Returns:
             Rendered section content
         """
         template_vars = self._build_template_variables(context)
-        
+
         try:
             # Cache compiled templates for better performance
-            if not hasattr(section, '_compiled_template'):
+            if not hasattr(section, "_compiled_template"):
                 section._compiled_template = Template(section.template)
             return section._compiled_template.safe_substitute(template_vars)
         except Exception as e:
             if section.required:
                 raise ValueError(f"Failed to render required section '{section.name}': {e}")
             return ""
-    
+
     def _build_template_variables(self, context: GenerationContext) -> Dict[str, str]:
         """Build template variables from context.
-        
+
         Args:
             context: Generation context
-            
+
         Returns:
             Dictionary of template variables
         """
         # Combine similar saidata and sample saidata for examples
         all_saidata_examples = context.similar_saidata.copy()
-        if hasattr(context, 'sample_saidata') and context.sample_saidata:
+        if hasattr(context, "sample_saidata") and context.sample_saidata:
             all_saidata_examples.extend(context.sample_saidata)
-        
+
         variables = {
             "software_name": context.software_name,
-            "target_providers": ", ".join(context.target_providers) if context.target_providers else "apt, brew, winget",
+            "target_providers": ", ".join(context.target_providers)
+            if context.target_providers
+            else "apt, brew, winget",
             "repository_context": self._format_repository_data(context.repository_data),
             "similar_saidata_examples": self._format_similar_saidata(all_saidata_examples),
-            "sample_saidata_examples": self._format_sample_saidata(getattr(context, 'sample_saidata', [])),
+            "sample_saidata_examples": self._format_sample_saidata(
+                getattr(context, "sample_saidata", [])
+            ),
             "user_hints": self._format_user_hints(context.user_hints),
             "existing_saidata": self._format_existing_saidata(context.existing_saidata),
             "validation_feedback": self._format_validation_feedback(context.user_hints),
             "json_schema": self._format_json_schema(context),
         }
-        
+
         return variables
-    
+
     def _format_repository_data(self, packages: List[RepositoryPackage]) -> str:
         """Format repository data for prompt inclusion.
-        
+
         Args:
             packages: List of repository packages
-            
+
         Returns:
             Formatted repository data string
         """
         if not packages:
             return "No repository data available."
-        
+
         # Group packages by repository for better organization
         from collections import defaultdict
+
         repo_groups = defaultdict(list)
         for pkg in packages:
             repo_groups[pkg.repository_name].append(pkg)
-        
+
         formatted_sections = []
         total_shown = 0
         max_packages = 8  # Show more packages for better context
-        
+
         for repo_name, repo_packages in repo_groups.items():
             if total_shown >= max_packages:
                 break
-                
+
             section_packages = []
             for pkg in repo_packages[:3]:  # Max 3 per repository
                 if total_shown >= max_packages:
                     break
-                    
+
                 pkg_info = f"  - {pkg.name}"
                 if pkg.version:
                     pkg_info += f" (v{pkg.version})"
@@ -195,48 +200,49 @@ class PromptTemplate:
                     pkg_info += f": {pkg.description[:80]}..."
                 if pkg.homepage:
                     pkg_info += f" [Homepage: {pkg.homepage}]"
-                    
+
                 section_packages.append(pkg_info)
                 total_shown += 1
-            
+
             if section_packages:
                 formatted_sections.append(f"{repo_name} repository:")
                 formatted_sections.extend(section_packages)
-        
+
         result = "Repository packages found:\n" + "\n".join(formatted_sections)
-        
+
         total_packages = len(packages)
         if total_shown < total_packages:
-            result += f"\n... and {total_packages - total_shown} more packages across {len(repo_groups)} repositories"
-        
+            result += f"\n... and {total_packages -
+                                   total_shown} more packages across {len(repo_groups)} repositories"
+
         return result
-    
+
     def _format_similar_saidata(self, similar_saidata: List[SaiData]) -> str:
         """Format similar saidata for prompt inclusion.
-        
+
         Args:
             similar_saidata: List of similar saidata files
-            
+
         Returns:
             Formatted similar saidata string
         """
         if not similar_saidata:
             return "No similar saidata examples available."
-        
+
         examples = []
         for i, saidata in enumerate(similar_saidata[:3], 1):  # Limit to 3 examples
             example_parts = [f"Example {i}: {saidata.metadata.name}"]
-            
+
             if saidata.metadata.description:
                 example_parts.append(f"  Description: {saidata.metadata.description[:100]}...")
-            
+
             if saidata.metadata.category:
                 example_parts.append(f"  Category: {saidata.metadata.category}")
-            
+
             if saidata.providers:
                 providers = list(saidata.providers.keys())
                 example_parts.append(f"  Providers: {', '.join(providers)}")
-                
+
                 # Show sample package names from providers
                 sample_packages = []
                 for provider_name, provider_config in list(saidata.providers.items())[:2]:
@@ -244,36 +250,36 @@ class PromptTemplate:
                         pkg_names = [pkg.name for pkg in provider_config.packages[:2]]
                         if pkg_names:
                             sample_packages.append(f"{provider_name}: {', '.join(pkg_names)}")
-                
+
                 if sample_packages:
                     example_parts.append(f"  Sample packages: {'; '.join(sample_packages)}")
-            
+
             examples.append("\n".join(example_parts))
-        
+
         return "Similar software examples:\n\n" + "\n\n".join(examples)
-    
+
     def _format_sample_saidata(self, sample_saidata: List[SaiData]) -> str:
         """Format sample saidata for prompt inclusion.
-        
+
         Args:
             sample_saidata: List of sample saidata files
-            
+
         Returns:
             Formatted sample saidata string with full structure examples
         """
         if not sample_saidata:
             return "No sample saidata available."
-        
+
         examples = []
         for i, saidata in enumerate(sample_saidata[:2], 1):  # Limit to 2 full examples
             example_parts = [f"Sample {i}: {saidata.metadata.name}"]
-            
+
             if saidata.metadata.description:
                 example_parts.append(f"  Description: {saidata.metadata.description}")
-            
+
             if saidata.metadata.category:
                 example_parts.append(f"  Category: {saidata.metadata.category}")
-            
+
             # Show top-level structure
             structure_parts = []
             if saidata.packages:
@@ -288,10 +294,10 @@ class PromptTemplate:
                 structure_parts.append(f"commands ({len(saidata.commands)})")
             if saidata.ports:
                 structure_parts.append(f"ports ({len(saidata.ports)})")
-            
+
             if structure_parts:
                 example_parts.append(f"  Top-level sections: {', '.join(structure_parts)}")
-            
+
             # Show example top-level package
             if saidata.packages:
                 pkg = saidata.packages[0]
@@ -299,129 +305,132 @@ class PromptTemplate:
                 if pkg.version:
                     pkg_str += f", version: {pkg.version}"
                 example_parts.append(f"  Example package: {pkg_str}")
-            
+
             # Show example service
             if saidata.services:
                 svc = saidata.services[0]
                 svc_str = f"name: {svc.name}, service_name: {svc.service_name}"
-                if hasattr(svc, 'type') and svc.type:
+                if hasattr(svc, "type") and svc.type:
                     svc_str += f", type: {svc.type}"
                 example_parts.append(f"  Example service: {svc_str}")
-            
+
             # Show provider structure
             if saidata.providers:
                 providers = list(saidata.providers.keys())
                 example_parts.append(f"  Providers: {', '.join(providers)}")
-                
+
                 # Show one provider example
                 first_provider = list(saidata.providers.items())[0]
                 provider_name, provider_config = first_provider
-                
+
                 config_details = []
                 if provider_config.packages:
                     config_details.append(f"packages ({len(provider_config.packages)})")
                 if provider_config.repositories:
                     config_details.append(f"repositories ({len(provider_config.repositories)})")
-                
+
                 if config_details:
                     example_parts.append(f"  {provider_name}: {', '.join(config_details)}")
-            
+
             examples.append("\n".join(example_parts))
-        
-        return "Reference saidata samples showing proper structure:\n\n" + "\n\n".join(examples) + "\n\nNOTE: These samples demonstrate the correct pattern - top-level sections define defaults, provider sections contain overrides."
-    
+
+        return (
+            "Reference saidata samples showing proper structure:\n\n" +
+            "\n\n".join(examples) +
+            "\n\nNOTE: These samples demonstrate the correct pattern - top-level sections define defaults, provider sections contain overrides.")
+
     def _format_user_hints(self, user_hints: Optional[Dict[str, Any]]) -> str:
         """Format user hints for prompt inclusion.
-        
+
         Args:
             user_hints: User-provided hints
-            
+
         Returns:
             Formatted user hints string
         """
         if not user_hints:
             return "No user hints provided."
-        
+
         formatted_hints = []
         for key, value in user_hints.items():
             formatted_hints.append(f"- {key}: {value}")
-        
+
         return "User hints:\n" + "\n".join(formatted_hints)
-    
+
     def _format_existing_saidata(self, existing_saidata: Optional[SaiData]) -> str:
         """Format existing saidata for update mode.
-        
+
         Args:
             existing_saidata: Existing saidata to update
-            
+
         Returns:
             Formatted existing saidata string
         """
         if not existing_saidata:
             return "No existing saidata provided."
-        
+
         info = f"Existing saidata for {existing_saidata.metadata.name}"
         if existing_saidata.metadata.version:
             info += f" v{existing_saidata.metadata.version}"
         if existing_saidata.providers:
             providers = list(existing_saidata.providers.keys())
             info += f" (Current providers: {', '.join(providers)})"
-        
+
         return info
-    
+
     def _format_validation_feedback(self, user_hints: Optional[Dict[str, Any]]) -> str:
         """Format validation feedback for retry prompts.
-        
+
         Args:
             user_hints: User hints that may contain validation feedback
-            
+
         Returns:
             Formatted validation feedback string
         """
         if not user_hints or "validation_feedback" not in user_hints:
             return "No validation feedback available."
-        
+
         feedback = user_hints["validation_feedback"]
-        
+
         formatted_parts = []
-        
+
         # Add main validation error
         if "validation_error" in feedback:
             formatted_parts.append(f"VALIDATION ERROR: {feedback['validation_error']}")
-        
+
         # Add specific errors
         if "specific_errors" in feedback and feedback["specific_errors"]:
             formatted_parts.append("SPECIFIC ERRORS:")
             for i, error in enumerate(feedback["specific_errors"], 1):
                 formatted_parts.append(f"  {i}. {error}")
-        
+
         # Add failed YAML excerpt
         if "failed_yaml_excerpt" in feedback:
             formatted_parts.append("FAILED YAML EXCERPT:")
             formatted_parts.append(f"```yaml\n{feedback['failed_yaml_excerpt']}\n```")
-        
+
         # Add retry instructions
         if "retry_instructions" in feedback and feedback["retry_instructions"]:
             formatted_parts.append("RETRY INSTRUCTIONS:")
             for instruction in feedback["retry_instructions"]:
                 formatted_parts.append(f"- {instruction}")
-        
+
         return "\n\n".join(formatted_parts)
-    
+
     def _format_json_schema(self, context: GenerationContext) -> str:
         """Format JSON schema for prompt inclusion.
-        
+
         Args:
             context: Generation context (unused but kept for consistency)
-            
+
         Returns:
             Formatted JSON schema string
         """
         schema_content = load_saidata_schema()
-        
+
         if "Schema file not found" in schema_content or "Schema loading failed" in schema_content:
             return schema_content
-        
+
         return f"COMPLETE JSON SCHEMA:\n```json\n{schema_content}\n```\n\nThis is the exact schema your YAML output must validate against."
 
 
@@ -440,7 +449,7 @@ CRITICAL REQUIREMENTS:
 4. Ensure cross-platform compatibility where possible
 5. Follow semantic versioning for the saidata version field
 6. Include security considerations and best practices""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="software_specification",
@@ -449,7 +458,7 @@ CRITICAL REQUIREMENTS:
 TARGET PROVIDERS: $target_providers
 
 Generate saidata that supports the specified providers with accurate package names, installation commands, and configuration details.""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="repository_context",
@@ -457,7 +466,7 @@ Generate saidata that supports the specified providers with accurate package nam
 $repository_context
 
 IMPORTANT: Use this repository information to ensure accurate package names, versions, and availability across different platforms. The package names shown here are verified to exist in the respective repositories.""",
-            condition="has_repository_data"
+            condition="has_repository_data",
         ),
         PromptSection(
             name="similar_examples",
@@ -465,7 +474,7 @@ IMPORTANT: Use this repository information to ensure accurate package names, ver
 $similar_saidata_examples
 
 Use these examples as reference for structure, provider configurations, and best practices. Pay attention to how similar software is configured across different providers, but ensure the generated saidata is specific to the requested software.""",
-            condition="has_similar_saidata"
+            condition="has_similar_saidata",
         ),
         PromptSection(
             name="sample_examples",
@@ -473,7 +482,7 @@ Use these examples as reference for structure, provider configurations, and best
 $sample_saidata_examples
 
 These are high-quality reference examples showing proper saidata structure, formatting, and best practices. Use these as templates for structure and formatting, adapting the content for the specific software being generated.""",
-            condition="has_sample_saidata"
+            condition="has_sample_saidata",
         ),
         PromptSection(
             name="user_guidance",
@@ -481,7 +490,7 @@ These are high-quality reference examples showing proper saidata structure, form
 $user_hints
 
 Incorporate these user preferences and hints into the generated saidata.""",
-            condition="has_user_hints"
+            condition="has_user_hints",
         ),
         PromptSection(
             name="schema_requirements",
@@ -677,12 +686,12 @@ providers:
         key: "https://repo.example.com/key.gpg"
         type: "upstream"
         recommended: true
-  
+
   dnf:
     packages:
       - name: "main"
         package_name: "example-software"
-  
+
   brew:
     packages:
       - name: "main"
@@ -698,7 +707,7 @@ providers:
 **WHEN TO USE PROVIDER OVERRIDES:**
 Provider overrides are needed when resources differ across platforms. Common cases:
 
-1. **Different package names**: 
+1. **Different package names**:
    - Top-level: package_name: "apache2" (Debian/Ubuntu default)
    - dnf override: package_name: "httpd" (RHEL/CentOS uses different name)
 
@@ -760,7 +769,7 @@ providers:
 ```
 
 Generate complete, valid YAML following this 0.3 structure exactly.""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="url_generation_emphasis",
@@ -833,7 +842,7 @@ metadata:
 ```
 
 Remember: URL validation happens automatically, so be generous with URL suggestions!""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="output_instruction",
@@ -853,9 +862,9 @@ Remember: URL validation happens automatically, so be generous with URL suggesti
 13. Ensure the output is production-ready and follows 0.3 schema best practices
 
 Generate the saidata YAML now:""",
-            required=True
-        )
-    ]
+            required=True,
+        ),
+    ],
 )
 
 UPDATE_SAIDATA_TEMPLATE = PromptTemplate(
@@ -872,7 +881,7 @@ CRITICAL REQUIREMENTS:
 4. Improve metadata and descriptions
 5. Maintain backward compatibility
 6. Generate ONLY valid YAML content""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="existing_saidata_context",
@@ -881,7 +890,7 @@ $existing_saidata
 
 Enhance this existing configuration with new information while preserving customizations.""",
             condition="has_existing_saidata",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="repository_updates",
@@ -889,7 +898,7 @@ Enhance this existing configuration with new information while preserving custom
 $repository_context
 
 Use this updated repository information to refresh package names, versions, and availability.""",
-            condition="has_repository_data"
+            condition="has_repository_data",
         ),
         PromptSection(
             name="enhancement_guidance",
@@ -897,7 +906,7 @@ Use this updated repository information to refresh package names, versions, and 
 $user_hints
 
 Apply these enhancement requests to the existing saidata.""",
-            condition="has_user_hints"
+            condition="has_user_hints",
         ),
         PromptSection(
             name="output_instruction",
@@ -910,9 +919,9 @@ Apply these enhancement requests to the existing saidata.""",
 6. Ensure all YAML syntax is correct
 
 Generate the updated saidata YAML now:""",
-            required=True
-        )
-    ]
+            required=True,
+        ),
+    ],
 )
 
 RETRY_SAIDATA_TEMPLATE = PromptTemplate(
@@ -929,7 +938,7 @@ CRITICAL REQUIREMENTS:
 4. Ensure all required fields are present and properly formatted
 5. Follow semantic versioning for the saidata version field
 6. Pay special attention to data types and field requirements""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="validation_feedback",
@@ -943,7 +952,7 @@ CRITICAL: You must fix ALL of these validation errors in your corrected output. 
 - YAML syntax errors
 - Schema compliance issues""",
             condition="has_validation_feedback",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="software_specification",
@@ -952,7 +961,7 @@ CRITICAL: You must fix ALL of these validation errors in your corrected output. 
 TARGET PROVIDERS: $target_providers
 
 Generate corrected saidata that supports the specified providers with accurate package names, installation commands, and configuration details.""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="repository_context",
@@ -960,7 +969,7 @@ Generate corrected saidata that supports the specified providers with accurate p
 $repository_context
 
 IMPORTANT: Use this repository information to ensure accurate package names, versions, and availability across different platforms. The package names shown here are verified to exist in the respective repositories.""",
-            condition="has_repository_data"
+            condition="has_repository_data",
         ),
         PromptSection(
             name="similar_examples",
@@ -968,7 +977,7 @@ IMPORTANT: Use this repository information to ensure accurate package names, ver
 $similar_saidata_examples
 
 Use these examples as reference for structure, provider configurations, and best practices. Pay attention to how similar software is configured across different providers, but ensure the generated saidata is specific to the requested software.""",
-            condition="has_similar_saidata"
+            condition="has_similar_saidata",
         ),
         PromptSection(
             name="sample_examples",
@@ -976,7 +985,7 @@ Use these examples as reference for structure, provider configurations, and best
 $sample_saidata_examples
 
 These are high-quality reference examples showing proper saidata structure, formatting, and best practices. Use these as templates for structure and formatting, adapting the content for the specific software being generated.""",
-            condition="has_sample_saidata"
+            condition="has_sample_saidata",
         ),
         PromptSection(
             name="json_schema_reference",
@@ -984,7 +993,7 @@ These are high-quality reference examples showing proper saidata structure, form
 $json_schema
 
 This is the complete JSON schema that your YAML output must validate against. Pay special attention to data types and required fields.""",
-            condition="include_json_schema"
+            condition="include_json_schema",
         ),
         PromptSection(
             name="schema_requirements",
@@ -1115,17 +1124,17 @@ sources:
   - name: "main"
     url: "https://example.com/software-{{version}}.tar.gz"
     build_system: "autotools"
-    
+
 binaries:
   - name: "main"
     url: "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip"
     install_path: "/usr/local/bin"
-    
+
 scripts:
   - name: "official"
     url: "https://get.example.com/install.sh"
     interpreter: "bash"
-    
+
 providers:
   apt:
     packages:
@@ -1155,7 +1164,7 @@ sources:
 ```
 
 Generate complete, valid YAML following this 0.3 structure exactly and fixing all validation errors.""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="url_generation_emphasis",
@@ -1171,7 +1180,7 @@ It's better to include a potentially incorrect URL than to omit it entirely.
 Use common URL patterns based on the software name and type.
 
 Remember: URL validation happens automatically, so be generous with URL suggestions!""",
-            required=True
+            required=True,
         ),
         PromptSection(
             name="output_instruction",
@@ -1187,15 +1196,15 @@ Remember: URL validation happens automatically, so be generous with URL suggesti
 9. Ensure the output passes 0.3 schema validation
 
 Generate the corrected saidata YAML now:""",
-            required=True
-        )
-    ]
+            required=True,
+        ),
+    ],
 )
 
 
 class PromptManager:
     """Manager for prompt templates."""
-    
+
     def __init__(self):
         """Initialize prompt manager with default templates."""
         self.templates = {
@@ -1203,36 +1212,38 @@ class PromptManager:
             "update": UPDATE_SAIDATA_TEMPLATE,
             "retry": RETRY_SAIDATA_TEMPLATE,
         }
-    
+
     def get_template(self, template_name: str) -> PromptTemplate:
         """Get a prompt template by name.
-        
+
         Args:
             template_name: Name of the template
-            
+
         Returns:
             PromptTemplate instance
-            
+
         Raises:
             KeyError: If template not found
         """
         if template_name not in self.templates:
-            raise KeyError(f"Template '{template_name}' not found. Available: {list(self.templates.keys())}")
-        
+            raise KeyError(
+                f"Template '{template_name}' not found. Available: {list(self.templates.keys())}"
+            )
+
         return self.templates[template_name]
-    
+
     def register_template(self, name: str, template: PromptTemplate) -> None:
         """Register a new prompt template.
-        
+
         Args:
             name: Template name
             template: PromptTemplate instance
         """
         self.templates[name] = template
-    
+
     def list_templates(self) -> List[str]:
         """List available template names.
-        
+
         Returns:
             List of template names
         """

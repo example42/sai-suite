@@ -1,12 +1,14 @@
 """Pydantic models for repository data structures."""
 
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class RepositoryPackage(BaseModel):
     """Package information from repository sources."""
+
     name: str
     version: str
     description: Optional[str] = None
@@ -24,24 +26,26 @@ class RepositoryPackage(BaseModel):
     tags: Optional[List[str]] = None
     category: Optional[str] = None
     last_updated: Optional[datetime] = None
-    
+
     model_config = ConfigDict(validate_assignment=True, extra="allow")
 
 
 class CacheEntry(BaseModel):
     """Repository cache entry."""
+
     repository_name: str
     data: List[RepositoryPackage]
     timestamp: datetime
     expires_at: datetime
     checksum: str
     metadata: Optional[Dict[str, Any]] = None
-    
+
     model_config = ConfigDict(validate_assignment=True)
 
 
 class RepositoryInfo(BaseModel):
     """Repository information and metadata."""
+
     name: str
     url: Optional[str] = None
     type: str  # apt, dnf, brew, winget, etc.
@@ -53,16 +57,17 @@ class RepositoryInfo(BaseModel):
     package_count: Optional[int] = None
     enabled: bool = True
     priority: int = 1
-    
+
     model_config = ConfigDict(validate_assignment=True)
 
 
 class SearchResult(BaseModel):
     """Search result for repository packages."""
+
     query: str
     packages: List[RepositoryPackage]
     total_results: int
     search_time: float
     repository_sources: List[str]
-    
+
     model_config = ConfigDict(validate_assignment=True)

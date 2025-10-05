@@ -1,14 +1,23 @@
 """Tests for URL validation filter."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
+
 import aiohttp
+import pytest
 
 from saigen.core.url_filter import URLValidationFilter
 from saigen.models.saidata import (
-    SaiData, Metadata, Urls, SecurityMetadata,
-    Package, Source, Binary, Script, BuildSystem,
-    ProviderConfig, Repository
+    Binary,
+    BuildSystem,
+    Metadata,
+    Package,
+    ProviderConfig,
+    Repository,
+    SaiData,
+    Script,
+    SecurityMetadata,
+    Source,
+    Urls,
 )
 
 
@@ -23,39 +32,26 @@ def sample_saidata():
             urls=Urls(
                 website="https://example.com",
                 documentation="https://docs.example.com",
-                source="https://github.com/example/repo"
+                source="https://github.com/example/repo",
             ),
             security=SecurityMetadata(
-                sbom_url="https://example.com/sbom.json",
-                signing_key="https://example.com/key.asc"
-            )
+                sbom_url="https://example.com/sbom.json", signing_key="https://example.com/key.asc"
+            ),
         ),
         packages=[
             Package(
-                name="pkg1",
-                package_name="test-pkg",
-                download_url="https://example.com/pkg.tar.gz"
+                name="pkg1", package_name="test-pkg", download_url="https://example.com/pkg.tar.gz"
             )
         ],
         sources=[
             Source(
                 name="source1",
                 url="https://example.com/source.tar.gz",
-                build_system=BuildSystem.CMAKE
+                build_system=BuildSystem.CMAKE,
             )
         ],
-        binaries=[
-            Binary(
-                name="binary1",
-                url="https://example.com/binary.tar.gz"
-            )
-        ],
-        scripts=[
-            Script(
-                name="script1",
-                url="https://example.com/install.sh"
-            )
-        ]
+        binaries=[Binary(name="binary1", url="https://example.com/binary.tar.gz")],
+        scripts=[Script(name="script1", url="https://example.com/install.sh")],
     )
 
 
@@ -73,7 +69,7 @@ async def test_extract_urls(sample_saidata):
     """Test URL extraction from saidata."""
     async with URLValidationFilter() as filter:
         urls = filter._extract_urls(sample_saidata)
-        
+
         # Should extract all HTTP/HTTPS URLs
         assert "https://example.com" in urls
         assert "https://docs.example.com" in urls
@@ -84,7 +80,7 @@ async def test_extract_urls(sample_saidata):
         assert "https://example.com/source.tar.gz" in urls
         assert "https://example.com/binary.tar.gz" in urls
         assert "https://example.com/install.sh" in urls
-        
+
         # Should have 9 unique URLs
         assert len(urls) == 9
 
@@ -110,13 +106,13 @@ async def test_check_url_valid():
         mock_response.status = 200
         mock_response.__aenter__.return_value = mock_response
         mock_response.__aexit__.return_value = None
-        
+
         filter._session.head = MagicMock(return_value=mock_response)
-        
-        semaphore = pytest.mock.AsyncMock()
+
+        semaphore = AsyncMock()
         semaphore.__aenter__.return_value = None
         semaphore.__aexit__.return_value = None
-        
+
         result = await filter._check_url("https://example.com", semaphore)
         assert result is True
 
@@ -130,13 +126,13 @@ async def test_check_url_invalid_status():
         mock_response.status = 404
         mock_response.__aenter__.return_value = mock_response
         mock_response.__aexit__.return_value = None
-        
+
         filter._session.head = MagicMock(return_value=mock_response)
-        
-        semaphore = pytest.mock.AsyncMock()
+
+        semaphore = AsyncMock()
         semaphore.__aenter__.return_value = None
         semaphore.__aexit__.return_value = None
-        
+
         result = await filter._check_url("https://example.com/notfound", semaphore)
         assert result is False
 
@@ -148,13 +144,13 @@ async def test_check_url_timeout():
         # Mock timeout
         async def mock_head(*args, **kwargs):
             raise aiohttp.ClientTimeout()
-        
+
         filter._session.head = mock_head
-        
-        semaphore = pytest.mock.AsyncMock()
+
+        semaphore = AsyncMock()
         semaphore.__aenter__.return_value = None
         semaphore.__aexit__.return_value = None
-        
+
         result = await filter._check_url("https://slow.example.com", semaphore)
         assert result is False
 
@@ -164,20 +160,22 @@ async def test_filter_saidata_all_valid(sample_saidata):
     """Test filtering when all URLs are valid."""
     async with URLValidationFilter() as filter:
         # Mock all URLs as valid
-        filter._validate_urls = AsyncMock(return_value={
-            "https://example.com",
-            "https://docs.example.com",
-            "https://github.com/example/repo",
-            "https://example.com/sbom.json",
-            "https://example.com/key.asc",
-            "https://example.com/pkg.tar.gz",
-            "https://example.com/source.tar.gz",
-            "https://example.com/binary.tar.gz",
-            "https://example.com/install.sh"
-        })
-        
+        filter._validate_urls = AsyncMock(
+            return_value={
+                "https://example.com",
+                "https://docs.example.com",
+                "https://github.com/example/repo",
+                "https://example.com/sbom.json",
+                "https://example.com/key.asc",
+                "https://example.com/pkg.tar.gz",
+                "https://example.com/source.tar.gz",
+                "https://example.com/binary.tar.gz",
+                "https://example.com/install.sh",
+            }
+        )
+
         filtered = await filter.filter_saidata(sample_saidata)
-        
+
         # All URLs should remain
         assert filtered.metadata.urls.website == "https://example.com"
         assert filtered.metadata.urls.documentation == "https://docs.example.com"
@@ -193,27 +191,29 @@ async def test_filter_saidata_some_invalid(sample_saidata):
     """Test filtering when some URLs are invalid."""
     async with URLValidationFilter() as filter:
         # Mock only some URLs as valid
-        filter._validate_urls = AsyncMock(return_value={
-            "https://example.com",
-            "https://github.com/example/repo",
-            "https://example.com/source.tar.gz"
-        })
-        
+        filter._validate_urls = AsyncMock(
+            return_value={
+                "https://example.com",
+                "https://github.com/example/repo",
+                "https://example.com/source.tar.gz",
+            }
+        )
+
         filtered = await filter.filter_saidata(sample_saidata)
-        
+
         # Valid URLs should remain
         assert filtered.metadata.urls.website == "https://example.com"
         assert filtered.metadata.urls.source == "https://github.com/example/repo"
-        
+
         # Invalid URLs should be filtered
         assert filtered.metadata.urls.documentation is None
         assert filtered.metadata.security.sbom_url is None
         assert filtered.metadata.security.signing_key is None
         assert filtered.packages[0].download_url is None
-        
+
         # Sources with valid URL should remain
         assert len(filtered.sources) == 1
-        
+
         # Binaries and scripts with invalid URLs should be removed
         assert len(filtered.binaries) == 0
         assert len(filtered.scripts) == 0
@@ -224,15 +224,12 @@ async def test_filter_saidata_no_urls():
     """Test filtering saidata with no URLs."""
     saidata = SaiData(
         version="0.3",
-        metadata=Metadata(
-            name="test-software",
-            description="Test software without URLs"
-        )
+        metadata=Metadata(name="test-software", description="Test software without URLs"),
     )
-    
+
     async with URLValidationFilter() as filter:
         filtered = await filter.filter_saidata(saidata)
-        
+
         # Should return unchanged
         assert filtered.metadata.name == "test-software"
         assert filtered.metadata.urls is None
@@ -243,10 +240,7 @@ async def test_filter_provider_configs():
     """Test filtering URLs in provider configurations."""
     saidata = SaiData(
         version="0.3",
-        metadata=Metadata(
-            name="test-software",
-            description="Test software"
-        ),
+        metadata=Metadata(name="test-software", description="Test software"),
         providers={
             "apt": ProviderConfig(
                 repositories=[
@@ -258,29 +252,27 @@ async def test_filter_provider_configs():
                             Source(
                                 name="source1",
                                 url="https://repo.example.com/source.tar.gz",
-                                build_system=BuildSystem.CMAKE
+                                build_system=BuildSystem.CMAKE,
                             )
-                        ]
+                        ],
                     )
                 ]
             )
-        }
+        },
     )
-    
+
     async with URLValidationFilter() as filter:
         # Mock only repo URL as valid
-        filter._validate_urls = AsyncMock(return_value={
-            "https://repo.example.com"
-        })
-        
+        filter._validate_urls = AsyncMock(return_value={"https://repo.example.com"})
+
         filtered = await filter.filter_saidata(saidata)
-        
+
         # Valid repo URL should remain
         assert filtered.providers["apt"].repositories[0].url == "https://repo.example.com"
-        
+
         # Invalid key URL should be filtered
         assert filtered.providers["apt"].repositories[0].key is None
-        
+
         # Invalid source should be removed
         assert len(filtered.providers["apt"].repositories[0].sources) == 0
 
@@ -288,23 +280,21 @@ async def test_filter_provider_configs():
 @pytest.mark.asyncio
 async def test_concurrent_url_validation():
     """Test that URLs are validated concurrently."""
-    urls = {
-        f"https://example{i}.com" for i in range(20)
-    }
-    
+    urls = {f"https://example{i}.com" for i in range(20)}
+
     async with URLValidationFilter(max_concurrent=5) as filter:
         # Mock check_url to track calls
         call_count = 0
-        
+
         async def mock_check_url(url, semaphore):
             nonlocal call_count
             call_count += 1
             return True
-        
+
         filter._check_url = mock_check_url
-        
+
         valid_urls = await filter._validate_urls(urls)
-        
+
         # All URLs should be validated
         assert len(valid_urls) == 20
         assert call_count == 20

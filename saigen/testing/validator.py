@@ -5,7 +5,7 @@ import platform
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import yaml
 
@@ -42,7 +42,7 @@ class SaidataValidator:
     def validate_package_exists(self, saidata: SaiData) -> TestResult:
         """Test if package exists in repositories."""
         start = self._now()
-        
+
         if not saidata.packages:
             return TestResult(
                 name="package_exists",
@@ -54,7 +54,7 @@ class SaidataValidator:
         for package in saidata.packages:
             pkg_mgr = package.name
             pkg_name = package.package_name
-            
+
             if not self._is_package_manager_available(pkg_mgr):
                 continue
 
@@ -99,7 +99,7 @@ class SaidataValidator:
         for package in saidata.packages:
             pkg_mgr = package.name
             pkg_name = package.package_name
-            
+
             if not self._is_package_manager_available(pkg_mgr):
                 continue
 
@@ -265,10 +265,12 @@ class SaidataValidator:
     def _now() -> float:
         """Get current timestamp."""
         import time
+
         return time.time()
 
     @staticmethod
     def _elapsed(start: float) -> float:
         """Calculate elapsed time."""
         import time
+
         return time.time() - start

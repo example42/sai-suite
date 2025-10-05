@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from saigen.testing.models import TestSuite
 from saigen.testing.validator import SaidataValidator
@@ -64,12 +63,13 @@ class TestRunner:
                     logger.info(f"Running test: {test_name}")
                 result = test_func()
                 suite.results.append(result)
-                
+
                 if self.verbose:
                     logger.info(f"  {result.status.value}: {result.message}")
             except Exception as e:
                 logger.error(f"Test '{test_name}' raised exception: {e}")
                 from saigen.testing.models import TestResult, TestStatus
+
                 suite.results.append(
                     TestResult(
                         name=test_name.lower().replace(" ", "_"),
@@ -92,9 +92,9 @@ class TestRunner:
             List of TestSuite results
         """
         results = []
-        
+
         yaml_files = list(saidata_dir.glob("**/*.yaml")) + list(saidata_dir.glob("**/*.yml"))
-        
+
         logger.info(f"Found {len(yaml_files)} saidata files to test")
 
         for yaml_file in yaml_files:

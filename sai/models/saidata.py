@@ -1,12 +1,14 @@
 """Pydantic models for SaiData structure."""
 
-from typing import Dict, List, Optional, Union, Any
-from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
+from typing import Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ServiceType(str, Enum):
     """Service management types."""
+
     SYSTEMD = "systemd"
     INIT = "init"
     LAUNCHD = "launchd"
@@ -17,6 +19,7 @@ class ServiceType(str, Enum):
 
 class FileType(str, Enum):
     """File types."""
+
     CONFIG = "config"
     BINARY = "binary"
     LIBRARY = "library"
@@ -28,6 +31,7 @@ class FileType(str, Enum):
 
 class Protocol(str, Enum):
     """Network protocols."""
+
     TCP = "tcp"
     UDP = "udp"
     SCTP = "sctp"
@@ -35,6 +39,7 @@ class Protocol(str, Enum):
 
 class RepositoryType(str, Enum):
     """Repository types."""
+
     UPSTREAM = "upstream"
     OS_DEFAULT = "os-default"
     OS_BACKPORTS = "os-backports"
@@ -43,6 +48,7 @@ class RepositoryType(str, Enum):
 
 class Urls(BaseModel):
     """URL metadata."""
+
     website: Optional[str] = None
     documentation: Optional[str] = None
     source: Optional[str] = None
@@ -57,6 +63,7 @@ class Urls(BaseModel):
 
 class SecurityMetadata(BaseModel):
     """Security-related metadata."""
+
     cve_exceptions: Optional[List[str]] = None
     security_contact: Optional[str] = None
     vulnerability_disclosure: Optional[str] = None
@@ -66,6 +73,7 @@ class SecurityMetadata(BaseModel):
 
 class Metadata(BaseModel):
     """Software metadata."""
+
     name: str
     display_name: Optional[str] = None
     description: Optional[str] = None
@@ -82,6 +90,7 @@ class Metadata(BaseModel):
 
 class Package(BaseModel):
     """Package definition."""
+
     name: str
     version: Optional[str] = None
     alternatives: Optional[List[str]] = None
@@ -94,6 +103,7 @@ class Package(BaseModel):
 
 class Service(BaseModel):
     """Service definition."""
+
     name: str
     service_name: Optional[str] = None
     type: Optional[ServiceType] = None
@@ -103,6 +113,7 @@ class Service(BaseModel):
 
 class File(BaseModel):
     """File definition."""
+
     name: str
     path: str
     type: Optional[FileType] = None
@@ -114,6 +125,7 @@ class File(BaseModel):
 
 class Directory(BaseModel):
     """Directory definition."""
+
     name: str
     path: str
     owner: Optional[str] = None
@@ -124,6 +136,7 @@ class Directory(BaseModel):
 
 class Command(BaseModel):
     """Command definition."""
+
     name: str
     path: Optional[str] = None
     arguments: Optional[List[str]] = None
@@ -134,6 +147,7 @@ class Command(BaseModel):
 
 class Port(BaseModel):
     """Port definition."""
+
     port: int
     protocol: Optional[Protocol] = None
     service: Optional[str] = None
@@ -142,6 +156,7 @@ class Port(BaseModel):
 
 class Container(BaseModel):
     """Container definition."""
+
     name: str
     image: str
     tag: Optional[str] = None
@@ -156,6 +171,7 @@ class Container(BaseModel):
 
 class PackageSource(BaseModel):
     """Package source definition."""
+
     name: str
     priority: Optional[int] = None
     recommended: Optional[bool] = None
@@ -166,6 +182,7 @@ class PackageSource(BaseModel):
 
 class Repository(BaseModel):
     """Repository definition."""
+
     name: str
     url: Optional[str] = None
     key: Optional[str] = None
@@ -186,6 +203,7 @@ class Repository(BaseModel):
 
 class ProviderConfig(BaseModel):
     """Provider-specific configuration."""
+
     prerequisites: Optional[List[str]] = None
     build_commands: Optional[List[str]] = None
     packages: Optional[List[Package]] = None
@@ -201,6 +219,7 @@ class ProviderConfig(BaseModel):
 
 class CompatibilityEntry(BaseModel):
     """Compatibility matrix entry."""
+
     provider: str
     platform: Union[str, List[str]]
     architecture: Optional[Union[str, List[str]]] = None
@@ -213,6 +232,7 @@ class CompatibilityEntry(BaseModel):
 
 class VersionCompatibility(BaseModel):
     """Version compatibility information."""
+
     latest: Optional[str] = None
     minimum: Optional[str] = None
     latest_lts: Optional[str] = None
@@ -221,12 +241,14 @@ class VersionCompatibility(BaseModel):
 
 class Compatibility(BaseModel):
     """Compatibility information."""
+
     matrix: Optional[List[CompatibilityEntry]] = None
     versions: Optional[VersionCompatibility] = None
 
 
 class SaiData(BaseModel):
     """Complete SaiData structure."""
+
     version: str = Field(pattern=r"^\d+\.\d+(\.\d+)?$")
     metadata: Metadata
     packages: Optional[List[Package]] = None
