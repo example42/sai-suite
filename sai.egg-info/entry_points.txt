@@ -1,3 +1,0 @@
-[console_scripts]
-sai = sai.cli.main:main
-saigen = saigen.cli.main:main
