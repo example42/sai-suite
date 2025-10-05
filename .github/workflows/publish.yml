@@ -1,0 +1,102 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        type: choice
+        options:
+          - sai
+          - saigen
+          - both
+      environment:
+        description: 'Environment to publish to'
+        required: true
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
+jobs:
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'pypi' }}
+    permissions:
+      id-token: write  # Required for trusted publishing
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Needed for setuptools-scm
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Determine packages to publish
+      id: packages
+      run: |
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          # Determine from tag
+          TAG="${{ github.event.release.tag_name }}"
+          if [[ $TAG == sai-* ]]; then
+            echo "packages=sai" >> $GITHUB_OUTPUT
+          elif [[ $TAG == saigen-* ]]; then
+            echo "packages=saigen" >> $GITHUB_OUTPUT
+          else
+            echo "packages=both" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "packages=${{ github.event.inputs.package }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build SAI package
+      if: steps.packages.outputs.packages == 'sai' || steps.packages.outputs.packages == 'both'
+      run: |
+        cd sai
+        python -m build
+        twine check dist/*
+
+    - name: Build SAIGEN package
+      if: steps.packages.outputs.packages == 'saigen' || steps.packages.outputs.packages == 'both'
+      run: |
+        cd saigen
+        python -m build
+        twine check dist/*
+
+    - name: Publish SAI to TestPyPI
+      if: (steps.packages.outputs.packages == 'sai' || steps.packages.outputs.packages == 'both') && (github.event.inputs.environment == 'testpypi')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        packages-dir: sai/dist/
+
+    - name: Publish SAIGEN to TestPyPI
+      if: (steps.packages.outputs.packages == 'saigen' || steps.packages.outputs.packages == 'both') && (github.event.inputs.environment == 'testpypi')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        packages-dir: saigen/dist/
+
+    - name: Publish SAI to PyPI
+      if: (steps.packages.outputs.packages == 'sai' || steps.packages.outputs.packages == 'both') && (github.event.inputs.environment == 'pypi' || github.event_name == 'release')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: sai/dist/
+
+    - name: Publish SAIGEN to PyPI
+      if: (steps.packages.outputs.packages == 'saigen' || steps.packages.outputs.packages == 'both') && (github.event.inputs.environment == 'pypi' || github.event_name == 'release')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: saigen/dist/

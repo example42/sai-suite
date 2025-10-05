@@ -1,379 +1,205 @@
 # Installation Guide
 
-This guide covers various methods to install the SAI Software Management Suite.
+The SAI Software Management Suite consists of two complementary tools that can be installed separately or together based on your needs.
 
-## Quick Installation
+## Quick Start
 
-### PyPI (Recommended)
+### Install SAI Only (Lightweight)
 
-Install the latest stable version from PyPI:
+If you only need to execute software management actions using existing saidata:
 
 ```bash
 pip install sai
 ```
 
-This installs both `sai` and `saigen` commands with core dependencies.
+This installs the lightweight SAI CLI tool with minimal dependencies.
 
-### With Optional Dependencies
+**Use this when:**
+- You're deploying software using existing saidata
+- You're running SAI in production environments
+- You want minimal dependencies and fast installation
+- You're using SAI in CI/CD pipelines
 
-Install with all optional dependencies for full functionality:
+### Install SAIGEN Only (Generation Tool)
 
-```bash
-pip install "sai[all]"
-```
-
-Or install specific feature sets:
-
-```bash
-# For AI generation features
-pip install "sai[llm,rag]"
-
-# For development
-pip install "sai[dev]"
-
-# For testing only
-pip install "sai[test]"
-```
-
-## Installation Methods
-
-### 1. Automated Installation Script
-
-#### Linux/macOS
-
-Download and run the installation script:
+If you only need to generate and manage saidata:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/example42/sai/main/scripts/install.sh | bash
+pip install saigen
 ```
 
-Or download and inspect first:
+This installs the SAIGEN tool with all generation capabilities.
+
+**Use this when:**
+- You're creating new saidata files
+- You're maintaining software metadata catalogs
+- You need AI-powered metadata generation
+- You're working with package repositories
+
+### Install SAI with Generation Support
+
+If you need both execution and generation capabilities:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/example42/sai/main/scripts/install.sh -o install.sh
-chmod +x install.sh
-./install.sh
+pip install sai[generation]
 ```
 
-#### Windows (PowerShell)
+This installs SAI with SAIGEN included as an optional dependency.
 
-```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/example42/sai/main/scripts/install.ps1" -OutFile "install.ps1"
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-.\install.ps1
-```
+**Use this when:**
+- You need both execution and generation in one environment
+- You're developing and testing saidata
+- You want a complete toolkit for software management
 
-The installation script will:
-- Check Python version (3.8+ required)
-- Create a virtual environment in `~/.sai/venv`
-- Install SAI with all dependencies
-- Create command symlinks in `~/.local/bin`
-- Set up shell completion
-- Create default configuration
+### Install SAIGEN with All Features
 
-### 2. Manual Installation
-
-#### Prerequisites
-
-- Python 3.8 or higher
-- pip (Python package installer)
-
-#### Step-by-step Installation
-
-1. **Create a virtual environment (recommended):**
+For full SAIGEN capabilities including LLM and RAG support:
 
 ```bash
-python -m venv sai-env
-source sai-env/bin/activate  # On Windows: sai-env\Scripts\activate
+# With LLM support (OpenAI, Anthropic)
+pip install saigen[llm]
+
+# With RAG support (embeddings, vector search)
+pip install saigen[rag]
+
+# With all features
+pip install saigen[all]
 ```
 
-2. **Install SAI:**
+## Installation Options Comparison
 
-```bash
-pip install sai[all]
-```
+| Package | Size | Dependencies | Use Case |
+|---------|------|--------------|----------|
+| `sai` | Small | Minimal | Production execution |
+| `saigen` | Medium | Standard | Metadata generation |
+| `sai[generation]` | Medium | Standard | Development & testing |
+| `saigen[llm]` | Large | +AI providers | AI-powered generation |
+| `saigen[rag]` | Large | +ML libraries | Advanced RAG features |
+| `saigen[all]` | Largest | Everything | Full development suite |
 
-3. **Verify installation:**
+## Development Installation
 
-```bash
-sai --version
-saigen --version
-```
-
-### 3. Development Installation
-
-For contributing to SAI or using the latest development version:
+For contributing to the project:
 
 ```bash
 # Clone the repository
-git clone https://github.com/example42/sai.git
-cd sai
+git clone https://github.com/example42/sai-python.git
+cd sai-python
 
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Install both packages in editable mode with dev dependencies
+pip install -e ./sai[dev]
+pip install -e ./saigen[dev]
 
-# Upgrade pip
-pip install --upgrade pip
-
-# Install in development mode
-pip install -e ".[dev,llm,rag]"
-
-# Install pre-commit hooks (optional)
-pre-commit install
+# Or install workspace dev dependencies
+pip install -e .[dev]
 ```
 
-### 4. Docker Installation
+## Verify Installation
 
-#### Using Pre-built Image
+After installation, verify the tools are available:
 
 ```bash
-# Pull the latest image
-docker pull ghcr.io/example42/sai:latest
-
-# Run SAI
-docker run --rm -it ghcr.io/example42/sai:latest sai --help
-
-# Run SAIGEN
-docker run --rm -it ghcr.io/example42/sai:latest saigen --help
-```
-
-#### Building from Source
-
-```bash
-# Clone repository
-git clone https://github.com/example42/sai.git
-cd sai
-
-# Build image
-docker build -t sai:local .
-
-# Run container
-docker run --rm -it sai:local sai --help
-```
-
-#### Docker Compose
-
-Create a `docker-compose.yml` file:
-
-```yaml
-version: '3.8'
-services:
-  sai:
-    image: ghcr.io/example42/sai:latest
-    volumes:
-      - ./saidata:/home/sai/.sai/saidata
-      - ./config.yaml:/home/sai/.sai/config.yaml
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-```
-
-Run with:
-
-```bash
-docker-compose run --rm sai sai install nginx
-```
-
-### 5. Package Manager Installation
-
-#### Homebrew (macOS/Linux)
-
-```bash
-# Add tap (if not already added)
-brew tap example42/sai
-
-# Install SAI
-brew install sai
-```
-
-#### Chocolatey (Windows)
-
-```powershell
-# Install SAI
-choco install sai
-```
-
-#### Scoop (Windows)
-
-```powershell
-# Add bucket
-scoop bucket add sai https://github.com/example42/scoop-sai
-
-# Install SAI
-scoop install sai
-```
-
-## Post-Installation Setup
-
-### 1. Shell Completion
-
-Enable shell completion for better CLI experience:
-
-```bash
-# Install completion for current shell
-sai completion install
-
-# Or manually add to your shell profile
-echo 'eval "$(_SAI_COMPLETE=bash_source sai)"' >> ~/.bashrc  # Bash
-echo 'eval "$(_SAI_COMPLETE=zsh_source sai)"' >> ~/.zshrc    # Zsh
-```
-
-### 2. Configuration
-
-Create a configuration file at `~/.sai/config.yaml`:
-
-```yaml
-config_version: "0.1.0"
-log_level: info
-
-# Provider search paths
-saidata_paths:
-  - "."
-  - "~/.sai/saidata"
-  - "/usr/local/share/sai/saidata"
-
-provider_paths:
-  - "providers"
-  - "~/.sai/providers"
-  - "/usr/local/share/sai/providers"
-
-# Provider priorities (lower number = higher priority)
-provider_priorities:
-  apt: 1      # Linux (Debian/Ubuntu)
-  brew: 2     # macOS
-  winget: 3   # Windows
-
-# Execution settings
-max_concurrent_actions: 3
-action_timeout: 300
-require_confirmation: true
-dry_run_default: false
-```
-
-### 3. Environment Variables
-
-For SAIGEN AI features, set up API keys:
-
-```bash
-# OpenAI
-export OPENAI_API_KEY="your-openai-api-key"
-
-# Anthropic
-export ANTHROPIC_API_KEY="your-anthropic-api-key"
-
-# Add to your shell profile for persistence
-echo 'export OPENAI_API_KEY="your-openai-api-key"' >> ~/.bashrc
-```
-
-## Verification
-
-Test your installation:
-
-```bash
-# Check versions
+# Check SAI
 sai --version
+sai --help
+
+# Check SAIGEN (if installed)
 saigen --version
-
-# List available providers
-sai providers list
-
-# Show configuration
-sai config show
-
-# Test SAIGEN (requires API key)
-saigen config --show
+saigen --help
 ```
 
-## Troubleshooting
+## Docker Installation
 
-### Common Issues
-
-#### Python Version Error
-
-```
-Error: Python 3.8 or higher is required
-```
-
-**Solution:** Install Python 3.8+ from [python.org](https://python.org) or use your system package manager.
-
-#### Permission Denied
-
-```
-Permission denied: '/usr/local/bin/sai'
-```
-
-**Solution:** Use `--user` flag or virtual environment:
+Pre-built Docker images are available:
 
 ```bash
-pip install --user sai
+# SAI only
+docker pull sai/sai:latest
+
+# SAIGEN only
+docker pull sai/saigen:latest
+
+# Full suite
+docker pull sai/suite:latest
 ```
 
-#### Command Not Found
-
-```
-sai: command not found
-```
-
-**Solution:** Add to PATH:
+## Upgrading
 
 ```bash
-# Add to ~/.bashrc or ~/.zshrc
-export PATH="$HOME/.local/bin:$PATH"
+# Upgrade SAI
+pip install --upgrade sai
+
+# Upgrade SAIGEN
+pip install --upgrade saigen
+
+# Upgrade both
+pip install --upgrade sai saigen
 ```
-
-#### Import Errors
-
-```
-ModuleNotFoundError: No module named 'sai'
-```
-
-**Solution:** Ensure you're in the correct virtual environment or reinstall:
-
-```bash
-pip install --force-reinstall sai
-```
-
-### Getting Help
-
-- Check the [troubleshooting guide](troubleshooting.md)
-- Open an issue on [GitHub](https://github.com/example42/sai/issues)
-- Join our [Discord community](https://discord.gg/sai-software)
 
 ## Uninstallation
 
-### PyPI Installation
-
 ```bash
+# Remove SAI
 pip uninstall sai
+
+# Remove SAIGEN
+pip uninstall saigen
+
+# Remove both
+pip uninstall sai saigen
 ```
 
-### Script Installation
+## Platform-Specific Notes
+
+### Linux
+No special requirements. Works on all major distributions.
+
+### macOS
+No special requirements. Compatible with both Intel and Apple Silicon.
+
+### Windows
+- Requires Python 3.8 or higher
+- Some features may require Windows Subsystem for Linux (WSL)
+
+## Troubleshooting
+
+### Import Errors
+
+If you see import errors after installation:
 
 ```bash
-# Linux/macOS
-~/.sai/uninstall.sh
+# Ensure you're using the correct Python environment
+which python
+python --version
 
-# Windows
-~/.sai/uninstall.ps1
+# Reinstall in the correct environment
+pip install --force-reinstall sai
 ```
 
-### Manual Cleanup
+### Dependency Conflicts
+
+If you encounter dependency conflicts:
 
 ```bash
-# Remove virtual environment
-rm -rf ~/.sai/venv
+# Use a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install sai
+```
 
-# Remove configuration
-rm -rf ~/.sai
+### Permission Errors
 
-# Remove symlinks
-rm ~/.local/bin/sai ~/.local/bin/saigen
+If you get permission errors during installation:
+
+```bash
+# Install for current user only
+pip install --user sai
+
+# Or use a virtual environment (recommended)
 ```
 
 ## Next Steps
 
-- Read the [Configuration Guide](configuration-guide.md)
-- Check out [Usage Examples](../examples/)
-- Explore the [API Reference](api-reference.md)
-- Learn about [Provider Development](provider-development.md)
+- **SAI Users**: See [SAI CLI Guide](./sai-cli-guide.md)
+- **SAIGEN Users**: See [SAIGEN Guide](./saigen-guide.md)
+- **Developers**: See [Development Guide](./development.md)

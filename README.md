@@ -1,62 +1,162 @@
 # SAI Software Management Suite
 
-This repository contains two complementary tools for software metadata management:
+A monorepo containing two complementary tools for software management and metadata generation.
 
-## 🔧 SAI - Software Action Interface CLI Tool
+## 📦 Two Packages, One Repository
 
-A lightweight CLI tool for executing software management actions using provider-based configurations.
+This repository provides **separate pip packages** that can be installed independently or together:
 
-**Key Features:**
-- **Provider-based Actions**: Execute install, configure, start, stop, and other actions
-- **Multi-platform Support**: Works across Linux, macOS, and Windows
-- **Extensible Providers**: Support for package managers, containers, and custom providers
-- **Configuration Management**: Flexible YAML/JSON configuration system
-- **Dry-run Mode**: Preview actions before execution
+### 🔧 SAI - Software Action Interface
 
-## 🤖 SAIGEN - AI-Powered Saidata Generation Tool
+**Lightweight CLI for executing software management actions**
 
-An AI-enhanced tool for generating, validating, and managing software metadata in YAML format with universal repository support.
-
-**Key Features:**
-- **Universal Repository Support**: 50+ package managers including apt, dnf, brew, winget, npm, pypi, cargo, and more
-- **YAML-Driven Configuration**: Add new repositories without code changes using simple YAML configs
-- **AI-Enhanced Generation**: Uses LLMs (OpenAI, Anthropic, Ollama) for intelligent metadata creation
-- **Advanced Repository Management**: Concurrent operations, intelligent caching, and real-time statistics
-- **Schema Validation**: Validates generated files against official saidata schema
-- **RAG Support**: Retrieval-Augmented Generation for improved accuracy
-- **Batch Processing**: Generate metadata for multiple software packages efficiently
-- **Comprehensive CLI**: Full-featured repository management and package search capabilities
-
-## Installation
-
-### Install Both Tools
 ```bash
-pip install sai  # Installs both sai and saigen
+pip install sai
 ```
 
-### Development Installation
+**Key Features:**
+- Provider-based action execution (install, configure, start, stop, etc.)
+- Multi-platform support (Linux, macOS, Windows)
+- Minimal dependencies for production use
+- Dry-run mode for safe testing
+- Works with existing saidata from the [saidata repository](https://github.com/example42/saidata)
 
-It's recommended to use a virtual environment for development:
+**Use SAI when you need to:**
+- Deploy software using existing saidata
+- Execute software management in production
+- Run automated deployments in CI/CD pipelines
+
+### 🤖 SAIGEN - SAI Data Generation
+
+**AI-powered tool for generating and managing software metadata**
 
 ```bash
-git clone https://github.com/example42/sai.git
-cd sai
+pip install saigen
+```
+
+**Key Features:**
+- Generate saidata files for 50+ package managers (apt, dnf, brew, winget, npm, pypi, cargo, etc.)
+- AI-enhanced generation with LLM support (OpenAI, Anthropic, Ollama)
+- Schema validation and quality assessment
+- Batch processing capabilities
+- RAG (Retrieval-Augmented Generation) support
+- Comprehensive repository management
+
+**Use SAIGEN when you need to:**
+- Create new saidata files
+- Validate and test metadata
+- Contribute to the saidata repository
+- Build software catalogs
+
+## 🚀 Quick Start
+
+### Choose Your Installation
+
+```bash
+# Install SAI only (lightweight, for execution)
+pip install sai
+
+# Install SAIGEN only (for metadata generation)
+pip install saigen
+
+# Install SAI with generation support
+pip install sai[generation]
+
+# Install SAIGEN with all features (LLM + RAG)
+pip install saigen[all]
+```
+
+**Not sure which to install?** See [When to Use What](docs/when-to-use-what.md)
+
+## 📖 Documentation
+
+- **[When to Use What](docs/when-to-use-what.md)** - Choosing between SAI and SAIGEN
+- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
+- **[Monorepo Structure](MONOREPO.md)** - Understanding the repository structure
+
+## 🛠️ Development
+
+### Quick Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/example42/sai-python.git
+cd sai-python
 
 # Create and activate virtual environment
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Upgrade pip to latest version (required for pyproject.toml editable installs)
-pip install --upgrade pip
+# Install both packages in editable mode
+make install-both
+# Or: ./scripts/install-local.sh both
 
-# Install in development mode with all dependencies
-pip install -e ".[dev,llm,rag]"
+# Verify installation
+sai --version
+saigen --version
 ```
 
-To deactivate the virtual environment when done:
+### Common Development Tasks
+
 ```bash
-deactivate
+# Run tests
+make test
+
+# Format code
+make format
+
+# Run linters
+make lint
+
+# Build packages
+make build
+
+# See all available commands
+make help
 ```
+
+### Monorepo Structure
+
+This repository uses a monorepo approach with separate packages:
+
+```
+sai-python/
+├── sai/              # SAI package (lightweight execution)
+│   └── pyproject.toml
+├── saigen/           # SAIGEN package (generation tool)
+│   └── pyproject.toml
+├── pyproject.toml    # Workspace configuration
+└── scripts/          # Build and deployment scripts
+```
+
+**Benefits:**
+- Install only what you need
+- Shared code and utilities
+- Independent versioning and releases
+- Unified development experience
+
+See [MONOREPO.md](MONOREPO.md) for details
+
+## 📚 Documentation
+
+**[📖 Documentation Quick Reference](DOCS-QUICK-REFERENCE.md)** - Find what you need fast!
+
+### Getting Started
+- **[Quick Start Guide](QUICK-START.md)** - Get up and running in minutes
+- **[When to Use What](docs/when-to-use-what.md)** - Choose the right tool for your needs
+- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
+
+### Package Documentation
+- **[📁 General Documentation](docs/)** - Shared documentation and guides
+- **[📁 SAI Documentation](sai/docs/)** - SAI-specific CLI reference and guides
+- **[📁 SAIGEN Documentation](saigen/docs/)** - SAIGEN-specific CLI reference and guides
+
+### Quick Links
+- **[SAI CLI Reference](sai/docs/cli-reference.md)** - SAI command reference
+- **[SAIGEN CLI Reference](saigen/docs/cli-reference.md)** - SAIGEN command reference
+- **[Architecture Diagram](docs/architecture-diagram.md)** - Visual guide to the monorepo
+- **[Migration Guide](docs/MIGRATION.md)** - Upgrading from previous versions
+- **[Monorepo Structure](MONOREPO.md)** - Repository architecture and workflows
 
 ## Supported Package Managers
 

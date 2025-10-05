@@ -1,185 +1,113 @@
-# SAI Software Management Suite Makefile
+.PHONY: help install install-sai install-saigen install-both build build-sai build-saigen clean test test-sai test-saigen lint format publish-test publish-prod
 
-.PHONY: help install install-dev test test-cov lint format type-check security clean build publish docker docs pre-commit validate-providers validate-providers-verbose
-
-# Default target
 help:
-	@echo "SAI Software Management Suite - Development Commands"
-	@echo "=================================================="
+	@echo "SAI Monorepo - Available Commands"
 	@echo ""
-	@echo "Setup Commands:"
-	@echo "  install       Install package in current environment"
-	@echo "  install-dev   Install package with development dependencies"
-	@echo "  install-all   Install package with all optional dependencies"
+	@echo "Installation:"
+	@echo "  make install-sai      Install SAI in editable mode"
+	@echo "  make install-saigen   Install SAIGEN in editable mode"
+	@echo "  make install-both     Install both packages in editable mode"
 	@echo ""
-	@echo "Development Commands:"
-	@echo "  test          Run test suite"
-	@echo "  test-cov      Run tests with coverage report"
-	@echo "  lint          Run linting checks"
-	@echo "  format        Format code with black and isort"
-	@echo "  type-check    Run type checking with mypy"
-	@echo "  security      Run security checks"
-	@echo "  pre-commit    Run all pre-commit hooks"
+	@echo "Building:"
+	@echo "  make build            Build both packages"
+	@echo "  make build-sai        Build SAI package only"
+	@echo "  make build-saigen     Build SAIGEN package only"
 	@echo ""
-	@echo "Build Commands:"
-	@echo "  clean         Clean build artifacts"
-	@echo "  build         Build package for distribution"
-	@echo "  publish       Publish to PyPI"
-	@echo "  publish-test  Publish to Test PyPI"
+	@echo "Testing:"
+	@echo "  make test             Run all tests"
+	@echo "  make test-sai         Run SAI tests only"
+	@echo "  make test-saigen      Run SAIGEN tests only"
+	@echo "  make coverage         Run tests with coverage report"
 	@echo ""
-	@echo "Docker Commands:"
-	@echo "  docker-build       Build Docker image"
-	@echo "  docker-run         Run Docker container"
-	@echo "  docker-test        Test Docker image"
-	@echo "  docker-build-test  Build test environment images"
-	@echo "  docker-push-test   Push test images to registry"
+	@echo "Code Quality:"
+	@echo "  make lint             Run linters (flake8, mypy)"
+	@echo "  make format           Format code (black, isort)"
+	@echo "  make format-check     Check code formatting"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  docs          Generate documentation"
-	@echo "  docs-serve    Serve documentation locally"
+	@echo "Publishing:"
+	@echo "  make publish-test     Publish to TestPyPI"
+	@echo "  make publish-prod     Publish to PyPI (production)"
 	@echo ""
-	@echo "Validation Commands:"
-	@echo "  validate-providers    Validate provider files against schema"
+	@echo "Cleanup:"
+	@echo "  make clean            Remove build artifacts"
+	@echo "  make clean-all        Remove all generated files"
 
-# Installation
-install:
-	pip install -e .
+# Installation targets
+install-sai:
+	pip install -e ./sai[dev]
 
-install-dev:
-	pip install -e ".[dev]"
+install-saigen:
+	pip install -e ./saigen[dev]
 
-install-all:
-	pip install -e ".[all]"
+install-both: install-sai install-saigen
 
-# Testing
+install: install-both
+
+# Build targets
+build-sai:
+	cd sai && python -m build
+
+build-saigen:
+	cd saigen && python -m build
+
+build: clean
+	./scripts/build-packages.sh
+
+# Test targets
 test:
 	pytest
 
-test-cov:
-	pytest --cov=sai --cov=saigen --cov-report=html --cov-report=term-missing
+test-sai:
+	pytest tests/sai/
 
-test-integration:
-	pytest tests/integration/
+test-saigen:
+	pytest tests/saigen/
 
-# Code Quality
+coverage:
+	pytest --cov=sai --cov=saigen --cov-report=html --cov-report=term
+
+# Code quality targets
 lint:
 	flake8 sai saigen tests
-	black --check --diff sai saigen tests
-	isort --check-only --diff sai saigen tests
+	mypy sai saigen
 
 format:
 	black sai saigen tests
 	isort sai saigen tests
 
-type-check:
-	mypy sai saigen
+format-check:
+	black --check sai saigen tests
+	isort --check-only sai saigen tests
 
-security:
-	bandit -r sai saigen
-	safety check
+# Publishing targets
+publish-test:
+	./scripts/publish-packages.sh test both
 
-pre-commit:
-	pre-commit run --all-files
+publish-test-sai:
+	./scripts/publish-packages.sh test sai
 
-# Build and Distribution
+publish-test-saigen:
+	./scripts/publish-packages.sh test saigen
+
+publish-prod:
+	./scripts/publish-packages.sh prod both
+
+publish-prod-sai:
+	./scripts/publish-packages.sh prod sai
+
+publish-prod-saigen:
+	./scripts/publish-packages.sh prod saigen
+
+# Cleanup targets
 clean:
-	rm -rf build/
-	rm -rf dist/
-	rm -rf *.egg-info/
-	find . -type d -name __pycache__ -exec rm -rf {} +
+	rm -rf build/ dist/ *.egg-info
+	rm -rf sai/build/ sai/dist/ sai/*.egg-info
+	rm -rf saigen/build/ saigen/dist/ saigen/*.egg-info
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete
 
-build: clean
-	python -m build
-
-publish: build
-	twine upload dist/*
-
-publish-test: build
-	twine upload --repository testpypi dist/*
-
-# Docker
-docker-build:
-	docker build -t sai:latest .
-
-docker-run:
-	docker run --rm -it sai:latest
-
-docker-test:
-	docker run --rm sai:latest sai --version
-	docker run --rm sai:latest saigen --version
-
-# Docker Test Images
-docker-build-test:
-	@echo "Building test images..."
-	docker build -t sai-test-ubuntu docker/test-ubuntu/
-	docker build -t sai-test-debian docker/test-debian/
-	docker build -t sai-test-fedora docker/test-fedora/
-	docker build -t sai-test-alpine docker/test-alpine/
-
-docker-tag-test:
-	@echo "Tagging test images..."
-	docker tag sai-test-ubuntu ghcr.io/example42/sai-test-ubuntu:latest
-	docker tag sai-test-debian ghcr.io/example42/sai-test-debian:latest
-	docker tag sai-test-fedora ghcr.io/example42/sai-test-fedora:latest
-	docker tag sai-test-alpine ghcr.io/example42/sai-test-alpine:latest
-
-docker-push-test: docker-tag-test
-	@echo "Pushing test images..."
-	docker push ghcr.io/example42/sai-test-ubuntu:latest
-	docker push ghcr.io/example42/sai-test-debian:latest
-	docker push ghcr.io/example42/sai-test-fedora:latest
-	docker push ghcr.io/example42/sai-test-alpine:latest
-
-# Documentation
-docs:
-	@echo "Documentation generation not yet implemented"
-
-docs-serve:
-	@echo "Documentation serving not yet implemented"
-
-# Release Management
-release-patch:
-	python scripts/release.py patch
-
-release-minor:
-	python scripts/release.py minor
-
-release-major:
-	python scripts/release.py major
-
-# Development Environment
-dev-setup: install-all
-	pre-commit install
-	@echo "Development environment setup complete!"
-
-# CI/CD Simulation
-ci: lint type-check security test
-
-# Cleanup Development Environment
-dev-clean:
-	pre-commit uninstall
-	pip uninstall -y sai
-	$(MAKE) clean
-
-# Version Information
-version:
-	@python -c "from sai.version import get_version; print(f'SAI Version: {get_version()}')"
-
-# Quick Development Cycle
-dev: format lint type-check test
-	@echo "Development cycle complete!"
-
-# Provider Validation
-validate-providers:
-	@echo "Validating provider files against schema..."
-	./scripts/validate_providers.sh
-
-validate-providers-verbose:
-	@echo "Validating provider files against schema (verbose)..."
-	./scripts/validate_providers.sh --verbose
-
-# All Quality Checks
-quality: lint type-check security test-cov validate-providers
-	@echo "All quality checks passed!"
+clean-all: clean
+	rm -rf .pytest_cache .mypy_cache .coverage htmlcov/
+	rm -rf .tox/
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
