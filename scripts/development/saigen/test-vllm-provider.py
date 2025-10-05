@@ -19,7 +19,7 @@ async def test_connection():
     
     config = {
         "base_url": "http://localhost:8000/v1",
-        "model": "meta-llama/Meta-Llama-3-70B-Instruct",
+        "model": "meta-llama/Meta-Llama-3-8B-Instruct",
         "temperature": 0.1,
         "max_tokens": 500
     }
@@ -66,7 +66,7 @@ async def test_generation():
     
     config = {
         "base_url": "http://localhost:8000/v1",
-        "model": "meta-llama/Meta-Llama-3-70B-Instruct",
+        "model": "meta-llama/Meta-Llama-3-8B-Instruct",
         "temperature": 0.1,
         "max_tokens": 1000
     }
@@ -118,7 +118,7 @@ async def test_model_requirements():
     
     config = {
         "base_url": "http://localhost:8000/v1",
-        "model": "meta-llama/Meta-Llama-3-70B-Instruct"
+        "model": "meta-llama/Meta-Llama-3-8B-Instruct"
     }
     
     provider = VLLMProvider(config)

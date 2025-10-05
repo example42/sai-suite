@@ -1,92 +1,117 @@
-# vLLM Setup Guide for NVIDIA DGX Systems
+# vLLM Setup Guide for NVIDIA GB10 (Grace Blackwell) Systems
 
-This guide explains how to set up and use vLLM with SAIGEN on NVIDIA DGX systems for high-performance local LLM inference.
+This guide explains how to set up and use vLLM with SAIGEN on NVIDIA GB10 Grace Blackwell desktop workstations for high-performance local LLM inference.
 
-## Why vLLM for DGX?
+## Why vLLM for GB10?
 
 vLLM is optimized for NVIDIA GPUs and provides:
 - **High throughput**: Continuous batching for maximum GPU utilization
 - **Efficient memory**: PagedAttention reduces memory usage by up to 2x
-- **Fast inference**: Optimized CUDA kernels for NVIDIA hardware
-- **Multi-GPU support**: Tensor parallelism for large models
+- **Fast inference**: Optimized CUDA kernels for Blackwell architecture
+- **Coherent memory**: Leverages GB10's unified CPU-GPU memory architecture
 - **Zero API costs**: Run models locally without external API calls
 
 ## Prerequisites
 
-- NVIDIA DGX system with DGX OS 7
-- CUDA 11.8+ or 12.1+
+- NVIDIA GB10 Grace Blackwell workstation with DGX OS
+- CUDA 12.1+ (Blackwell support)
 - Python 3.8+
-- Sufficient GPU memory for your chosen model
+- Network access to GB10 (if running SAIGEN remotely)
+
+**Note**: The GB10 can run vLLM server while your development machine runs SAIGEN remotely over the network.
 
 ## Installation
 
-### 1. Install vLLM
+### On GB10 Workstation
 
 ```bash
-# Install vLLM with CUDA support
+# On GB10: Install vLLM with CUDA support
 pip install vllm
 
-# Or for specific CUDA version (e.g., CUDA 12.1)
+# Or for specific CUDA version (e.g., CUDA 12.1 for Blackwell)
 pip install vllm-cuda121
+
+# Verify installation
+python -c "import vllm; print(vllm.__version__)"
 ```
 
-### 2. Verify Installation
+### On Development Machine (Optional)
 
 ```bash
-python -c "import vllm; print(vllm.__version__)"
+# On dev machine: Install SAIGEN only (vLLM runs on GB10)
+pip install saigen
+
+# Or install from source
+pip install -e ./saigen
 ```
 
 ## Starting vLLM Server
 
-### Basic Setup (Single GPU)
+### On GB10 Workstation
+
+#### Basic Setup (Single GPU)
 
 ```bash
-# Start vLLM server with Llama 3 8B model
+# On GB10: Start vLLM server with Llama 3 8B model
 python -m vllm.entrypoints.openai.api_server \
     --model meta-llama/Meta-Llama-3-8B-Instruct \
     --host 0.0.0.0 \
     --port 8000
 ```
 
-### Multi-GPU Setup (Tensor Parallelism)
+**Note**: Using `--host 0.0.0.0` allows remote access from your development machine.
 
-For larger models or faster inference, use multiple GPUs:
+#### Optimized GB10 Configuration
 
-```bash
-# Use 2 GPUs for Llama 3 70B model
-python -m vllm.entrypoints.openai.api_server \
-    --model meta-llama/Meta-Llama-3-70B-Instruct \
-    --tensor-parallel-size 2 \
-    --host 0.0.0.0 \
-    --port 8000
-```
-
-### Optimized DGX Configuration
-
-For maximum performance on DGX systems:
+For maximum performance leveraging GB10's 128GB unified memory:
 
 ```bash
-# Llama 3 70B on 4 GPUs with optimized settings
+# On GB10: Llama 3 8B optimized for Blackwell architecture
 python -m vllm.entrypoints.openai.api_server \
-    --model meta-llama/Meta-Llama-3-70B-Instruct \
-    --tensor-parallel-size 4 \
-    --gpu-memory-utilization 0.95 \
+    --model meta-llama/Meta-Llama-3-8B-Instruct \
+    --gpu-memory-utilization 0.90 \
     --max-model-len 8192 \
+    --max-num-seqs 128 \
     --host 0.0.0.0 \
     --port 8000 \
     --dtype auto
 ```
 
+#### Larger Models on GB10
+
+GB10's 128GB unified memory can handle larger models:
+
+```bash
+# On GB10: Mixtral 8x7B (leveraging unified memory)
+python -m vllm.entrypoints.openai.api_server \
+    --model mistralai/Mixtral-8x7B-Instruct-v0.1 \
+    --gpu-memory-utilization 0.85 \
+    --max-model-len 8192 \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --dtype auto
+
+# On GB10: Llama 3 70B (may work with quantization)
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Meta-Llama-3-70B-Instruct \
+    --gpu-memory-utilization 0.80 \
+    --max-model-len 4096 \
+    --quantization awq \
+    --host 0.0.0.0 \
+    --port 8000
+```
+
+**Note**: GB10's 128GB unified memory allows running larger models than typical single-GPU systems.
+
 ### Advanced Options
 
 ```bash
-# Full configuration example
+# Full configuration example for GB10
 python -m vllm.entrypoints.openai.api_server \
-    --model meta-llama/Meta-Llama-3-70B-Instruct \
-    --tensor-parallel-size 4 \
-    --gpu-memory-utilization 0.95 \
+    --model meta-llama/Meta-Llama-3-8B-Instruct \
+    --gpu-memory-utilization 0.90 \
     --max-model-len 8192 \
-    --max-num-seqs 256 \
+    --max-num-seqs 128 \
     --host 0.0.0.0 \
     --port 8000 \
     --dtype auto \
@@ -95,26 +120,57 @@ python -m vllm.entrypoints.openai.api_server \
 
 ## SAIGEN Configuration
 
-### Option 1: Using vLLM Provider (Recommended)
+### Local Setup (SAIGEN on GB10)
 
-Add to your `~/.saigen/config.yaml`:
+If running SAIGEN directly on the GB10, add to `~/.saigen/config.yaml`:
 
 ```yaml
 llm_providers:
   vllm:
     provider: "vllm"
     base_url: "http://localhost:8000/v1"
-    model: "meta-llama/Meta-Llama-3-70B-Instruct"
+    model: "meta-llama/Meta-Llama-3-8B-Instruct"
+    temperature: 0.1
+    max_tokens: 4096
+    timeout: 90
+    enabled: true
+```
+
+### Remote Setup (SAIGEN on Development Machine)
+
+If running SAIGEN on a separate development machine, use the GB10's IP address:
+
+```yaml
+llm_providers:
+  vllm:
+    provider: "vllm"
+    base_url: "http://gb10-hostname:8000/v1"  # Replace with GB10 IP or hostname
+    model: "meta-llama/Meta-Llama-3-8B-Instruct"
+    temperature: 0.1
+    max_tokens: 4096
+    timeout: 120  # Longer timeout for network latency
+    enabled: true
+```
+
+**Example with IP address:**
+```yaml
+llm_providers:
+  vllm:
+    provider: "vllm"
+    base_url: "http://192.168.1.100:8000/v1"  # GB10's IP address
+    model: "meta-llama/Meta-Llama-3-8B-Instruct"
     temperature: 0.1
     max_tokens: 4096
     timeout: 120
     enabled: true
-    # vLLM-specific settings (informational, set when starting server)
-    tensor_parallel_size: 4
-    gpu_memory_utilization: 0.95
 ```
 
-### Option 2: Using OpenAI Provider with vLLM
+**Network Requirements:**
+- GB10 must be accessible on port 8000
+- 10 GbE or ConnectX-7 (200 Gbps) recommended for best performance
+- WiFi 7 also available but slower for large batches
+
+### Alternative: Using OpenAI Provider with vLLM
 
 vLLM is OpenAI-compatible, so you can also use the OpenAI provider:
 
@@ -123,62 +179,71 @@ llm_providers:
   vllm:
     provider: "openai"
     api_key: "not-needed"
-    api_base: "http://localhost:8000/v1"
-    model: "meta-llama/Meta-Llama-3-70B-Instruct"
+    api_base: "http://gb10-hostname:8000/v1"  # Use GB10's address
+    model: "meta-llama/Meta-Llama-3-8B-Instruct"
     temperature: 0.1
     max_tokens: 4096
     timeout: 120
     enabled: true
 ```
 
-## Recommended Models for DGX
+## Recommended Models for GB10
 
-### For DGX A100 (8x 40GB or 8x 80GB)
+### For GB10 Grace Blackwell (128GB Unified Memory)
 
-| Model | GPUs | Memory | Best For |
-|-------|------|--------|----------|
-| Llama 3 8B | 1 | 16GB | Fast iteration, testing |
-| Llama 3 70B | 2-4 | 140GB | Production quality |
-| Mixtral 8x7B | 2 | 90GB | Good balance |
-| CodeLlama 34B | 2 | 70GB | Code generation |
-| Qwen2 72B | 4 | 145GB | Multilingual, high quality |
+| Model | Memory | Best For | Notes |
+|-------|--------|----------|-------|
+| Llama 3 8B | ~16GB | Production, fast inference | Recommended |
+| Mistral 7B | ~16GB | Balanced performance | Good alternative |
+| Mixtral 8x7B | ~90GB | High quality, MoE | Leverages unified memory |
+| CodeLlama 34B | ~70GB | Code generation | Possible with unified memory |
+| Llama 3 70B (AWQ) | ~40GB | Best quality | With quantization |
+| Qwen2 7B | ~16GB | Multilingual | Good for non-English |
+
+**GB10 Advantage**: The 128GB unified coherent memory allows running larger models than typical single-GPU systems. Models up to 70B can work with quantization (AWQ/GPTQ).
 
 ### Model Selection Guide
 
 ```bash
-# Fast and efficient (1 GPU)
+# Recommended: Fast and high quality (16GB)
 --model meta-llama/Meta-Llama-3-8B-Instruct
 
-# Best quality (2-4 GPUs)
---model meta-llama/Meta-Llama-3-70B-Instruct
+# High quality MoE (90GB - leverages unified memory)
+--model mistralai/Mixtral-8x7B-Instruct-v0.1
 
-# Code-focused (2 GPUs)
+# Code-focused medium (70GB)
 --model codellama/CodeLlama-34b-Instruct-hf
 
-# Mixture of Experts (2 GPUs)
---model mistralai/Mixtral-8x7B-Instruct-v0.1
+# Best quality with quantization (40GB)
+--model TheBloke/Llama-2-70B-Chat-AWQ --quantization awq
+
+# Very fast (8GB)
+--model microsoft/Phi-3-medium-4k-instruct
 ```
 
 ## Usage with SAIGEN
 
-### Generate Single Package
+### From Development Machine (Remote)
 
 ```bash
-# Using vLLM provider
+# On your development machine, SAIGEN connects to GB10 over network
 saigen generate nginx --llm-provider vllm
 
-# With specific providers
-saigen generate nginx --llm-provider vllm --providers apt,brew,winget
-```
-
-### Batch Generation
-
-```bash
-# Generate multiple packages
-saigen batch generate software-list.txt --llm-provider vllm --max-concurrent 5
+# Batch generation leveraging GB10's 200 Gbps network
+saigen batch generate software-list.txt --llm-provider vllm --max-concurrent 10
 
 # With category filter
 saigen batch generate software-list.txt --llm-provider vllm --category webserver
+```
+
+### From GB10 Directly (Local)
+
+```bash
+# On GB10 itself
+saigen generate nginx --llm-provider vllm --providers apt,brew,winget
+
+# Batch generation with higher concurrency (local = no network latency)
+saigen batch generate software-list.txt --llm-provider vllm --max-concurrent 15
 ```
 
 ### Test Connection
@@ -205,28 +270,48 @@ asyncio.run(test())
 
 ### GPU Memory Utilization
 
-Adjust based on your workload:
+GB10's 128GB unified memory allows flexible allocation:
 
 ```bash
-# Conservative (more headroom for other processes)
+# Conservative (for smaller models, 8B-13B)
 --gpu-memory-utilization 0.85
 
-# Balanced (default)
+# Balanced (recommended for most workloads)
 --gpu-memory-utilization 0.90
 
-# Aggressive (maximum performance)
+# Aggressive (for large models leveraging unified memory)
 --gpu-memory-utilization 0.95
+```
+
+### Network Optimization (Remote Setup)
+
+When running SAIGEN remotely:
+
+```bash
+# Use GB10's high-speed network
+# - 10 GbE: Good for moderate batch sizes
+# - ConnectX-7 @ 200 Gbps: Excellent for large batches
+# - WiFi 7: Convenient but slower
+
+# Increase batch size with high-speed network
+saigen batch generate list.txt --max-concurrent 20  # With 200 Gbps
+saigen batch generate list.txt --max-concurrent 5   # With WiFi 7
 ```
 
 ### Batch Size Tuning
 
 For SAIGEN batch generation:
 
-```bash
-# In config.yaml
+```yaml
+# In config.yaml - Local on GB10
 generation:
-  parallel_requests: 10  # Increase for vLLM's continuous batching
-  request_timeout: 120
+  parallel_requests: 15  # Higher for local access
+  request_timeout: 90
+
+# In config.yaml - Remote over network
+generation:
+  parallel_requests: 10  # Moderate for network latency
+  request_timeout: 120   # Longer timeout for network
 ```
 
 ### Context Length
@@ -260,37 +345,97 @@ watch -n 1 nvidia-smi
 
 vLLM exposes metrics at `http://localhost:8000/metrics` (Prometheus format).
 
+## Remote Setup (Development Machine → GB10)
+
+### Network Configuration
+
+1. **On GB10**: Ensure vLLM server binds to all interfaces:
+```bash
+# On GB10: Start with --host 0.0.0.0
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Meta-Llama-3-8B-Instruct \
+    --host 0.0.0.0 \
+    --port 8000
+```
+
+2. **Find GB10's IP address**:
+```bash
+# On GB10
+ip addr show  # Look for inet address
+# Or use hostname
+hostname -I
+```
+
+3. **Test connectivity from development machine**:
+```bash
+# From dev machine
+curl http://gb10-ip:8000/v1/models
+# Should return list of available models
+```
+
+### Firewall Configuration
+
+```bash
+# On GB10: Allow port 8000 (if firewall is enabled)
+sudo ufw allow 8000/tcp
+# Or
+sudo firewall-cmd --add-port=8000/tcp --permanent
+sudo firewall-cmd --reload
+```
+
+### Network Performance
+
+- **10 GbE**: Good for moderate batch sizes (5-10 concurrent)
+- **ConnectX-7 @ 200 Gbps**: Excellent for large batches (20+ concurrent)
+- **WiFi 7**: Convenient but slower (3-5 concurrent recommended)
+
 ## Troubleshooting
 
 ### Out of Memory
 
 ```bash
-# Reduce memory utilization
---gpu-memory-utilization 0.85
+# On GB10: Reduce memory utilization
+--gpu-memory-utilization 0.80
 
 # Reduce max sequence length
 --max-model-len 4096
 
-# Use more GPUs
---tensor-parallel-size 4
+# Use smaller model
+--model mistralai/Mistral-7B-Instruct-v0.2
+
+# Use quantization for large models
+--model meta-llama/Meta-Llama-3-70B-Instruct --quantization awq
 ```
 
 ### Slow Inference
 
 ```bash
-# Increase batch size
---max-num-seqs 256
+# On GB10: Increase batch size
+--max-num-seqs 128
 
 # Use quantization (if supported)
 --quantization awq
 
-# Check GPU utilization with nvidia-smi
+# Check GPU utilization
+nvidia-smi -l 1
+```
+
+### Connection Refused (Remote Setup)
+
+```bash
+# On GB10: Verify server is running
+curl http://localhost:8000/v1/models
+
+# Check firewall
+sudo ufw status
+
+# Ensure --host 0.0.0.0 was used when starting vLLM
 ```
 
 ### Model Not Found
 
 ```bash
-# Models are downloaded from HuggingFace automatically
+# On GB10: Models are downloaded from HuggingFace automatically
 # Ensure you have access to gated models (Llama, etc.)
 huggingface-cli login
 
@@ -300,7 +445,7 @@ export HF_TOKEN=your_token_here
 
 ## Running as a Service
 
-### Systemd Service (DGX OS)
+### Systemd Service (DGX OS on GB10)
 
 Create `/etc/systemd/system/vllm.service`:
 
@@ -313,11 +458,10 @@ After=network.target
 Type=simple
 User=your-username
 WorkingDirectory=/home/your-username
-Environment="CUDA_VISIBLE_DEVICES=0,1,2,3"
+Environment="CUDA_VISIBLE_DEVICES=0"
 ExecStart=/usr/bin/python3 -m vllm.entrypoints.openai.api_server \
-    --model meta-llama/Meta-Llama-3-70B-Instruct \
-    --tensor-parallel-size 4 \
-    --gpu-memory-utilization 0.95 \
+    --model meta-llama/Meta-Llama-3-8B-Instruct \
+    --gpu-memory-utilization 0.90 \
     --host 0.0.0.0 \
     --port 8000
 Restart=always
@@ -342,13 +486,13 @@ sudo systemctl status vllm
 # Pull vLLM Docker image
 docker pull vllm/vllm-openai:latest
 
-# Run with GPU support
+# Run with GPU support on GB10
 docker run --gpus all \
     -p 8000:8000 \
     --ipc=host \
     vllm/vllm-openai:latest \
-    --model meta-llama/Meta-Llama-3-70B-Instruct \
-    --tensor-parallel-size 4
+    --model meta-llama/Meta-Llama-3-8B-Instruct \
+    --gpu-memory-utilization 0.90
 ```
 
 ## Cost Savings
