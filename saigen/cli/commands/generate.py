@@ -7,7 +7,7 @@ import click
 
 
 @click.command()
-@click.argument("software_name")
+@click.argument("software_name", required=False)
 @click.option(
     "--output",
     "-o",
@@ -38,48 +38,37 @@ def generate(
 ):
     """Generate saidata for a software package using 0.3 schema.
 
-    Creates a comprehensive saidata YAML file using the latest 0.3 schema format
+    Creates a comprehensive saidata YAML file using the latest schema format
     by combining LLM knowledge with repository data and existing saidata examples.
 
-    🆕 NEW IN 0.3 SCHEMA:
-    • Sources: Build from source with autotools, cmake, make, meson, ninja
-    • Binaries: Download pre-compiled binaries with URL templating
-    • Scripts: Execute installation scripts with security validation
-    • Security metadata: CVE exceptions, security contacts, SBOM URLs
-    • URL templating: {{version}}, {{platform}}, {{architecture}} placeholders
-    • Enhanced providers: Provider-specific overrides for all resource types
-    • Compatibility matrix: Cross-platform compatibility tracking
-
-    INSTALLATION METHODS:
-    • Package managers: apt, brew, winget, npm, pypi, cargo, etc.
-    • Binary downloads: Cross-platform binaries with automatic detection
-    • Source compilation: Custom builds with various build systems
-    • Script installation: Secure script execution with validation
-    • Container deployment: Docker, Kubernetes, Helm configurations
-
-    The --log-file option enables detailed logging of the entire generation
-    process, including all LLM interactions, data operations, and timing
-    information. This is useful for debugging, cost monitoring, and quality
-    assurance.
-
+    \b
     Examples:
-        # Basic generation with 0.3 schema
+
+    • Basic generation\n
         saigen generate nginx
 
-        # Target specific providers including new installation methods
+    • Target specific providers including new installation methods\n
         saigen generate --providers apt,brew,binary,source terraform
 
-        # Generate with comprehensive logging
+    • Generate with comprehensive logging\n
         saigen generate --log-file ./generation.json --verbose kubernetes
 
-        # Dry run to preview 0.3 features
+    • Dry run to preview generation output\n
         saigen generate --dry-run --verbose docker
 
-        # Force overwrite with custom output
+    • Force overwrite with custom output\n
         saigen generate --force --output custom-nginx.yaml nginx
     """
+    # Show help if software_name is missing
+    if not software_name:
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Missing required argument SOFTWARE_NAME")
+        click.echo("=" * 70)
+        ctx.exit(2)
+    
     # Input validation for security
-    if not software_name or not software_name.strip():
+    if not software_name.strip():
         raise click.BadParameter("Software name cannot be empty")
 
     # Sanitize software name (allow only alphanumeric, hyphens, underscores, dots)

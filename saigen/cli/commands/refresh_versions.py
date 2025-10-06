@@ -78,6 +78,7 @@ def refresh_versions(
     repositories directly. This is a fast, cost-free operation that keeps your
     saidata files synchronized with upstream package versions.
 
+    \b
     The command:
     • Loads existing saidata file
     • Queries package repositories for current versions
@@ -85,6 +86,7 @@ def refresh_versions(
     • Preserves all other metadata unchanged
     • Creates backup before modifying (optional)
 
+    \b
     Examples:
         # Refresh all package versions
         saigen refresh-versions nginx.yaml

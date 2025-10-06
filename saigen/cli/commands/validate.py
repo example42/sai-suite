@@ -15,7 +15,7 @@ from ...utils.config import get_config
 
 
 @click.command()
-@click.argument("file_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("file_path", type=click.Path(exists=True, path_type=Path), required=False)
 @click.option(
     "--schema",
     type=click.Path(exists=True, path_type=Path),
@@ -65,16 +65,18 @@ def validate(
     validate_checksums: bool = False,
     auto_recover: bool = False,
 ) -> None:
-    """Validate a saidata YAML file against the 0.3 schema.
+    """Validate a saidata YAML file against the saidata schema.
 
-    Comprehensive validation for saidata 0.3 schema files including:
+    Comprehensive validation for saidata schema files including:
 
+    \b
     🔍 CORE VALIDATION:
     • JSON schema compliance (saidata-0.3-schema.json)
     • Required fields and structure validation
     • Enum value validation for build systems, service types, etc.
     • Cross-reference consistency checking
 
+    \b
     🆕 NEW 0.3 FEATURES:
     • URL template validation ({{version}}, {{platform}}, {{architecture}})
     • Checksum format validation (algorithm:hash format)
@@ -83,6 +85,7 @@ def validate(
     • Provider configuration validation with overrides
     • Compatibility matrix validation
 
+    \b
     🔧 ADVANCED FEATURES:
     • Quality metrics and scoring (--advanced)
     • Repository accuracy checking (--advanced)
@@ -90,6 +93,7 @@ def validate(
     • Best practice recommendations
     • Performance and security suggestions
 
+    \b
     🛠️ ERROR RECOVERY:
     The --auto-recover flag attempts to automatically fix common issues:
     • Invalid URL template syntax
@@ -97,28 +101,39 @@ def validate(
     • Missing required fields with sensible defaults
     • Enum value corrections
 
+    \b
     Examples:
-        # Basic 0.3 schema validation
+
+    • Basic schema validation\n
         saigen validate nginx.yaml
 
-        # Validate with URL and checksum checking
+    • Validate with URL and checksum checking\n
         saigen validate --validate-urls --validate-checksums terraform.yaml
 
-        # Advanced validation with quality metrics
+    • Advanced validation with quality metrics\n
         saigen validate --advanced --detailed kubernetes.yaml
 
-        # Auto-recover from common errors
+    • Auto-recover from common errors\n
         saigen validate --auto-recover --format json docker.yaml
 
-        # Custom schema validation
+    • Custom schema validation\n
         saigen validate --schema custom-0.3-schema.json software.yaml
 
-        # Detailed error context for debugging
+    • Detailed error context for debugging\n
         saigen validate --show-context --format json nginx.yaml
 
-        # Fast validation without repository checks
+    • Fast validation without repository checks\n
         saigen validate --advanced --no-repository-check large-file.yaml
     """
+    # Show help if file_path is missing
+    if not file_path:
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Missing required argument FILE_PATH")
+        click.echo("=" * 70)
+        ctx.exit(2)
+    
     try:
         if advanced:
             # Use advanced validation with quality metrics

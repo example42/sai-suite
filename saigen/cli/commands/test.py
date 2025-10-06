@@ -11,7 +11,7 @@ from ...utils.config import get_config
 
 
 @click.command()
-@click.argument("file_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("file_path", type=click.Path(exists=True, path_type=Path), required=False)
 @click.option(
     "--providers", multiple=True, help="Specific providers to test (can be used multiple times)"
 )
@@ -49,19 +49,42 @@ def test(
     """Test a saidata YAML file comprehensively.
 
     This command performs various tests on saidata files including:
-    - Dry-run testing of package installations
-    - Provider compatibility checks
-    - Package availability verification
-    - Command and service validation
-    - MCP server integration testing (if available)
+
+    \b
+    TEST TYPES:
+    • Dry-run testing of package installations
+    • Provider compatibility checks
+    • Package availability verification
+    • Command and service validation
+    • MCP server integration testing (TODO)
+
+    \b
 
     Examples:
+
+    • Basic test\n
         saigen test nginx.yaml
+
+    • Test specific providers\n
         saigen test --providers apt --providers brew software.yaml
+
+    • Run specific test types\n
         saigen test --test-types dry_run --test-types package_availability software.yaml
+
+    • Show detailed results\n
         saigen test --show-details --format json software.yaml
-        saigen test --no-dry-run software.yaml  # WARNING: May perform actual operations
+
+    • WARNING: Perform actual operations\n
+        saigen test --no-dry-run software.yaml
     """
+    # Show help if file_path is missing
+    if not file_path:
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Missing required argument FILE_PATH")
+        click.echo("=" * 70)
+        ctx.exit(2)
+    
     exit_code = 0
 
     # Handle dry-run confirmation outside try-catch to avoid catching SystemExit

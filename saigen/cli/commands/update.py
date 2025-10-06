@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @click.command()
-@click.argument("saidata_file", type=click.Path(exists=True, path_type=Path))
+@click.argument("saidata_file", type=click.Path(exists=True, path_type=Path), required=False)
 @click.option(
     "--output",
     "-o",
@@ -64,11 +64,26 @@ def update(
     data from LLMs and repositories. Preserves manual customizations while
     adding new information.
 
+    \b
     Examples:
+
+    • Basic update\n
         saigen update nginx.yaml
+
+    • Force complete regeneration\n
         saigen update --force-update --output nginx-v2.yaml nginx.yaml
+
+    • Interactive conflict resolution\n
         saigen update --merge-strategy preserve --interactive nginx.yaml
     """
+    # Show help if saidata_file is missing
+    if not saidata_file:
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Missing required argument SAIDATA_FILE")
+        click.echo("=" * 70)
+        ctx.exit(2)
+    
     # Handle both test context and real context
     if ctx.obj is None:
         ctx.obj = {}

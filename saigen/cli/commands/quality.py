@@ -15,7 +15,7 @@ from ...utils.config import get_config
 
 
 @click.command()
-@click.argument("file_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("file_path", type=click.Path(exists=True, path_type=Path), required=False)
 @click.option(
     "--metric",
     type=click.Choice([m.value for m in QualityMetric]),
@@ -47,19 +47,38 @@ def quality(
     """Assess quality metrics for a saidata file.
 
     This command provides comprehensive quality assessment including:
-    - Completeness scoring
-    - Metadata richness analysis
-    - Cross-reference integrity checking
-    - Repository alignment verification
-    - Consistency validation
-    - Overall accuracy assessment
 
+    • Completeness scoring
+    • Metadata richness analysis
+    • Cross-reference integrity checking
+    • Repository alignment verification
+    • Consistency validation
+    • Overall accuracy assessment
+
+    \b
     Examples:
+
+    • Basic quality assessment\n
         saigen quality nginx.yaml
+
+    • Focus on specific metric with custom threshold\n
         saigen quality --metric completeness --threshold 0.8 software.yaml
+
+    • Export detailed report\n
         saigen quality --format json --export report.json software.yaml
+
+    • Skip repository checks for faster assessment\n
         saigen quality --no-repository-check software.yaml
     """
+    # Show help if file_path is missing
+    if not file_path:
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Missing required argument FILE_PATH")
+        click.echo("=" * 70)
+        ctx.exit(2)
+
     try:
         asyncio.run(
             _run_quality_assessment(

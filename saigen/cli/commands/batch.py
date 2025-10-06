@@ -16,13 +16,13 @@ from ...models.generation import LLMProvider
     "--input-file",
     "-f",
     type=click.Path(exists=True, path_type=Path),
-    help="Input file containing software names (one per line)",
+    help="[REQUIRED] Input file containing software names (one per line)",
 )
 @click.option(
     "--software-list",
     "-s",
     multiple=True,
-    help="Software names to process (can be specified multiple times)",
+    help="[REQUIRED] Software names to process (can be specified multiple times)",
 )
 @click.option(
     "--output-dir",
@@ -67,40 +67,38 @@ def batch(
     force: bool,
     preview: bool,
 ):
-    """Generate saidata 0.3 for multiple software packages in batch.
+    """Generate saidata for multiple software packages in batch.
 
-    Process multiple software packages efficiently using parallel generation
-    with the latest 0.3 schema format. Each generated file includes:
+    Process multiple software packages efficiently using parallel generation.
 
-    🆕 NEW 0.3 FEATURES:
-    • Multiple installation methods (sources, binaries, scripts)
-    • URL templating with {{version}}, {{platform}}, {{architecture}}
-    • Enhanced security metadata and checksum validation
-    • Provider-specific configurations and overrides
-    • Comprehensive compatibility matrices
-
-    📊 BATCH PROCESSING:
-    • Parallel generation with configurable concurrency
-    • Category filtering for targeted generation
-    • Progress tracking and error handling
-    • Automatic file organization and naming
-
+    \b
     Examples:
-        # Generate 0.3 saidata from file list
+
+    • Generate saidata from file list\n
         saigen batch -f software_list.txt -o output/
 
-        # Generate with specific installation methods
-        saigen batch -s nginx -s terraform --providers apt,brew,binary,source -o output/
+    • Generate with specific installation methods\n
+        saigen batch -s nginx -s terraform --providers apt,brew -o output/
 
-        # Filter by category with parallel processing
+    • Filter by category with parallel processing\n
         saigen batch -f web_tools.txt -c "database|cache" -j 5 -o output/
 
-        # Preview what would be generated
+    • Preview what would be generated\n
         saigen batch -f software_list.txt --preview --verbose
 
-        # Generate with enhanced security focus
-        saigen batch -f security_tools.txt --providers binary,source -o secure/
     """
+    # Validate input sources first - show help if missing
+    if not input_file and not software_list:
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Must specify either --input-file (-f) or --software-list (-s)")
+        click.echo("=" * 70)
+        ctx.exit(2)
+
+    if input_file and software_list:
+        click.echo("ERROR: Cannot specify both --input-file and --software-list", err=True)
+        ctx.exit(2)
+
     config = ctx.obj["config"]
     verbose = ctx.obj["verbose"]
     dry_run = ctx.obj["dry_run"] or preview
@@ -132,13 +130,6 @@ def batch(
                 llm_provider = LLMProvider.OPENAI  # Fallback
         else:
             llm_provider = LLMProvider.OPENAI  # Fallback
-
-    # Validate input sources
-    if not input_file and not software_list:
-        raise click.BadParameter("Must specify either --input-file or --software-list")
-
-    if input_file and software_list:
-        raise click.BadParameter("Cannot specify both --input-file and --software-list")
 
     # Validate concurrency
     if max_concurrent < 1 or max_concurrent > 20:

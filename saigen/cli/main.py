@@ -34,20 +34,14 @@ def cli(
     verbose: bool,
     dry_run: bool,
 ):
-    """saigen - AI-powered saidata generation tool for schema 0.3.
+    """saigen - AI-powered saidata generation tool.
 
-    Generate, validate, and manage software metadata (saidata) files using the
-    latest 0.3 schema format. Features include:
+    Generate, validate, and manage software metadata (saidata) files.
 
-    • Multiple installation methods: sources, binaries, scripts
-    • URL templating with {{version}}, {{platform}}, {{architecture}}
-    • Enhanced security metadata and checksum validation
-    • Provider-specific configurations and compatibility matrices
-    • AI-powered generation with repository data integration
-    • Comprehensive validation with automatic error recovery
-
-    Supports multiple LLM providers (OpenAI, Anthropic, Ollama) and package
-    repositories (apt, brew, npm, pypi, cargo, winget, and more).
+    \b
+    Supports multiple LLM providers (OpenAI, Anthropic, Ollama, vLLM), with RAG info
+    based on package repositories (apt, brew, npm, pypi, cargo, winget, and more) to
+    handle different installation methods (packages, sources, binaries, scripts).
     """
     ctx.ensure_object(dict)
     ctx.obj["config_path"] = config
