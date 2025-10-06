@@ -15,6 +15,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 # Disable tokenizers parallelism to avoid fork-related warnings
 # This must be set before importing sentence_transformers
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# Limit PyTorch threads to avoid multiprocessing conflicts
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
 
 try:
     import faiss
@@ -87,17 +90,19 @@ class RAGIndexer:
             async with self._model_lock:
                 if self._model is None:
                     logger.info(f"Loading sentence transformer model: {self.model_name}")
-                    # Run model loading in thread pool to avoid blocking
-                    loop = asyncio.get_event_loop()
-                    self._model = await loop.run_in_executor(
-                        None,
-                        lambda: SentenceTransformer(
-                            self.model_name, device="cpu"  # Use CPU for better compatibility
-                        ),
-                    )
-                    # Set max sequence length
-                    self._model.max_seq_length = self.max_sequence_length
-                    logger.info("Model loaded successfully")
+                    try:
+                        # Load model directly (not in executor to avoid multiprocessing issues)
+                        # SentenceTransformer handles its own threading internally
+                        self._model = SentenceTransformer(
+                            self.model_name,
+                            device="cpu",  # Use CPU for better compatibility
+                        )
+                        # Set max sequence length
+                        self._model.max_seq_length = self.max_sequence_length
+                        logger.info("Model loaded successfully")
+                    except Exception as e:
+                        logger.error(f"Failed to load model {self.model_name}: {e}")
+                        raise RAGError(f"Failed to load sentence transformer model: {e}")
 
         return self._model
 

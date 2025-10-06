@@ -598,6 +598,5 @@ tail -50 ~/.sai/logs/sai.log
 ### Useful Resources
 
 - [Repository Configuration Guide](./repository-configuration.md)
-- [SAI Configuration Guide](./configuration-guide.md)
-- [Command Reference](./command-reference.md)
-- [General Troubleshooting](./troubleshooting.md)
+- [Configuration Guide](./configuration-guide.md)
+- [CLI Reference](./cli-reference.md)

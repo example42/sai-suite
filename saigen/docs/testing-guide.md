@@ -289,5 +289,5 @@ find packages/ -name "*.yaml" | \
 ## See Also
 
 - [CLI Reference](cli-reference.md)
-- [Docker Images](../docker/README.md)
-- [CI/CD Examples](../examples/ci-cd/)
+- [Docker Images](../../docker/README.md)
+- [CI/CD Examples](../../examples/ci-cd/)

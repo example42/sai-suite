@@ -134,7 +134,7 @@ rag:
   model_name: "all-MiniLM-L6-v2"
   use_default_samples: true
   max_sample_examples: 3
-  default_samples_directory: "docs/saidata_samples"
+  default_samples_directory: "saigen/docs/examples/saidata_samples"
 ```
 
 ## Integration with Generation

@@ -152,7 +152,6 @@ saigen test-system nginx.yaml
 - **[Documentation Index](docs/README.md)** - Complete documentation overview
 - **[Monorepo Structure](MONOREPO.md)** - Understanding the repository architecture
 - **[Architecture Diagram](docs/architecture-diagram.md)** - Visual guide to the system
-- **[Migration Guide](docs/MIGRATION.md)** - Upgrading from previous versions
 
 ### 🔧 SAI Documentation
 - **[SAI README](sai/README.md)** - SAI package overview

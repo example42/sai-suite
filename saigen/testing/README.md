@@ -77,6 +77,6 @@ docker run --rm -v $(pwd):/data ghcr.io/example42/sai-test-ubuntu:latest \
 
 ## See Also
 
-- [Testing Guide](../../docs/testing-guide.md)
+- [Testing Guide](../docs/testing-guide.md)
 - [Docker Images](../../docker/README.md)
 - [CI/CD Examples](../../examples/ci-cd/)

@@ -18,7 +18,6 @@ This repository uses a monorepo structure with separate documentation for each p
 - **[Quick Start](../QUICK-START.md)** - Get up and running quickly
 
 ### Existing Users
-- **[Migration Guide](MIGRATION.md)** - Upgrade from previous versions
 - **[Architecture Diagram](architecture-diagram.md)** - Understand the structure
 
 ## 📦 Package Documentation
@@ -69,7 +68,6 @@ The **[summaries/](summaries/)** directory contains detailed implementation note
 
 - **Not sure which tool?** → [When to Use What](when-to-use-what.md)
 - **Installation issues?** → [Installation Guide](installation.md)
-- **Upgrading?** → [Migration Guide](MIGRATION.md)
 - **Found a bug?** → [Open an issue](https://github.com/example42/sai-suite/issues)
 
 ## 📋 Archive

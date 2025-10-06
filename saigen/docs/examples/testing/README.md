@@ -99,5 +99,5 @@ Total: 4 | Passed: 4 | Failed: 0 | Skipped: 0 | Errors: 0
 
 ## See Also
 
-- [Testing Guide](../../docs/testing-guide.md)
-- [Docker Images](../../docker/README.md)
+- [Testing Guide](../../testing-guide.md)
+- [Docker Images](../../../../docker/README.md)

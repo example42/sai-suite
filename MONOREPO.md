@@ -243,11 +243,11 @@ The previous single-package structure has been split into:
 
 - [When to Use What](docs/when-to-use-what.md) - Choosing between SAI and SAIGEN
 - [Installation Guide](docs/installation.md) - Detailed installation instructions
-- [Development Guide](docs/development.md) - Contributing to the project
+- [Development Workflow](#development-workflow) - Contributing to the project
 
 ## Questions?
 
 - **Which package do I need?** See [When to Use What](docs/when-to-use-what.md)
 - **How do I install?** See [Installation Guide](docs/installation.md)
-- **How do I contribute?** See [Development Guide](docs/development.md)
+- **How do I contribute?** See [Development Workflow](#development-workflow)
 - **Issues?** Open an issue on GitHub

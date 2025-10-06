@@ -135,9 +135,8 @@ docker run --rm -v $(pwd)/packages:/data sai-test-ubuntu \
 ## Need Help?
 
 - Full guide: [docs/testing-guide.md](testing-guide.md)
-- Docker images: [docker/README.md](../docker/README.md)
-- CI/CD examples: [examples/ci-cd/](../examples/ci-cd/)
-- Setup for saidata repo: [examples/saidata-repo/TESTING-SETUP.md](../examples/saidata-repo/TESTING-SETUP.md)
+- Docker images: [docker/README.md](../../docker/README.md)
+- CI/CD examples: [examples/ci-cd/](../../examples/ci-cd/)
 
 ## Next Steps
 

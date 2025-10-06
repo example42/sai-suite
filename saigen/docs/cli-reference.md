@@ -44,7 +44,7 @@ saigen generate [OPTIONS] SOFTWARE
 saigen generate nginx --provider apt
 saigen generate docker --provider brew
 saigen generate nginx --provider apt --use-rag
-saigen generate nginx --llm-provider anthropic --model claude-3-sonnet
+saigen generate nginx --llm-provider anthropic --model claude-4-sonnet
 ```
 
 #### batch generate
