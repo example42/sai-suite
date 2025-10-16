@@ -209,21 +209,6 @@ def batch(
         except Exception as e:
             raise click.BadParameter(f"Cannot create output directory: {e}")
 
-        # Check for existing files if not forcing
-        if not force:
-            existing_files = []
-            for name in software_names:
-                output_file = output_dir / f"{name}.yaml"
-                if output_file.exists():
-                    existing_files.append(output_file)
-
-            if existing_files:
-                click.echo(
-                    f"Warning: {len(existing_files)} files already exist in output directory"
-                )
-                if not click.confirm("Continue and overwrite existing files?"):
-                    ctx.exit(0)
-
     # Initialize engines
     try:
         generation_engine = GenerationEngine(config)
@@ -253,6 +238,7 @@ def batch(
                 max_concurrent=max_concurrent,
                 continue_on_error=not stop_on_error,
                 use_rag=not no_rag,
+                force=force,
                 progress_callback=progress_callback if verbose else None,
             )
         )

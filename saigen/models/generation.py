@@ -102,6 +102,7 @@ class BatchGenerationRequest(BaseModel):
     max_concurrent: int = 3
     continue_on_error: bool = True
     category_filter: Optional[str] = None
+    force: bool = False
 
     model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
 

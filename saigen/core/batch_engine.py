@@ -239,11 +239,39 @@ class BatchGenerationEngine:
         if not valid_software:
             raise GenerationEngineError("No valid software names found in list")
 
-        logger.info(f"Starting batch generation for {len(valid_software)} software packages")
+        # Filter out existing files if force is not set
+        software_to_process = valid_software
+        skipped_count = 0
+        if not request.force and request.output_directory:
+            software_to_process = []
+            for software_name in valid_software:
+                output_path = self._get_output_path(software_name, request.output_directory)
+                if output_path and output_path.exists():
+                    logger.info(f"Skipping existing file: {output_path}")
+                    skipped_count += 1
+                else:
+                    software_to_process.append(software_name)
+            
+            if skipped_count > 0:
+                logger.info(f"Skipped {skipped_count} existing files (use --force to regenerate)")
+        
+        if not software_to_process:
+            logger.info("No software packages to process (all files exist)")
+            return BatchGenerationResult(
+                total_requested=len(valid_software),
+                successful=0,
+                failed=0,
+                results=[],
+                failed_software=[],
+                total_time=time.time() - start_time,
+                average_time_per_item=0.0,
+            )
+
+        logger.info(f"Starting batch generation for {len(software_to_process)} software packages")
 
         # Initialize progress reporter
         progress_reporter = BatchProgressReporter(
-            total_items=len(valid_software), verbose=logger.isEnabledFor(logging.DEBUG)
+            total_items=len(software_to_process), verbose=logger.isEnabledFor(logging.DEBUG)
         )
 
         # Create semaphore for concurrency control
@@ -304,7 +332,7 @@ class BatchGenerationEngine:
                     return error_result
 
         # Process all software packages concurrently
-        tasks = [process_software(software) for software in valid_software]
+        tasks = [process_software(software) for software in software_to_process]
 
         if request.continue_on_error:
             # Use gather with return_exceptions=True to continue on errors
@@ -312,8 +340,8 @@ class BatchGenerationEngine:
 
             for i, result in enumerate(task_results):
                 if isinstance(result, Exception):
-                    logger.error(f"Task failed for {valid_software[i]}: {result}")
-                    failed_software.append(valid_software[i])
+                    logger.error(f"Task failed for {software_to_process[i]}: {result}")
+                    failed_software.append(software_to_process[i])
                     # Create error result
                     error_result = GenerationResult(
                         success=False,
@@ -330,20 +358,20 @@ class BatchGenerationEngine:
                 else:
                     results.append(result)
                     if not result.success:
-                        failed_software.append(valid_software[i])
+                        failed_software.append(software_to_process[i])
         else:
             # Stop on first error
             try:
                 results = await asyncio.gather(*tasks)
                 for i, result in enumerate(results):
                     if not result.success:
-                        failed_software.append(valid_software[i])
+                        failed_software.append(software_to_process[i])
                         # Stop on first failure when continue_on_error=False
                         logger.error(
-                            f"Batch processing stopped due to failure: {valid_software[i]}"
+                            f"Batch processing stopped due to failure: {software_to_process[i]}"
                         )
                         raise GenerationEngineError(
-                            f"Batch processing failed: {valid_software[i]} generation failed"
+                            f"Batch processing failed: {software_to_process[i]} generation failed"
                         )
             except GenerationEngineError:
                 # Re-raise our own exceptions
@@ -407,6 +435,7 @@ class BatchGenerationEngine:
         continue_on_error: bool = True,
         category_filter: Optional[str] = None,
         use_rag: bool = True,
+        force: bool = False,
         progress_callback: Optional[Callable[[str, bool], None]] = None,
     ) -> BatchGenerationResult:
         """Generate saidata from a software list file.
@@ -420,6 +449,7 @@ class BatchGenerationEngine:
             continue_on_error: Whether to continue on individual failures
             category_filter: Optional category filter regex
             use_rag: Whether to use RAG for enhanced generation
+            force: Whether to overwrite existing files
             progress_callback: Optional progress callback
 
         Returns:
@@ -445,6 +475,7 @@ class BatchGenerationEngine:
             continue_on_error=continue_on_error,
             category_filter=category_filter,
             use_rag=use_rag,
+            force=force,
         )
 
         return await self.generate_batch(request, progress_callback)
@@ -458,6 +489,7 @@ class BatchGenerationEngine:
         max_concurrent: int = 3,
         continue_on_error: bool = True,
         use_rag: bool = True,
+        force: bool = False,
         progress_callback: Optional[Callable[[str, bool], None]] = None,
     ) -> BatchGenerationResult:
         """Generate saidata from a list of software names.
@@ -470,6 +502,7 @@ class BatchGenerationEngine:
             max_concurrent: Maximum concurrent generations
             continue_on_error: Whether to continue on individual failures
             use_rag: Whether to use RAG for enhanced generation
+            force: Whether to overwrite existing files
             progress_callback: Optional progress callback
 
         Returns:
@@ -487,6 +520,7 @@ class BatchGenerationEngine:
             max_concurrent=max_concurrent,
             continue_on_error=continue_on_error,
             use_rag=use_rag,
+            force=force,
         )
 
         return await self.generate_batch(request, progress_callback)
@@ -542,6 +576,7 @@ Average Time per Item: {result.average_time_per_item:.2f}s
             max_concurrent=kwargs.get("max_concurrent", self.max_concurrent),
             continue_on_error=kwargs.get("continue_on_error", True),
             category_filter=kwargs.get("category_filter"),
+            force=kwargs.get("force", False),
         )
 
         return await self.generate_batch(request, kwargs.get("progress_callback"))
