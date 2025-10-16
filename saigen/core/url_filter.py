@@ -100,38 +100,54 @@ class URLValidationFilter:
                 "icon",
             ]:
                 url = getattr(saidata.metadata.urls, field, None)
-                if url and self._is_http_url(url):
+                if url and self._is_http_url(url) and not self._has_template_variables(url):
                     urls.add(url)
 
         # Extract from metadata.security
         if saidata.metadata.security:
             for field in ["vulnerability_disclosure", "sbom_url", "signing_key"]:
                 url = getattr(saidata.metadata.security, field, None)
-                if url and self._is_http_url(url):
+                if url and self._is_http_url(url) and not self._has_template_variables(url):
                     urls.add(url)
 
         # Extract from packages
         if saidata.packages:
             for package in saidata.packages:
-                if package.download_url and self._is_http_url(package.download_url):
+                if (
+                    package.download_url
+                    and self._is_http_url(package.download_url)
+                    and not self._has_template_variables(package.download_url)
+                ):
                     urls.add(package.download_url)
 
         # Extract from sources
         if saidata.sources:
             for source in saidata.sources:
-                if source.url and self._is_http_url(source.url):
+                if (
+                    source.url
+                    and self._is_http_url(source.url)
+                    and not self._has_template_variables(source.url)
+                ):
                     urls.add(source.url)
 
         # Extract from binaries
         if saidata.binaries:
             for binary in saidata.binaries:
-                if binary.url and self._is_http_url(binary.url):
+                if (
+                    binary.url
+                    and self._is_http_url(binary.url)
+                    and not self._has_template_variables(binary.url)
+                ):
                     urls.add(binary.url)
 
         # Extract from scripts
         if saidata.scripts:
             for script in saidata.scripts:
-                if script.url and self._is_http_url(script.url):
+                if (
+                    script.url
+                    and self._is_http_url(script.url)
+                    and not self._has_template_variables(script.url)
+                ):
                     urls.add(script.url)
 
         # Extract from providers
@@ -140,39 +156,67 @@ class URLValidationFilter:
                 # Packages
                 if provider_config.packages:
                     for package in provider_config.packages:
-                        if package.download_url and self._is_http_url(package.download_url):
+                        if (
+                            package.download_url
+                            and self._is_http_url(package.download_url)
+                            and not self._has_template_variables(package.download_url)
+                        ):
                             urls.add(package.download_url)
 
                 # Repositories
                 if provider_config.repositories:
                     for repo in provider_config.repositories:
-                        if repo.url and self._is_http_url(repo.url):
+                        if (
+                            repo.url
+                            and self._is_http_url(repo.url)
+                            and not self._has_template_variables(repo.url)
+                        ):
                             urls.add(repo.url)
-                        if repo.key and self._is_http_url(repo.key):
+                        if (
+                            repo.key
+                            and self._is_http_url(repo.key)
+                            and not self._has_template_variables(repo.key)
+                        ):
                             urls.add(repo.key)
 
                         # Nested packages in repositories
                         if repo.packages:
                             for package in repo.packages:
-                                if package.download_url and self._is_http_url(package.download_url):
+                                if (
+                                    package.download_url
+                                    and self._is_http_url(package.download_url)
+                                    and not self._has_template_variables(package.download_url)
+                                ):
                                     urls.add(package.download_url)
 
                         # Nested sources in repositories
                         if repo.sources:
                             for source in repo.sources:
-                                if source.url and self._is_http_url(source.url):
+                                if (
+                                    source.url
+                                    and self._is_http_url(source.url)
+                                    and not self._has_template_variables(source.url)
+                                ):
                                     urls.add(source.url)
 
                         # Nested binaries in repositories
                         if repo.binaries:
                             for binary in repo.binaries:
-                                if binary.url and self._is_http_url(binary.url):
+                                if (
+                                    binary.url
+                                    and self._is_http_url(binary.url)
+                                    and not self._has_template_variables(binary.url)
+                                ):
                                     urls.add(binary.url)
 
                         # Nested scripts in repositories
                         if repo.scripts:
                             for script in repo.scripts:
-                                if script.url and self._is_http_url(script.url):
+                                if (
+                                    script.url
+                                    and self._is_http_url(script.url)
+                                    and not self._has_template_variables(script.url)
+                                ):
                                     urls.add(script.url)
 
                 # Package sources
@@ -180,25 +224,41 @@ class URLValidationFilter:
                     for pkg_source in provider_config.package_sources:
                         if pkg_source.packages:
                             for package in pkg_source.packages:
-                                if package.download_url and self._is_http_url(package.download_url):
+                                if (
+                                    package.download_url
+                                    and self._is_http_url(package.download_url)
+                                    and not self._has_template_variables(package.download_url)
+                                ):
                                     urls.add(package.download_url)
 
                 # Direct sources
                 if provider_config.sources:
                     for source in provider_config.sources:
-                        if source.url and self._is_http_url(source.url):
+                        if (
+                            source.url
+                            and self._is_http_url(source.url)
+                            and not self._has_template_variables(source.url)
+                        ):
                             urls.add(source.url)
 
                 # Direct binaries
                 if provider_config.binaries:
                     for binary in provider_config.binaries:
-                        if binary.url and self._is_http_url(binary.url):
+                        if (
+                            binary.url
+                            and self._is_http_url(binary.url)
+                            and not self._has_template_variables(binary.url)
+                        ):
                             urls.add(binary.url)
 
                 # Direct scripts
                 if provider_config.scripts:
                     for script in provider_config.scripts:
-                        if script.url and self._is_http_url(script.url):
+                        if (
+                            script.url
+                            and self._is_http_url(script.url)
+                            and not self._has_template_variables(script.url)
+                        ):
                             urls.add(script.url)
 
         return urls
@@ -217,6 +277,22 @@ class URLValidationFilter:
             return parsed.scheme in ("http", "https")
         except Exception:
             return False
+
+    def _has_template_variables(self, url: str) -> bool:
+        """Check if URL contains template variables.
+
+        Template variables like {{version}}, {{platform}}, and {{architecture}} are used
+        in saidata URLs to support dynamic URL generation. These URLs should not be
+        validated by making HTTP requests since they are not actual URLs yet - they will
+        be resolved at runtime by the SAI execution engine.
+
+        Args:
+            url: URL to check
+
+        Returns:
+            True if URL contains template variables like {{version}}, {{platform}}, {{architecture}}
+        """
+        return "{{" in url and "}}" in url
 
     async def _validate_urls(self, urls: Set[str]) -> Set[str]:
         """Validate URLs by making HTTP requests.
@@ -295,7 +371,12 @@ class URLValidationFilter:
             urls_dict = data_dict["metadata"]["urls"]
             for field in list(urls_dict.keys()):
                 url = urls_dict[field]
-                if url and self._is_http_url(url) and url not in valid_urls:
+                if (
+                    url
+                    and self._is_http_url(url)
+                    and not self._has_template_variables(url)
+                    and url not in valid_urls
+                ):
                     logger.debug(f"Filtering out invalid URL from metadata.urls.{field}: {url}")
                     urls_dict[field] = None
 
@@ -304,7 +385,12 @@ class URLValidationFilter:
             security_dict = data_dict["metadata"]["security"]
             for field in ["vulnerability_disclosure", "sbom_url", "signing_key"]:
                 url = security_dict.get(field)
-                if url and self._is_http_url(url) and url not in valid_urls:
+                if (
+                    url
+                    and self._is_http_url(url)
+                    and not self._has_template_variables(url)
+                    and url not in valid_urls
+                ):
                     logger.debug(f"Filtering out invalid URL from metadata.security.{field}: {url}")
                     security_dict[field] = None
 
@@ -313,7 +399,11 @@ class URLValidationFilter:
             for package in data_dict["packages"]:
                 if package.get("download_url"):
                     url = package["download_url"]
-                    if self._is_http_url(url) and url not in valid_urls:
+                    if (
+                        self._is_http_url(url)
+                        and not self._has_template_variables(url)
+                        and url not in valid_urls
+                    ):
                         logger.debug(
                             f"Filtering out invalid download_url from package {
                                 package['name']}: {url}")
@@ -324,7 +414,9 @@ class URLValidationFilter:
             data_dict["sources"] = [
                 source
                 for source in data_dict["sources"]
-                if not self._is_http_url(source["url"]) or source["url"] in valid_urls
+                if not self._is_http_url(source["url"])
+                or self._has_template_variables(source["url"])
+                or source["url"] in valid_urls
             ]
 
         # Filter binaries
@@ -332,7 +424,9 @@ class URLValidationFilter:
             data_dict["binaries"] = [
                 binary
                 for binary in data_dict["binaries"]
-                if not self._is_http_url(binary["url"]) or binary["url"] in valid_urls
+                if not self._is_http_url(binary["url"])
+                or self._has_template_variables(binary["url"])
+                or binary["url"] in valid_urls
             ]
 
         # Filter scripts
@@ -340,7 +434,9 @@ class URLValidationFilter:
             data_dict["scripts"] = [
                 script
                 for script in data_dict["scripts"]
-                if not self._is_http_url(script["url"]) or script["url"] in valid_urls
+                if not self._is_http_url(script["url"])
+                or self._has_template_variables(script["url"])
+                or script["url"] in valid_urls
             ]
 
         # Filter providers
@@ -363,7 +459,11 @@ class URLValidationFilter:
             for package in provider_config["packages"]:
                 if package.get("download_url"):
                     url = package["download_url"]
-                    if self._is_http_url(url) and url not in valid_urls:
+                    if (
+                        self._is_http_url(url)
+                        and not self._has_template_variables(url)
+                        and url not in valid_urls
+                    ):
                         logger.debug(
                             f"Filtering out invalid download_url from provider package: {url}"
                         )
@@ -375,14 +475,22 @@ class URLValidationFilter:
                 # Repository URL
                 if repo.get("url"):
                     url = repo["url"]
-                    if self._is_http_url(url) and url not in valid_urls:
+                    if (
+                        self._is_http_url(url)
+                        and not self._has_template_variables(url)
+                        and url not in valid_urls
+                    ):
                         logger.debug(f"Filtering out invalid repository URL: {url}")
                         repo["url"] = None
 
                 # Repository key
                 if repo.get("key"):
                     url = repo["key"]
-                    if self._is_http_url(url) and url not in valid_urls:
+                    if (
+                        self._is_http_url(url)
+                        and not self._has_template_variables(url)
+                        and url not in valid_urls
+                    ):
                         logger.debug(f"Filtering out invalid repository key URL: {url}")
                         repo["key"] = None
 
@@ -391,7 +499,11 @@ class URLValidationFilter:
                     for package in repo["packages"]:
                         if package.get("download_url"):
                             url = package["download_url"]
-                            if self._is_http_url(url) and url not in valid_urls:
+                            if (
+                                self._is_http_url(url)
+                                and not self._has_template_variables(url)
+                                and url not in valid_urls
+                            ):
                                 logger.debug(
                                     f"Filtering out invalid download_url from repo package: {url}"
                                 )
@@ -402,7 +514,9 @@ class URLValidationFilter:
                     repo["sources"] = [
                         source
                         for source in repo["sources"]
-                        if not self._is_http_url(source["url"]) or source["url"] in valid_urls
+                        if not self._is_http_url(source["url"])
+                        or self._has_template_variables(source["url"])
+                        or source["url"] in valid_urls
                     ]
 
                 # Nested binaries
@@ -410,7 +524,9 @@ class URLValidationFilter:
                     repo["binaries"] = [
                         binary
                         for binary in repo["binaries"]
-                        if not self._is_http_url(binary["url"]) or binary["url"] in valid_urls
+                        if not self._is_http_url(binary["url"])
+                        or self._has_template_variables(binary["url"])
+                        or binary["url"] in valid_urls
                     ]
 
                 # Nested scripts
@@ -418,7 +534,9 @@ class URLValidationFilter:
                     repo["scripts"] = [
                         script
                         for script in repo["scripts"]
-                        if not self._is_http_url(script["url"]) or script["url"] in valid_urls
+                        if not self._is_http_url(script["url"])
+                        or self._has_template_variables(script["url"])
+                        or script["url"] in valid_urls
                     ]
 
         # Filter package sources
@@ -428,7 +546,11 @@ class URLValidationFilter:
                     for package in pkg_source["packages"]:
                         if package.get("download_url"):
                             url = package["download_url"]
-                            if self._is_http_url(url) and url not in valid_urls:
+                            if (
+                                self._is_http_url(url)
+                                and not self._has_template_variables(url)
+                                and url not in valid_urls
+                            ):
                                 logger.debug(
                                     f"Filtering out invalid download_url from package source: {url}"
                                 )
@@ -439,7 +561,9 @@ class URLValidationFilter:
             provider_config["sources"] = [
                 source
                 for source in provider_config["sources"]
-                if not self._is_http_url(source["url"]) or source["url"] in valid_urls
+                if not self._is_http_url(source["url"])
+                or self._has_template_variables(source["url"])
+                or source["url"] in valid_urls
             ]
 
         # Filter direct binaries
@@ -447,7 +571,9 @@ class URLValidationFilter:
             provider_config["binaries"] = [
                 binary
                 for binary in provider_config["binaries"]
-                if not self._is_http_url(binary["url"]) or binary["url"] in valid_urls
+                if not self._is_http_url(binary["url"])
+                or self._has_template_variables(binary["url"])
+                or binary["url"] in valid_urls
             ]
 
         # Filter direct scripts
@@ -455,5 +581,7 @@ class URLValidationFilter:
             provider_config["scripts"] = [
                 script
                 for script in provider_config["scripts"]
-                if not self._is_http_url(script["url"]) or script["url"] in valid_urls
+                if not self._is_http_url(script["url"])
+                or self._has_template_variables(script["url"])
+                or script["url"] in valid_urls
             ]

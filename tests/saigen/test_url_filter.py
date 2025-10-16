@@ -98,6 +98,25 @@ async def test_is_http_url():
 
 
 @pytest.mark.asyncio
+async def test_has_template_variables():
+    """Test template variable detection."""
+    async with URLValidationFilter() as filter:
+        # URLs with template variables
+        assert filter._has_template_variables("https://nginx.org/download/nginx-{{version}}.tar.gz")
+        assert filter._has_template_variables(
+            "https://releases.example.com/{{version}}/app_{{platform}}_{{architecture}}.tar.gz"
+        )
+        assert filter._has_template_variables("https://example.com/{{version}}/file.zip")
+        assert filter._has_template_variables("https://example.com/{{platform}}/file.zip")
+        assert filter._has_template_variables("https://example.com/{{architecture}}/file.zip")
+
+        # URLs without template variables
+        assert not filter._has_template_variables("https://example.com/file.tar.gz")
+        assert not filter._has_template_variables("https://example.com/v1.0.0/file.zip")
+        assert not filter._has_template_variables("https://example.com")
+
+
+@pytest.mark.asyncio
 async def test_check_url_valid():
     """Test checking a valid URL."""
     async with URLValidationFilter() as filter:
@@ -298,3 +317,110 @@ async def test_concurrent_url_validation():
         # All URLs should be validated
         assert len(valid_urls) == 20
         assert call_count == 20
+
+
+@pytest.mark.asyncio
+async def test_extract_urls_skips_template_variables():
+    """Test that URLs with template variables are not extracted for validation."""
+    saidata = SaiData(
+        version="0.3",
+        metadata=Metadata(
+            name="test-software",
+            description="Test software",
+            urls=Urls(
+                website="https://example.com",
+                documentation="https://docs.example.com/{{version}}/index.html",
+            ),
+        ),
+        sources=[
+            Source(
+                name="source1",
+                url="https://nginx.org/download/nginx-{{version}}.tar.gz",
+                build_system=BuildSystem.CMAKE,
+            )
+        ],
+        binaries=[
+            Binary(
+                name="binary1",
+                url="https://releases.example.com/{{version}}/app_{{platform}}_{{architecture}}.tar.gz",
+            )
+        ],
+        scripts=[
+            Script(
+                name="script1",
+                url="https://get.example.com/install-{{version}}.sh",
+            )
+        ],
+    )
+
+    async with URLValidationFilter() as filter:
+        urls = filter._extract_urls(saidata)
+
+        # Should only extract URLs without template variables
+        assert "https://example.com" in urls
+        assert "https://docs.example.com/{{version}}/index.html" not in urls
+        assert "https://nginx.org/download/nginx-{{version}}.tar.gz" not in urls
+        assert (
+            "https://releases.example.com/{{version}}/app_{{platform}}_{{architecture}}.tar.gz"
+            not in urls
+        )
+        assert "https://get.example.com/install-{{version}}.sh" not in urls
+
+        # Should have only 1 URL (the website)
+        assert len(urls) == 1
+
+
+@pytest.mark.asyncio
+async def test_filter_saidata_preserves_template_urls():
+    """Test that URLs with template variables are preserved during filtering."""
+    saidata = SaiData(
+        version="0.3",
+        metadata=Metadata(
+            name="test-software",
+            description="Test software",
+            urls=Urls(
+                website="https://example.com",
+                documentation="https://docs.example.com/{{version}}/index.html",
+            ),
+        ),
+        sources=[
+            Source(
+                name="source1",
+                url="https://nginx.org/download/nginx-{{version}}.tar.gz",
+                build_system=BuildSystem.CMAKE,
+            )
+        ],
+        binaries=[
+            Binary(
+                name="binary1",
+                url="https://releases.example.com/{{version}}/app_{{platform}}_{{architecture}}.tar.gz",
+            )
+        ],
+        scripts=[
+            Script(
+                name="script1",
+                url="https://get.example.com/install-{{version}}.sh",
+            )
+        ],
+    )
+
+    async with URLValidationFilter() as filter:
+        # Mock only the website URL as valid
+        filter._validate_urls = AsyncMock(return_value={"https://example.com"})
+
+        filtered = await filter.filter_saidata(saidata)
+
+        # Template URLs should be preserved (not filtered out)
+        assert filtered.metadata.urls.website == "https://example.com"
+        assert (
+            filtered.metadata.urls.documentation == "https://docs.example.com/{{version}}/index.html"
+        )
+        assert len(filtered.sources) == 1
+        assert filtered.sources[0].url == "https://nginx.org/download/nginx-{{version}}.tar.gz"
+        assert len(filtered.binaries) == 1
+        assert (
+            filtered.binaries[0].url
+            == "https://releases.example.com/{{version}}/app_{{platform}}_{{architecture}}.tar.gz"
+        )
+        assert len(filtered.scripts) == 1
+        assert filtered.scripts[0].url == "https://get.example.com/install-{{version}}.sh"

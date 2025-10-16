@@ -17,11 +17,12 @@ A comprehensive Python tool for generating, validating, and managing software me
 - Enables automation of software deployment and system administration tasks
 
 ### SAIGEN Core Purpose
-- Automates creation of software metadata YAML files (saidata)
+- Automates creation of software metadata YAML files (saidata) following schema 0.3
 - Caches package information from multiple repositories (apt, dnf, brew, winget, etc.)
-- Uses repository data and LLMs to generate saidata
-- Validates generated files against official schema
+- Uses repository data and LLMs to generate saidata with sources, binaries, and scripts
+- Validates generated files against official schema (saidata-0.3-schema.json)
 - Tests saidata using mcp servers
+- Supports URL templating with version, platform, and architecture placeholders
 
 ## Key Features
 
@@ -35,9 +36,12 @@ A comprehensive Python tool for generating, validating, and managing software me
 
 ### SAIGEN Features
 - Multi-provider package repository integration
-- Schema validation and quality assessment
+- Schema 0.3 validation and quality assessment
+- Support for multiple installation methods (packages, sources, binaries, scripts)
 - Batch processing capabilities
 - AI-enhanced metadata generation with RAG (Retrieval-Augmented Generation)
+- URL templating with platform/architecture detection
+- Security features (checksum validation, vulnerability metadata)
 - CLI and programmatic API interfaces
 - Docker containerization support
 
