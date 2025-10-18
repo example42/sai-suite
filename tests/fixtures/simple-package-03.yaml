@@ -1,0 +1,19 @@
+version: "0.3"
+metadata:
+  name: curl
+  description: "Command line tool for transferring data with URLs"
+  version: "8.0.0"
+
+packages:
+  - name: curl
+    package_name: curl
+    version: "8.0.0"
+
+services:
+  - name: curl
+    service_name: curl
+    type: systemd
+
+commands:
+  - name: curl
+    path: "/usr/bin/curl"

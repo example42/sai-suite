@@ -15,89 +15,69 @@ actions:
     description: "Download and install binary"
     steps:
       - name: "create-temp-dir"
-        command: "mkdir -p {{sai_binary(0, 'temp_dir')}}"
+        command: "mkdir -p /tmp/sai-binary-install"
       - name: "download-binary"
-        command: "cd {{sai_binary(0, 'temp_dir')}} && {{sai_binary(0, 'download_cmd')}}"
-      - name: "verify-checksum"
-        command: "cd {{sai_binary(0, 'temp_dir')}} && {{sai_binary(0, 'checksum_cmd')}}"
-        ignore_failure: true
+        command: "cd /tmp/sai-binary-install && curl -L {{sai_binary(0, 'url', 'binary')}} -o binary.tar.gz"
       - name: "extract-archive"
-        command: "cd {{sai_binary(0, 'temp_dir')}} && {{sai_binary(0, 'extract_cmd')}}"
+        command: "cd /tmp/sai-binary-install && tar xzf binary.tar.gz"
         ignore_failure: true
       - name: "create-install-dir"
-        command: "mkdir -p {{sai_binary(0, 'install_path')}}"
+        command: "sudo mkdir -p {{sai_binary(0, 'install_path', 'binary')}}"
       - name: "install-binary"
-        command: "{{sai_binary(0, 'install_cmd')}}"
+        command: "sudo cp /tmp/sai-binary-install/{{sai_binary(0, 'executable', 'binary')}} {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       - name: "set-permissions"
-        command: "chmod {{sai_binary(0, 'permissions')}} {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}"
-      - name: "create-manifest"
-        command: "echo '{{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}' > {{sai_binary(0, 'manifest_file')}}"
+        command: "sudo chmod {{sai_binary(0, 'permissions', 'binary')}} {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       - name: "cleanup-temp"
-        command: "rm -rf {{sai_binary(0, 'temp_dir')}}"
+        command: "rm -rf /tmp/sai-binary-install"
         ignore_failure: true
     timeout: 600
     validation:
-      command: "{{sai_binary(0, 'validation_cmd')}}"
+      command: "test -f {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       expected_exit_code: 0
-    rollback: "rm -f {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}} && rm -f {{sai_binary(0, 'manifest_file')}}"
+    rollback: "sudo rm -f {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
 
   uninstall:
     description: "Remove installed binary"
     steps:
       - name: "remove-binary"
-        command: "rm -f {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}"
-      - name: "remove-additional-files"
-        command: "{{sai_binary(0, 'uninstall_cmd')}}"
-        ignore_failure: true
-      - name: "remove-manifest"
-        command: "rm -f {{sai_binary(0, 'manifest_file')}}"
-        ignore_failure: true
+        command: "sudo rm -f {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
     validation:
-      command: "! {{sai_binary(0, 'validation_cmd')}}"
+      command: "! test -f {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       expected_exit_code: 0
 
   upgrade:
     description: "Upgrade installed binary"
     steps:
       - name: "backup-current"
-        command: "cp {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}} {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}.backup"
+        command: "sudo cp {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}} {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}.backup"
         ignore_failure: true
       - name: "create-temp-dir"
-        command: "mkdir -p {{sai_binary(0, 'temp_dir')}}"
+        command: "mkdir -p /tmp/sai-binary-upgrade"
       - name: "download-new-binary"
-        command: "cd {{sai_binary(0, 'temp_dir')}} && {{sai_binary(0, 'download_cmd')}}"
-      - name: "verify-new-checksum"
-        command: "cd {{sai_binary(0, 'temp_dir')}} && {{sai_binary(0, 'checksum_cmd')}}"
-        ignore_failure: true
+        command: "cd /tmp/sai-binary-upgrade && curl -L {{sai_binary(0, 'url', 'binary')}} -o binary.tar.gz"
       - name: "extract-new-archive"
-        command: "cd {{sai_binary(0, 'temp_dir')}} && {{sai_binary(0, 'extract_cmd')}}"
+        command: "cd /tmp/sai-binary-upgrade && tar xzf binary.tar.gz"
         ignore_failure: true
       - name: "install-new-binary"
-        command: "{{sai_binary(0, 'install_cmd')}}"
+        command: "sudo cp /tmp/sai-binary-upgrade/{{sai_binary(0, 'executable', 'binary')}} {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       - name: "set-new-permissions"
-        command: "chmod {{sai_binary(0, 'permissions')}} {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}"
+        command: "sudo chmod {{sai_binary(0, 'permissions', 'binary')}} {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       - name: "cleanup-backup"
-        command: "rm -f {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}.backup"
+        command: "sudo rm -f {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}.backup"
         ignore_failure: true
       - name: "cleanup-temp"
-        command: "rm -rf {{sai_binary(0, 'temp_dir')}}"
+        command: "rm -rf /tmp/sai-binary-upgrade"
         ignore_failure: true
     timeout: 600
     validation:
-      command: "{{sai_binary(0, 'validation_cmd')}}"
+      command: "test -f {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
       expected_exit_code: 0
-    rollback: "mv {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}.backup {{sai_binary(0, 'install_path')}}/{{sai_binary(0, 'executable')}}"
+    rollback: "sudo mv {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}.backup {{sai_binary(0, 'install_path', 'binary')}}/{{sai_binary(0, 'executable', 'binary')}}"
 
   version:
     description: "Show installed version"
-    template: "{{sai_binary(0, 'version_cmd')}}"
+    template: "echo 'Version: {{sai_binary(0, 'version', 'binary')}}'"
 
   info:
     description: "Show binary installation information"
-    template: "cat {{sai_binary(0, 'manifest_file')}} 2>/dev/null || echo 'Not installed as binary'"
-
-  # Helper action for checking download utility availability
-  test:
-    description: "Test binary download availability"
-    template: "which curl >/dev/null 2>&1 || which wget >/dev/null 2>&1"
-    timeout: 10
+    template: "echo 'Binary URL: {{sai_binary(0, 'url', 'binary')}}' && echo 'Install Path: {{sai_binary(0, 'install_path', 'binary')}}' && echo 'Executable: {{sai_binary(0, 'executable', 'binary')}}'"

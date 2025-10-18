@@ -1,0 +1,173 @@
+version: "0.3"
+metadata:
+  name: nginx
+  display_name: "NGINX Web Server"
+  description: "High-performance HTTP server and reverse proxy"
+  version: "1.24.0"
+  category: "web-server"
+  license: "BSD-2-Clause"
+  tags:
+    - web
+    - server
+    - proxy
+    - http
+  urls:
+    website: "https://nginx.org"
+    documentation: "https://nginx.org/en/docs/"
+    source: "https://github.com/nginx/nginx"
+
+packages:
+  - name: nginx
+    package_name: nginx
+    version: "1.24.0"
+  - name: nginx-common
+    package_name: nginx-common
+
+sources:
+  - name: main
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    version: "1.24.0"
+    build_system: autotools
+    build_dir: "/tmp/nginx-build"
+    source_dir: "/tmp/nginx-build/nginx-1.24.0"
+    install_prefix: "/usr/local"
+    configure_args:
+      - "--with-http_ssl_module"
+      - "--with-http_v2_module"
+      - "--with-http_realip_module"
+    build_args:
+      - "-j4"
+    install_args:
+      - "install"
+    prerequisites:
+      - "build-essential"
+      - "libssl-dev"
+      - "libpcre3-dev"
+      - "zlib1g-dev"
+    checksum: "sha256:abc123def456789abc123def456789abc123def456789abc123def456789abc12"
+
+binaries:
+  - name: main
+    url: "https://nginx.org/download/nginx-{{version}}-{{platform}}-{{architecture}}.tar.gz"
+    version: "1.24.0"
+    platform: "linux"
+    architecture: "amd64"
+    install_path: "/usr/local/bin"
+    executable: "nginx"
+    permissions: "0755"
+    checksum: "sha256:def456789abc123def456789abc123def456789abc123def456789abc123def4"
+
+scripts:
+  - name: official
+    url: "https://nginx.org/install.sh"
+    version: "1.24.0"
+    interpreter: "bash"
+    checksum: "sha256:ghi789abc123def456789abc123def456789abc123def456789abc123def456"
+    arguments:
+      - "--prefix=/usr/local"
+      - "--with-ssl"
+    environment:
+      NGINX_VERSION: "1.24.0"
+      INSTALL_PREFIX: "/usr/local"
+    working_dir: "/tmp"
+    timeout: 600
+
+services:
+  - name: nginx
+    service_name: nginx
+    type: systemd
+    enabled: true
+    state: started
+
+files:
+  - name: nginx.conf
+    path: "/etc/nginx/nginx.conf"
+    type: config
+    owner: root
+    group: root
+    mode: "0644"
+
+directories:
+  - name: nginx-conf
+    path: "/etc/nginx"
+    owner: root
+    group: root
+    mode: "0755"
+
+commands:
+  - name: nginx
+    path: "/usr/sbin/nginx"
+    aliases:
+      - "nginx-server"
+
+ports:
+  - port: 80
+    protocol: tcp
+    service: http
+  - port: 443
+    protocol: tcp
+    service: https
+
+providers:
+  apt:
+    packages:
+      - name: nginx
+        package_name: nginx-full
+        version: "1.24.0"
+      - name: nginx-common
+        package_name: nginx-common
+    sources:
+      - name: main
+        url: "https://nginx.org/download/nginx-1.24.0.tar.gz"
+        build_system: autotools
+        configure_args:
+          - "--with-http_ssl_module"
+          - "--with-http_v2_module"
+  
+  brew:
+    packages:
+      - name: nginx
+        package_name: nginx
+        version: "1.24.0"
+  
+  source:
+    sources:
+      - name: main
+        url: "https://nginx.org/download/nginx-1.24.0.tar.gz"
+        build_system: autotools
+        build_dir: "/tmp/nginx-build"
+        install_prefix: "/usr/local"
+  
+  binary:
+    binaries:
+      - name: main
+        url: "https://nginx.org/download/nginx-1.24.0-linux-amd64.tar.gz"
+        platform: "linux"
+        architecture: "amd64"
+        install_path: "/usr/local/bin"
+  
+  script:
+    scripts:
+      - name: official
+        url: "https://nginx.org/install.sh"
+        interpreter: "bash"
+        timeout: 600
+
+compatibility:
+  platforms:
+    - linux
+    - darwin
+  architectures:
+    - amd64
+    - arm64
+  os_versions:
+    ubuntu:
+      - "20.04"
+      - "22.04"
+      - "24.04"
+    debian:
+      - "11"
+      - "12"
+    centos:
+      - "8"
+      - "9"

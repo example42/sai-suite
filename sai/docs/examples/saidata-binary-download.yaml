@@ -1,0 +1,97 @@
+# Binary Download Example - Installing Pre-compiled Binaries
+# This demonstrates how to configure binary downloads in schema 0.3
+
+version: "0.3"
+
+metadata:
+  name: terraform
+  description: "Infrastructure as Code tool"
+  homepage: "https://www.terraform.io"
+  license: "MPL-2.0"
+
+# Package definition (for package manager installation)
+packages:
+  - name: terraform
+    package_name: terraform
+    version: "1.6.0"
+
+# Binary download configuration
+binaries:
+  - name: main
+    url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip"
+    version: "1.6.0"
+    platform: linux
+    architecture: amd64
+    checksum: "sha256:d117883fd98b960c5d0f012b0d4b21801e1c4674e8559e3e7e6d7e7e7e7e7e7e"
+    install_path: "/usr/local/bin"
+    executable: "terraform"
+    archive:
+      format: "zip"
+      strip_prefix: ""
+      extract_path: "/tmp/terraform-extract"
+    permissions: "0755"
+
+# Command to verify installation
+commands:
+  - name: terraform
+    path: "/usr/local/bin/terraform"
+    version_arg: "version"
+
+# Provider-specific binary configuration
+providers:
+  binary:
+    binaries:
+      - name: main
+        url: "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip"
+        install_path: "/usr/local/bin"
+        executable: "terraform"
+        archive:
+          format: "zip"
+        permissions: "0755"
+
+  brew:
+    packages:
+      - name: terraform
+        package_name: terraform
+        version: "1.6.0"
+
+  apt:
+    packages:
+      - name: terraform
+        package_name: terraform
+        version: "1.6.0"
+    repositories:
+      - name: hashicorp
+        url: "https://apt.releases.hashicorp.com"
+        distribution: "{{os_codename}}"
+        components:
+          - main
+        key_url: "https://apt.releases.hashicorp.com/gpg"
+
+# Compatibility matrix
+compatibility:
+  platforms:
+    - linux
+    - darwin
+    - windows
+  architectures:
+    - amd64
+    - arm64
+    - arm
+  os_versions:
+    ubuntu:
+      - "20.04"
+      - "22.04"
+      - "24.04"
+    debian:
+      - "11"
+      - "12"
+    centos:
+      - "8"
+      - "9"
+    macos:
+      - "13"
+      - "14"
+    windows:
+      - "10"
+      - "11"

@@ -40,6 +40,13 @@ pip install sai
 **Key Features:**
 - Provider-based action execution (install, configure, start, stop, etc.)
 - Multi-platform support (Linux, macOS, Windows)
+- **Schema 0.3 support** with multiple installation methods:
+  - **Packages**: Traditional package manager installations
+  - **Sources**: Build software from source with autotools, cmake, make, meson, ninja
+  - **Binaries**: Download and install pre-compiled binaries with platform/architecture detection
+  - **Scripts**: Execute installation scripts with security validation
+- Enhanced template functions for flexible configuration
+- **Package name distinction**: Separate logical names (`name`) from actual package names (`package_name`)
 - Minimal dependencies for production use
 - Dry-run mode for safe testing
 - Works with existing saidata from the [saidata repository](https://github.com/example42/saidata)
@@ -48,6 +55,7 @@ pip install sai
 - Deploy software using existing saidata
 - Execute software management in production
 - Run automated deployments in CI/CD pipelines
+- Build software from source or install pre-compiled binaries
 
 ### 🤖 SAIGEN - SAI Data Generation
 
@@ -261,11 +269,109 @@ SAIGEN now supports 50+ package managers across all major platforms:
 - **Kubernetes**: helm charts
 - **Scientific**: spack, conda-forge
 
+## 🆕 Schema 0.3 Features
+
+SAI now supports the saidata schema version 0.3, which introduces powerful new capabilities:
+
+### Multiple Installation Methods
+
+**Packages** - Traditional package manager installations:
+```yaml
+packages:
+  - name: nginx          # Logical name for cross-referencing
+    package_name: nginx  # Actual package name for package managers
+    version: "1.24.0"
+```
+
+**Sources** - Build from source with multiple build systems:
+```yaml
+sources:
+  - name: main
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    build_system: autotools  # autotools, cmake, make, meson, ninja, custom
+    configure_args:
+      - "--with-http_ssl_module"
+    checksum: "sha256:abc123..."
+```
+
+**Binaries** - Pre-compiled downloads with platform detection:
+```yaml
+binaries:
+  - name: main
+    url: "https://releases.example.com/{{version}}/app_{{platform}}_{{architecture}}.tar.gz"
+    platform: linux      # linux, darwin, windows
+    architecture: amd64  # amd64, arm64, etc.
+    install_path: "/usr/local/bin"
+    checksum: "sha256:def456..."
+```
+
+**Scripts** - Installation scripts with security validation:
+```yaml
+scripts:
+  - name: official
+    url: "https://get.example.com/install.sh"
+    interpreter: bash
+    checksum: "sha256:ghi789..."
+    timeout: 600
+```
+
+### Enhanced Template Functions
+
+Access saidata fields with precision using the new template functions:
+
+```yaml
+# Package management - specify which field to access
+command: "apt-get install -y {{sai_package(0, 'package_name', 'apt')}}"
+command: "echo Installing {{sai_package(0, 'name')}}"
+
+# Source builds - access build configurations
+command: "wget {{sai_source(0, 'url', 'source')}}"
+command: "{{sai_source(0, 'build_system')}} build"
+
+# Binary downloads - platform-aware installations
+command: "curl -L {{sai_binary(0, 'url', 'binary')}} -o app.tar.gz"
+
+# Script installations - secure script execution
+command: "curl -fsSL {{sai_script(0, 'url', 'script')}} | {{sai_script(0, 'interpreter')}}"
+```
+
+### Package Name Distinction
+
+Schema 0.3 distinguishes between logical names and actual package names:
+
+- **`name`**: Logical identifier for cross-referencing (e.g., "nginx")
+- **`package_name`**: Actual package name used by package managers (e.g., "nginx-full" for brew)
+
+This allows the same software to have different package names across providers:
+
+```yaml
+packages:
+  - name: nginx
+    package_name: nginx
+
+providers:
+  brew:
+    packages:
+      - name: nginx
+        package_name: nginx-full  # Different package name for brew
+```
+
 ## 💡 Key Features at a Glance
 
 ### SAI Features
 ✅ Execute software actions across platforms  
 ✅ Multi-provider support (apt, brew, winget, etc.)  
+✅ **Schema 0.3 support** with multiple installation methods:
+  - Packages (traditional package managers)
+  - Sources (build from source with autotools, cmake, make, meson, ninja)
+  - Binaries (pre-compiled downloads with platform/architecture detection)
+  - Scripts (installation scripts with security validation)
+✅ Enhanced template functions with field-level access:
+  - `sai_package(index, field, provider)` - Access package fields
+  - `sai_source(index, field, provider)` - Access source configurations
+  - `sai_binary(index, field, provider)` - Access binary configurations
+  - `sai_script(index, field, provider)` - Access script configurations
+✅ **Package name distinction**: Logical names vs actual package names  
 ✅ Batch action execution with `sai apply`  
 ✅ Dry-run mode for safe testing  
 ✅ Provider auto-detection and caching  

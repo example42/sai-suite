@@ -1,0 +1,28 @@
+version: "0.3"
+metadata:
+  name: test-binary-app
+  description: "Test application for binary download provider"
+  version: "1.5.0"
+
+binaries:
+  - name: main
+    url: "https://example.com/releases/test-app-1.5.0-linux-amd64.tar.gz"
+    version: "1.5.0"
+    platform: "linux"
+    architecture: "amd64"
+    install_path: "/usr/local/bin"
+    executable: "test-app"
+    permissions: "0755"
+    checksum: "sha256:def456789abc123def456789abc123def456789abc123def456789abc123def4"
+
+providers:
+  binary:
+    binaries:
+      - name: main
+        url: "https://example.com/releases/test-app-1.5.0-linux-amd64.tar.gz"
+        version: "1.5.0"
+        platform: "linux"
+        architecture: "amd64"
+        install_path: "/usr/local/bin"
+        executable: "test-app"
+        permissions: "0755"

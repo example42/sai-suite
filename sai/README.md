@@ -12,6 +12,8 @@ pip install sai
 
 - **Provider-based Actions**: Execute install, configure, start, stop, and other actions
 - **Multi-platform Support**: Works across Linux, macOS, and Windows
+- **Schema 0.3 Support**: Multiple installation methods (packages, sources, binaries, scripts)
+- **Enhanced Template Functions**: Field-level access to saidata with `sai_package()`, `sai_source()`, `sai_binary()`, `sai_script()`
 - **Extensible Providers**: Support for package managers, containers, and custom providers
 - **Configuration Management**: Flexible YAML/JSON configuration system
 - **Dry-run Mode**: Preview actions before execution

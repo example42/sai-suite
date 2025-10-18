@@ -214,6 +214,9 @@ class SaidataLoader:
             # Additional validation checks
             self._validate_metadata(data, errors, warnings)
             self._validate_packages(data, errors, warnings)
+            self._validate_sources(data, errors, warnings)
+            self._validate_binaries(data, errors, warnings)
+            self._validate_scripts(data, errors, warnings)
             self._validate_services(data, errors, warnings)
             self._validate_providers(data, errors, warnings)
 
@@ -687,15 +690,15 @@ class SaidataLoader:
 
     def _load_schema(self) -> None:
         """Load the JSON schema for saidata validation."""
-        schema_path = Path(__file__).parent.parent.parent / "schemas" / "saidata-0.2-schema.json"
+        schema_path = Path(__file__).parent.parent.parent / "schemas" / "saidata-0.3-schema.json"
 
         try:
             with open(schema_path, "r", encoding="utf-8") as f:
                 self._schema_cache = json.load(f)
-            logger.debug(f"Loaded saidata schema from: {schema_path}")
+            logger.info(f"Loaded saidata schema version 0.3 from: {schema_path}")
         except Exception as e:
             logger.error(f"Failed to load saidata schema: {e}")
-            # Use minimal schema as fallback
+            # Use minimal schema as fallback for 0.3 format
             self._schema_cache = {
                 "type": "object",
                 "properties": {
@@ -731,7 +734,7 @@ class SaidataLoader:
     def _validate_packages(
         self, data: Dict[str, Any], errors: List[str], warnings: List[str]
     ) -> None:
-        """Validate packages section."""
+        """Validate packages section for schema 0.3."""
         packages = data.get("packages", [])
 
         if not packages:
@@ -743,8 +746,184 @@ class SaidataLoader:
                 errors.append(f"Package {i} must be an object")
                 continue
 
+            # Schema 0.3 requires both name and package_name fields
             if not package.get("name"):
-                errors.append(f"Package {i} must have a name field")
+                errors.append(
+                    f"Package {i} must have a 'name' field (logical name for cross-referencing)"
+                )
+
+            if not package.get("package_name"):
+                errors.append(
+                    f"Package {i} must have a 'package_name' field (actual package name used by package managers). "
+                    "In schema 0.3, both 'name' and 'package_name' are required."
+                )
+
+    def _validate_sources(
+        self, data: Dict[str, Any], errors: List[str], warnings: List[str]
+    ) -> None:
+        """Validate sources section for schema 0.3."""
+        sources = data.get("sources", [])
+
+        if not sources:
+            return  # Sources are optional
+
+        for i, source in enumerate(sources):
+            if not isinstance(source, dict):
+                errors.append(f"Source {i} must be an object")
+                continue
+
+            # Required fields
+            if not source.get("name"):
+                errors.append(f"Source {i} must have a 'name' field")
+
+            if not source.get("url"):
+                errors.append(f"Source {i} must have a 'url' field")
+
+            if not source.get("build_system"):
+                errors.append(f"Source {i} must have a 'build_system' field")
+
+            # Validate build_system value
+            build_system = source.get("build_system")
+            if build_system and build_system not in [
+                "autotools",
+                "cmake",
+                "make",
+                "meson",
+                "ninja",
+                "custom",
+            ]:
+                errors.append(
+                    f"Source {i} has invalid build_system: {build_system}. "
+                    "Must be one of: autotools, cmake, make, meson, ninja, custom"
+                )
+
+            # Validate checksum format if present
+            checksum = source.get("checksum")
+            if checksum and isinstance(checksum, str):
+                if not (
+                    checksum.startswith("sha256:")
+                    or checksum.startswith("sha512:")
+                    or checksum.startswith("md5:")
+                ):
+                    warnings.append(
+                        f"Source {i} checksum should be prefixed with algorithm (e.g., 'sha256:...')"
+                    )
+
+    def _validate_binaries(
+        self, data: Dict[str, Any], errors: List[str], warnings: List[str]
+    ) -> None:
+        """Validate binaries section for schema 0.3."""
+        binaries = data.get("binaries", [])
+
+        if not binaries:
+            return  # Binaries are optional
+
+        for i, binary in enumerate(binaries):
+            if not isinstance(binary, dict):
+                errors.append(f"Binary {i} must be an object")
+                continue
+
+            # Required fields
+            if not binary.get("name"):
+                errors.append(f"Binary {i} must have a 'name' field")
+
+            if not binary.get("url"):
+                errors.append(f"Binary {i} must have a 'url' field")
+
+            # Validate URL template variables
+            url = binary.get("url", "")
+            if "{{" in url and "}}" in url:
+                # Check for common template variables
+                valid_vars = ["version", "platform", "architecture", "arch"]
+                for var in valid_vars:
+                    if f"{{{{{var}}}}}" in url:
+                        logger.debug(f"Binary {i} uses template variable: {var}")
+
+            # Validate checksum format if present
+            checksum = binary.get("checksum")
+            if checksum and isinstance(checksum, str):
+                if not (
+                    checksum.startswith("sha256:")
+                    or checksum.startswith("sha512:")
+                    or checksum.startswith("md5:")
+                ):
+                    warnings.append(
+                        f"Binary {i} checksum should be prefixed with algorithm (e.g., 'sha256:...')"
+                    )
+
+            # Validate archive configuration if present
+            archive = binary.get("archive")
+            if archive and isinstance(archive, dict):
+                archive_format = archive.get("format")
+                if archive_format and archive_format not in [
+                    "tar.gz",
+                    "tar.bz2",
+                    "tar.xz",
+                    "zip",
+                    "tar",
+                ]:
+                    warnings.append(
+                        f"Binary {i} has uncommon archive format: {archive_format}"
+                    )
+
+    def _validate_scripts(
+        self, data: Dict[str, Any], errors: List[str], warnings: List[str]
+    ) -> None:
+        """Validate scripts section for schema 0.3."""
+        scripts = data.get("scripts", [])
+
+        if not scripts:
+            return  # Scripts are optional
+
+        for i, script in enumerate(scripts):
+            if not isinstance(script, dict):
+                errors.append(f"Script {i} must be an object")
+                continue
+
+            # Required fields
+            if not script.get("name"):
+                errors.append(f"Script {i} must have a 'name' field")
+
+            if not script.get("url"):
+                errors.append(f"Script {i} must have a 'url' field")
+
+            # Validate checksum format if present
+            checksum = script.get("checksum")
+            if checksum and isinstance(checksum, str):
+                if not (
+                    checksum.startswith("sha256:")
+                    or checksum.startswith("sha512:")
+                    or checksum.startswith("md5:")
+                ):
+                    warnings.append(
+                        f"Script {i} checksum should be prefixed with algorithm (e.g., 'sha256:...')"
+                    )
+            elif not checksum:
+                warnings.append(
+                    f"Script {i} should have a checksum for security verification"
+                )
+
+            # Validate interpreter if present
+            interpreter = script.get("interpreter")
+            if interpreter and interpreter not in [
+                "bash",
+                "sh",
+                "python",
+                "python3",
+                "perl",
+                "ruby",
+            ]:
+                warnings.append(
+                    f"Script {i} has uncommon interpreter: {interpreter}"
+                )
+
+            # Validate timeout if present
+            timeout = script.get("timeout")
+            if timeout is not None:
+                if not isinstance(timeout, int) or timeout < 1 or timeout > 3600:
+                    errors.append(
+                        f"Script {i} timeout must be an integer between 1 and 3600 seconds"
+                    )
 
     def _validate_services(
         self, data: Dict[str, Any], errors: List[str], warnings: List[str]
@@ -774,7 +953,7 @@ class SaidataLoader:
     def _validate_providers(
         self, data: Dict[str, Any], errors: List[str], warnings: List[str]
     ) -> None:
-        """Validate providers section."""
+        """Validate providers section for schema 0.3."""
         providers = data.get("providers", {})
 
         if not providers:
@@ -795,6 +974,42 @@ class SaidataLoader:
 
                 if not package.get("name"):
                     errors.append(f"Provider {provider_name} package {i} must have a name field")
+
+                # Schema 0.3: Check for package_name in provider-specific packages
+                if not package.get("package_name"):
+                    warnings.append(
+                        f"Provider {provider_name} package {i} should have a 'package_name' field"
+                    )
+
+            # Validate provider-specific sources
+            provider_sources = provider_config.get("sources", [])
+            for i, source in enumerate(provider_sources):
+                if not isinstance(source, dict):
+                    errors.append(f"Provider {provider_name} source {i} must be an object")
+                    continue
+
+                if not source.get("name"):
+                    errors.append(f"Provider {provider_name} source {i} must have a name field")
+
+            # Validate provider-specific binaries
+            provider_binaries = provider_config.get("binaries", [])
+            for i, binary in enumerate(provider_binaries):
+                if not isinstance(binary, dict):
+                    errors.append(f"Provider {provider_name} binary {i} must be an object")
+                    continue
+
+                if not binary.get("name"):
+                    errors.append(f"Provider {provider_name} binary {i} must have a name field")
+
+            # Validate provider-specific scripts
+            provider_scripts = provider_config.get("scripts", [])
+            for i, script in enumerate(provider_scripts):
+                if not isinstance(script, dict):
+                    errors.append(f"Provider {provider_name} script {i} must be an object")
+                    continue
+
+                if not script.get("name"):
+                    errors.append(f"Provider {provider_name} script {i} must have a name field")
 
 
 class ValidationError(Exception):

@@ -1,0 +1,36 @@
+version: "0.3"
+metadata:
+  name: test-source-app
+  description: "Test application for source build provider"
+  version: "1.0.0"
+
+sources:
+  - name: main
+    url: "https://example.com/test-app-1.0.0.tar.gz"
+    version: "1.0.0"
+    build_system: autotools
+    build_dir: "/tmp/test-app-build"
+    source_dir: "/tmp/test-app-build/test-app-1.0.0"
+    install_prefix: "/usr/local"
+    configure_args:
+      - "--enable-ssl"
+      - "--with-threads"
+    build_args:
+      - "-j4"
+    install_args:
+      - "install"
+    prerequisites:
+      - "build-essential"
+      - "libssl-dev"
+    checksum: "sha256:abc123def456"
+
+providers:
+  source:
+    sources:
+      - name: main
+        url: "https://example.com/test-app-1.0.0.tar.gz"
+        version: "1.0.0"
+        build_system: autotools
+        build_dir: "/tmp/test-app-build"
+        source_dir: "/tmp/test-app-build/test-app-1.0.0"
+        install_prefix: "/usr/local"

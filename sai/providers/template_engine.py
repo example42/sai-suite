@@ -3,7 +3,7 @@
 import logging
 import os
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from jinja2 import BaseLoader, Environment, StrictUndefined, TemplateSyntaxError, UndefinedError
 
@@ -156,6 +156,23 @@ class SaidataContextBuilder:
             else []
         )
 
+        # Installation method collections
+        context["sources"] = (
+            [self._source_to_dict(src) for src in self.saidata.sources]
+            if self.saidata.sources
+            else []
+        )
+        context["binaries"] = (
+            [self._binary_to_dict(bin) for bin in self.saidata.binaries]
+            if self.saidata.binaries
+            else []
+        )
+        context["scripts"] = (
+            [self._script_to_dict(scr) for scr in self.saidata.scripts]
+            if self.saidata.scripts
+            else []
+        )
+
         # Add providers section if it exists
         if hasattr(self.saidata, "providers") and self.saidata.providers:
             context["providers"] = self._build_providers_context()
@@ -256,6 +273,7 @@ class SaidataContextBuilder:
         """Convert Package model to dictionary."""
         return {
             "name": package.name,
+            "package_name": package.package_name,
             "version": package.version,
             "alternatives": package.alternatives or [],
             "install_options": package.install_options,
@@ -331,6 +349,62 @@ class SaidataContextBuilder:
             "environment": container.environment or {},
             "networks": container.networks or [],
             "labels": container.labels or {},
+        }
+
+    def _source_to_dict(self, source) -> Dict[str, Any]:
+        """Convert Source model to dictionary."""
+        return {
+            "name": source.name,
+            "url": source.url,
+            "version": source.version,
+            "build_system": source.build_system,
+            "build_dir": source.build_dir,
+            "source_dir": source.source_dir,
+            "install_prefix": source.install_prefix,
+            "configure_args": source.configure_args or [],
+            "build_args": source.build_args or [],
+            "install_args": source.install_args or [],
+            "prerequisites": source.prerequisites or [],
+            "environment": source.environment or {},
+            "checksum": source.checksum,
+            "custom_commands": (
+                source.custom_commands.__dict__ if source.custom_commands else {}
+            ),
+        }
+
+    def _binary_to_dict(self, binary) -> Dict[str, Any]:
+        """Convert Binary model to dictionary."""
+        return {
+            "name": binary.name,
+            "url": binary.url,
+            "version": binary.version,
+            "architecture": binary.architecture,
+            "platform": binary.platform,
+            "checksum": binary.checksum,
+            "install_path": binary.install_path,
+            "executable": binary.executable,
+            "archive": binary.archive.__dict__ if binary.archive else {},
+            "permissions": binary.permissions,
+            "custom_commands": (
+                binary.custom_commands.__dict__ if binary.custom_commands else {}
+            ),
+        }
+
+    def _script_to_dict(self, script) -> Dict[str, Any]:
+        """Convert Script model to dictionary."""
+        return {
+            "name": script.name,
+            "url": script.url,
+            "version": script.version,
+            "interpreter": script.interpreter,
+            "checksum": script.checksum,
+            "arguments": script.arguments or [],
+            "environment": script.environment or {},
+            "working_dir": script.working_dir,
+            "timeout": script.timeout,
+            "custom_commands": (
+                script.custom_commands.__dict__ if script.custom_commands else {}
+            ),
         }
 
 
@@ -439,6 +513,11 @@ class TemplateEngine:
         self.env.globals["sai_port"] = self._sai_port_global
         self.env.globals["sai_command"] = self._sai_command_global
 
+        # Installation method functions
+        self.env.globals["sai_source"] = self._sai_source_global
+        self.env.globals["sai_binary"] = self._sai_binary_global
+        self.env.globals["sai_script"] = self._sai_script_global
+
         logger.debug("Template engine initialized")
 
     def register_function(self, name: str, function: Callable) -> None:
@@ -488,8 +567,8 @@ class TemplateEngine:
         def sai_packages_wrapper(saidata_obj, provider_name=None):
             return self._sai_packages_global(context, provider_name)
 
-        def sai_package_wrapper(saidata_obj, provider_name=None, index=0):
-            return self._sai_package_global(context, provider_name, index)
+        def sai_package_wrapper(saidata_obj, index_or_wildcard=0, field="package_name", provider_name=None):
+            return self._sai_package_global(context, index_or_wildcard, field, provider_name)
 
         def sai_service_wrapper(saidata_obj, provider_name=None, index=0, field="name"):
             return self._sai_service_global(context, provider_name, index, field)
@@ -502,6 +581,16 @@ class TemplateEngine:
 
         def sai_command_wrapper(saidata_obj, index=0, field="path"):
             return self._sai_command_global(context, index, field)
+
+        # Installation method function wrappers
+        def sai_source_wrapper(saidata_obj, index=0, field="url", provider_name=None):
+            return self._sai_source_global(context, index, field, provider_name)
+
+        def sai_binary_wrapper(saidata_obj, index=0, field="url", provider_name=None):
+            return self._sai_binary_global(context, index, field, provider_name)
+
+        def sai_script_wrapper(saidata_obj, index=0, field="url", provider_name=None):
+            return self._sai_script_global(context, index, field, provider_name)
 
         # Only add built-in functions if they haven't been overridden by custom functions
         if "sai_packages" not in context:
@@ -516,6 +605,12 @@ class TemplateEngine:
             context["sai_port"] = sai_port_wrapper
         if "sai_command" not in context:
             context["sai_command"] = sai_command_wrapper
+        if "sai_source" not in context:
+            context["sai_source"] = sai_source_wrapper
+        if "sai_binary" not in context:
+            context["sai_binary"] = sai_binary_wrapper
+        if "sai_script" not in context:
+            context["sai_script"] = sai_script_wrapper
 
         return context
 
@@ -791,11 +886,28 @@ class TemplateEngine:
         return self._sai_lookup_filter(saidata_context, "packages", "name", -1, provider_name)
 
     def _sai_package_global(
-        self, saidata_context: Dict[str, Any], provider_name: str = None, index: int = 0
+        self,
+        saidata_context: Dict[str, Any],
+        index_or_wildcard: Union[int, str] = 0,
+        field: str = "package_name",
+        provider_name: Optional[str] = None,
     ) -> str:
-        """Global function to get single package name with provider fallback.
+        """Global function to get package field with provider fallback.
 
-        Usage: {{sai_package(saidata, 'brew')}} or {{sai_package(saidata)}}
+        Args:
+            saidata_context: The saidata context dictionary
+            index_or_wildcard: Index (int) or '*' for all packages
+            field: Field to extract ('name', 'package_name', 'version', etc.)
+            provider_name: Provider name for provider-specific lookup
+
+        Returns:
+            Package field value(s) as string
+
+        Usage:
+            {{sai_package(saidata, 0, 'package_name', 'apt')}}  # First package name for apt
+            {{sai_package(saidata, '*', 'package_name', 'apt')}} # All package names for apt
+            {{sai_package(saidata, 0, 'name')}}                  # Logical name
+            {{sai_package(saidata, 0)}}                          # First package_name (default)
         """
         # Handle case where saidata_context is the actual SaiData object
         if hasattr(saidata_context, "metadata"):
@@ -803,7 +915,13 @@ class TemplateEngine:
             context_builder = SaidataContextBuilder(saidata_context)
             saidata_context = context_builder.build_context()
 
-        return self._sai_lookup_filter(saidata_context, "packages", "name", index, provider_name)
+        # Determine if we want all packages or a single one
+        if index_or_wildcard == "*":
+            index = -1  # Signal to return all
+        else:
+            index = int(index_or_wildcard)
+
+        return self._sai_lookup_filter(saidata_context, "packages", field, index, provider_name)
 
     def _sai_service_global(
         self,
@@ -863,3 +981,90 @@ class TemplateEngine:
         Usage: {{sai_command(saidata)}} or {{sai_command(saidata, 0, 'path')}}
         """
         return self._sai_lookup_filter(saidata_context, "commands", field, index)
+
+    def _sai_source_global(
+        self,
+        saidata_context: Dict[str, Any],
+        index: int = 0,
+        field: str = "url",
+        provider_name: Optional[str] = None,
+    ) -> str:
+        """Global function to get source configuration field.
+
+        Args:
+            saidata_context: The saidata context dictionary
+            index: Index of source to retrieve
+            field: Field to extract ('name', 'url', 'version', 'build_system', etc.)
+            provider_name: Provider name for provider-specific lookup
+
+        Returns:
+            Source field value as string
+
+        Usage:
+            {{sai_source(saidata, 0, 'url')}}           # First source URL
+            {{sai_source(saidata, 0, 'version')}}       # First source version
+            {{sai_source(saidata, 0, 'url', 'source')}} # Provider-specific source URL
+        """
+        if hasattr(saidata_context, "metadata"):
+            context_builder = SaidataContextBuilder(saidata_context)
+            saidata_context = context_builder.build_context()
+
+        return self._sai_lookup_filter(saidata_context, "sources", field, index, provider_name)
+
+    def _sai_binary_global(
+        self,
+        saidata_context: Dict[str, Any],
+        index: int = 0,
+        field: str = "url",
+        provider_name: Optional[str] = None,
+    ) -> str:
+        """Global function to get binary configuration field.
+
+        Args:
+            saidata_context: The saidata context dictionary
+            index: Index of binary to retrieve
+            field: Field to extract ('name', 'url', 'version', 'platform', etc.)
+            provider_name: Provider name for provider-specific lookup
+
+        Returns:
+            Binary field value as string
+
+        Usage:
+            {{sai_binary(saidata, 0, 'url')}}            # First binary URL
+            {{sai_binary(saidata, 0, 'platform')}}       # First binary platform
+            {{sai_binary(saidata, 0, 'url', 'binary')}}  # Provider-specific binary URL
+        """
+        if hasattr(saidata_context, "metadata"):
+            context_builder = SaidataContextBuilder(saidata_context)
+            saidata_context = context_builder.build_context()
+
+        return self._sai_lookup_filter(saidata_context, "binaries", field, index, provider_name)
+
+    def _sai_script_global(
+        self,
+        saidata_context: Dict[str, Any],
+        index: int = 0,
+        field: str = "url",
+        provider_name: Optional[str] = None,
+    ) -> str:
+        """Global function to get script configuration field.
+
+        Args:
+            saidata_context: The saidata context dictionary
+            index: Index of script to retrieve
+            field: Field to extract ('name', 'url', 'interpreter', etc.)
+            provider_name: Provider name for provider-specific lookup
+
+        Returns:
+            Script field value as string
+
+        Usage:
+            {{sai_script(saidata, 0, 'url')}}            # First script URL
+            {{sai_script(saidata, 0, 'interpreter')}}    # First script interpreter
+            {{sai_script(saidata, 0, 'url', 'script')}}  # Provider-specific script URL
+        """
+        if hasattr(saidata_context, "metadata"):
+            context_builder = SaidataContextBuilder(saidata_context)
+            saidata_context = context_builder.build_context()
+
+        return self._sai_lookup_filter(saidata_context, "scripts", field, index, provider_name)

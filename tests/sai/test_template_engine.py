@@ -58,12 +58,12 @@ class TestSaidataContextBuilder:
         """Test building context with packages."""
         metadata = Metadata(name="nginx", version="1.20.1")
         packages = [
-            Package(name="nginx", version="1.20.1"),
-            Package(name="nginx-common", alternatives=["nginx-core"]),
+            Package(name="nginx", package_name="nginx", version="1.20.1"),
+            Package(name="nginx-common", package_name="nginx-common", alternatives=["nginx-core"]),
         ]
 
         saidata = SaiData(
-            version="0.2",
+            version="0.3",
             metadata=metadata,
             packages=packages,
         )
@@ -73,6 +73,7 @@ class TestSaidataContextBuilder:
 
         assert len(context["saidata"]["packages"]) == 2
         assert context["saidata"]["packages"][0]["name"] == "nginx"
+        assert context["saidata"]["packages"][0]["package_name"] == "nginx"
         assert context["saidata"]["packages"][0]["version"] == "1.20.1"
         assert context["saidata"]["packages"][1]["name"] == "nginx-common"
         assert context["saidata"]["packages"][1]["alternatives"] == ["nginx-core"]
@@ -267,10 +268,10 @@ class TestTemplateEngine:
         """Test resolving template with package array expansion."""
         metadata = Metadata(name="nginx")
         packages = [
-            Package(name="nginx"),
-            Package(name="nginx-common"),
+            Package(name="nginx", package_name="nginx"),
+            Package(name="nginx-common", package_name="nginx-common"),
         ]
-        saidata = SaiData(version="0.2", metadata=metadata, packages=packages)
+        saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
 
         engine = TemplateEngine()
         result = engine.resolve_template("apt-get install {{saidata.packages.*.name}}", saidata)
@@ -313,8 +314,8 @@ class TestTemplateEngine:
     def test_resolve_action_template(self):
         """Test resolving action templates."""
         metadata = Metadata(name="nginx")
-        packages = [Package(name="nginx")]
-        saidata = SaiData(version="0.2", metadata=metadata, packages=packages)
+        packages = [Package(name="nginx", package_name="nginx")]
+        saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
 
         action = Action(
             description="Install nginx",
@@ -393,8 +394,8 @@ class TestTemplateEngine:
     def test_complex_template_with_conditionals(self):
         """Test complex template with Jinja2 conditionals."""
         metadata = Metadata(name="nginx", version="1.20.1")
-        packages = [Package(name="nginx")]
-        saidata = SaiData(version="0.2", metadata=metadata, packages=packages)
+        packages = [Package(name="nginx", package_name="nginx")]
+        saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
 
         template = """
         {%- if version -%}
@@ -412,8 +413,8 @@ class TestTemplateEngine:
     def test_whitespace_handling(self):
         """Test proper whitespace handling in templates."""
         metadata = Metadata(name="nginx")
-        packages = [Package(name="nginx"), Package(name="nginx-common")]
-        saidata = SaiData(version="0.2", metadata=metadata, packages=packages)
+        packages = [Package(name="nginx", package_name="nginx"), Package(name="nginx-common", package_name="nginx-common")]
+        saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
 
         engine = TemplateEngine()
         result = engine.resolve_template("  install {{saidata.packages.*.name}}  ", saidata)

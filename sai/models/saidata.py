@@ -37,6 +37,17 @@ class Protocol(str, Enum):
     SCTP = "sctp"
 
 
+class BuildSystem(str, Enum):
+    """Build system types for source builds."""
+
+    AUTOTOOLS = "autotools"
+    CMAKE = "cmake"
+    MAKE = "make"
+    MESON = "meson"
+    NINJA = "ninja"
+    CUSTOM = "custom"
+
+
 class RepositoryType(str, Enum):
     """Repository types."""
 
@@ -89,9 +100,18 @@ class Metadata(BaseModel):
 
 
 class Package(BaseModel):
-    """Package definition."""
+    """Package definition.
+    
+    The Package model distinguishes between:
+    - name: Logical identifier used for cross-referencing within saidata
+    - package_name: Actual package name used by package managers (apt, brew, etc.)
+    
+    This allows the same logical name to map to different actual package names
+    across different providers.
+    """
 
-    name: str
+    name: str  # Logical identifier for cross-referencing
+    package_name: str  # Actual package name used by package managers
     version: Optional[str] = None
     alternatives: Optional[List[str]] = None
     install_options: Optional[str] = None
@@ -169,6 +189,96 @@ class Container(BaseModel):
     labels: Optional[Dict[str, str]] = None
 
 
+class CustomCommands(BaseModel):
+    """Custom commands for overriding default behavior in installation methods.
+    
+    These commands allow fine-grained control over each step of the installation
+    process for sources, binaries, and scripts.
+    """
+
+    download: Optional[str] = None
+    extract: Optional[str] = None
+    configure: Optional[str] = None
+    build: Optional[str] = None
+    install: Optional[str] = None
+    uninstall: Optional[str] = None
+    validation: Optional[str] = None
+    version: Optional[str] = None
+
+
+class Source(BaseModel):
+    """Source build configuration.
+    
+    Defines how to download, build, and install software from source code.
+    Supports multiple build systems and custom build commands.
+    """
+
+    name: str  # Logical name (e.g., 'main', 'stable', 'dev')
+    url: str  # Download URL with template support ({{version}}, {{platform}}, etc.)
+    build_system: BuildSystem
+    version: Optional[str] = None
+    build_dir: Optional[str] = None
+    source_dir: Optional[str] = None
+    install_prefix: Optional[str] = None
+    configure_args: Optional[List[str]] = None
+    build_args: Optional[List[str]] = None
+    install_args: Optional[List[str]] = None
+    prerequisites: Optional[List[str]] = None
+    environment: Optional[Dict[str, str]] = None
+    checksum: Optional[str] = None  # Format: "algorithm:hash" (e.g., "sha256:abc123...")
+    custom_commands: Optional[CustomCommands] = None
+
+
+class ArchiveConfig(BaseModel):
+    """Archive extraction configuration for binary downloads.
+    
+    Defines how to extract and process downloaded binary archives.
+    """
+
+    format: Optional[str] = None  # Archive format: tar.gz, zip, tar.bz2, etc.
+    strip_prefix: Optional[str] = None  # Strip leading path components
+    extract_path: Optional[str] = None  # Path within archive to extract
+
+
+class Binary(BaseModel):
+    """Binary download configuration.
+    
+    Defines how to download and install pre-compiled binary software.
+    Supports platform/architecture-specific URLs and archive extraction.
+    """
+
+    name: str  # Logical name (e.g., 'main', 'stable')
+    url: str  # Download URL with template support ({{version}}, {{platform}}, {{architecture}})
+    version: Optional[str] = None
+    architecture: Optional[str] = None  # amd64, arm64, x86_64, etc.
+    platform: Optional[str] = None  # linux, darwin, windows
+    checksum: Optional[str] = None  # Format: "algorithm:hash" (e.g., "sha256:abc123...")
+    install_path: Optional[str] = None  # Installation directory (default: /usr/local/bin)
+    executable: Optional[str] = None  # Name of the executable file
+    archive: Optional[ArchiveConfig] = None
+    permissions: Optional[str] = None  # Octal format (e.g., "0755")
+    custom_commands: Optional[CustomCommands] = None
+
+
+class Script(BaseModel):
+    """Script installation configuration.
+    
+    Defines how to download and execute installation scripts with security features.
+    Includes checksum verification and timeout controls.
+    """
+
+    name: str  # Logical name (e.g., 'official', 'convenience')
+    url: str  # Script download URL
+    version: Optional[str] = None
+    interpreter: Optional[str] = None  # bash, sh, python, python3, etc.
+    checksum: Optional[str] = None  # Format: "algorithm:hash" (e.g., "sha256:abc123...")
+    arguments: Optional[List[str]] = None  # Arguments to pass to the script
+    environment: Optional[Dict[str, str]] = None  # Environment variables
+    working_dir: Optional[str] = None  # Working directory for script execution
+    timeout: Optional[int] = Field(None, ge=1, le=3600)  # Timeout in seconds (1-3600)
+    custom_commands: Optional[CustomCommands] = None
+
+
 class PackageSource(BaseModel):
     """Package source definition."""
 
@@ -199,6 +309,9 @@ class Repository(BaseModel):
     commands: Optional[List[Command]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
+    sources: Optional[List[Source]] = None
+    binaries: Optional[List[Binary]] = None
+    scripts: Optional[List[Script]] = None
 
 
 class ProviderConfig(BaseModel):
@@ -215,6 +328,9 @@ class ProviderConfig(BaseModel):
     commands: Optional[List[Command]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
+    sources: Optional[List[Source]] = None
+    binaries: Optional[List[Binary]] = None
+    scripts: Optional[List[Script]] = None
 
 
 class CompatibilityEntry(BaseModel):
@@ -258,6 +374,9 @@ class SaiData(BaseModel):
     commands: Optional[List[Command]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
+    sources: Optional[List[Source]] = None
+    binaries: Optional[List[Binary]] = None
+    scripts: Optional[List[Script]] = None
     providers: Optional[Dict[str, ProviderConfig]] = None
     compatibility: Optional[Compatibility] = None
 

@@ -1,0 +1,84 @@
+# Source Build Example - Building Software from Source
+# This demonstrates how to configure source builds in schema 0.3
+
+version: "0.3"
+
+metadata:
+  name: htop
+  description: "Interactive process viewer"
+  homepage: "https://htop.dev"
+
+# Package definition (for package manager installation)
+packages:
+  - name: htop
+    package_name: htop
+    version: "3.2.2"
+
+# Source build configuration
+sources:
+  - name: main
+    url: "https://github.com/htop-dev/htop/releases/download/{{version}}/htop-{{version}}.tar.xz"
+    version: "3.2.2"
+    build_system: autotools
+    build_dir: "."
+    install_prefix: "/usr/local"
+    configure_args:
+      - "--enable-unicode"
+      - "--enable-sensors"
+    build_args:
+      - "-j4"
+    install_args:
+      - "install"
+    prerequisites:
+      - build-essential
+      - libncursesw5-dev
+      - libsensors-dev
+    checksum: "sha256:3829c742a835a0426db41bb039d1b976420c21ec65e93b35cd9bfd2d57f44ac8"
+
+# Command to verify installation
+commands:
+  - name: htop
+    path: "/usr/local/bin/htop"
+    version_arg: "--version"
+
+# Provider-specific source configuration
+providers:
+  source:
+    sources:
+      - name: main
+        url: "https://github.com/htop-dev/htop/releases/download/{{version}}/htop-{{version}}.tar.xz"
+        build_system: autotools
+        configure_args:
+          - "--prefix=/usr/local"
+          - "--enable-unicode"
+          - "--enable-sensors"
+        prerequisites:
+          - build-essential
+          - libncursesw5-dev
+          - libsensors-dev
+
+  apt:
+    packages:
+      - name: htop
+        package_name: htop
+        version: "3.2.2-1"
+    sources:
+      - name: main
+        url: "https://github.com/htop-dev/htop/releases/download/{{version}}/htop-{{version}}.tar.xz"
+        build_system: autotools
+        prerequisites:
+          - build-essential
+          - libncursesw5-dev
+          - libsensors-dev
+          - libtool
+          - autoconf
+          - automake
+
+# Compatibility
+compatibility:
+  platforms:
+    - linux
+    - darwin
+  architectures:
+    - amd64
+    - arm64
