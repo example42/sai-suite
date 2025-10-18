@@ -1,0 +1,27 @@
+# Simple Package Example - Minimal Schema 0.3 Saidata
+# This demonstrates the minimum required fields for a basic package
+
+version: "0.3"
+
+metadata:
+  name: redis
+  description: "In-memory data structure store"
+
+# Basic package definition
+packages:
+  - name: redis              # Logical name
+    package_name: redis      # Actual package name
+    version: "7.0.0"
+
+# Service definition
+services:
+  - name: redis
+    service_name: redis-server
+    enabled: true
+    state: started
+
+# Port definition
+ports:
+  - port: 6379
+    protocol: tcp
+    description: "Redis default port"

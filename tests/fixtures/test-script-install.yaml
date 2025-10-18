@@ -1,0 +1,32 @@
+version: "0.3"
+metadata:
+  name: test-script-app
+  description: "Test application for script installation provider"
+  version: "1.2.0"
+
+scripts:
+  - name: official
+    url: "https://get.example.com/install.sh"
+    version: "1.2.0"
+    interpreter: "bash"
+    checksum: "sha256:abc123def456789abc123def456789abc123def456789abc123def456789abc12"
+    arguments:
+      - "--yes"
+      - "--quiet"
+    environment:
+      INSTALL_DIR: "/usr/local"
+      CHANNEL: "stable"
+    working_dir: "/tmp"
+    timeout: 600
+
+providers:
+  script:
+    scripts:
+      - name: official
+        url: "https://get.example.com/install.sh"
+        version: "1.2.0"
+        interpreter: "bash"
+        arguments:
+          - "--yes"
+          - "--quiet"
+        timeout: 600

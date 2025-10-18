@@ -7,9 +7,13 @@
 - **TODOs**: `docs/TODO/` - TODO lists and pending tasks (not archived)
 - **Examples**: `examples/` - Shared examples only (CI/CD integrations)
 - **Schemas**: `schemas/` - JSON schema definitions
+  - `saidata-0.3-schema.json` - Saidata schema with packages, sources, binaries, scripts
+  - `providerdata-0.1-schema.json` - Provider action definitions
+  - `applydata-0.1-schema.json` - Batch operation definitions
 - **Scripts**: `scripts/` - Build, deployment, and utility scripts
 - **Development Scripts**: `scripts/development/` - All demo and development scripts organized by package (sai/, saigen/)
 - **Tests**: `tests/` - Comprehensive test suite organized by package (sai/, saigen/, shared/, integration/)
+  - `tests/fixtures/` - Test fixtures including saidata examples
 - **Saidata**: Repository-based saidata (cached in `~/.sai/cache/repositories/`)
 - **Providerdata**: `providers/` - Provider data to support actions
 
@@ -46,7 +50,7 @@
 
 ### General Documentation (`docs/`)
 - Shared documentation applicable to both packages
-- Installation guides, architecture diagrams, migration guides
+- Installation guides, architecture diagrams, implementation guides
 - Implementation summaries in `docs/summaries/`
 - Obsolete docs archived in `docs/archive/`
 

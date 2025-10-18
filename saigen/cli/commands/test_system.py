@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @click.command(name="test-system")
-@click.argument("saidata_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("saidata_path", type=click.Path(exists=True, path_type=Path), required=False)
 @click.option(
     "--real-install",
     is_flag=True,
@@ -53,27 +53,41 @@ def test_system(
     """Test saidata files on real systems.
 
     This command validates saidata files by checking:
-    - Package existence in repositories
-    - Installation capability (with --real-install)
-    - Service availability
-    - File locations
 
+    \b
+    TEST CHECKS:
+    • Package existence in repositories
+    • Installation capability (with --real-install)
+    • Service availability
+    • File locations
+
+    \b
     Examples:
-        # Dry-run test (checks package existence only)
+
+    • Dry-run test (checks package existence only)\n
         saigen test-system nginx.yaml
 
-        # Test with actual installation
+    • Test with actual installation\n
         saigen test-system --real-install nginx.yaml
 
-        # Test all files in directory
+    • Test all files in directory\n
         saigen test-system --batch packages/
 
-        # Generate JSON report
+    • Generate JSON report\n
         saigen test-system --format json -o report.json nginx.yaml
 
-        # Generate JUnit XML for CI
+    • Generate JUnit XML for CI\n
         saigen test-system --format junit -o results.xml nginx.yaml
     """
+    # Show help if saidata_path is missing
+    if not saidata_path:
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        click.echo("\n" + "=" * 70)
+        click.echo("ERROR: Missing required argument SAIDATA_PATH")
+        click.echo("=" * 70)
+        ctx.exit(2)
+    
     if verbose:
         logging.basicConfig(level=logging.INFO)
 

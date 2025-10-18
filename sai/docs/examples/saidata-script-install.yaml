@@ -1,0 +1,111 @@
+# Script Installation Example - Using Installation Scripts
+# This demonstrates how to configure script-based installations in schema 0.3
+
+version: "0.3"
+
+metadata:
+  name: rustup
+  description: "Rust toolchain installer"
+  homepage: "https://rustup.rs"
+  license: "MIT OR Apache-2.0"
+
+# Package definition (for package manager installation)
+packages:
+  - name: rustup
+    package_name: rustup
+    version: "1.26.0"
+
+# Script installation configuration
+scripts:
+  - name: official
+    url: "https://sh.rustup.rs"
+    version: "1.26.0"
+    interpreter: sh
+    checksum: "sha256:a3cb081f88a6789d104518b30d4aa410009cd08c3822a1226991d6cf0442a0f8"
+    arguments:
+      - "-y"
+      - "--default-toolchain"
+      - "stable"
+      - "--profile"
+      - "default"
+    environment:
+      RUSTUP_HOME: "/usr/local/rustup"
+      CARGO_HOME: "/usr/local/cargo"
+    working_dir: "/tmp"
+    timeout: 600
+
+# Commands installed by the script
+commands:
+  - name: rustup
+    path: "/usr/local/cargo/bin/rustup"
+    version_arg: "--version"
+  - name: cargo
+    path: "/usr/local/cargo/bin/cargo"
+    version_arg: "--version"
+  - name: rustc
+    path: "/usr/local/cargo/bin/rustc"
+    version_arg: "--version"
+
+# Directories created by the script
+directories:
+  - name: rustup
+    path: "/usr/local/rustup"
+    owner: root
+    group: root
+    mode: "0755"
+  - name: cargo
+    path: "/usr/local/cargo"
+    owner: root
+    group: root
+    mode: "0755"
+
+# Provider-specific script configuration
+providers:
+  script:
+    scripts:
+      - name: official
+        url: "https://sh.rustup.rs"
+        interpreter: sh
+        arguments:
+          - "-y"
+          - "--default-toolchain"
+          - "stable"
+        environment:
+          RUSTUP_HOME: "/usr/local/rustup"
+          CARGO_HOME: "/usr/local/cargo"
+        timeout: 600
+
+  apt:
+    packages:
+      - name: rustup
+        package_name: rustup
+        version: "1.26.0"
+
+  brew:
+    packages:
+      - name: rustup
+        package_name: rustup-init
+        version: "1.26.0"
+
+# Compatibility
+compatibility:
+  platforms:
+    - linux
+    - darwin
+  architectures:
+    - amd64
+    - arm64
+  os_versions:
+    ubuntu:
+      - "20.04"
+      - "22.04"
+      - "24.04"
+    debian:
+      - "11"
+      - "12"
+    centos:
+      - "8"
+      - "9"
+    macos:
+      - "13"
+      - "14"

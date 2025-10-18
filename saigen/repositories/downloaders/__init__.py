@@ -3,7 +3,4 @@
 from .base import BaseRepositoryDownloader
 from .universal import UniversalRepositoryDownloader
 
-__all__ = [
-    'BaseRepositoryDownloader',
-    'UniversalRepositoryDownloader'
-]
+__all__ = ["BaseRepositoryDownloader", "UniversalRepositoryDownloader"]

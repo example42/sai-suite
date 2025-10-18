@@ -251,5 +251,5 @@ pip install sai saigen
 
 For more help, see:
 - [Installation Guide](./installation.md)
-- [SAI CLI Guide](./sai-cli-guide.md)
-- [SAIGEN Guide](./saigen-guide.md)
+- [SAI CLI Reference](../sai/docs/cli-reference.md)
+- [SAIGEN CLI Reference](../saigen/docs/cli-reference.md)

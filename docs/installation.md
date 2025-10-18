@@ -200,6 +200,6 @@ pip install --user sai
 
 ## Next Steps
 
-- **SAI Users**: See [SAI CLI Guide](./sai-cli-guide.md)
-- **SAIGEN Users**: See [SAIGEN Guide](./saigen-guide.md)
-- **Developers**: See [Development Guide](./development.md)
+- **SAI Users**: See [SAI CLI Reference](../sai/docs/cli-reference.md)
+- **SAIGEN Users**: See [SAIGEN CLI Reference](../saigen/docs/cli-reference.md)
+- **Developers**: See [Monorepo Structure](../MONOREPO.md)

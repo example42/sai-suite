@@ -1,17 +1,18 @@
 """Pydantic models for generation requests and responses."""
 
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
-from pathlib import Path
-from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .saidata import SaiData
+from pydantic import BaseModel, ConfigDict, Field
+
 from .repository import RepositoryPackage
+from .saidata import SaiData
 
 
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
+
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     OLLAMA = "ollama"
@@ -20,6 +21,7 @@ class LLMProvider(str, Enum):
 
 class GenerationMode(str, Enum):
     """Generation modes."""
+
     CREATE = "create"
     UPDATE = "update"
     ENHANCE = "enhance"
@@ -27,6 +29,7 @@ class GenerationMode(str, Enum):
 
 class GenerationRequest(BaseModel):
     """Request for saidata generation."""
+
     software_name: str
     target_providers: List[str] = Field(default_factory=list)
     llm_provider: LLMProvider = LLMProvider.OPENAI
@@ -36,12 +39,13 @@ class GenerationRequest(BaseModel):
     update_mode: bool = False
     generation_mode: GenerationMode = GenerationMode.CREATE
     existing_saidata: Optional[SaiData] = None
-    
+
     model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
 
 
 class GenerationContext(BaseModel):
     """Context data for LLM generation."""
+
     software_name: str
     repository_data: List[RepositoryPackage] = Field(default_factory=list)
     similar_saidata: List[SaiData] = Field(default_factory=list)
@@ -49,7 +53,7 @@ class GenerationContext(BaseModel):
     user_hints: Optional[Dict[str, Any]] = None
     target_providers: List[str] = Field(default_factory=list)
     existing_saidata: Optional[SaiData] = None
-    
+
     # Enhanced context fields for 0.3 schema generation
     installation_method_examples: Optional[Dict[str, Any]] = None
     likely_installation_methods: Optional[List[str]] = None
@@ -58,12 +62,13 @@ class GenerationContext(BaseModel):
     compatibility_matrix_template: Optional[List[Dict[str, Any]]] = None
     url_templating_examples: Optional[Dict[str, Any]] = None
     provider_enhancement_examples: Optional[Dict[str, Any]] = None
-    
-    model_config = ConfigDict(validate_assignment=True, extra='allow')
+
+    model_config = ConfigDict(validate_assignment=True, extra="allow")
 
 
 class ValidationError(BaseModel):
     """Validation error details."""
+
     field: str
     message: str
     severity: str = "error"  # error, warning, info
@@ -72,6 +77,7 @@ class ValidationError(BaseModel):
 
 class GenerationResult(BaseModel):
     """Result of saidata generation."""
+
     success: bool
     saidata: Optional[SaiData] = None
     validation_errors: List[ValidationError] = Field(default_factory=list)
@@ -81,12 +87,13 @@ class GenerationResult(BaseModel):
     repository_sources_used: List[str] = Field(default_factory=list)
     tokens_used: Optional[int] = None
     cost_estimate: Optional[float] = None
-    
+
     model_config = ConfigDict(validate_assignment=True)
 
 
 class BatchGenerationRequest(BaseModel):
     """Request for batch saidata generation."""
+
     software_list: List[str]
     target_providers: List[str] = Field(default_factory=list)
     llm_provider: LLMProvider = LLMProvider.OPENAI
@@ -95,12 +102,14 @@ class BatchGenerationRequest(BaseModel):
     max_concurrent: int = 3
     continue_on_error: bool = True
     category_filter: Optional[str] = None
-    
+    force: bool = False
+
     model_config = ConfigDict(validate_assignment=True, use_enum_values=True)
 
 
 class BatchGenerationResult(BaseModel):
     """Result of batch saidata generation."""
+
     total_requested: int
     successful: int
     failed: int
@@ -108,7 +117,7 @@ class BatchGenerationResult(BaseModel):
     failed_software: List[str] = Field(default_factory=list)
     total_time: float
     average_time_per_item: float
-    
+
     model_config = ConfigDict(validate_assignment=True)
 
 
@@ -118,6 +127,7 @@ BatchResult = BatchGenerationResult
 
 class BatchProgress(BaseModel):
     """Progress tracking for batch operations."""
+
     total: int
     completed: int
     successful: int
@@ -125,17 +135,17 @@ class BatchProgress(BaseModel):
     current_item: Optional[str] = None
     elapsed_time: float = 0.0
     estimated_remaining: Optional[float] = None
-    
+
     model_config = ConfigDict(validate_assignment=True)
 
 
 class BatchError(Exception):
     """Base exception for batch processing errors."""
-    pass
 
 
 class BatchProcessingError(BatchError):
     """Error during batch processing."""
+
     def __init__(self, message: str, software_name: Optional[str] = None):
         if software_name:
             message = f"{message} (software: {software_name})"

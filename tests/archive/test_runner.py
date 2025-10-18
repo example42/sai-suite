@@ -1,15 +1,14 @@
 """Test runner for SAI CLI tool tests."""
 
 import sys
-import subprocess
-from pathlib import Path
+
 import pytest
 
 
 def run_unit_tests():
     """Run unit tests."""
     print("Running unit tests...")
-    
+
     unit_test_args = [
         "-v",
         "--tb=short",
@@ -18,59 +17,51 @@ def run_unit_tests():
         "--cov-report=html:htmlcov",
         "tests/",
         "--ignore=tests/integration/",
-        "-m", "not integration and not slow"
+        "-m",
+        "not integration and not slow",
     ]
-    
+
     return pytest.main(unit_test_args)
 
 
 def run_integration_tests():
     """Run integration tests."""
     print("Running integration tests...")
-    
-    integration_test_args = [
-        "-v",
-        "--tb=short",
-        "tests/integration/",
-        "-m", "integration"
-    ]
-    
+
+    integration_test_args = ["-v", "--tb=short", "tests/integration/", "-m", "integration"]
+
     return pytest.main(integration_test_args)
 
 
 def run_all_tests():
     """Run all tests."""
     print("Running all tests...")
-    
+
     all_test_args = [
         "-v",
         "--tb=short",
         "--cov=sai",
         "--cov-report=term-missing",
         "--cov-report=html:htmlcov",
-        "tests/"
+        "tests/",
     ]
-    
+
     return pytest.main(all_test_args)
 
 
 def run_specific_test(test_path):
     """Run a specific test file or test function."""
     print(f"Running specific test: {test_path}")
-    
-    specific_test_args = [
-        "-v",
-        "--tb=short",
-        test_path
-    ]
-    
+
+    specific_test_args = ["-v", "--tb=short", test_path]
+
     return pytest.main(specific_test_args)
 
 
 def run_tests_with_coverage():
     """Run tests with detailed coverage reporting."""
     print("Running tests with coverage...")
-    
+
     coverage_args = [
         "-v",
         "--tb=short",
@@ -80,24 +71,25 @@ def run_tests_with_coverage():
         "--cov-report=xml:coverage.xml",
         "--cov-branch",
         "tests/",
-        "--ignore=tests/integration/"
+        "--ignore=tests/integration/",
     ]
-    
+
     return pytest.main(coverage_args)
 
 
 def run_fast_tests():
     """Run only fast tests (exclude slow and integration tests)."""
     print("Running fast tests...")
-    
+
     fast_test_args = [
         "-v",
         "--tb=short",
         "tests/",
         "--ignore=tests/integration/",
-        "-m", "not slow and not integration"
+        "-m",
+        "not slow and not integration",
     ]
-    
+
     return pytest.main(fast_test_args)
 
 
@@ -113,9 +105,9 @@ def main():
         print("  coverage    - Run tests with detailed coverage")
         print("  specific    - Run specific test (requires test path)")
         return 1
-    
+
     command = sys.argv[1]
-    
+
     if command == "unit":
         return run_unit_tests()
     elif command == "integration":

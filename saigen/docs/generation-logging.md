@@ -267,4 +267,4 @@ Planned improvements to generation logging:
 - Performance benchmarking tools
 - Cost optimization suggestions
 
-For more examples and detailed usage, see [examples/generation_logging_example.md](../examples/generation_logging_example.md).
+For more examples and detailed usage, see the examples directory in the saigen documentation.

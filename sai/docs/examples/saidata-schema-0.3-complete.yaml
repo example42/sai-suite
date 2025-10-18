@@ -1,0 +1,220 @@
+# Complete Saidata Schema 0.3 Example
+# This file demonstrates all features of the saidata 0.3 schema
+
+version: "0.3"
+
+metadata:
+  name: nginx
+  description: "High-performance HTTP server and reverse proxy"
+  homepage: "https://nginx.org"
+  license: "BSD-2-Clause"
+  tags:
+    - web-server
+    - reverse-proxy
+    - load-balancer
+
+# Package definitions with logical names and actual package names
+packages:
+  - name: nginx              # Logical name for cross-referencing
+    package_name: nginx      # Actual package name for package managers
+    version: "1.24.0"
+    alternatives:
+      - nginx-full
+      - nginx-light
+    repository: "nginx-stable"
+    checksum: "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+
+# Services to manage
+services:
+  - name: nginx
+    service_name: nginx
+    enabled: true
+    state: started
+
+# Files to manage
+files:
+  - name: config
+    path: "/etc/nginx/nginx.conf"
+    type: config
+    owner: root
+    group: root
+    mode: "0644"
+
+# Directories to create
+directories:
+  - name: webroot
+    path: "/var/www/html"
+    owner: www-data
+    group: www-data
+    mode: "0755"
+    recursive: true
+
+# Commands to verify installation
+commands:
+  - name: nginx
+    path: "/usr/sbin/nginx"
+    version_arg: "-v"
+
+# Ports used by the software
+ports:
+  - port: 80
+    protocol: tcp
+    description: "HTTP"
+  - port: 443
+    protocol: tcp
+    description: "HTTPS"
+
+# Source build configuration
+sources:
+  - name: main
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    version: "1.24.0"
+    build_system: autotools
+    build_dir: "build"
+    source_dir: "nginx-1.24.0"
+    install_prefix: "/usr/local"
+    configure_args:
+      - "--with-http_ssl_module"
+      - "--with-http_v2_module"
+      - "--with-http_realip_module"
+      - "--with-http_gzip_static_module"
+    build_args:
+      - "-j4"
+    install_args:
+      - "install"
+    prerequisites:
+      - build-essential
+      - libssl-dev
+      - libpcre3-dev
+      - zlib1g-dev
+    environment:
+      CC: gcc
+      CFLAGS: "-O2 -pipe"
+    checksum: "sha256:c5c5c5d507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc8"
+
+# Binary download configuration
+binaries:
+  - name: main
+    url: "https://nginx.org/download/nginx-{{version}}_{{platform}}_{{architecture}}.tar.gz"
+    version: "1.24.0"
+    platform: linux
+    architecture: amd64
+    checksum: "sha256:d6d6d6e507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc9"
+    install_path: "/usr/local/bin"
+    executable: "nginx"
+    archive:
+      format: "tar.gz"
+      strip_prefix: "nginx-1.24.0/"
+      extract_path: "/tmp/nginx-extract"
+    permissions: "0755"
+
+# Script installation configuration
+scripts:
+  - name: official
+    url: "https://nginx.org/packages/install.sh"
+    version: "1.24.0"
+    interpreter: bash
+    checksum: "sha256:e7e7e7f507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bca"
+    arguments:
+      - "--channel"
+      - "stable"
+      - "--version"
+      - "1.24.0"
+    environment:
+      NGINX_VERSION: "1.24.0"
+      INSTALL_DIR: "/usr/local"
+    working_dir: "/tmp"
+    timeout: 600
+
+# Provider-specific overrides
+providers:
+  apt:
+    packages:
+      - name: nginx
+        package_name: nginx-full  # Different package name for apt
+        version: "1.24.0-1ubuntu1"
+    repositories:
+      - name: nginx-stable
+        url: "http://nginx.org/packages/ubuntu"
+        distribution: "{{os_codename}}"
+        components:
+          - nginx
+        key_url: "https://nginx.org/keys/nginx_signing.key"
+    sources:
+      - name: main
+        url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+        build_system: autotools
+        prerequisites:
+          - build-essential
+          - libssl-dev
+          - libpcre3-dev
+          - zlib1g-dev
+
+  brew:
+    packages:
+      - name: nginx
+        package_name: nginx      # Same package name for brew
+        version: "1.24.0"
+    binaries:
+      - name: main
+        url: "https://nginx.org/download/nginx-{{version}}_darwin_{{architecture}}.tar.gz"
+        install_path: "/usr/local/bin"
+
+  dnf:
+    packages:
+      - name: nginx
+        package_name: nginx
+        version: "1.24.0-1.el8"
+    repositories:
+      - name: nginx-stable
+        baseurl: "http://nginx.org/packages/centos/8/x86_64/"
+        gpgkey: "https://nginx.org/keys/nginx_signing.key"
+
+  source:
+    sources:
+      - name: main
+        url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+        build_system: autotools
+        configure_args:
+          - "--prefix=/usr/local/nginx"
+          - "--with-http_ssl_module"
+
+  binary:
+    binaries:
+      - name: main
+        url: "https://nginx.org/download/nginx-{{version}}_{{platform}}_{{architecture}}.tar.gz"
+        install_path: "/usr/local/bin"
+
+  script:
+    scripts:
+      - name: official
+        url: "https://nginx.org/packages/install.sh"
+        interpreter: bash
+        timeout: 600
+
+# Compatibility matrix
+compatibility:
+  platforms:
+    - linux
+    - darwin
+    - windows
+  architectures:
+    - amd64
+    - arm64
+  os_versions:
+    ubuntu:
+      - "20.04"
+      - "22.04"
+      - "24.04"
+    debian:
+      - "11"
+      - "12"
+    centos:
+      - "8"
+      - "9"
+    rocky:
+      - "8"
+      - "9"
+    macos:
+      - "13"
+      - "14"
