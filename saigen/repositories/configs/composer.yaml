@@ -1,0 +1,29 @@
+version: '1.0'
+repositories:
+- name: packagist
+  type: composer
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://packagist.org/packages/list.json?type=library
+    search: https://packagist.org/search.json?q={query}&per_page=100
+    info: https://packagist.org/packages/{package}.json
+  parsing:
+    format: json
+    patterns:
+      json_path: packageNames
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: Packagist PHP Repository
+    maintainer: Packagist
+    priority: 95
+    enabled: true
+    official: true
+    url: https://packagist.org
+  eol: false
+  query_type: api

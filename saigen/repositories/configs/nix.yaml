@@ -1,0 +1,41 @@
+version: '1.0'
+repositories:
+- name: nix-nixos
+  type: nix
+  platform: linux
+  distribution:
+  - nixos
+  architecture:
+  - x86_64
+  - aarch64
+  endpoints:
+    packages: https://channels.nixos.org/nixos-unstable/packages.json.br
+    search: https://search.nixos.org/packages?channel=unstable&query={query}
+    info: https://search.nixos.org/packages?channel=unstable&show={package}
+  parsing:
+    format: json
+    compression: brotli
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: maintainer
+      homepage: homepage
+      license: license
+      system: system
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  limits:
+    requests_per_minute: 60
+    timeout_seconds: 300
+  metadata:
+    description: NixOS Unstable Channel Package Repository
+    maintainer: NixOS
+    priority: 80
+    enabled: true
+    official: true
+    url: https://search.nixos.org
+  eol: false
+  query_type: api

@@ -1,0 +1,33 @@
+version: '1.0'
+repositories:
+- name: maven-central
+  type: maven
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://search.maven.org/solrsearch/select?q=*:*&rows=50000&wt=json
+    search: https://search.maven.org/solrsearch/select?q={query}&rows=100&wt=json
+    info: https://search.maven.org/solrsearch/select?q=g:{group}+AND+a:{artifact}&wt=json
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: response.docs.a
+      version: response.docs.latestVersion
+      description: response.docs.text
+      maintainer: response.docs.g
+  cache:
+    ttl_hours: 168
+    max_size_mb: 300
+  metadata:
+    description: Maven Central Repository
+    maintainer: Sonatype
+    priority: 95
+    enabled: true
+    official: true
+    url: https://search.maven.org
+  eol: false
+  query_type: api

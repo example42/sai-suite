@@ -1,124 +1,133 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "jenkins"
-  display_name: "Jenkins"
-  description: "Open source automation server for building, deploying and automating projects"
-  version: "2.414.0"
-  category: "ci-cd"
-  subcategory: "automation-server"
-  tags: ["jenkins", "ci", "cd", "automation", "devops", "build"]
-  license: "MIT"
-  language: "Java"
-  maintainer: "Jenkins Community"
+  name: jenkins
+  display_name: Jenkins
+  description: Open source automation server for building, deploying and automating projects
+  version: 2.414.0
+  category: ci-cd
+  subcategory: automation-server
+  tags:
+  - jenkins
+  - ci
+  - cd
+  - automation
+  - devops
+  - build
+  license: MIT
+  language: Java
+  maintainer: Jenkins Community
   urls:
-    website: "https://www.jenkins.io"
-    documentation: "https://www.jenkins.io/doc"
-    source: "https://github.com/jenkinsci/jenkins"
-    issues: "https://issues.jenkins.io"
-    support: "https://www.jenkins.io/participate"
-    download: "https://www.jenkins.io/download"
-    changelog: "https://www.jenkins.io/changelog"
-    license: "https://github.com/jenkinsci/jenkins/blob/master/LICENSE.txt"
+    website: https://www.jenkins.io
+    documentation: https://www.jenkins.io/doc
+    source: https://github.com/jenkinsci/jenkins
+    issues: https://issues.jenkins.io
+    support: https://www.jenkins.io/participate
+    download: https://www.jenkins.io/download
+    changelog: https://www.jenkins.io/changelog
+    license: https://github.com/jenkinsci/jenkins/blob/master/LICENSE.txt
   security:
-    security_contact: "security@jenkins.io"
-    vulnerability_disclosure: "https://www.jenkins.io/security"
-
+    security_contact: security@jenkins.io
+    vulnerability_disclosure: https://www.jenkins.io/security
 packages:
-  - name: "jenkins"
-    package_name: "jenkins"
-    version: "2.414.0"
-
+- name: jenkins
+  package_name: jenkins
+  version: 2.414.0
 services:
-  - name: "jenkins"
-    service_name: "jenkins"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/default/jenkins"]
-
+- name: jenkins
+  service_name: jenkins
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/default/jenkins
 files:
-  - name: "config"
-    path: "/etc/default/jenkins"
-    type: "config"
-    owner: "root"
-    group: "root"
-    mode: "0644"
-    backup: true
-
+- name: config
+  path: /etc/default/jenkins
+  type: config
+  owner: root
+  group: root
+  mode: '0644'
+  backup: true
 directories:
-  - name: "home"
-    path: "/var/lib/jenkins"
-    owner: "jenkins"
-    group: "jenkins"
-    mode: "0755"
-  - name: "log"
-    path: "/var/log/jenkins"
-    owner: "jenkins"
-    group: "jenkins"
-    mode: "0755"
-
+- name: home
+  path: /var/lib/jenkins
+  owner: jenkins
+  group: jenkins
+  mode: '0755'
+- name: log
+  path: /var/log/jenkins
+  owner: jenkins
+  group: jenkins
+  mode: '0755'
 commands:
-  - name: "jenkins"
-    path: "/usr/bin/jenkins"
-    shell_completion: false
-
+- name: jenkins
+  path: /usr/bin/jenkins
+  shell_completion: false
 ports:
-  - port: 8080
-    protocol: "tcp"
-    service: "http"
-    description: "Jenkins web interface"
-
+- port: 8080
+  protocol: tcp
+  service: http
+  description: Jenkins web interface
 providers:
   apt:
     repositories:
-      - name: "jenkins-official"
-        url: "https://pkg.jenkins.io/debian-stable"
-        key: "https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "jenkins"
-            package_name: "jenkins"
-            version: "2.414.0"
-
+    - name: jenkins-official
+      url: https://pkg.jenkins.io/debian-stable
+      key: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+      type: upstream
+      recommended: true
+      packages:
+      - name: jenkins
+        package_name: jenkins
   dnf:
     repositories:
-      - name: "jenkins-official"
-        url: "https://pkg.jenkins.io/redhat-stable"
-        key: "https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "jenkins"
-            package_name: "jenkins"
-            version: "2.414.0"
-
+    - name: jenkins-official
+      url: https://pkg.jenkins.io/redhat-stable
+      key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+      type: upstream
+      recommended: true
+      packages:
+      - name: jenkins
+        package_name: jenkins
   brew:
     packages:
-      - name: "jenkins"
-        package_name: "jenkins"
-
+    - name: jenkins
+      package_name: jenkins
   docker:
     containers:
-      - name: "jenkins"
-        image: "jenkins/jenkins"
-        tag: "2.414.0-lts"
-        registry: "docker.io"
-        ports: ["8080:8080", "50000:50000"]
-
+    - name: jenkins
+      image: jenkins/jenkins
+      tag: 2.414.0-lts
+      registry: docker.io
+      ports:
+      - 8080:8080
+      - 50000:50000
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64"]
-      supported: true
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    supported: true
+  - provider: docker
+    platform:
+    - linux
+    - macos
+    - windows
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true

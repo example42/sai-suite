@@ -1,0 +1,40 @@
+version: '1.0'
+repositories:
+- name: snapcraft
+  type: snap
+  platform: linux
+  distribution:
+  - ubuntu
+  - fedora
+  - debian
+  - opensuse
+  - arch
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  endpoints:
+    packages: https://api.snapcraft.io/v2/snaps/find
+    search: https://api.snapcraft.io/v2/snaps/find?q={query}
+    info: https://api.snapcraft.io/v2/snaps/info/{package}
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: summary
+      maintainer: publisher.display-name
+      category: categories
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Snap Store
+    maintainer: Canonical
+    priority: 65
+    enabled: true
+    official: true
+    url: https://snapcraft.io
+  eol: false
+  query_type: api

@@ -106,10 +106,14 @@ def batch(
     # Use global LLM provider if specified, otherwise use config default
     llm_provider_name = ctx.obj["llm_provider"]
     if llm_provider_name:
-        try:
-            llm_provider = LLMProvider(llm_provider_name)
-        except ValueError:
-            raise click.BadParameter(f"Invalid LLM provider: {llm_provider_name}")
+        # Validate that the provider exists in config
+        if not config.llm_providers or llm_provider_name not in config.llm_providers:
+            available = list(config.llm_providers.keys()) if config.llm_providers else []
+            raise click.BadParameter(
+                f"Invalid LLM provider: {llm_provider_name}. "
+                f"Available providers: {', '.join(available) if available else 'none configured'}"
+            )
+        llm_provider = llm_provider_name
     else:
         # Use default from config or fallback
         if hasattr(config, "llm_providers") and config.llm_providers:
@@ -124,12 +128,9 @@ def batch(
                 # No enabled providers, use first one anyway
                 first_provider = next(iter(config.llm_providers.keys()), "openai")
 
-            try:
-                llm_provider = LLMProvider(first_provider)
-            except ValueError:
-                llm_provider = LLMProvider.OPENAI  # Fallback
+            llm_provider = first_provider
         else:
-            llm_provider = LLMProvider.OPENAI  # Fallback
+            llm_provider = "openai"  # Fallback
 
     # Validate concurrency
     if max_concurrent < 1 or max_concurrent > 20:

@@ -1,0 +1,289 @@
+version: "1.0"
+repositories:
+  # Docker apt repository for Ubuntu 20.04 (Focal)
+  - name: "docker-apt-ubuntu-focal"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    version_mapping:
+      "20.04": "focal"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://download.docker.com/linux/ubuntu/dists/focal/stable/binary-{arch}/Packages.gz"
+      search: "https://download.docker.com/linux/ubuntu/"
+      info: "https://docs.docker.com/engine/install/ubuntu/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "Docker Official Repository for Ubuntu 20.04 (Focal)"
+      maintainer: "Docker Inc."
+      priority: 100  # Higher priority than OS repositories
+      enabled: true
+      official: true
+      url: "https://docs.docker.com/engine/install/ubuntu/"
+
+  # Docker apt repository for Ubuntu 22.04 (Jammy)
+  - name: "docker-apt-ubuntu-jammy"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    version_mapping:
+      "22.04": "jammy"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://download.docker.com/linux/ubuntu/dists/jammy/stable/binary-{arch}/Packages.gz"
+      search: "https://download.docker.com/linux/ubuntu/"
+      info: "https://docs.docker.com/engine/install/ubuntu/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "Docker Official Repository for Ubuntu 22.04 (Jammy)"
+      maintainer: "Docker Inc."
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://docs.docker.com/engine/install/ubuntu/"
+
+  # Docker apt repository for Ubuntu 24.04 (Noble)
+  - name: "docker-apt-ubuntu-noble"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    version_mapping:
+      "24.04": "noble"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://download.docker.com/linux/ubuntu/dists/noble/stable/binary-{arch}/Packages.gz"
+      search: "https://download.docker.com/linux/ubuntu/"
+      info: "https://docs.docker.com/engine/install/ubuntu/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "Docker Official Repository for Ubuntu 24.04 (Noble)"
+      maintainer: "Docker Inc."
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://docs.docker.com/engine/install/ubuntu/"
+
+  # Docker apt repository for Debian 10 (Buster)
+  - name: "docker-apt-debian-buster"
+    type: "apt"
+    platform: "linux"
+    distribution: ["debian"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    version_mapping:
+      "10": "buster"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://download.docker.com/linux/debian/dists/buster/stable/binary-{arch}/Packages.gz"
+      search: "https://download.docker.com/linux/debian/"
+      info: "https://docs.docker.com/engine/install/debian/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "Docker Official Repository for Debian 10 (Buster)"
+      maintainer: "Docker Inc."
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://docs.docker.com/engine/install/debian/"
+
+  # Docker apt repository for Debian 11 (Bullseye)
+  - name: "docker-apt-debian-bullseye"
+    type: "apt"
+    platform: "linux"
+    distribution: ["debian"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    version_mapping:
+      "11": "bullseye"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://download.docker.com/linux/debian/dists/bullseye/stable/binary-{arch}/Packages.gz"
+      search: "https://download.docker.com/linux/debian/"
+      info: "https://docs.docker.com/engine/install/debian/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "Docker Official Repository for Debian 11 (Bullseye)"
+      maintainer: "Docker Inc."
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://docs.docker.com/engine/install/debian/"
+
+  # Docker apt repository for Debian 12 (Bookworm)
+  - name: "docker-apt-debian-bookworm"
+    type: "apt"
+    platform: "linux"
+    distribution: ["debian"]
+    architecture: ["amd64", "arm64", "armhf"]
+    
+    version_mapping:
+      "12": "bookworm"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://download.docker.com/linux/debian/dists/bookworm/stable/binary-{arch}/Packages.gz"
+      search: "https://download.docker.com/linux/debian/"
+      info: "https://docs.docker.com/engine/install/debian/"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "Docker Official Repository for Debian 12 (Bookworm)"
+      maintainer: "Docker Inc."
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://docs.docker.com/engine/install/debian/"

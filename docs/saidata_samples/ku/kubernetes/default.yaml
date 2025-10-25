@@ -1,145 +1,147 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "kubernetes"
-  display_name: "Kubernetes"
-  description: "Container orchestration platform for automating deployment, scaling, and management"
-  version: "1.28.0"
-  category: "orchestration"
-  subcategory: "container"
-  tags: ["kubernetes", "orchestration", "containers", "devops", "cloud-native"]
-  license: "Apache-2.0"
-  language: "Go"
-  maintainer: "Cloud Native Computing Foundation"
+  name: kubernetes
+  display_name: Kubernetes
+  description: Container orchestration platform for automating deployment, scaling, and management
+  version: 1.28.0
+  category: orchestration
+  subcategory: container
+  tags:
+  - kubernetes
+  - orchestration
+  - containers
+  - devops
+  - cloud-native
+  license: Apache-2.0
+  language: Go
+  maintainer: Cloud Native Computing Foundation
   urls:
-    website: "https://kubernetes.io"
-    documentation: "https://kubernetes.io/docs"
-    source: "https://github.com/kubernetes/kubernetes"
-    issues: "https://github.com/kubernetes/kubernetes/issues"
-    support: "https://kubernetes.io/community"
-    download: "https://github.com/kubernetes/kubernetes/releases"
-    changelog: "https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG"
-    license: "https://github.com/kubernetes/kubernetes/blob/master/LICENSE"
+    website: https://kubernetes.io
+    documentation: https://kubernetes.io/docs
+    source: https://github.com/kubernetes/kubernetes
+    issues: https://github.com/kubernetes/kubernetes/issues
+    support: https://kubernetes.io/community
+    download: https://github.com/kubernetes/kubernetes/releases
+    changelog: https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG
+    license: https://github.com/kubernetes/kubernetes/blob/master/LICENSE
   security:
-    security_contact: "security@kubernetes.io"
-    vulnerability_disclosure: "https://kubernetes.io/docs/reference/issues-security/security"
-
+    security_contact: security@kubernetes.io
+    vulnerability_disclosure: https://kubernetes.io/docs/reference/issues-security/security
 packages:
-  - name: "kubelet"
-    package_name: "kubelet"
-    version: "1.28.0"
-  - name: "kubeadm"
-    package_name: "kubeadm"
-    version: "1.28.0"
-  - name: "kubectl"
-    package_name: "kubectl"
-    version: "1.28.0"
-  - name: "kube-proxy"
-    package_name: "kube-proxy"
-    version: "1.28.0"
-
+- name: kubelet
+  package_name: kubelet
+  version: 1.28.0
+- name: kubeadm
+  package_name: kubeadm
+  version: 1.28.0
+- name: kubectl
+  package_name: kubectl
+  version: 1.28.0
+- name: kube-proxy
+  package_name: kube-proxy
+  version: 1.28.0
 services:
-  - name: "kubelet"
-    service_name: "kubelet"
-    type: "systemd"
-    enabled: true
-    config_files: ["/var/lib/kubelet/config.yaml"]
-
+- name: kubelet
+  service_name: kubelet
+  type: systemd
+  enabled: true
+  config_files:
+  - /var/lib/kubelet/config.yaml
 files:
-  - name: "kubelet-config"
-    path: "/var/lib/kubelet/config.yaml"
-    type: "config"
-    owner: "root"
-    group: "root"
-    mode: "0644"
-    backup: true
-
+- name: kubelet-config
+  path: /var/lib/kubelet/config.yaml
+  type: config
+  owner: root
+  group: root
+  mode: '0644'
+  backup: true
 directories:
-  - name: "kubelet"
-    path: "/var/lib/kubelet"
-    owner: "root"
-    group: "root"
-    mode: "0755"
-  - name: "kubernetes"
-    path: "/etc/kubernetes"
-    owner: "root"
-    group: "root"
-    mode: "0755"
-
+- name: kubelet
+  path: /var/lib/kubelet
+  owner: root
+  group: root
+  mode: '0755'
+- name: kubernetes
+  path: /etc/kubernetes
+  owner: root
+  group: root
+  mode: '0755'
 commands:
-  - name: "kubectl"
-    path: "/usr/bin/kubectl"
-    shell_completion: true
-    man_page: "kubectl(1)"
-  - name: "kubeadm"
-    path: "/usr/bin/kubeadm"
-    shell_completion: true
-
+- name: kubectl
+  path: /usr/bin/kubectl
+  shell_completion: true
+  man_page: kubectl(1)
+- name: kubeadm
+  path: /usr/bin/kubeadm
+  shell_completion: true
 providers:
   apt:
     repositories:
-      - name: "kubernetes-official"
-        url: "https://pkgs.k8s.io/core:/stable:/v1.28/deb"
-        key: "https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "kubelet"
-            package_name: "kubelet"
-            version: "1.28.0-00"
-          - name: "kubeadm"
-            package_name: "kubeadm"
-            version: "1.28.0-00"
-          - name: "kubectl"
-            package_name: "kubectl"
-            version: "1.28.0-00"
-
+    - name: kubernetes-official
+      url: https://pkgs.k8s.io/core:/stable:/v1.28/deb
+      key: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+      type: upstream
+      recommended: true
+      packages:
+      - name: kubelet
+        package_name: kubelet
+      - name: kubeadm
+        package_name: kubeadm
+      - name: kubectl
+        package_name: kubectl
   dnf:
     repositories:
-      - name: "kubernetes-official"
-        url: "https://pkgs.k8s.io/core:/stable:/v1.28/rpm"
-        key: "https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "kubelet"
-            package_name: "kubelet"
-            version: "1.28.0-0"
-          - name: "kubeadm"
-            package_name: "kubeadm"
-            version: "1.28.0-0"
-          - name: "kubectl"
-            package_name: "kubectl"
-            version: "1.28.0-0"
-
+    - name: kubernetes-official
+      url: https://pkgs.k8s.io/core:/stable:/v1.28/rpm
+      key: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key
+      type: upstream
+      recommended: true
+      packages:
+      - name: kubelet
+        package_name: kubelet
+      - name: kubeadm
+        package_name: kubeadm
+      - name: kubectl
+        package_name: kubectl
   brew:
     packages:
-      - name: "kubectl"
-        package_name: "kubectl"
-      - name: "kubeadm"
-        package_name: "kubeadm"
-
+    - name: kubectl
+      package_name: kubectl
+    - name: kubeadm
+      package_name: kubeadm
   helm:
     repositories:
-      - name: "kubernetes"
-        url: "https://kubernetes.github.io/dashboard"
-        type: "upstream"
-        packages:
-          - name: "kubernetes"
-            package_name: "kubernetes-dashboard"
-
+    - name: kubernetes
+      url: https://kubernetes.github.io/dashboard
+      type: upstream
+      packages:
+      - name: kubernetes
+        package_name: kubernetes-dashboard
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true

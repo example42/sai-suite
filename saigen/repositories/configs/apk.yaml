@@ -1,0 +1,84 @@
+version: '1.0'
+repositories:
+- name: apk-alpine-3.18
+  type: apk
+  platform: linux
+  distribution:
+  - alpine
+  architecture:
+  - x86_64
+  - aarch64
+  - armhf
+  version_mapping:
+    '3.18': v318
+  endpoints:
+    packages: https://dl-cdn.alpinelinux.org/alpine/v3.18/main/{arch}/APKINDEX.tar.gz
+    search: https://pkgs.alpinelinux.org/packages?name={query}
+  parsing:
+    format: text
+    compression: gzip
+    encoding: utf-8
+    patterns:
+      line_pattern: ^P:(.+)$
+      name_group: 1
+    fields:
+      name: P
+      version: V
+      description: T
+      maintainer: m
+      homepage: U
+      license: L
+      size: S
+  cache:
+    ttl_hours: 168
+    max_size_mb: 20
+  metadata:
+    description: Alpine Linux 3.18 Main Repository
+    maintainer: Alpine Linux
+    priority: 80
+    enabled: true
+    official: true
+    url: https://pkgs.alpinelinux.org
+  eol: false
+  query_type: bulk_download
+- name: apk-alpine-3.19
+  type: apk
+  platform: linux
+  distribution:
+  - alpine
+  architecture:
+  - x86_64
+  - aarch64
+  - armhf
+  version_mapping:
+    '3.19': v319
+  endpoints:
+    packages: https://dl-cdn.alpinelinux.org/alpine/v3.19/main/{arch}/APKINDEX.tar.gz
+    search: https://pkgs.alpinelinux.org/packages?name={query}
+  parsing:
+    format: text
+    compression: gzip
+    encoding: utf-8
+    patterns:
+      line_pattern: ^P:(.+)$
+      name_group: 1
+    fields:
+      name: P
+      version: V
+      description: T
+      maintainer: m
+      homepage: U
+      license: L
+      size: S
+  cache:
+    ttl_hours: 168
+    max_size_mb: 20
+  metadata:
+    description: Alpine Linux 3.19 Main Repository
+    maintainer: Alpine Linux
+    priority: 80
+    enabled: true
+    official: true
+    url: https://pkgs.alpinelinux.org
+  eol: false
+  query_type: bulk_download

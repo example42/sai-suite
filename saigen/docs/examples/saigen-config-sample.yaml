@@ -41,12 +41,22 @@ llm_providers:
 
   # Example Ollama local inference configuration (uncomment and configure to use)
   # Requires Ollama to be installed and running locally
-  # ollama:
+  # Multiple Ollama instances with different models are supported
+  # ollama_qwen3:
   #   provider: "ollama"
-  #   base_url: "http://localhost:11434"  # Default Ollama server URL
-  #   model: "llama2"  # Model name (must be installed in Ollama)
+  #   api_base: "http://localhost:11434"  # Default Ollama server URL
+  #   model: "qwen3-coder:30b"  # Model name (must be installed in Ollama)
   #   temperature: 0.1
   #   timeout: 60  # Longer timeout for local models
+  #   max_retries: 3
+  #   enabled: true
+  # 
+  # ollama_deepseek:
+  #   provider: "ollama"
+  #   api_base: "http://localhost:11434"
+  #   model: "deepseek-r1:8b"
+  #   temperature: 0.1
+  #   timeout: 60
   #   max_retries: 3
   #   enabled: true
   #   # Popular model options (install with: ollama pull <model>):
@@ -55,7 +65,9 @@ llm_providers:
   #   # - "codellama" (specialized for code generation)
   #   # - "mistral" (7B, fast and efficient)
   #   # - "mixtral" (8x7B mixture of experts)
-  #   # - "phi" (3B, very fast, good for simple tasks)
+  #   # - "phi3" (3B, very fast, good for simple tasks)
+  #   # - "qwen3-coder" (specialized for code generation)
+  #   # - "deepseek-r1" (reasoning model)
 
   # Example OpenAI-compatible local inference configuration
   # Works with LM Studio, LocalAI, vLLM, and other OpenAI-compatible servers

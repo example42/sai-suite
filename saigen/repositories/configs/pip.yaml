@@ -1,0 +1,75 @@
+version: '1.0'
+repositories:
+- name: pypi
+  type: pypi
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://pypi.org/simple/
+    search: https://pypi.org/search/?q={query}&o=-created
+    info: https://pypi.org/pypi/{package}/json
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: info.name
+      version: info.version
+      description: info.summary
+      homepage: info.home_page
+      license: info.license
+      maintainer: info.maintainer
+      category: info.classifiers
+  cache:
+    ttl_hours: 168
+    max_size_mb: 300
+    api_cache_ttl_seconds: 3600  # Cache API responses for 1 hour
+  limits:
+    requests_per_minute: 600
+    concurrent_requests: 10
+    timeout_seconds: 120
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  metadata:
+    description: Python Package Index
+    maintainer: Python Software Foundation
+    priority: 95
+    enabled: true
+    official: true
+    url: https://pypi.org
+  eol: false
+  query_type: api
+- name: conda-forge
+  type: conda
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://conda.anaconda.org/conda-forge/linux-64/repodata.json
+    search: https://anaconda.org/search?q={query}
+    info: https://anaconda.org/conda-forge/{package}
+  parsing:
+    format: json
+    patterns:
+      json_path: packages
+    fields:
+      name: name
+      version: version
+      description: summary
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: Conda Forge
+    maintainer: conda-forge
+    priority: 85
+    enabled: true
+    official: true
+    url: https://conda-forge.org
+  eol: false
+  query_type: bulk_download

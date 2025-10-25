@@ -94,6 +94,3 @@ SAIGEN supports 50+ package managers including:
 - **Issues**: https://github.com/example42/sai-suite/issues
 - **PyPI**: https://pypi.org/project/saigen/
 
-## License
-
-MIT License - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.

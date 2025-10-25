@@ -1,0 +1,10 @@
+apache
+prometheus
+zabbix
+nagios
+icinga
+cassandra
+couchdb
+influxdb
+vault
+sqlite

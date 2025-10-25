@@ -1,0 +1,35 @@
+version: '1.0'
+repositories:
+- name: rubygems
+  type: gem
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://rubygems.org/api/v1/gems.json
+    search: https://rubygems.org/api/v1/search.json?query={query}
+    info: https://rubygems.org/api/v1/gems/{package}.json
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: info
+      homepage: homepage_uri
+      license: licenses
+      maintainer: authors
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: RubyGems.org
+    maintainer: Ruby Central
+    priority: 95
+    enabled: true
+    official: true
+    url: https://rubygems.org
+  eol: false
+  query_type: api

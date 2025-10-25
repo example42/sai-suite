@@ -57,6 +57,11 @@ class RepositoryInfo(BaseModel):
     package_count: Optional[int] = None
     enabled: bool = True
     priority: int = 1
+    
+    # NEW FIELDS for provider version refresh enhancement
+    version_mapping: Optional[Dict[str, str]] = None  # version → codename
+    eol: bool = False  # End-of-life status
+    query_type: str = "bulk_download"  # or "api"
 
     model_config = ConfigDict(validate_assignment=True)
 

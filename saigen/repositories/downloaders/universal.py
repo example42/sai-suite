@@ -177,11 +177,11 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
             # Read content
             content = await response.read()
 
-            # Parse content
-            return await self._parse_content(content, response.headers)
+            # Parse content (pass URL for parsers that need it)
+            return await self._parse_content(content, response.headers, url)
 
     async def _parse_content(
-        self, content: bytes, headers: Dict[str, str]
+        self, content: bytes, headers: Dict[str, str], source_url: str = ""
     ) -> List[RepositoryPackage]:
         """Parse content using configured parser."""
         format_type = self.parsing_config.get("format", "json")
@@ -201,11 +201,21 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
         if not parser_func:
             raise RepositoryError(f"No parser available for format: {format_type}")
 
+        # Add base URL to config for parsers that need it (like RPM)
+        parsing_config = self.parsing_config.copy()
+        if source_url:
+            # Extract base URL (directory containing repodata/)
+            if source_url.endswith("/repomd.xml"):
+                # Remove /repodata/repomd.xml to get base
+                parsing_config["base_url"] = source_url.rsplit("/repodata/", 1)[0] + "/"
+            else:
+                parsing_config["base_url"] = source_url
+
         # Parse content
         try:
             packages = await parser_func(
                 content=text_content,
-                config=self.parsing_config,
+                config=parsing_config,
                 repository_info=self.repository_info,
             )
             return packages
@@ -223,6 +233,8 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                 compression = "gzip"
             elif content_encoding in ["bzip2", "bz2"]:
                 compression = "bzip2"
+            elif content_encoding in ["br", "brotli"]:
+                compression = "brotli"
 
         # Decompress if needed
         if compression == "gzip":
@@ -270,6 +282,26 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                     return content
                 except UnicodeDecodeError:
                     raise RepositoryError(f"Failed to decompress xz content: {e}")
+
+        elif compression == "brotli":
+            try:
+                import brotli
+            except ImportError:
+                raise RepositoryError(
+                    f"Brotli compression is required for {self.repository_info.name} but the 'brotli' "
+                    "package is not installed. Install it with: pip install brotli"
+                )
+
+            try:
+                content = brotli.decompress(content)
+            except Exception as e:
+                # Try to handle already decompressed content
+                try:
+                    content.decode("utf-8", errors="strict")
+                    logger.debug(f"Content appears to be already decompressed despite brotli config")
+                    return content
+                except UnicodeDecodeError:
+                    raise RepositoryError(f"Failed to decompress brotli content: {e}")
 
         return content
 

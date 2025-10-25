@@ -1,0 +1,241 @@
+version: "1.0"
+repositories:
+  # HashiCorp apt repository for Ubuntu 20.04 (Focal)
+  - name: "hashicorp-apt-ubuntu-focal"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64"]
+    
+    version_mapping:
+      "20.04": "focal"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://apt.releases.hashicorp.com/dists/focal/main/binary-{arch}/Packages.gz"
+      search: "https://apt.releases.hashicorp.com/"
+      info: "https://www.hashicorp.com/official-packaging-guide"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "HashiCorp Official Repository for Ubuntu 20.04 (Focal)"
+      maintainer: "HashiCorp"
+      priority: 100  # Higher priority than OS repositories
+      enabled: true
+      official: true
+      url: "https://www.hashicorp.com/official-packaging-guide"
+
+  # HashiCorp apt repository for Ubuntu 22.04 (Jammy)
+  - name: "hashicorp-apt-ubuntu-jammy"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64"]
+    
+    version_mapping:
+      "22.04": "jammy"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://apt.releases.hashicorp.com/dists/jammy/main/binary-{arch}/Packages.gz"
+      search: "https://apt.releases.hashicorp.com/"
+      info: "https://www.hashicorp.com/official-packaging-guide"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "HashiCorp Official Repository for Ubuntu 22.04 (Jammy)"
+      maintainer: "HashiCorp"
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://www.hashicorp.com/official-packaging-guide"
+
+  # HashiCorp apt repository for Ubuntu 24.04 (Noble)
+  - name: "hashicorp-apt-ubuntu-noble"
+    type: "apt"
+    platform: "linux"
+    distribution: ["ubuntu"]
+    architecture: ["amd64", "arm64"]
+    
+    version_mapping:
+      "24.04": "noble"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://apt.releases.hashicorp.com/dists/noble/main/binary-{arch}/Packages.gz"
+      search: "https://apt.releases.hashicorp.com/"
+      info: "https://www.hashicorp.com/official-packaging-guide"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "HashiCorp Official Repository for Ubuntu 24.04 (Noble)"
+      maintainer: "HashiCorp"
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://www.hashicorp.com/official-packaging-guide"
+
+  # HashiCorp apt repository for Debian 11 (Bullseye)
+  - name: "hashicorp-apt-debian-bullseye"
+    type: "apt"
+    platform: "linux"
+    distribution: ["debian"]
+    architecture: ["amd64", "arm64"]
+    
+    version_mapping:
+      "11": "bullseye"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://apt.releases.hashicorp.com/dists/bullseye/main/binary-{arch}/Packages.gz"
+      search: "https://apt.releases.hashicorp.com/"
+      info: "https://www.hashicorp.com/official-packaging-guide"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "HashiCorp Official Repository for Debian 11 (Bullseye)"
+      maintainer: "HashiCorp"
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://www.hashicorp.com/official-packaging-guide"
+
+  # HashiCorp apt repository for Debian 12 (Bookworm)
+  - name: "hashicorp-apt-debian-bookworm"
+    type: "apt"
+    platform: "linux"
+    distribution: ["debian"]
+    architecture: ["amd64", "arm64"]
+    
+    version_mapping:
+      "12": "bookworm"
+    
+    eol: false
+    query_type: "bulk_download"
+    
+    endpoints:
+      packages: "https://apt.releases.hashicorp.com/dists/bookworm/main/binary-{arch}/Packages.gz"
+      search: "https://apt.releases.hashicorp.com/"
+      info: "https://www.hashicorp.com/official-packaging-guide"
+    
+    parsing:
+      format: "debian_packages"
+      compression: "gzip"
+      encoding: "utf-8"
+      fields:
+        name: "Package"
+        version: "Version"
+        description: "Description"
+        maintainer: "Maintainer"
+        homepage: "Homepage"
+        dependencies: "Depends"
+        size: "Installed-Size"
+        category: "Section"
+    
+    cache:
+      ttl_hours: 24
+      max_size_mb: 50
+    
+    limits:
+      requests_per_minute: 60
+      timeout_seconds: 300
+    
+    metadata:
+      description: "HashiCorp Official Repository for Debian 12 (Bookworm)"
+      maintainer: "HashiCorp"
+      priority: 100
+      enabled: true
+      official: true
+      url: "https://www.hashicorp.com/official-packaging-guide"

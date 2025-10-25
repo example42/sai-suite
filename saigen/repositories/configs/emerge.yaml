@@ -1,0 +1,37 @@
+version: '1.0'
+repositories:
+- name: emerge-gentoo
+  type: emerge
+  platform: linux
+  distribution:
+  - gentoo
+  architecture:
+  - amd64
+  - arm64
+  - x86
+  endpoints:
+    packages: https://packages.gentoo.org/packages/search?q={query}&format=json
+    search: https://packages.gentoo.org/packages/search?q={query}
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: maintainer
+      homepage: homepage
+      license: license
+      category: category
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Gentoo Portage Repository
+    maintainer: Gentoo
+    priority: 75
+    enabled: true
+    official: true
+    url: https://packages.gentoo.org
+  eol: false
+  query_type: api
