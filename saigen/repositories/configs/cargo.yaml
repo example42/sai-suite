@@ -1,0 +1,41 @@
+version: '1.0'
+repositories:
+- name: crates-io
+  type: cargo
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://crates.io/api/v1/crates?page=1&per_page=100&sort=alphabetical
+    search: https://crates.io/api/v1/crates?q={query}&per_page=100
+    info: https://crates.io/api/v1/crates/{package}
+  parsing:
+    format: json
+    patterns:
+      json_path: crates
+    fields:
+      name: name
+      version: max_version
+      description: description
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+    api_cache_ttl_seconds: 3600  # Cache API responses for 1 hour
+  limits:
+    requests_per_minute: 300
+    concurrent_requests: 10
+    timeout_seconds: 120
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  metadata:
+    description: Crates.io Rust Package Registry
+    maintainer: The Rust Foundation
+    priority: 95
+    enabled: true
+    official: true
+    url: https://crates.io
+  eol: false
+  query_type: api

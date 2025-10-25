@@ -1,171 +1,168 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "python"
-  display_name: "Python"
-  description: "High-level programming language for general-purpose programming"
-  version: "3.12.1"
-  category: "programming-language"
-  subcategory: "interpreter"
-  tags: ["python", "programming", "interpreter", "scripting"]
-  license: "PSF-2.0"
-  language: "C"
-  maintainer: "Python Software Foundation"
+  name: python
+  display_name: Python
+  description: High-level programming language for general-purpose programming
+  version: 3.12.1
+  category: programming-language
+  subcategory: interpreter
+  tags:
+  - python
+  - programming
+  - interpreter
+  - scripting
+  license: PSF-2.0
+  language: C
+  maintainer: Python Software Foundation
   urls:
-    website: "https://www.python.org"
-    documentation: "https://docs.python.org"
-    source: "https://github.com/python/cpython"
-    issues: "https://github.com/python/cpython/issues"
-    download: "https://www.python.org/downloads"
-    changelog: "https://docs.python.org/3/whatsnew"
-    license: "https://docs.python.org/3/license.html"
+    website: https://www.python.org
+    documentation: https://docs.python.org
+    source: https://github.com/python/cpython
+    issues: https://github.com/python/cpython/issues
+    download: https://www.python.org/downloads
+    changelog: https://docs.python.org/3/whatsnew
+    license: https://docs.python.org/3/license.html
   security:
-    security_contact: "security@python.org"
-    vulnerability_disclosure: "https://www.python.org/dev/security"
-
+    security_contact: security@python.org
+    vulnerability_disclosure: https://www.python.org/dev/security
 packages:
-  - name: "python"
-    package_name: "python3"
-    version: "3.12.1"
-  - name: "pip"
-    package_name: "python3-pip"
-    version: "23.3.1"
-
-# Source compilation with optimizations
+- name: python
+  package_name: python3
+  version: 3.12.1
+- name: pip
+  package_name: python3-pip
+  version: 23.3.1
 sources:
-  - name: "python-source"
-    url: "https://www.python.org/ftp/python/{{version}}/Python-{{version}}.tar.xz"
-    version: "3.12.1"
-    checksum: "sha256:9ed8b8e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0"
-    build_system: "autotools"
-    configure_args:
-      - "--prefix=/usr/local"
-      - "--enable-optimizations"
-      - "--with-lto"
-      - "--enable-shared"
-      - "--with-system-expat"
-      - "--with-system-ffi"
-      - "--enable-loadable-sqlite-extensions"
-    prerequisites:
-      - "gcc"
-      - "make"
-      - "build-essential"
-      - "libssl-dev"
-      - "zlib1g-dev"
-      - "libbz2-dev"
-      - "libreadline-dev"
-      - "libsqlite3-dev"
-      - "libncursesw5-dev"
-      - "libffi-dev"
-      - "liblzma-dev"
-      - "libssl3"
-      - "libffi8"
-    install_prefix: "/usr/local"
-    custom_commands:
-      install: "make altinstall && ln -sf /usr/local/bin/python3 /usr/local/bin/python && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip"
-
-# Pyenv installation script
+- name: python-source
+  url: https://www.python.org/ftp/python/{{version}}/Python-{{version}}.tar.xz
+  version: 3.12.1
+  checksum: sha256:9ed8b8e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0
+  build_system: autotools
+  configure_args:
+  - --prefix=/usr/local
+  - --enable-optimizations
+  - --with-lto
+  - --enable-shared
+  - --with-system-expat
+  - --with-system-ffi
+  - --enable-loadable-sqlite-extensions
+  prerequisites:
+  - gcc
+  - make
+  - build-essential
+  - libssl-dev
+  - zlib1g-dev
+  - libbz2-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - libncursesw5-dev
+  - libffi-dev
+  - liblzma-dev
+  - libssl3
+  - libffi8
+  install_prefix: /usr/local
+  custom_commands:
+    install: make altinstall && ln -sf /usr/local/bin/python3 /usr/local/bin/python && ln -sf /usr/local/bin/pip3 /usr/local/bin/pip
 scripts:
-  - name: "pyenv-installer"
-    url: "https://pyenv.run"
-    checksum: "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-    interpreter: "/bin/bash"
-    arguments: []
-    timeout: 600
-    requires_root: false
-    idempotent: true
-    post_install:
-      - "export PYENV_ROOT=\"$HOME/.pyenv\""
-      - "export PATH=\"$PYENV_ROOT/bin:$PATH\""
-      - "eval \"$(pyenv init -)\""
-      - "pyenv install {{version}}"
-      - "pyenv global {{version}}"
-    verification:
-      command: "python --version"
-      expected_output: "Python {{version}}"
-    environment:
-      PYENV_ROOT: "$HOME/.pyenv"
-      PATH: "$PYENV_ROOT/bin:$PATH"
-
+- name: pyenv-installer
+  url: https://pyenv.run
+  checksum: sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+  interpreter: /bin/bash
+  arguments: []
+  timeout: 600
+  requires_root: false
+  idempotent: true
+  post_install:
+  - export PYENV_ROOT="$HOME/.pyenv"
+  - export PATH="$PYENV_ROOT/bin:$PATH"
+  - eval "$(pyenv init -)"
+  - pyenv install {{version}}
+  - pyenv global {{version}}
+  verification:
+    command: python --version
+    expected_output: Python {{version}}
+  environment:
+    PYENV_ROOT: $HOME/.pyenv
+    PATH: $PYENV_ROOT/bin:$PATH
 files:
-  - name: "pip-config"
-    path: "$HOME/.pip/pip.conf"
-    type: "config"
-    owner: "$(whoami)"
-    group: "$(whoami)"
-    mode: "0644"
-
+- name: pip-config
+  path: $HOME/.pip/pip.conf
+  type: config
+  owner: $(whoami)
+  group: $(whoami)
+  mode: '0644'
 directories:
-  - name: "site-packages"
-    path: "/usr/local/lib/python3.12/site-packages"
-    owner: "root"
-    group: "root"
-    mode: "0755"
-  - name: "pip-cache"
-    path: "$HOME/.cache/pip"
-    owner: "$(whoami)"
-    group: "$(whoami)"
-    mode: "0755"
-
+- name: site-packages
+  path: /usr/local/lib/python3.12/site-packages
+  owner: root
+  group: root
+  mode: '0755'
+- name: pip-cache
+  path: $HOME/.cache/pip
+  owner: $(whoami)
+  group: $(whoami)
+  mode: '0755'
 commands:
-  - name: "python3"
-    path: "/usr/bin/python3"
-    shell_completion: false
-    man_page: "python3(1)"
-  - name: "pip3"
-    path: "/usr/bin/pip3"
-    shell_completion: true
-    man_page: "pip3(1)"
-
+- name: python3
+  path: /usr/bin/python3
+  shell_completion: false
+  man_page: python3(1)
+- name: pip3
+  path: /usr/bin/pip3
+  shell_completion: true
+  man_page: pip3(1)
 providers:
   apt:
     packages:
-      - name: "python"
-        package_name: "python3"
-        version: "3.12.1"
-      - name: "pip"
-        package_name: "python3-pip"
-        version: "23.3.1"
-
+    - name: python
+      package_name: python3
+    - name: pip
+      package_name: python3-pip
   dnf:
     packages:
-      - name: "python"
-        package_name: "python3"
-        version: "3.12.1"
-      - name: "pip"
-        package_name: "python3-pip"
-        version: "23.3.1"
-
+    - name: python
+      package_name: python3
+    - name: pip
+      package_name: python3-pip
   brew:
     packages:
-      - name: "python"
-        package_name: "python@3.12"
-        version: "3.12.1"
-
+    - name: python
+      package_name: python@3.12
   choco:
     packages:
-      - name: "python"
-        package_name: "python"
-        version: "3.12.1"
-
+    - name: python
+      package_name: python
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "choco"
-      platform: "windows"
-      architecture: ["amd64"]
-      supported: true
-
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: choco
+    platform: windows
+    architecture:
+    - amd64
+    supported: true

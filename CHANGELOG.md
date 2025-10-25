@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **API-Based Repository Support**: Complete implementation of API-based repository downloaders
+  - New `ApiDownloader` class for fetching package data from REST APIs
+  - Support for API-based repositories (Docker Hub, Hashicorp, etc.)
+  - Enhanced repository configuration schema with API endpoint support
+  - Codename resolution system for Ubuntu/Debian version mapping
+- **Repository Configuration Reorganization**: Restructured repository configs for better maintainability
+  - Split monolithic config files into individual per-provider YAML files
+  - New `saigen/repositories/configs/` directory with 20+ provider-specific configs
+  - Enhanced repository type classification (package_manager, api, language, universal)
+  - Improved documentation in `docs/repository-types.md`
+- **Enhanced Repository Management**: Improved repository cache and validation
+  - `CodenameResolver` for Ubuntu/Debian codename to version mapping
+  - Enhanced `UniversalRepositoryManager` with API repository support
+  - Improved cache update logic for API-based repositories
+  - Better error handling and validation for repository configurations
+- **Override Validation System**: New validation framework for provider overrides
+  - `OverrideValidator` class for validating provider-specific configurations
+  - Integration with refresh-versions command for override validation
+  - Comprehensive validation of package names, versions, and provider-specific fields
+- **Weekly Version Update Automation**: Complete automation framework for version updates
+  - `weekly_version_update.py` script for automated saidata version refreshes
+  - Cron job setup script (`setup-cronjob.sh`) for scheduled execution
+  - Configuration file support for customizing update behavior
+  - Email notification support for update results
+- **Enhanced Testing Framework**: Comprehensive test coverage for new features
+  - Integration tests for refresh-versions command
+  - Unit tests for API downloader, codename resolver, and override validator
+  - Performance and error handling tests
+  - Real saidata validation tests
+- **Documentation Enhancements**: Extensive documentation for new features
+  - Repository configuration guide with examples
+  - Upstream repositories guide
+  - Refresh-versions troubleshooting guide
+  - Saidata structure guide
+  - Weekly update automation guides
 - **🚀 MAJOR FEATURE: Configurable Saidata Repository System**: Complete implementation of repository-based saidata management
   - **GitRepositoryHandler**: Full git repository operations with shallow clone support, authentication (SSH keys, tokens), and automatic updates
   - **TarballRepositoryHandler**: Fallback HTTP download system with GitHub releases API integration and checksum verification
@@ -151,6 +186,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **Repository Configuration Architecture**: Major restructuring of repository configuration system
+  - Migrated from monolithic YAML files to individual provider configs
+  - Enhanced schema with API endpoint and authentication support
+  - Improved repository type classification and validation
+- **Refresh-Versions Command**: Enhanced with override validation and better error handling
+  - Added `--validate-overrides` flag for provider override validation
+  - Improved package name update logic with better conflict resolution
+  - Enhanced progress reporting and error messages
+- **Repository Cache System**: Improved cache management for API repositories
+  - Better handling of API-based repository updates
+  - Enhanced cache invalidation and refresh logic
+  - Improved error handling for network failures
+- **CLI Repository Commands**: Enhanced repository management commands
+  - Improved `saigen repositories list` with better formatting
+  - Enhanced repository configuration validation
+  - Better error messages and troubleshooting guidance
+- **Development Scripts Organization**: Cleaned up and reorganized development scripts
+  - Removed obsolete analysis and test scripts
+  - Better organization in `scripts/development/` directory
+  - Enhanced README documentation for scripts
 - **🔄 BREAKING CHANGE: Default Saidata Source**: SAI now uses repository-based saidata by default instead of local files
   - Default saidata paths now prioritize `~/.sai/cache/repositories/saidata-main`
   - Local saidata directory removed from project (moved to repository-based system)
@@ -223,6 +278,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment Hardening**: Minimal secure environment variables, removal of dangerous PATH entries
 
 ### Fixed
+- **API Repository Cache Updates**: Fixed cache update logic for API-based repositories
+  - Resolved issue where API repositories weren't being updated properly
+  - Enhanced cache invalidation for API endpoints
+  - Improved error handling for API request failures
+- **Repository Configuration Validation**: Fixed validation issues with new schema
+  - Corrected repository type validation
+  - Fixed API endpoint configuration validation
+  - Improved error messages for invalid configurations
+- **Codename Resolution**: Fixed Ubuntu/Debian version to codename mapping
+  - Added comprehensive codename mapping for all Ubuntu LTS versions
+  - Improved fallback logic for unknown versions
+  - Better error handling for unsupported distributions
+- **Override Validation**: Fixed validation of provider-specific overrides
+  - Corrected package name validation logic
+  - Improved version format validation
+  - Better handling of missing or invalid override fields
+- **Path Utilities**: Fixed path resolution for repository configurations
+  - Corrected relative path handling
+  - Improved cross-platform path compatibility
+  - Better error messages for invalid paths
 - **🐛 Test Infrastructure**: Fixed pytest collection warnings by renaming test fixture classes
   - Renamed `TestRepository` → `TestRepositoryConfig` to avoid pytest collection conflicts
   - Fixed test class naming conflicts in repository test fixtures

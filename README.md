@@ -29,24 +29,19 @@
 
 This repository provides **separate pip packages** that can be installed independently or together:
 
-### 🔧 SAI - Software Action Interface
+### 🔧 SAI
 
-**Lightweight CLI for executing software management actions**
-
-```bash
-pip install sai
-```
+Lightweight CLI for executing software management actions
 
 **Key Features:**
 - Provider-based action execution (install, configure, start, stop, etc.)
 - Multi-platform support (Linux, macOS, Windows)
-- **Schema 0.3 support** with multiple installation methods:
+- Multi-language support (pip, gem, cargo, npm, nuget...)
+- **Multiple installation methods**:
   - **Packages**: Traditional package manager installations
   - **Sources**: Build software from source with autotools, cmake, make, meson, ninja
   - **Binaries**: Download and install pre-compiled binaries with platform/architecture detection
   - **Scripts**: Execute installation scripts with security validation
-- Enhanced template functions for flexible configuration
-- **Package name distinction**: Separate logical names (`name`) from actual package names (`package_name`)
 - Minimal dependencies for production use
 - Dry-run mode for safe testing
 - Works with existing saidata from the [saidata repository](https://github.com/example42/saidata)
@@ -59,11 +54,7 @@ pip install sai
 
 ### 🤖 SAIGEN - SAI Data Generation
 
-**AI-powered tool for generating and managing software metadata**
-
-```bash
-pip install saigen
-```
+AI-powered tool for generating and managing software metadata.
 
 **Key Features:**
 - Generate saidata files for 50+ package managers (apt, dnf, brew, winget, npm, pypi, cargo, etc.)
@@ -75,9 +66,8 @@ pip install saigen
 
 **Use SAIGEN when you need to:**
 - Create new saidata files
-- Validate and test metadata
+- Validate and test saidata
 - Contribute to the saidata repository
-- Build software catalogs
 
 ## 🚀 Quick Start
 
@@ -110,9 +100,6 @@ pip install sai
 
 # Install SAIGEN only (for metadata generation)
 pip install saigen
-
-# Install SAI with generation support
-pip install sai[generation]
 
 # Install SAIGEN with all features (LLM + RAG)
 pip install saigen[all]

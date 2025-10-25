@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -10,7 +11,9 @@ import yaml
 
 from saigen.models.repository import RepositoryInfo, RepositoryPackage, SearchResult
 from saigen.repositories.cache import CacheManager, RepositoryCache
+from saigen.repositories.codename_resolver import resolve_codename, resolve_repository_name
 from saigen.repositories.downloaders.universal import UniversalRepositoryDownloader
+from saigen.repositories.downloaders.api_downloader import APIRepositoryDownloader
 from saigen.repositories.parsers import ParserRegistry
 from saigen.utils.errors import ConfigurationError, RepositoryError
 
@@ -148,6 +151,60 @@ class UniversalRepositoryManager:
             if url and isinstance(url, str):
                 if not url.startswith(("http://", "https://")):
                     raise ConfigurationError(f"Invalid URL scheme in {endpoint_name}: {url}")
+        
+        # Validate version_mapping if present
+        if "version_mapping" in config:
+            self._validate_version_mapping(config["version_mapping"], config["name"], source_file)
+        
+        # Validate eol if present
+        if "eol" in config and not isinstance(config["eol"], bool):
+            raise ConfigurationError(
+                f"Repository {config['name']}: 'eol' field must be a boolean in {source_file}"
+            )
+        
+        # Validate query_type if present
+        if "query_type" in config:
+            query_type = config["query_type"]
+            if query_type not in ["bulk_download", "api"]:
+                raise ConfigurationError(
+                    f"Repository {config['name']}: 'query_type' must be 'bulk_download' or 'api' in {source_file}"
+                )
+    
+    def _validate_version_mapping(
+        self, version_mapping: Any, repo_name: str, source_file: Path
+    ) -> None:
+        """Validate version_mapping field structure.
+        
+        Args:
+            version_mapping: The version_mapping value to validate
+            repo_name: Repository name for error messages
+            source_file: Source file path for error messages
+        """
+        if not isinstance(version_mapping, dict):
+            raise ConfigurationError(
+                f"Repository {repo_name}: version_mapping must be a dictionary in {source_file}"
+            )
+        
+        for version, codename in version_mapping.items():
+            if not isinstance(version, str) or not isinstance(codename, str):
+                raise ConfigurationError(
+                    f"Repository {repo_name}: version_mapping entries must be string:string, "
+                    f"got {version}:{codename} in {source_file}"
+                )
+            
+            # Validate version format (must be numeric with optional dots)
+            if not re.match(r'^[0-9.]+$', version):
+                raise ConfigurationError(
+                    f"Repository {repo_name}: version_mapping key '{version}' "
+                    f"must match pattern ^[0-9.]+$ in {source_file}"
+                )
+            
+            # Validate codename format (lowercase alphanumeric with hyphens)
+            if not re.match(r'^[a-z0-9-]+$', codename):
+                raise ConfigurationError(
+                    f"Repository {repo_name}: version_mapping value '{codename}' "
+                    f"must match pattern ^[a-z0-9-]+$ in {source_file}"
+                )
 
     async def _initialize_downloaders(self) -> None:
         """Initialize downloaders for all enabled repositories."""
@@ -174,10 +231,16 @@ class UniversalRepositoryManager:
             # Convert config to repository info
             repo_info = self._config_to_repository_info(config)
 
-            # Create downloader
-            downloader = UniversalRepositoryDownloader(
-                repository_info=repo_info, config=config, parser_registry=self.parser_registry
-            )
+            # Create appropriate downloader based on query_type
+            query_type = config.get("query_type", "bulk_download")
+            if query_type == "api":
+                downloader = APIRepositoryDownloader(
+                    repository_info=repo_info, config=config, parser_registry=self.parser_registry
+                )
+            else:
+                downloader = UniversalRepositoryDownloader(
+                    repository_info=repo_info, config=config, parser_registry=self.parser_registry
+                )
 
             # Test availability if configured (with timeout)
             metadata = config.get("metadata", {})
@@ -220,6 +283,9 @@ class UniversalRepositoryManager:
             priority=metadata.get("priority", 50),
             description=metadata.get("description"),
             maintainer=metadata.get("maintainer"),
+            version_mapping=config.get("version_mapping"),
+            eol=config.get("eol", False),
+            query_type=config.get("query_type", "bulk_download"),
         )
 
     def _update_statistics(self) -> None:
@@ -403,6 +469,88 @@ class UniversalRepositoryManager:
                 logger.debug(f"Failed to get package details from {name}: {e}")
 
         return None
+    
+    async def query_package_from_repository(
+        self,
+        repository_name: str,
+        package_name: str,
+        use_cache: bool = True
+    ) -> Optional[RepositoryPackage]:
+        """Query a specific package from a specific repository.
+        
+        This is optimized for API-based repositories where querying individual
+        packages is more efficient than downloading the full package list.
+        
+        Args:
+            repository_name: Name of the repository to query
+            package_name: Name of the package to query
+            use_cache: Whether to use cached response
+            
+        Returns:
+            RepositoryPackage if found, None otherwise
+        """
+        if not self._initialized:
+            await self.initialize()
+        
+        downloader = self._downloaders.get(repository_name)
+        if not downloader:
+            raise RepositoryError(f"Repository '{repository_name}' not found or not available")
+        
+        try:
+            # Check if this is an API-based downloader
+            if isinstance(downloader, APIRepositoryDownloader):
+                return await downloader.query_package(package_name, use_cache=use_cache)
+            else:
+                # Fall back to get_package_details for bulk download repos
+                return await downloader.get_package_details(package_name)
+        except Exception as e:
+            logger.error(f"Failed to query package {package_name} from {repository_name}: {e}")
+            return None
+    
+    async def query_packages_batch(
+        self,
+        repository_name: str,
+        package_names: List[str],
+        use_cache: bool = True
+    ) -> Dict[str, Optional[RepositoryPackage]]:
+        """Query multiple packages from a specific repository.
+        
+        This is optimized for API-based repositories where querying individual
+        packages concurrently is more efficient than downloading the full package list.
+        
+        Args:
+            repository_name: Name of the repository to query
+            package_names: List of package names to query
+            use_cache: Whether to use cached responses
+            
+        Returns:
+            Dict mapping package names to RepositoryPackage (or None if not found)
+        """
+        if not self._initialized:
+            await self.initialize()
+        
+        downloader = self._downloaders.get(repository_name)
+        if not downloader:
+            raise RepositoryError(f"Repository '{repository_name}' not found or not available")
+        
+        try:
+            # Check if this is an API-based downloader
+            if isinstance(downloader, APIRepositoryDownloader):
+                return await downloader.query_packages_batch(package_names, use_cache=use_cache)
+            else:
+                # Fall back to sequential queries for bulk download repos
+                results = {}
+                for package_name in package_names:
+                    try:
+                        package = await downloader.get_package_details(package_name)
+                        results[package_name] = package
+                    except Exception as e:
+                        logger.debug(f"Failed to query package {package_name}: {e}")
+                        results[package_name] = None
+                return results
+        except Exception as e:
+            logger.error(f"Failed to query packages from {repository_name}: {e}")
+            return {name: None for name in package_names}
 
     async def update_cache(
         self, repository_names: Optional[List[str]] = None, force: bool = False
@@ -553,6 +701,119 @@ class UniversalRepositoryManager:
                     await downloader.__aexit__(exc_type, exc_val, exc_tb)
                 except Exception as e:
                     logger.debug(f"Error closing downloader: {e}")
+
+    def resolve_codename_for_repository(
+        self, repository_name: str, version: str
+    ) -> Optional[str]:
+        """Resolve OS version to codename for a specific repository.
+        
+        Args:
+            repository_name: Name of the repository
+            version: OS version (e.g., "22.04", "11", "39")
+            
+        Returns:
+            Codename string or None if not found
+            
+        Example:
+            >>> manager.resolve_codename_for_repository("apt-ubuntu-jammy", "22.04")
+            'jammy'
+        """
+        repo_info = self.get_repository_info(repository_name)
+        if not repo_info:
+            logger.warning(f"Repository {repository_name} not found")
+            return None
+        
+        return resolve_codename(repo_info, version)
+    
+    def resolve_repository_name_from_context(
+        self, provider: str, os: Optional[str], version: Optional[str]
+    ) -> str:
+        """Resolve repository name from provider, OS, and version context.
+        
+        This method uses the codename resolver to find the appropriate repository
+        name based on the OS context. It searches through all available repositories
+        to find one that matches the provider type and has a version_mapping entry
+        for the given OS version.
+        
+        Args:
+            provider: Provider name (apt, dnf, brew, etc.)
+            os: OS name (ubuntu, debian, etc.) or None
+            version: OS version (e.g., "22.04", "11") or None
+            
+        Returns:
+            Repository name (e.g., "apt-ubuntu-jammy") or provider name as fallback
+            
+        Example:
+            >>> manager.resolve_repository_name_from_context("apt", "ubuntu", "22.04")
+            'apt-ubuntu-jammy'
+        """
+        # Build a dict of all repository info for the resolver
+        repositories = {
+            name: downloader.repository_info
+            for name, downloader in self._downloaders.items()
+        }
+        
+        resolved_name = resolve_repository_name(provider, os, version, repositories)
+        
+        # Log if EOL repository is being used
+        if resolved_name in self._downloaders:
+            repo_info = self._downloaders[resolved_name].repository_info
+            if repo_info.eol:
+                logger.info(
+                    f"Using EOL (end-of-life) repository: {resolved_name} "
+                    f"for {os} {version}"
+                )
+        
+        return resolved_name
+    
+    def has_repository(self, repository_name: str) -> bool:
+        """Check if a repository exists and is available.
+        
+        Args:
+            repository_name: Name of the repository to check
+            
+        Returns:
+            True if repository exists and is available, False otherwise
+        """
+        return repository_name in self._downloaders
+    
+    def get_version_mappings(
+        self, provider: Optional[str] = None
+    ) -> Dict[str, Dict[str, Dict[str, str]]]:
+        """Get all version mappings from repositories.
+        
+        This is useful for debugging and displaying available OS versions.
+        
+        Args:
+            provider: Optional provider filter (apt, dnf, etc.)
+            
+        Returns:
+            Dict mapping repository names to their version_mapping dicts
+            Format: {repo_name: {version: codename}}
+            
+        Example:
+            >>> mappings = manager.get_version_mappings("apt")
+            >>> print(mappings)
+            {
+                'apt-ubuntu-jammy': {'22.04': 'jammy'},
+                'apt-ubuntu-focal': {'20.04': 'focal'},
+                'apt-debian-bookworm': {'12': 'bookworm'}
+            }
+        """
+        mappings = {}
+        
+        for name, downloader in self._downloaders.items():
+            repo_info = downloader.repository_info
+            
+            # Filter by provider if specified
+            if provider and repo_info.type != provider:
+                continue
+            
+            # Only include repositories with version_mapping
+            if repo_info.version_mapping:
+                mappings[name] = repo_info.version_mapping
+        
+        return mappings
 
     async def close(self):
         """Explicitly close all connections."""

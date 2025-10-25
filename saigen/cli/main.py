@@ -5,6 +5,7 @@ from .commands.index import index
 from .repositories import repositories
 from .commands.batch import batch
 from .commands import cache, config, generate, refresh_versions, test, test_system, update, validate
+from .commands.validate import validate_overrides
 from ..version import get_version
 from ..utils.config import get_config_manager
 import logging
@@ -76,6 +77,7 @@ def cli(
 
 # Add commands to the CLI group
 cli.add_command(validate)
+cli.add_command(validate_overrides)
 cli.add_command(generate)
 cli.add_command(config)
 cli.add_command(cache)

@@ -1,0 +1,41 @@
+version: '1.0'
+repositories:
+- name: npm-registry
+  type: npm
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://replicate.npmjs.com/_all_docs?include_docs=true
+    search: https://registry.npmjs.org/-/v1/search?text={query}&size=250
+    info: https://registry.npmjs.org/{package}
+  parsing:
+    format: json
+    patterns:
+      json_path: rows
+    fields:
+      name: doc.name
+      version: doc.dist-tags.latest
+      description: doc.description
+  cache:
+    ttl_hours: 168
+    max_size_mb: 500
+    api_cache_ttl_seconds: 3600  # Cache API responses for 1 hour
+  limits:
+    requests_per_minute: 300
+    concurrent_requests: 10
+    timeout_seconds: 180
+    max_retries: 3
+    retry_delay_seconds: 1
+    exponential_backoff: true
+  metadata:
+    description: NPM Registry
+    maintainer: npm, Inc.
+    priority: 95
+    enabled: true
+    official: true
+    url: https://www.npmjs.com
+  eol: false
+  query_type: api

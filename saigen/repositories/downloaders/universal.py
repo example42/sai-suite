@@ -223,6 +223,8 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                 compression = "gzip"
             elif content_encoding in ["bzip2", "bz2"]:
                 compression = "bzip2"
+            elif content_encoding in ["br", "brotli"]:
+                compression = "brotli"
 
         # Decompress if needed
         if compression == "gzip":
@@ -270,6 +272,26 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                     return content
                 except UnicodeDecodeError:
                     raise RepositoryError(f"Failed to decompress xz content: {e}")
+
+        elif compression == "brotli":
+            try:
+                import brotli
+            except ImportError:
+                raise RepositoryError(
+                    f"Brotli compression is required for {self.repository_info.name} but the 'brotli' "
+                    "package is not installed. Install it with: pip install brotli"
+                )
+
+            try:
+                content = brotli.decompress(content)
+            except Exception as e:
+                # Try to handle already decompressed content
+                try:
+                    content.decode("utf-8", errors="strict")
+                    logger.debug(f"Content appears to be already decompressed despite brotli config")
+                    return content
+                except UnicodeDecodeError:
+                    raise RepositoryError(f"Failed to decompress brotli content: {e}")
 
         return content
 

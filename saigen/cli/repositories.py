@@ -65,6 +65,47 @@ def get_repository_manager(
 logger = logging.getLogger(__name__)
 
 
+def _matches_os(repo, os_filter: str) -> bool:
+    """Check if repository matches OS filter."""
+    # Check if OS is in repository name (e.g., apt-ubuntu-jammy)
+    if os_filter.lower() in repo.name.lower():
+        return True
+    
+    # Check version_mapping if available
+    if repo.version_mapping:
+        # For repositories with version_mapping, check if any codename suggests this OS
+        # This is a heuristic - repository names typically include OS
+        return os_filter.lower() in repo.name.lower()
+    
+    return False
+
+
+def _matches_version(repo, version_filter: str) -> bool:
+    """Check if repository supports the specified version."""
+    if not repo.version_mapping:
+        return False
+    
+    # Check if version is in the version_mapping keys
+    return version_filter in repo.version_mapping
+
+
+def _format_os_versions(repo) -> str:
+    """Format OS versions and codenames for display."""
+    if not repo.version_mapping:
+        return "N/A"
+    
+    # Format as "version (codename)"
+    versions = []
+    for version, codename in repo.version_mapping.items():
+        versions.append(f"{version} ({codename})")
+    
+    result = ", ".join(versions)
+    # Truncate if too long
+    if len(result) > 30:
+        return result[:27] + "..."
+    return result
+
+
 @click.group()
 def repositories():
     """Manage 50+ package repositories across all platforms.
@@ -86,6 +127,10 @@ def repositories():
 @click.option(
     "--type", "repo_type", help="Filter by repository type (apt, brew, npm, pypi, cargo, etc.)"
 )
+@click.option("--os", help="Filter by OS (ubuntu, debian, fedora, etc.)")
+@click.option("--version", help="Filter by OS version (22.04, 11, 39, etc.)")
+@click.option("--eol", is_flag=True, help="Show only EOL (end-of-life) repositories")
+@click.option("--active", is_flag=True, help="Show only active (non-EOL) repositories")
 @click.option(
     "--format",
     "output_format",
@@ -98,6 +143,10 @@ def repositories():
 def list_repos(
     platform: Optional[str],
     repo_type: Optional[str],
+    os: Optional[str],
+    version: Optional[str],
+    eol: bool,
+    active: bool,
     output_format: str,
     cache_dir: Optional[str],
     config_dir: Optional[str],
@@ -105,19 +154,26 @@ def list_repos(
     """List available repositories from 50+ supported package managers.
 
     Shows all configured repositories with their status, priority, and metadata.
-    Supports filtering by platform and repository type.
+    Supports filtering by platform, repository type, OS, OS version, and EOL status.
 
     Examples:
       saigen repositories list-repos
       saigen repositories list-repos --platform linux
       saigen repositories list-repos --type npm --format json
+      saigen repositories list-repos --os ubuntu --version 22.04
+      saigen repositories list-repos --eol
+      saigen repositories list-repos --active
     """
-    asyncio.run(_list_repositories(platform, repo_type, output_format, cache_dir, config_dir))
+    asyncio.run(_list_repositories(platform, repo_type, os, version, eol, active, output_format, cache_dir, config_dir))
 
 
 async def _list_repositories(
     platform: Optional[str],
     repo_type: Optional[str],
+    os: Optional[str],
+    version: Optional[str],
+    eol: bool,
+    active: bool,
     output_format: str,
     cache_dir: Optional[str],
     config_dir: Optional[str],
@@ -134,6 +190,20 @@ async def _list_repositories(
             # Filter by type if specified
             if repo_type:
                 repositories = [r for r in repositories if r.type == repo_type]
+            
+            # Filter by OS if specified
+            if os:
+                repositories = [r for r in repositories if _matches_os(r, os)]
+            
+            # Filter by version if specified
+            if version:
+                repositories = [r for r in repositories if _matches_version(r, version)]
+            
+            # Filter by EOL status if specified
+            if eol:
+                repositories = [r for r in repositories if r.eol]
+            elif active:
+                repositories = [r for r in repositories if not r.eol]
 
             if output_format == "json":
                 data = [repo.model_dump() for repo in repositories]
@@ -148,24 +218,37 @@ async def _list_repositories(
                     click.echo("No repositories found.")
                     return
 
-                headers = ["Name", "Type", "Platform", "Priority", "Enabled", "Description"]
+                headers = ["Name", "Type", "Platform", "OS Versions", "Status", "Priority", "Enabled", "Description"]
                 rows = []
 
                 for repo in repositories:
+                    # Format OS versions and codenames
+                    os_versions = _format_os_versions(repo)
+                    
+                    # Format status with EOL badge
+                    status = "[EOL]" if repo.eol else "Active"
+                    
                     rows.append(
                         [
                             repo.name,
                             repo.type,
                             repo.platform,
+                            os_versions,
+                            status,
                             repo.priority,
                             "✓" if repo.enabled else "✗",
-                            (repo.description or "")[:50]
-                            + ("..." if len(repo.description or "") > 50 else ""),
+                            (repo.description or "")[:35]
+                            + ("..." if len(repo.description or "") > 35 else ""),
                         ]
                     )
 
                 click.echo(tabulate(rows, headers=headers, tablefmt="grid"))
                 click.echo(f"\nTotal: {len(repositories)} repositories")
+                
+                # Show EOL count if any
+                eol_count = sum(1 for r in repositories if r.eol)
+                if eol_count > 0:
+                    click.echo(f"EOL repositories: {eol_count}")
 
     except Exception as e:
         logger.error(f"Failed to list repositories: {e}")

@@ -389,6 +389,11 @@ def extract_packages_from_data(
                 # Convert tags to list if it's a string
                 if isinstance(tags, str):
                     tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
+                
+                # Convert category to string if it's a list (e.g., PyPI classifiers)
+                if isinstance(category, list):
+                    # Take the first category or join them
+                    category = category[0] if category else None
 
                 # Convert size to integer if it's a string
                 if isinstance(size, str) and size.isdigit():

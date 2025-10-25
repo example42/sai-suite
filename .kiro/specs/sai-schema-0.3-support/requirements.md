@@ -8,7 +8,7 @@ The SAI CLI tool needs to be updated to support the saidata-0.3-schema.json form
 
 ## Glossary
 
-- **SAI**: Software Action Interface - the CLI tool for executing software management actions
+- **SAI**: the CLI tool for executing software management actions
 - **Saidata**: YAML/JSON files containing software metadata and installation instructions
 - **Template Engine**: The Jinja2-based system that resolves template variables in provider actions
 - **Provider**: A package manager or installation method (apt, brew, source, binary, script, etc.)

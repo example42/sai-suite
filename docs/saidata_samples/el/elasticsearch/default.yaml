@@ -1,129 +1,134 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "elasticsearch"
-  display_name: "Elasticsearch"
-  description: "Distributed search and analytics engine built on Apache Lucene"
-  version: "8.9.0"
-  category: "search"
-  subcategory: "analytics"
-  tags: ["elasticsearch", "search", "analytics", "lucene", "elk", "observability"]
-  license: "Elastic-2.0"
-  language: "Java"
-  maintainer: "Elastic N.V."
+  name: elasticsearch
+  display_name: Elasticsearch
+  description: Distributed search and analytics engine built on Apache Lucene
+  version: 8.9.0
+  category: search
+  subcategory: analytics
+  tags:
+  - elasticsearch
+  - search
+  - analytics
+  - lucene
+  - elk
+  - observability
+  license: Elastic-2.0
+  language: Java
+  maintainer: Elastic N.V.
   urls:
-    website: "https://www.elastic.co/elasticsearch"
-    documentation: "https://www.elastic.co/guide/en/elasticsearch/reference/current"
-    source: "https://github.com/elastic/elasticsearch"
-    issues: "https://github.com/elastic/elasticsearch/issues"
-    support: "https://www.elastic.co/support"
-    download: "https://www.elastic.co/downloads/elasticsearch"
-    changelog: "https://www.elastic.co/guide/en/elasticsearch/reference/current/release-notes.html"
-    license: "https://github.com/elastic/elasticsearch/blob/main/LICENSE.txt"
+    website: https://www.elastic.co/elasticsearch
+    documentation: https://www.elastic.co/guide/en/elasticsearch/reference/current
+    source: https://github.com/elastic/elasticsearch
+    issues: https://github.com/elastic/elasticsearch/issues
+    support: https://www.elastic.co/support
+    download: https://www.elastic.co/downloads/elasticsearch
+    changelog: https://www.elastic.co/guide/en/elasticsearch/reference/current/release-notes.html
+    license: https://github.com/elastic/elasticsearch/blob/main/LICENSE.txt
   security:
-    security_contact: "security@elastic.co"
-    vulnerability_disclosure: "https://www.elastic.co/community/security"
-
+    security_contact: security@elastic.co
+    vulnerability_disclosure: https://www.elastic.co/community/security
 packages:
-  - name: "elasticsearch"
-    package_name: "elasticsearch"
-    version: "8.9.0"
-
+- name: elasticsearch
+  package_name: elasticsearch
+  version: 8.9.0
 services:
-  - name: "elasticsearch"
-    service_name: "elasticsearch"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/elasticsearch/elasticsearch.yml"]
-
+- name: elasticsearch
+  service_name: elasticsearch
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/elasticsearch/elasticsearch.yml
 files:
-  - name: "main-config"
-    path: "/etc/elasticsearch/elasticsearch.yml"
-    type: "config"
-    owner: "root"
-    group: "elasticsearch"
-    mode: "0660"
-    backup: true
-
+- name: main-config
+  path: /etc/elasticsearch/elasticsearch.yml
+  type: config
+  owner: root
+  group: elasticsearch
+  mode: '0660'
+  backup: true
 directories:
-  - name: "config"
-    path: "/etc/elasticsearch"
-    owner: "root"
-    group: "elasticsearch"
-    mode: "0750"
-  - name: "data"
-    path: "/var/lib/elasticsearch"
-    owner: "elasticsearch"
-    group: "elasticsearch"
-    mode: "0750"
-
+- name: config
+  path: /etc/elasticsearch
+  owner: root
+  group: elasticsearch
+  mode: '0750'
+- name: data
+  path: /var/lib/elasticsearch
+  owner: elasticsearch
+  group: elasticsearch
+  mode: '0750'
 commands:
-  - name: "elasticsearch"
-    path: "/usr/share/elasticsearch/bin/elasticsearch"
-    shell_completion: false
-
+- name: elasticsearch
+  path: /usr/share/elasticsearch/bin/elasticsearch
+  shell_completion: false
 ports:
-  - port: 9200
-    protocol: "tcp"
-    service: "http"
-    description: "Elasticsearch HTTP API"
-  - port: 9300
-    protocol: "tcp"
-    service: "transport"
-    description: "Elasticsearch transport"
-
+- port: 9200
+  protocol: tcp
+  service: http
+  description: Elasticsearch HTTP API
+- port: 9300
+  protocol: tcp
+  service: transport
+  description: Elasticsearch transport
 providers:
   apt:
     repositories:
-      - name: "elastic-official"
-        url: "https://artifacts.elastic.co/packages/8.x/apt"
-        key: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "elasticsearch"
-            package_name: "elasticsearch"
-            version: "8.9.0"
-
+    - name: elastic-official
+      url: https://artifacts.elastic.co/packages/8.x/apt
+      key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      type: upstream
+      recommended: true
+      packages:
+      - name: elasticsearch
+        package_name: elasticsearch
   dnf:
     repositories:
-      - name: "elastic-official"
-        url: "https://artifacts.elastic.co/packages/8.x/yum"
-        key: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "elasticsearch"
-            package_name: "elasticsearch"
-            version: "8.9.0"
-
+    - name: elastic-official
+      url: https://artifacts.elastic.co/packages/8.x/yum
+      key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      type: upstream
+      recommended: true
+      packages:
+      - name: elasticsearch
+        package_name: elasticsearch
   brew:
     packages:
-      - name: "elasticsearch"
-        package_name: "elasticsearch"
-        version: "8.9.0"
-
+    - name: elasticsearch
+      package_name: elasticsearch
   helm:
     repositories:
-      - name: "elastic"
-        url: "https://helm.elastic.co"
-        type: "upstream"
-        packages:
-          - name: "elasticsearch"
-            package_name: "elasticsearch"
-
+    - name: elastic
+      url: https://helm.elastic.co
+      type: upstream
+      packages:
+      - name: elasticsearch
+        package_name: elasticsearch
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true

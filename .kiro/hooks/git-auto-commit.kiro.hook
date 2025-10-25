@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Git Auto Commit",
+  "description": "Automatically stages and commits all current changes in the git repository when files are modified",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Files have been modified in the workspace. Please:\n1. Update CHANGELOG\n2. Run `git add .` to stage all changes\n3. Run `git commit -m \"Auto-commit: [describe the changes]\"` with an appropriate commit message describing what was changed\n"
+  }
+}

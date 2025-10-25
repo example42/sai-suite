@@ -1,4 +1,4 @@
-# SAI - Software Action Interface
+# SAI
 
 Lightweight CLI tool for executing software management actions using provider-based configurations.
 
