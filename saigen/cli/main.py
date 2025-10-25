@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL 1.1.
 @click.option(
     "--config", type=click.Path(exists=True, path_type=Path), help="Configuration file path"
 )
-@click.option("--llm-provider", help="LLM provider to use (openai, anthropic, ollama)")
+@click.option("--llm-provider", help="LLM provider name from config (e.g., openai, ollama_qwen3)")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--dry-run", is_flag=True, help="Show what would be done without executing")
 @click.version_option(version=get_version(), prog_name="saigen")

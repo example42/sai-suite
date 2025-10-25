@@ -32,7 +32,7 @@ class GenerationRequest(BaseModel):
 
     software_name: str
     target_providers: List[str] = Field(default_factory=list)
-    llm_provider: LLMProvider = LLMProvider.OPENAI
+    llm_provider: str = "openai"  # Provider name from config (e.g., 'openai', 'ollama_qwen3')
     use_rag: bool = True
     user_hints: Optional[Dict[str, Any]] = None
     output_path: Optional[Path] = None
@@ -96,7 +96,7 @@ class BatchGenerationRequest(BaseModel):
 
     software_list: List[str]
     target_providers: List[str] = Field(default_factory=list)
-    llm_provider: LLMProvider = LLMProvider.OPENAI
+    llm_provider: str = "openai"  # Provider name from config (e.g., 'openai', 'ollama_qwen3')
     use_rag: bool = True
     output_directory: Optional[Path] = None
     max_concurrent: int = 3

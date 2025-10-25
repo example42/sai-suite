@@ -199,3 +199,4 @@ logs/
 htmlcov/
 .pytest_cache/
 test-results/
+llm-comparison*

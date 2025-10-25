@@ -94,6 +94,50 @@ class LLMProviderManager:
         LLMProvider.VLLM: VLLMProvider if VLLM_AVAILABLE else None,
     }
 
+    @staticmethod
+    def extract_provider_type(provider_name: str, provider_config: Optional[Dict[str, Any]] = None) -> str:
+        """Extract the base provider type from a provider name or config.
+        
+        Args:
+            provider_name: Full provider name (e.g., 'ollama_qwen3', 'openai')
+            provider_config: Optional provider configuration dict
+            
+        Returns:
+            Base provider type (e.g., 'ollama', 'openai')
+        """
+        # First check if provider type is explicitly set in config
+        if provider_config:
+            if hasattr(provider_config, "provider"):
+                return provider_config.provider
+            elif isinstance(provider_config, dict) and "provider" in provider_config:
+                return provider_config["provider"]
+        
+        # Otherwise, extract from name (e.g., 'ollama_qwen3' -> 'ollama')
+        return provider_name.split("_")[0].lower()
+    
+    @staticmethod
+    def validate_provider_name(provider_name: str, available_providers: Dict[str, Any]) -> bool:
+        """Validate if a provider name exists in the configuration.
+        
+        Args:
+            provider_name: Provider name to validate
+            available_providers: Dictionary of configured providers
+            
+        Returns:
+            True if provider exists and is valid
+        """
+        if provider_name not in available_providers:
+            return False
+        
+        provider_config = available_providers[provider_name]
+        provider_type = LLMProviderManager.extract_provider_type(provider_name, provider_config)
+        
+        try:
+            LLMProvider(provider_type)
+            return True
+        except ValueError:
+            return False
+
     def __init__(self, config: Dict[str, Dict[str, Any]]):
         """Initialize provider manager.
 
@@ -109,11 +153,21 @@ class LLMProviderManager:
         """Initialize provider configurations."""
         for provider_name, provider_config in self.config.items():
             try:
-                provider_enum = LLMProvider(provider_name.lower())
+                # Extract provider type from config or infer from name
+                # Support names like "ollama_qwen3", "ollama_deepseek", etc.
+                if hasattr(provider_config, "provider"):
+                    provider_type = provider_config.provider
+                elif hasattr(provider_config, "get"):
+                    provider_type = provider_config.get("provider", provider_name.split("_")[0])
+                else:
+                    # Fallback: extract base provider type from name
+                    provider_type = provider_name.split("_")[0]
+                
+                provider_enum = LLMProvider(provider_type.lower())
                 provider_class = self.PROVIDER_REGISTRY.get(provider_enum)
 
                 if provider_class is None:
-                    logger.warning(f"Provider '{provider_name}' not available or not installed")
+                    logger.warning(f"Provider '{provider_name}' (type: {provider_type}) not available or not installed")
                     continue
 
                 # Handle both dict and Pydantic model configs

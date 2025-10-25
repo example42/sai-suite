@@ -338,7 +338,8 @@
             "launchd",
             "windows_service",
             "docker",
-            "kubernetes"
+            "kubernetes",
+            "none"
           ]
         },
         "enabled": {

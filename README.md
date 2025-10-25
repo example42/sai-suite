@@ -481,6 +481,17 @@ llm_providers:
     provider: anthropic
     model: claude-3-sonnet-20240229
     enabled: false
+  # Multiple instances of the same provider type are supported
+  ollama_qwen3:
+    provider: ollama
+    api_base: http://localhost:11434
+    model: qwen3-coder:30b
+    enabled: true
+  ollama_deepseek:
+    provider: ollama
+    api_base: http://localhost:11434
+    model: deepseek-r1:8b
+    enabled: true
 
 repositories:
   apt:

@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Multi-Provider Instance Support**: Configure multiple instances of the same LLM provider type
+  - Support for multiple Ollama models with unique names (e.g., `ollama_qwen3`, `ollama_deepseek`)
+  - Support for multiple OpenAI endpoints (official, Azure, local)
+  - New `provider` field in configuration to explicitly specify provider type
+  - Provider type extraction from name prefix as fallback (e.g., `ollama_qwen3` → `ollama`)
+  - Enhanced provider validation with `validate_provider_name()` method
+  - New `extract_provider_type()` method for flexible provider type detection
+  - Comprehensive multi-provider guide documentation
+  - Support for model comparison workflows and A/B testing
+- **Quality Command Score Format**: New `--format score` option for `saigen quality` command
+  - Returns just the numeric quality score (0.000-1.000) without additional text
+  - Useful for automation, scripting, and CI/CD pipelines
+  - Suppresses progress messages when using score format
+  - Works with both overall score and specific metric scores
 - **API-Based Repository Support**: Complete implementation of API-based repository downloaders
   - New `ApiDownloader` class for fetching package data from REST APIs
   - Support for API-based repositories (Docker Hub, Hashicorp, etc.)
@@ -186,6 +200,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **LLM Provider Manager**: Enhanced to support multiple instances of the same provider type
+  - Provider initialization now extracts base type from configuration or name
+  - Improved error messages showing both provider name and type
+  - Better handling of provider-specific configurations
+  - Support for both dict and Pydantic model configs
+- **Configuration Documentation**: Enhanced configuration guide with multi-provider examples
+  - Added comprehensive examples for multiple Ollama models
+  - Added examples for multiple OpenAI endpoints
+  - Documented naming conventions and best practices
+  - Added troubleshooting section for common issues
 - **Repository Configuration Architecture**: Major restructuring of repository configuration system
   - Migrated from monolithic YAML files to individual provider configs
   - Enhanced schema with API endpoint and authentication support

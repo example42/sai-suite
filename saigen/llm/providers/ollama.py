@@ -93,7 +93,8 @@ class OllamaProvider(BaseLLMProvider):
 
         super().__init__(config)
 
-        self.base_url = self.config.get("base_url", "http://localhost:11434")
+        # Support both base_url and api_base for consistency with other providers
+        self.base_url = self.config.get("base_url") or self.config.get("api_base", "http://localhost:11434")
         self.model = self.config.get("model", "llama2")
         self.temperature = self.config.get("temperature", 0.1)
         self.timeout = self.config.get("timeout", 60)  # Longer timeout for local models
@@ -106,10 +107,10 @@ class OllamaProvider(BaseLLMProvider):
 
     def _validate_config(self) -> None:
         """Validate Ollama provider configuration."""
-        # Validate base_url format
-        base_url = self.config.get("base_url", "http://localhost:11434")
+        # Validate base_url format (support both base_url and api_base)
+        base_url = self.config.get("base_url") or self.config.get("api_base", "http://localhost:11434")
         if not base_url.startswith(("http://", "https://")):
-            raise ConfigurationError("base_url must start with http:// or https://")
+            raise ConfigurationError("base_url/api_base must start with http:// or https://")
 
         # Validate model name
         model = self.config.get("model")
@@ -240,6 +241,9 @@ class OllamaProvider(BaseLLMProvider):
         Returns:
             True if provider is available, False otherwise
         """
+        if not AIOHTTP_AVAILABLE:
+            return False
+
         try:
             self._validate_config()
             return True

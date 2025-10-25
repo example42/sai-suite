@@ -242,8 +242,10 @@ class ConfigManager:
             issues.append("No LLM providers configured")
         else:
             for name, provider in config.llm_providers.items():
+                # Ollama and vLLM don't require API keys
                 if provider.enabled and not provider.api_key:
-                    issues.append(f"LLM provider '{name}' is enabled but missing API key")
+                    if provider.provider not in ['ollama', 'vllm']:
+                        issues.append(f"LLM provider '{name}' is enabled but missing API key")
 
         # Check cache directory permissions
         try:

@@ -1,0 +1,3 @@
+terraform
+samba
+apache
