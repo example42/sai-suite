@@ -44,6 +44,11 @@ class ParserRegistry:
         from saigen.repositories.parsers.github import parse_github_directory
 
         self.register_parser("github_directory", parse_github_directory)
+        
+        # RPM-specific parsers
+        from saigen.repositories.parsers.rpm_parser import parse_rpm_repomd
+        
+        self.register_parser("rpm_repomd", parse_rpm_repomd)
 
     def register_parser(self, format_name: str, parser_func: ParserFunction) -> None:
         """Register a parser function for a format.
@@ -203,23 +208,13 @@ async def parse_debian_packages(
 async def parse_rpm_metadata(
     content: str, config: Dict[str, Any], repository_info: RepositoryInfo
 ) -> List[RepositoryPackage]:
-    """Parse RPM repository metadata (repomd.xml format)."""
-    try:
-        root = ET.fromstring(content)
-
-        # Handle different RPM metadata formats
-        packages = []
-
-        # Try to find package elements
-        for package_elem in root.findall(".//package"):
-            package = create_package_from_rpm_element(package_elem, repository_info)
-            if package:
-                packages.append(package)
-
-        return packages
-
-    except ET.ParseError as e:
-        raise RepositoryError(f"Invalid RPM metadata XML: {str(e)}")
+    """Parse RPM repository metadata (repomd.xml format).
+    
+    This is a wrapper that delegates to the enhanced RPM parser.
+    """
+    from saigen.repositories.parsers.rpm_parser import parse_rpm_repomd
+    
+    return await parse_rpm_repomd(content, config, repository_info)
 
 
 async def parse_html_format(

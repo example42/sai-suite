@@ -323,7 +323,11 @@ class UniversalRepositoryManager:
         repository_type: Optional[str] = None,
         use_cache: bool = True,
     ) -> Dict[str, List[RepositoryPackage]]:
-        """Get packages from all repositories with optional filtering."""
+        """Get packages from all repositories with optional filtering.
+        
+        Note: API-based repositories are skipped as they don't support bulk downloads.
+        Use query_package() or query_packages_batch() for API-based repositories.
+        """
         if not self._initialized:
             await self.initialize()
 
@@ -335,6 +339,11 @@ class UniversalRepositoryManager:
         # Fetch packages from all repositories concurrently
         tasks = []
         for name, downloader in downloaders.items():
+            # Skip API-based repositories as they don't support bulk downloads
+            if isinstance(downloader, APIRepositoryDownloader):
+                logger.debug(f"Skipping API-based repository {name} (use query_package instead)")
+                continue
+            
             if use_cache:
                 task = asyncio.create_task(
                     self.cache.get_or_fetch(downloader), name=f"fetch_{name}"
@@ -584,10 +593,21 @@ class UniversalRepositoryManager:
         repo_stats = {}
         for name, downloader in self._downloaders.items():
             try:
-                repo_metadata = await downloader.get_repository_metadata()
-                repo_stats[name] = repo_metadata
+                # For API-based repositories, don't try to get full package list
+                if isinstance(downloader, APIRepositoryDownloader):
+                    repo_stats[name] = {
+                        "query_type": "api",
+                        "status": "API",
+                        "last_updated": datetime.utcnow(),
+                        "repository_type": downloader.repository_info.type,
+                        "platform": downloader.repository_info.platform,
+                        "note": "API-based repository - use query_package() for individual lookups"
+                    }
+                else:
+                    repo_metadata = await downloader.get_repository_metadata()
+                    repo_stats[name] = repo_metadata
             except Exception as e:
-                repo_stats[name] = {"error": str(e)}
+                repo_stats[name] = {"error": str(e), "status": "Error", "last_updated": datetime.utcnow()}
 
         stats["repositories"] = repo_stats
 

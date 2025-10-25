@@ -463,9 +463,16 @@ async def _show_statistics(
 
                     for repo_name, repo_data in repo_stats.items():
                         if isinstance(repo_data, dict):
-                            package_count = repo_data.get("package_count", "N/A")
-                            error = repo_data.get("error")
-                            status = "Error" if error else "OK"
+                            # Check if this is an API-based repository
+                            query_type = repo_data.get("query_type")
+                            if query_type == "api":
+                                package_count = "N/A"
+                                status = repo_data.get("status", "API")
+                            else:
+                                package_count = repo_data.get("package_count", "N/A")
+                                error = repo_data.get("error")
+                                status = "Error" if error else repo_data.get("status", "OK")
+                            
                             last_updated = repo_data.get("last_updated", "N/A")
 
                             if isinstance(last_updated, str) and last_updated != "N/A":
@@ -480,6 +487,7 @@ async def _show_statistics(
                             rows.append([repo_name, package_count, status, last_updated])
 
                             # Collect error details for verbose output
+                            error = repo_data.get("error")
                             if error and verbose:
                                 errors_detail.append((repo_name, error))
 

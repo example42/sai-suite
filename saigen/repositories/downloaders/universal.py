@@ -177,11 +177,11 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
             # Read content
             content = await response.read()
 
-            # Parse content
-            return await self._parse_content(content, response.headers)
+            # Parse content (pass URL for parsers that need it)
+            return await self._parse_content(content, response.headers, url)
 
     async def _parse_content(
-        self, content: bytes, headers: Dict[str, str]
+        self, content: bytes, headers: Dict[str, str], source_url: str = ""
     ) -> List[RepositoryPackage]:
         """Parse content using configured parser."""
         format_type = self.parsing_config.get("format", "json")
@@ -201,11 +201,21 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
         if not parser_func:
             raise RepositoryError(f"No parser available for format: {format_type}")
 
+        # Add base URL to config for parsers that need it (like RPM)
+        parsing_config = self.parsing_config.copy()
+        if source_url:
+            # Extract base URL (directory containing repodata/)
+            if source_url.endswith("/repomd.xml"):
+                # Remove /repodata/repomd.xml to get base
+                parsing_config["base_url"] = source_url.rsplit("/repodata/", 1)[0] + "/"
+            else:
+                parsing_config["base_url"] = source_url
+
         # Parse content
         try:
             packages = await parser_func(
                 content=text_content,
-                config=self.parsing_config,
+                config=parsing_config,
                 repository_info=self.repository_info,
             )
             return packages

@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **RPM Repository Parser**: Complete implementation of RPM package metadata parser
+  - New `RpmParser` class for parsing RPM repository metadata (primary.xml)
+  - Support for DNF/YUM repositories with automatic metadata decompression
+  - Extraction of package name, version, architecture, description, URL, and license
+  - Integration with universal repository manager
+  - Test script for validating RPM parser functionality
+- **Repository Fixes and Enhancements**: Multiple improvements to repository handling
+  - Fixed DNF/YUM repository URL handling and metadata parsing
+  - Enhanced universal downloader with better error handling
+  - Improved repository type detection and validation
+  - Updated repository configurations for better reliability
+  - Comprehensive documentation of repository fixes
 - **Multi-Provider Instance Support**: Configure multiple instances of the same LLM provider type
   - Support for multiple Ollama models with unique names (e.g., `ollama_qwen3`, `ollama_deepseek`)
   - Support for multiple OpenAI endpoints (official, Azure, local)

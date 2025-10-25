@@ -700,9 +700,6 @@ SAI includes specialized providers for security, debugging, and analysis:
 - AI-assisted software documentation
 - Repository data analysis and enrichment
 
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
