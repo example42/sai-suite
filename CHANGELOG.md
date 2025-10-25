@@ -8,12 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **RPM Repository Parser**: Complete implementation of RPM package metadata parser
-  - New `RpmParser` class for parsing RPM repository metadata (primary.xml)
-  - Support for DNF/YUM repositories with automatic metadata decompression
-  - Extraction of package name, version, architecture, description, URL, and license
+- **RPM Repository Parser**: Complete implementation of RPM package metadata parser with comprehensive format support
+  - New enhanced RPM parser for parsing repomd.xml and primary.xml metadata
+  - Support for standard repomd.xml format (Rocky, AlmaLinux, CentOS Stream)
+  - Support for Fedora metalink format with automatic mirror selection
+  - Support for gzip compression (.gz) - standard format
+  - Support for zstandard compression (.zst) - Fedora 41, openSUSE Tumbleweed
+  - Proper XML namespace handling for reliable package extraction
+  - Extraction of package name, version, description, homepage, license, maintainer, size, category
   - Integration with universal repository manager
   - Test script for validating RPM parser functionality
+  - **New dependency**: `zstandard>=0.20.0,<1.0.0` for .zst compression support
+  - Successfully tested with 12 repositories totaling 301,641 packages
 - **Repository Fixes and Enhancements**: Multiple improvements to repository handling
   - Fixed DNF/YUM repository URL handling and metadata parsing
   - Enhanced universal downloader with better error handling
