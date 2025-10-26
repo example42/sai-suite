@@ -420,24 +420,59 @@ class UniversalRepositoryManager:
             task = asyncio.create_task(downloader.search_package(query), name=f"search_{name}")
             tasks.append((name, task))
 
-        # Collect search results
+        # Collect search results by repository
+        results_by_repo = {}
         for name, task in tasks:
             try:
                 packages = await task
                 if packages:
-                    # Apply limit per repository if specified
-                    if limit:
-                        packages = packages[:limit]
-
-                    all_packages.extend(packages)
+                    # Deduplicate packages by name+version within each repository
+                    # This handles cases where repos return multiple arch variants
+                    seen = set()
+                    deduped = []
+                    for pkg in packages:
+                        key = (pkg.name, pkg.version)
+                        if key not in seen:
+                            seen.add(key)
+                            deduped.append(pkg)
+                    
+                    results_by_repo[name] = deduped
                     repository_sources.append(name)
-                    logger.debug(f"Found {len(packages)} matches in {name}")
+                    if len(deduped) < len(packages):
+                        logger.debug(f"Found {len(packages)} matches ({len(deduped)} unique) in {name}")
+                    else:
+                        logger.debug(f"Found {len(packages)} matches in {name}")
             except Exception as e:
                 logger.error(f"Search failed in {name}: {e}")
 
-        # Apply global limit if specified
-        if limit and len(all_packages) > limit:
-            all_packages = all_packages[:limit]
+        # Interleave results from different repositories for diversity
+        # This ensures we show results from multiple repos, not just the first one
+        if limit and results_by_repo:
+            # Calculate max results per repository to ensure diversity
+            num_repos = len(results_by_repo)
+            max_per_repo = max(3, limit // num_repos + 1)  # At least 3 per repo
+            
+            # Limit each repository's results
+            limited_results = {
+                name: pkgs[:max_per_repo] 
+                for name, pkgs in results_by_repo.items()
+            }
+            
+            # Round-robin through repositories
+            repo_iterators = {name: iter(pkgs) for name, pkgs in limited_results.items()}
+            while len(all_packages) < limit and repo_iterators:
+                for name in list(repo_iterators.keys()):
+                    try:
+                        pkg = next(repo_iterators[name])
+                        all_packages.append(pkg)
+                        if len(all_packages) >= limit:
+                            break
+                    except StopIteration:
+                        del repo_iterators[name]
+        else:
+            # No limit, just concatenate all results
+            for packages in results_by_repo.values():
+                all_packages.extend(packages)
 
         # Calculate search time
         search_time = (datetime.utcnow() - start_time).total_seconds()

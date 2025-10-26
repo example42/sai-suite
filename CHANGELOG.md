@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Repository Search Relevance Scoring**: Implemented intelligent search result ranking system
+  - New `_calculate_relevance_score()` method in UniversalRepositoryDownloader for scoring search results
+  - Exact name matches score 100, name prefix matches score 50, name contains query scores 25, description matches score 5
+  - Search results automatically sorted by relevance score (highest first)
+  - Improved search quality by prioritizing more relevant packages
+- **Repository Search Result Diversity**: Enhanced search to show results from multiple repositories
+  - Round-robin interleaving of results from different repositories for better diversity
+  - Configurable max results per repository (minimum 3) to ensure representation from multiple sources
+  - Prevents single repository from dominating search results
+  - Better user experience with varied package sources
+- **Repository Search Deduplication**: Added deduplication of packages within each repository
+  - Removes duplicate packages with same name+version (e.g., different architecture variants)
+  - Reduces noise in search results while maintaining unique packages
+  - Improved logging to show both total and unique package counts
 - **RPM Repository Parser**: Complete implementation of RPM package metadata parser with comprehensive format support
   - New enhanced RPM parser for parsing repomd.xml and primary.xml metadata
   - Support for standard repomd.xml format (Rocky, AlmaLinux, CentOS Stream)
@@ -218,6 +232,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **Repository Search Implementation**: Refactored search logic for better performance and accuracy
+  - Search now applies limit at manager level instead of CLI level for better efficiency
+  - Removed redundant limit application in CLI after manager already limits results
+  - Enhanced search to return pre-sorted, deduplicated, and limited results
+- **Repository Cache Access**: Fixed cache entry data access pattern
+  - Changed from `cache_entry.packages` to `cache_entry.data` for correct attribute access
+  - Ensures proper retrieval of cached package data
+  - Consistent with cache entry data model structure
 - **LLM Provider Manager**: Enhanced to support multiple instances of the same provider type
   - Provider initialization now extracts base type from configuration or name
   - Improved error messages showing both provider name and type

@@ -399,8 +399,8 @@ class RepositoryCache:
                 cache_key = meta_file.stem
                 cache_entry = await self.get(cache_key)
 
-                if cache_entry and cache_entry.packages:
-                    all_packages.extend(cache_entry.packages)
+                if cache_entry and cache_entry.data:
+                    all_packages.extend(cache_entry.data)
 
             except Exception as e:
                 # Log error but continue with other entries
@@ -443,8 +443,8 @@ class RepositoryCache:
                 cache_key = meta_file.stem
                 cache_entry = await self.get(cache_key)
 
-                if cache_entry and cache_entry.packages:
-                    packages.extend(cache_entry.packages)
+                if cache_entry and cache_entry.data:
+                    packages.extend(cache_entry.data)
 
             except Exception as e:
                 # Log error but continue with other entries

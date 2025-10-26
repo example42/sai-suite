@@ -311,13 +311,13 @@ async def _search_packages(
         async with manager:
             click.echo(f"Searching for '{query}'...")
 
-            # Search packages
+            # Search packages with limit for better diversity
             result = await manager.search_packages(
-                query=query, platform=platform, repository_names=None
+                query=query, platform=platform, repository_names=None, limit=limit
             )
 
-            # Apply limit
-            packages = result.packages[:limit] if limit else result.packages
+            # Packages are already limited by manager
+            packages = result.packages
 
             if output_format == "json":
                 data = {
