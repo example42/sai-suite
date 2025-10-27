@@ -197,6 +197,20 @@ class RepositoryCache:
 
         # Cache miss - fetch fresh data
         try:
+            # Check if this is an API-based repository
+            from saigen.repositories.downloaders.api_downloader import APIRepositoryDownloader
+            
+            if isinstance(downloader, APIRepositoryDownloader):
+                # Skip fetching for API-based repositories during cache update
+                # API repositories should be queried on-demand, not bulk downloaded
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(
+                    f"Skipping bulk download for API-based repository {downloader.repository_info.name}. "
+                    "Use query_package() or query_packages_batch() for on-demand queries."
+                )
+                return []
+            
             packages = await downloader.download_package_list()
 
             # Store in cache
@@ -385,8 +399,8 @@ class RepositoryCache:
                 cache_key = meta_file.stem
                 cache_entry = await self.get(cache_key)
 
-                if cache_entry and cache_entry.packages:
-                    all_packages.extend(cache_entry.packages)
+                if cache_entry and cache_entry.data:
+                    all_packages.extend(cache_entry.data)
 
             except Exception as e:
                 # Log error but continue with other entries
@@ -429,8 +443,8 @@ class RepositoryCache:
                 cache_key = meta_file.stem
                 cache_entry = await self.get(cache_key)
 
-                if cache_entry and cache_entry.packages:
-                    packages.extend(cache_entry.packages)
+                if cache_entry and cache_entry.data:
+                    packages.extend(cache_entry.data)
 
             except Exception as e:
                 # Log error but continue with other entries
@@ -623,6 +637,18 @@ class CacheManager:
         Returns:
             True if cache was updated
         """
+        # Skip API-based repositories - they should be queried on-demand
+        from saigen.repositories.downloaders.api_downloader import APIRepositoryDownloader
+        
+        if isinstance(downloader, APIRepositoryDownloader):
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(
+                f"Skipping cache update for API-based repository {downloader.repository_info.name}. "
+                "API repositories are queried on-demand."
+            )
+            return False
+        
         cache_key = downloader.get_cache_key()
 
         if not force:

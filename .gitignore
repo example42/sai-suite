@@ -163,6 +163,7 @@ cython_debug/
 .sai/
 *.cache
 cache/
+saidata/
 
 # Auto-generated version files (setuptools-scm)
 */_version.py
@@ -199,3 +200,4 @@ logs/
 htmlcov/
 .pytest_cache/
 test-results/
+llm-comparison*

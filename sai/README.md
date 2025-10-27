@@ -1,4 +1,4 @@
-# SAI - Software Action Interface
+# SAI
 
 Lightweight CLI tool for executing software management actions using provider-based configurations.
 
@@ -73,7 +73,3 @@ pip install sai[dev]
 - **Repository**: https://github.com/example42/sai-suite
 - **Issues**: https://github.com/example42/sai-suite/issues
 - **PyPI**: https://pypi.org/project/sai/
-
-## License
-
-MIT License - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.

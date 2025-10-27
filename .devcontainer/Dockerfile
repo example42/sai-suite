@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM ubuntu:24.04
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     tree \
     htop \
+    python3 \
     ca-certificates \
     gnupg \
     lsb-release \

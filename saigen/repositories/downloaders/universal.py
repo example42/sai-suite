@@ -177,11 +177,11 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
             # Read content
             content = await response.read()
 
-            # Parse content
-            return await self._parse_content(content, response.headers)
+            # Parse content (pass URL for parsers that need it)
+            return await self._parse_content(content, response.headers, url)
 
     async def _parse_content(
-        self, content: bytes, headers: Dict[str, str]
+        self, content: bytes, headers: Dict[str, str], source_url: str = ""
     ) -> List[RepositoryPackage]:
         """Parse content using configured parser."""
         format_type = self.parsing_config.get("format", "json")
@@ -201,11 +201,21 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
         if not parser_func:
             raise RepositoryError(f"No parser available for format: {format_type}")
 
+        # Add base URL to config for parsers that need it (like RPM)
+        parsing_config = self.parsing_config.copy()
+        if source_url:
+            # Extract base URL (directory containing repodata/)
+            if source_url.endswith("/repomd.xml"):
+                # Remove /repodata/repomd.xml to get base
+                parsing_config["base_url"] = source_url.rsplit("/repodata/", 1)[0] + "/"
+            else:
+                parsing_config["base_url"] = source_url
+
         # Parse content
         try:
             packages = await parser_func(
                 content=text_content,
-                config=self.parsing_config,
+                config=parsing_config,
                 repository_info=self.repository_info,
             )
             return packages
@@ -223,6 +233,8 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                 compression = "gzip"
             elif content_encoding in ["bzip2", "bz2"]:
                 compression = "bzip2"
+            elif content_encoding in ["br", "brotli"]:
+                compression = "brotli"
 
         # Decompress if needed
         if compression == "gzip":
@@ -271,10 +283,30 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                 except UnicodeDecodeError:
                     raise RepositoryError(f"Failed to decompress xz content: {e}")
 
+        elif compression == "brotli":
+            try:
+                import brotli
+            except ImportError:
+                raise RepositoryError(
+                    f"Brotli compression is required for {self.repository_info.name} but the 'brotli' "
+                    "package is not installed. Install it with: pip install brotli"
+                )
+
+            try:
+                content = brotli.decompress(content)
+            except Exception as e:
+                # Try to handle already decompressed content
+                try:
+                    content.decode("utf-8", errors="strict")
+                    logger.debug(f"Content appears to be already decompressed despite brotli config")
+                    return content
+                except UnicodeDecodeError:
+                    raise RepositoryError(f"Failed to decompress brotli content: {e}")
+
         return content
 
     async def search_package(self, name: str) -> List[RepositoryPackage]:
-        """Search for specific package."""
+        """Search for specific package with relevance scoring."""
         search_url = self.endpoints.get("search")
 
         if search_url:
@@ -284,16 +316,17 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
                 url = search_url.replace("{query}", name).replace("{package}", name)
                 packages = await self._download_and_parse(session, url)
 
-                # Filter results to match search query
+                # Filter and score results
                 name_lower = name.lower()
-                matching_packages = []
+                scored_packages = []
                 for package in packages:
-                    if name_lower in package.name.lower() or (
-                        package.description and name_lower in package.description.lower()
-                    ):
-                        matching_packages.append(package)
+                    score = self._calculate_relevance_score(package, name_lower)
+                    if score > 0:
+                        scored_packages.append((score, package))
 
-                return matching_packages
+                # Sort by relevance score (highest first)
+                scored_packages.sort(key=lambda x: x[0], reverse=True)
+                return [pkg for _, pkg in scored_packages]
 
             except Exception as e:
                 logger.debug(f"Search endpoint failed for {name}: {e}")
@@ -304,19 +337,46 @@ class UniversalRepositoryDownloader(BaseRepositoryDownloader):
             all_packages = await self.download_package_list()
 
             name_lower = name.lower()
-            matching_packages = []
+            scored_packages = []
 
             for package in all_packages:
-                if name_lower in package.name.lower() or (
-                    package.description and name_lower in package.description.lower()
-                ):
-                    matching_packages.append(package)
+                score = self._calculate_relevance_score(package, name_lower)
+                if score > 0:
+                    scored_packages.append((score, package))
 
-            return matching_packages
+            # Sort by relevance score (highest first)
+            scored_packages.sort(key=lambda x: x[0], reverse=True)
+            return [pkg for _, pkg in scored_packages]
 
         except Exception as e:
             logger.error(f"Failed to search packages in {self.repository_info.name}: {e}")
             return []
+
+    def _calculate_relevance_score(self, package: RepositoryPackage, query: str) -> float:
+        """Calculate relevance score for search results.
+        
+        Scoring:
+        - Exact name match: 100
+        - Name starts with query: 50
+        - Name contains query: 25
+        - Description contains query: 5
+        """
+        score = 0.0
+        pkg_name_lower = package.name.lower()
+        
+        # Name matching (highest priority)
+        if pkg_name_lower == query:
+            score += 100
+        elif pkg_name_lower.startswith(query):
+            score += 50
+        elif query in pkg_name_lower:
+            score += 25
+        
+        # Description matching (lower priority)
+        if package.description and query in package.description.lower():
+            score += 5
+        
+        return score
 
     async def get_package_details(
         self, name: str, version: Optional[str] = None

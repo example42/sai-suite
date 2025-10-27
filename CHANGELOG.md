@@ -8,6 +8,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saidata Generation Metadata**: Added comprehensive metadata tracking for generated saidata files
+  - New `saidata` metadata section in saidata-0.3-schema.json with model, generation_date, generation_time, test_date, and human_review_date fields
+  - Automatic metadata injection during saidata generation with LLM model name and ISO 8601 timestamps
+  - Generation time tracking in seconds for performance monitoring
+  - Support for test and human review date tracking for lifecycle management
+- **Saidata Directory Exclusion**: Added `saidata/` to .gitignore to prevent accidental commits of generated saidata files
+- **Development Container Update**: Updated devcontainer base image from Python 3.11-slim to Ubuntu 24.04 for better compatibility
+- **Repository Search Relevance Scoring**: Implemented intelligent search result ranking system
+  - New `_calculate_relevance_score()` method in UniversalRepositoryDownloader for scoring search results
+  - Exact name matches score 100, name prefix matches score 50, name contains query scores 25, description matches score 5
+  - Search results automatically sorted by relevance score (highest first)
+  - Improved search quality by prioritizing more relevant packages
+- **Repository Search Result Diversity**: Enhanced search to show results from multiple repositories
+  - Round-robin interleaving of results from different repositories for better diversity
+  - Configurable max results per repository (minimum 3) to ensure representation from multiple sources
+  - Prevents single repository from dominating search results
+  - Better user experience with varied package sources
+- **Repository Search Deduplication**: Added deduplication of packages within each repository
+  - Removes duplicate packages with same name+version (e.g., different architecture variants)
+  - Reduces noise in search results while maintaining unique packages
+  - Improved logging to show both total and unique package counts
+- **RPM Repository Parser**: Complete implementation of RPM package metadata parser with comprehensive format support
+  - New enhanced RPM parser for parsing repomd.xml and primary.xml metadata
+  - Support for standard repomd.xml format (Rocky, AlmaLinux, CentOS Stream)
+  - Support for Fedora metalink format with automatic mirror selection
+  - Support for gzip compression (.gz) - standard format
+  - Support for zstandard compression (.zst) - Fedora 41, openSUSE Tumbleweed
+  - Proper XML namespace handling for reliable package extraction
+  - Extraction of package name, version, description, homepage, license, maintainer, size, category
+  - Integration with universal repository manager
+  - Test script for validating RPM parser functionality
+  - **New dependency**: `zstandard>=0.20.0,<1.0.0` for .zst compression support
+  - Successfully tested with 12 repositories totaling 301,641 packages
+- **Repository Fixes and Enhancements**: Multiple improvements to repository handling
+  - Fixed DNF/YUM repository URL handling and metadata parsing
+  - Enhanced universal downloader with better error handling
+  - Improved repository type detection and validation
+  - Updated repository configurations for better reliability
+  - Comprehensive documentation of repository fixes
+- **Multi-Provider Instance Support**: Configure multiple instances of the same LLM provider type
+  - Support for multiple Ollama models with unique names (e.g., `ollama_qwen3`, `ollama_deepseek`)
+  - Support for multiple OpenAI endpoints (official, Azure, local)
+  - New `provider` field in configuration to explicitly specify provider type
+  - Provider type extraction from name prefix as fallback (e.g., `ollama_qwen3` → `ollama`)
+  - Enhanced provider validation with `validate_provider_name()` method
+  - New `extract_provider_type()` method for flexible provider type detection
+  - Comprehensive multi-provider guide documentation
+  - Support for model comparison workflows and A/B testing
+- **Quality Command Score Format**: New `--format score` option for `saigen quality` command
+  - Returns just the numeric quality score (0.000-1.000) without additional text
+  - Useful for automation, scripting, and CI/CD pipelines
+  - Suppresses progress messages when using score format
+  - Works with both overall score and specific metric scores
+- **API-Based Repository Support**: Complete implementation of API-based repository downloaders
+  - New `ApiDownloader` class for fetching package data from REST APIs
+  - Support for API-based repositories (Docker Hub, Hashicorp, etc.)
+  - Enhanced repository configuration schema with API endpoint support
+  - Codename resolution system for Ubuntu/Debian version mapping
+- **Repository Configuration Reorganization**: Restructured repository configs for better maintainability
+  - Split monolithic config files into individual per-provider YAML files
+  - New `saigen/repositories/configs/` directory with 20+ provider-specific configs
+  - Enhanced repository type classification (package_manager, api, language, universal)
+  - Improved documentation in `docs/repository-types.md`
+- **Enhanced Repository Management**: Improved repository cache and validation
+  - `CodenameResolver` for Ubuntu/Debian codename to version mapping
+  - Enhanced `UniversalRepositoryManager` with API repository support
+  - Improved cache update logic for API-based repositories
+  - Better error handling and validation for repository configurations
+- **Override Validation System**: New validation framework for provider overrides
+  - `OverrideValidator` class for validating provider-specific configurations
+  - Integration with refresh-versions command for override validation
+  - Comprehensive validation of package names, versions, and provider-specific fields
+- **Weekly Version Update Automation**: Complete automation framework for version updates
+  - `weekly_version_update.py` script for automated saidata version refreshes
+  - Cron job setup script (`setup-cronjob.sh`) for scheduled execution
+  - Configuration file support for customizing update behavior
+  - Email notification support for update results
+- **Enhanced Testing Framework**: Comprehensive test coverage for new features
+  - Integration tests for refresh-versions command
+  - Unit tests for API downloader, codename resolver, and override validator
+  - Performance and error handling tests
+  - Real saidata validation tests
+- **Documentation Enhancements**: Extensive documentation for new features
+  - Repository configuration guide with examples
+  - Upstream repositories guide
+  - Refresh-versions troubleshooting guide
+  - Saidata structure guide
+  - Weekly update automation guides
 - **🚀 MAJOR FEATURE: Configurable Saidata Repository System**: Complete implementation of repository-based saidata management
   - **GitRepositoryHandler**: Full git repository operations with shallow clone support, authentication (SSH keys, tokens), and automatic updates
   - **TarballRepositoryHandler**: Fallback HTTP download system with GitHub releases API integration and checksum verification
@@ -151,6 +239,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **Generation Engine Metadata Handling**: Enhanced save_saidata method to accept optional model_name parameter for metadata injection
+- **CLI Commands Metadata Integration**: Updated generate, update, and batch commands to pass model name to save_saidata for proper metadata tracking
+- **Git Auto-Commit Hook**: Updated hook prompt to include --no-pager flag for git diff commands
+- **Repository Search Implementation**: Refactored search logic for better performance and accuracy
+  - Search now applies limit at manager level instead of CLI level for better efficiency
+  - Removed redundant limit application in CLI after manager already limits results
+  - Enhanced search to return pre-sorted, deduplicated, and limited results
+- **Repository Cache Access**: Fixed cache entry data access pattern
+  - Changed from `cache_entry.packages` to `cache_entry.data` for correct attribute access
+  - Ensures proper retrieval of cached package data
+  - Consistent with cache entry data model structure
+- **LLM Provider Manager**: Enhanced to support multiple instances of the same provider type
+  - Provider initialization now extracts base type from configuration or name
+  - Improved error messages showing both provider name and type
+  - Better handling of provider-specific configurations
+  - Support for both dict and Pydantic model configs
+- **Configuration Documentation**: Enhanced configuration guide with multi-provider examples
+  - Added comprehensive examples for multiple Ollama models
+  - Added examples for multiple OpenAI endpoints
+  - Documented naming conventions and best practices
+  - Added troubleshooting section for common issues
+- **Repository Configuration Architecture**: Major restructuring of repository configuration system
+  - Migrated from monolithic YAML files to individual provider configs
+  - Enhanced schema with API endpoint and authentication support
+  - Improved repository type classification and validation
+- **Refresh-Versions Command**: Enhanced with override validation and better error handling
+  - Added `--validate-overrides` flag for provider override validation
+  - Improved package name update logic with better conflict resolution
+  - Enhanced progress reporting and error messages
+- **Repository Cache System**: Improved cache management for API repositories
+  - Better handling of API-based repository updates
+  - Enhanced cache invalidation and refresh logic
+  - Improved error handling for network failures
+- **CLI Repository Commands**: Enhanced repository management commands
+  - Improved `saigen repositories list` with better formatting
+  - Enhanced repository configuration validation
+  - Better error messages and troubleshooting guidance
+- **Development Scripts Organization**: Cleaned up and reorganized development scripts
+  - Removed obsolete analysis and test scripts
+  - Better organization in `scripts/development/` directory
+  - Enhanced README documentation for scripts
 - **🔄 BREAKING CHANGE: Default Saidata Source**: SAI now uses repository-based saidata by default instead of local files
   - Default saidata paths now prioritize `~/.sai/cache/repositories/saidata-main`
   - Local saidata directory removed from project (moved to repository-based system)
@@ -223,6 +352,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment Hardening**: Minimal secure environment variables, removal of dangerous PATH entries
 
 ### Fixed
+- **API Repository Cache Updates**: Fixed cache update logic for API-based repositories
+  - Resolved issue where API repositories weren't being updated properly
+  - Enhanced cache invalidation for API endpoints
+  - Improved error handling for API request failures
+- **Repository Configuration Validation**: Fixed validation issues with new schema
+  - Corrected repository type validation
+  - Fixed API endpoint configuration validation
+  - Improved error messages for invalid configurations
+- **Codename Resolution**: Fixed Ubuntu/Debian version to codename mapping
+  - Added comprehensive codename mapping for all Ubuntu LTS versions
+  - Improved fallback logic for unknown versions
+  - Better error handling for unsupported distributions
+- **Override Validation**: Fixed validation of provider-specific overrides
+  - Corrected package name validation logic
+  - Improved version format validation
+  - Better handling of missing or invalid override fields
+- **Path Utilities**: Fixed path resolution for repository configurations
+  - Corrected relative path handling
+  - Improved cross-platform path compatibility
+  - Better error messages for invalid paths
 - **🐛 Test Infrastructure**: Fixed pytest collection warnings by renaming test fixture classes
   - Renamed `TestRepository` → `TestRepositoryConfig` to avoid pytest collection conflicts
   - Fixed test class naming conflicts in repository test fixtures

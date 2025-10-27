@@ -947,6 +947,7 @@ class SaidataLoader:
                 "windows_service",
                 "docker",
                 "kubernetes",
+                "none"
             ]:
                 errors.append(f"Service {i} has invalid type: {service_type}")
 

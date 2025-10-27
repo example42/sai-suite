@@ -1,167 +1,177 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "prometheus"
-  display_name: "Prometheus"
-  description: "Open-source monitoring and alerting toolkit with time series database"
-  version: "2.45.0"
-  category: "monitoring"
-  subcategory: "metrics"
-  tags: ["prometheus", "monitoring", "metrics", "alerting", "observability"]
-  license: "Apache-2.0"
-  language: "Go"
-  maintainer: "Prometheus Community"
+  name: prometheus
+  display_name: Prometheus
+  description: Open-source monitoring and alerting toolkit with time series database
+  version: 2.45.0
+  category: monitoring
+  subcategory: metrics
+  tags:
+  - prometheus
+  - monitoring
+  - metrics
+  - alerting
+  - observability
+  license: Apache-2.0
+  language: Go
+  maintainer: Prometheus Community
   urls:
-    website: "https://prometheus.io"
-    documentation: "https://prometheus.io/docs"
-    source: "https://github.com/prometheus/prometheus"
-    issues: "https://github.com/prometheus/prometheus/issues"
-    support: "https://prometheus.io/community"
-    download: "https://github.com/prometheus/prometheus/releases"
-    changelog: "https://github.com/prometheus/prometheus/blob/main/CHANGELOG.md"
-    license: "https://github.com/prometheus/prometheus/blob/main/LICENSE"
+    website: https://prometheus.io
+    documentation: https://prometheus.io/docs
+    source: https://github.com/prometheus/prometheus
+    issues: https://github.com/prometheus/prometheus/issues
+    support: https://prometheus.io/community
+    download: https://github.com/prometheus/prometheus/releases
+    changelog: https://github.com/prometheus/prometheus/blob/main/CHANGELOG.md
+    license: https://github.com/prometheus/prometheus/blob/main/LICENSE
   security:
-    security_contact: "security@prometheus.io"
-    vulnerability_disclosure: "https://prometheus.io/docs/operating/security"
-
+    security_contact: security@prometheus.io
+    vulnerability_disclosure: https://prometheus.io/docs/operating/security
 packages:
-  - name: "prometheus"
-    package_name: "prometheus"
-    version: "2.45.0"
-  - name: "node-exporter"
-    package_name: "prometheus-node-exporter"
-    version: "1.6.0"
-  - name: "alertmanager"
-    package_name: "prometheus-alertmanager"
-    version: "0.25.0"
-
+- name: prometheus
+  package_name: prometheus
+  version: 2.45.0
+- name: node-exporter
+  package_name: prometheus-node-exporter
+  version: 1.6.0
+- name: alertmanager
+  package_name: prometheus-alertmanager
+  version: 0.25.0
 services:
-  - name: "prometheus"
-    service_name: "prometheus"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/prometheus/prometheus.yml"]
-  - name: "node-exporter"
-    service_name: "prometheus-node-exporter"
-    type: "systemd"
-    enabled: true
-  - name: "alertmanager"
-    service_name: "prometheus-alertmanager"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/prometheus/alertmanager.yml"]
-
+- name: prometheus
+  service_name: prometheus
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/prometheus/prometheus.yml
+- name: node-exporter
+  service_name: prometheus-node-exporter
+  type: systemd
+  enabled: true
+- name: alertmanager
+  service_name: prometheus-alertmanager
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/prometheus/alertmanager.yml
 files:
-  - name: "config"
-    path: "/etc/prometheus/prometheus.yml"
-    type: "config"
-    owner: "prometheus"
-    group: "prometheus"
-    mode: "0644"
-    backup: true
-  - name: "alertmanager-config"
-    path: "/etc/prometheus/alertmanager.yml"
-    type: "config"
-    owner: "prometheus"
-    group: "prometheus"
-    mode: "0644"
-    backup: true
-
+- name: config
+  path: /etc/prometheus/prometheus.yml
+  type: config
+  owner: prometheus
+  group: prometheus
+  mode: '0644'
+  backup: true
+- name: alertmanager-config
+  path: /etc/prometheus/alertmanager.yml
+  type: config
+  owner: prometheus
+  group: prometheus
+  mode: '0644'
+  backup: true
 directories:
-  - name: "config"
-    path: "/etc/prometheus"
-    owner: "prometheus"
-    group: "prometheus"
-    mode: "0755"
-  - name: "data"
-    path: "/var/lib/prometheus"
-    owner: "prometheus"
-    group: "prometheus"
-    mode: "0755"
-
+- name: config
+  path: /etc/prometheus
+  owner: prometheus
+  group: prometheus
+  mode: '0755'
+- name: data
+  path: /var/lib/prometheus
+  owner: prometheus
+  group: prometheus
+  mode: '0755'
 commands:
-  - name: "prometheus"
-    path: "/usr/bin/prometheus"
-    shell_completion: false
-  - name: "promtool"
-    path: "/usr/bin/promtool"
-    shell_completion: false
-
+- name: prometheus
+  path: /usr/bin/prometheus
+  shell_completion: false
+- name: promtool
+  path: /usr/bin/promtool
+  shell_completion: false
 ports:
-  - port: 9090
-    protocol: "tcp"
-    service: "http"
-    description: "Prometheus web interface"
-  - port: 9093
-    protocol: "tcp"
-    service: "http"
-    description: "Alertmanager web interface"
-  - port: 9100
-    protocol: "tcp"
-    service: "http"
-    description: "Node exporter metrics"
-
+- port: 9090
+  protocol: tcp
+  service: http
+  description: Prometheus web interface
+- port: 9093
+  protocol: tcp
+  service: http
+  description: Alertmanager web interface
+- port: 9100
+  protocol: tcp
+  service: http
+  description: Node exporter metrics
 providers:
   apt:
     packages:
-      - name: "prometheus"
-        package_name: "prometheus"
-        version: "2.45.0"
-      - name: "node-exporter"
-        package_name: "prometheus-node-exporter"
-        version: "1.6.0"
-
+    - name: prometheus
+      package_name: prometheus
+    - name: node-exporter
+      package_name: prometheus-node-exporter
   dnf:
     packages:
-      - name: "prometheus"
-        package_name: "prometheus"
-        version: "2.45.0"
-
+    - name: prometheus
+      package_name: prometheus
   brew:
     packages:
-      - name: "prometheus"
-        package_name: "prometheus"
-        version: "2.45.0"
-
+    - name: prometheus
+      package_name: prometheus
   docker:
     containers:
-      - name: "prometheus"
-        image: "prom/prometheus"
-        tag: "v2.45.0"
-        registry: "docker.io"
-        ports: ["9090:9090"]
-      - name: "node-exporter"
-        image: "prom/node-exporter"
-        tag: "v1.6.0"
-        registry: "docker.io"
-        ports: ["9100:9100"]
-
+    - name: prometheus
+      image: prom/prometheus
+      tag: v2.45.0
+      registry: docker.io
+      ports:
+      - 9090:9090
+    - name: node-exporter
+      image: prom/node-exporter
+      tag: v1.6.0
+      registry: docker.io
+      ports:
+      - 9100:9100
   helm:
     repositories:
-      - name: "prometheus-community"
-        url: "https://prometheus-community.github.io/helm-charts"
-        type: "upstream"
-        packages:
-          - name: "prometheus"
-            package_name: "prometheus"
-
+    - name: prometheus-community
+      url: https://prometheus-community.github.io/helm-charts
+      type: upstream
+      packages:
+      - name: prometheus
+        package_name: prometheus
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: docker
+    platform:
+    - linux
+    - macos
+    - windows
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true

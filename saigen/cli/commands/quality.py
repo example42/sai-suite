@@ -31,9 +31,9 @@ from ...utils.config import get_config
 @click.option(
     "--format",
     "output_format",
-    type=click.Choice(["text", "json", "csv"]),
+    type=click.Choice(["text", "json", "csv", "score"]),
     default="text",
-    help="Output format",
+    help="Output format (score: just the numeric value)",
 )
 @click.option("--export", type=click.Path(path_type=Path), help="Export detailed report to file")
 def quality(
@@ -121,9 +121,11 @@ async def _run_quality_assessment(
             repository_manager = RepositoryManager(cache_dir, config_dir)
             await repository_manager.initialize()
 
-            click.echo("🔍 Initializing repository data...", err=True)
+            if output_format != "score":
+                click.echo("🔍 Initializing repository data...", err=True)
         except Exception as e:
-            click.echo(f"⚠️  Repository checking disabled: {e}", err=True)
+            if output_format != "score":
+                click.echo(f"⚠️  Repository checking disabled: {e}", err=True)
             check_repository_accuracy = False
 
     # Create advanced validator
@@ -131,7 +133,8 @@ async def _run_quality_assessment(
     advanced_validator = AdvancedSaidataValidator(repository_manager, base_validator)
 
     # Run quality assessment
-    click.echo("📊 Assessing quality metrics...", err=True)
+    if output_format != "score":
+        click.echo("📊 Assessing quality metrics...", err=True)
     quality_report = await advanced_validator.validate_comprehensive(
         saidata, check_repository_accuracy
     )
@@ -152,6 +155,9 @@ async def _run_quality_assessment(
     elif output_format == "csv":
         output = _format_csv_output(quality_report, file_path)
         result_text = output
+    elif output_format == "score":
+        output = _format_score_output(quality_report, metric_filter)
+        result_text = output
     else:
         output = _format_text_output(quality_report, file_path, threshold, metric_filter)
         result_text = output
@@ -168,7 +174,8 @@ async def _run_quality_assessment(
                 json.dump(json.loads(result_text), f, indent=2)
             else:
                 f.write(result_text)
-        click.echo(f"📄 Report exported to {export_path}", err=True)
+        if output_format != "score":
+            click.echo(f"📄 Report exported to {export_path}", err=True)
 
     # Clean up
     if repository_manager:
@@ -230,6 +237,18 @@ def _format_csv_output(quality_report, file_path: Path) -> str:
         )
 
     return "\n".join(lines)
+
+
+def _format_score_output(quality_report, metric_filter: Optional[str]) -> str:
+    """Format quality report as just the score value."""
+    if metric_filter:
+        # If filtering by specific metric, show that metric's score
+        metric_enum = QualityMetric(metric_filter)
+        score = quality_report.metric_scores[metric_enum]
+        return f"{score.score:.3f}"
+    else:
+        # Show overall score
+        return f"{quality_report.overall_score:.3f}"
 
 
 def _format_text_output(

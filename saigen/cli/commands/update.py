@@ -144,24 +144,23 @@ def update(
 
         # Determine LLM provider
         if llm_provider:
-            try:
-                provider_enum = LLMProvider(llm_provider)
-            except ValueError:
+            # Validate that the provider exists in config
+            if not config.llm_providers or llm_provider not in config.llm_providers:
+                available = list(config.llm_providers.keys()) if config.llm_providers else []
                 click.echo(
-                    f"Error: Invalid LLM provider '{llm_provider}'. Available: {[p.value for p in LLMProvider]}",
+                    f"Error: Invalid LLM provider '{llm_provider}'. "
+                    f"Available providers: {', '.join(available) if available else 'none configured'}",
                     err=True,
                 )
                 ctx.exit(1)
+            provider_name = llm_provider
         else:
             # Use default from config or fallback
             if hasattr(config, "llm_providers") and config.llm_providers:
                 first_provider = next(iter(config.llm_providers.keys()), "openai")
-                try:
-                    provider_enum = LLMProvider(first_provider)
-                except ValueError:
-                    provider_enum = LLMProvider.OPENAI
+                provider_name = first_provider
             else:
-                provider_enum = LLMProvider.OPENAI
+                provider_name = "openai"
 
         # Create update request
         target_providers_list = list(providers) if providers else []
@@ -172,7 +171,7 @@ def update(
                 request = GenerationRequest(
                     software_name=existing_saidata.metadata.name,
                     target_providers=target_providers_list,
-                    llm_provider=provider_enum,
+                    llm_provider=provider_name,
                     use_rag=not no_rag,
                     generation_mode=GenerationMode.CREATE,
                     existing_saidata=None,  # Don't use existing data for force update
@@ -191,7 +190,7 @@ def update(
                 return await update_engine.update_saidata(
                     existing_saidata=existing_saidata,
                     target_providers=target_providers_list,
-                    llm_provider=provider_enum,
+                    llm_provider=provider_name,
                     use_rag=not no_rag,
                     merge_strategy=merge_strategy,
                     interactive=interactive,
@@ -202,7 +201,9 @@ def update(
         if result.success:
             # Save updated saidata
             async def save_result():
-                await generation_engine.save_saidata(result.saidata, output_path)
+                # Get model name from the result
+                model_name = generation_engine._get_model_name(result.llm_provider_used)
+                await generation_engine.save_saidata(result.saidata, output_path, model_name=model_name)
 
             asyncio.run(save_result())
 

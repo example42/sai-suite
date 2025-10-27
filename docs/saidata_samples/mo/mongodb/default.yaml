@@ -1,182 +1,197 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "mongodb"
-  display_name: "MongoDB"
-  description: "Document-oriented NoSQL database program"
-  version: "7.0.0"
-  category: "database"
-  subcategory: "nosql"
-  tags: ["mongodb", "database", "nosql", "document", "json", "bson"]
-  license: "SSPL-1.0"
-  language: "C++"
-  maintainer: "MongoDB Inc."
+  name: mongodb
+  display_name: MongoDB
+  description: Document-oriented NoSQL database program
+  version: 7.0.0
+  category: database
+  subcategory: nosql
+  tags:
+  - mongodb
+  - database
+  - nosql
+  - document
+  - json
+  - bson
+  license: SSPL-1.0
+  language: C++
+  maintainer: MongoDB Inc.
   urls:
-    website: "https://www.mongodb.com"
-    documentation: "https://docs.mongodb.com"
-    source: "https://github.com/mongodb/mongo"
-    issues: "https://jira.mongodb.org"
-    support: "https://www.mongodb.com/support"
-    download: "https://www.mongodb.com/try/download/community"
-    changelog: "https://docs.mongodb.com/manual/release-notes"
-    license: "https://github.com/mongodb/mongo/blob/master/LICENSE-Community.txt"
+    website: https://www.mongodb.com
+    documentation: https://docs.mongodb.com
+    source: https://github.com/mongodb/mongo
+    issues: https://jira.mongodb.org
+    support: https://www.mongodb.com/support
+    download: https://www.mongodb.com/try/download/community
+    changelog: https://docs.mongodb.com/manual/release-notes
+    license: https://github.com/mongodb/mongo/blob/master/LICENSE-Community.txt
   security:
-    security_contact: "security@mongodb.com"
-    vulnerability_disclosure: "https://www.mongodb.com/vulnerability-disclosure-policy"
-
+    security_contact: security@mongodb.com
+    vulnerability_disclosure: https://www.mongodb.com/vulnerability-disclosure-policy
 packages:
-  - name: "server"
-    package_name: "mongodb-org-server"
-    version: "7.0.0"
-    alternatives: ["mongod"]
-  - name: "shell"
-    package_name: "mongodb-org-shell"
-    version: "7.0.0"
-    alternatives: ["mongosh"]
-  - name: "tools"
-    package_name: "mongodb-org-tools"
-    version: "7.0.0"
-
+- name: server
+  package_name: mongodb-org-server
+  version: 7.0.0
+  alternatives:
+  - mongod
+- name: shell
+  package_name: mongodb-org-shell
+  version: 7.0.0
+  alternatives:
+  - mongosh
+- name: tools
+  package_name: mongodb-org-tools
+  version: 7.0.0
 services:
-  - name: "mongod"
-    service_name: "mongod"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/mongod.conf"]
-
+- name: mongod
+  service_name: mongod
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/mongod.conf
 files:
-  - name: "config"
-    path: "/etc/mongod.conf"
-    type: "config"
-    owner: "root"
-    group: "root"
-    mode: "0644"
-    backup: true
-
+- name: config
+  path: /etc/mongod.conf
+  type: config
+  owner: root
+  group: root
+  mode: '0644'
+  backup: true
 directories:
-  - name: "data"
-    path: "/var/lib/mongodb"
-    owner: "mongodb"
-    group: "mongodb"
-    mode: "0755"
-  - name: "log"
-    path: "/var/log/mongodb"
-    owner: "mongodb"
-    group: "mongodb"
-    mode: "0755"
-
+- name: data
+  path: /var/lib/mongodb
+  owner: mongodb
+  group: mongodb
+  mode: '0755'
+- name: log
+  path: /var/log/mongodb
+  owner: mongodb
+  group: mongodb
+  mode: '0755'
 commands:
-  - name: "mongod"
-    path: "/usr/bin/mongod"
-    shell_completion: false
-    man_page: "mongod(1)"
-  - name: "mongosh"
-    path: "/usr/bin/mongosh"
-    shell_completion: true
-    man_page: "mongosh(1)"
-
+- name: mongod
+  path: /usr/bin/mongod
+  shell_completion: false
+  man_page: mongod(1)
+- name: mongosh
+  path: /usr/bin/mongosh
+  shell_completion: true
+  man_page: mongosh(1)
 ports:
-  - port: 27017
-    protocol: "tcp"
-    service: "mongodb"
-    description: "MongoDB server"
-
+- port: 27017
+  protocol: tcp
+  service: mongodb
+  description: MongoDB server
 providers:
   apt:
     repositories:
-      - name: "mongodb-official"
-        url: "https://repo.mongodb.org/apt/ubuntu"
-        key: "https://www.mongodb.org/static/pgp/server-7.0.asc"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "server"
-            package_name: "mongodb-org-server"
-            version: "7.0.0"
-            alternatives: ["mongodb-org-server"]
-          - name: "shell"
-            package_name: "mongodb-mongosh"
-            version: "7.0.0"
-            alternatives: ["mongodb-mongosh"]
-          - name: "tools"
-            package_name: "mongodb-org-tools"
-            version: "7.0.0"
-            alternatives: ["mongodb-org-tools"]
-      - name: "ubuntu-default"
-        type: "os-default"
-        packages:
-          - name: "server"
-            package_name: "mongodb"
-            alternatives: ["mongodb"]
-
+    - name: mongodb-official
+      url: https://repo.mongodb.org/apt/ubuntu
+      key: https://www.mongodb.org/static/pgp/server-7.0.asc
+      type: upstream
+      recommended: true
+      packages:
+      - name: server
+        package_name: mongodb-org-server
+        alternatives:
+        - mongodb-org-server
+      - name: shell
+        package_name: mongodb-mongosh
+        alternatives:
+        - mongodb-mongosh
+      - name: tools
+        package_name: mongodb-org-tools
+        alternatives:
+        - mongodb-org-tools
+    - name: ubuntu-default
+      type: os-default
+      packages:
+      - name: server
+        package_name: mongodb
+        alternatives:
+        - mongodb
   dnf:
     repositories:
-      - name: "mongodb-official"
-        url: "https://repo.mongodb.org/yum/redhat/8/mongodb-org/7.0"
-        key: "https://www.mongodb.org/static/pgp/server-7.0.asc"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "server"
-            package_name: "mongodb-org-server"
-            version: "7.0.0"
-            alternatives: ["mongodb-org-server"]
-          - name: "shell"
-            package_name: "mongodb-mongosh"
-            version: "7.0.0"
-            alternatives: ["mongodb-mongosh"]
-          - name: "tools"
-            package_name: "mongodb-org-tools"
-            version: "7.0.0"
-            alternatives: ["mongodb-org-tools"]
-
+    - name: mongodb-official
+      url: https://repo.mongodb.org/yum/redhat/8/mongodb-org/7.0
+      key: https://www.mongodb.org/static/pgp/server-7.0.asc
+      type: upstream
+      recommended: true
+      packages:
+      - name: server
+        package_name: mongodb-org-server
+        alternatives:
+        - mongodb-org-server
+      - name: shell
+        package_name: mongodb-mongosh
+        alternatives:
+        - mongodb-mongosh
+      - name: tools
+        package_name: mongodb-org-tools
+        alternatives:
+        - mongodb-org-tools
   brew:
     packages:
-      - name: "server"
-        package_name: "mongodb-community"
-        version: "7.0.0"
-        alternatives: ["mongodb-community@7.0"]
-        recommended: true
-
+    - name: server
+      package_name: mongodb-community
+      alternatives:
+      - mongodb-community@7.0
+      recommended: true
   choco:
     packages:
-      - name: "server"
-        package_name: "mongodb"
-        version: "7.0.0"
-        alternatives: ["mongodb"]
-
+    - name: server
+      package_name: mongodb
+      alternatives:
+      - mongodb
   helm:
     repositories:
-      - name: "bitnami"
-        url: "https://charts.bitnami.com/bitnami"
-        type: "third-party"
-        packages:
-          - name: "mongodb"
-            package_name: "mongodb"
-            alternatives: ["mongodb"]
-
+    - name: bitnami
+      url: https://charts.bitnami.com/bitnami
+      type: third-party
+      packages:
+      - name: mongodb
+        package_name: mongodb
+        alternatives:
+        - mongodb
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "choco"
-      platform: "windows"
-      architecture: ["amd64"]
-      supported: true
-    - provider: "helm"
-      platform: ["linux"]
-      architecture: ["amd64", "arm64"]
-      supported: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: choco
+    platform: windows
+    architecture:
+    - amd64
+    supported: true
+  - provider: helm
+    platform:
+    - linux
+    architecture:
+    - amd64
+    - arm64
+    supported: true

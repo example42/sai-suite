@@ -1,0 +1,35 @@
+version: '1.0'
+repositories:
+- name: flathub
+  type: flatpak
+  platform: linux
+  distribution:
+  - universal
+  architecture:
+  - x86_64
+  - aarch64
+  endpoints:
+    packages: https://flathub.org/api/v2/appstream
+    search: https://flathub.org/api/v1/apps/search/{query}
+    info: https://flathub.org/api/v1/apps/{package}
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: flatpakAppId
+      version: currentReleaseVersion
+      description: summary
+      homepage: projectLicense
+      category: categories
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Flathub Repository
+    maintainer: Flathub
+    priority: 70
+    enabled: true
+    official: true
+    url: https://flathub.org
+  eol: false
+  query_type: api

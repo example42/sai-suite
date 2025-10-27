@@ -115,6 +115,42 @@
             ]
           }
         },
+        "version_mapping": {
+          "type": "object",
+          "description": "Maps OS version string to distribution codename for this specific repository",
+          "patternProperties": {
+            "^[0-9.]+$": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            }
+          },
+          "additionalProperties": false,
+          "examples": [
+            {
+              "22.04": "jammy"
+            },
+            {
+              "11": "bullseye"
+            },
+            {
+              "39": "f39"
+            }
+          ]
+        },
+        "eol": {
+          "type": "boolean",
+          "description": "Indicates if this is an end-of-life OS version/repository",
+          "default": false
+        },
+        "query_type": {
+          "type": "string",
+          "description": "Method for querying packages from this repository",
+          "enum": [
+            "bulk_download",
+            "api"
+          ],
+          "default": "bulk_download"
+        },
         "endpoints": {
           "$ref": "#/definitions/Endpoints"
         },
@@ -331,6 +367,12 @@
           "type": "boolean",
           "description": "Whether caching is enabled",
           "default": true
+        },
+        "api_cache_ttl_seconds": {
+          "type": "integer",
+          "description": "API response cache TTL in seconds (for API-based repositories)",
+          "minimum": 1,
+          "default": 3600
         }
       },
       "additionalProperties": false
@@ -361,6 +403,23 @@
           "description": "Maximum concurrent requests",
           "minimum": 1,
           "default": 10
+        },
+        "max_retries": {
+          "type": "integer",
+          "description": "Maximum number of retry attempts for failed requests",
+          "minimum": 0,
+          "default": 3
+        },
+        "retry_delay_seconds": {
+          "type": "integer",
+          "description": "Initial delay between retries in seconds",
+          "minimum": 1,
+          "default": 1
+        },
+        "exponential_backoff": {
+          "type": "boolean",
+          "description": "Whether to use exponential backoff for retries",
+          "default": true
         }
       },
       "additionalProperties": false

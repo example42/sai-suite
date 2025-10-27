@@ -2,7 +2,7 @@
 
 Understanding when to use each tool will help you choose the right installation and workflow for your needs.
 
-## SAI - Software Action Interface
+## SAI
 
 ### What It Does
 SAI executes software management actions using provider-based configurations and saidata files.

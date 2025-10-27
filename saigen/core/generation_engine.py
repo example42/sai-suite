@@ -231,6 +231,19 @@ class GenerationEngine:
                     llm_response.content, request.software_name, context, provider_name
                 )
 
+            # Add generation metadata
+            from datetime import datetime, timezone
+
+            from ..models.saidata import SaidataMetadata
+
+            if not saidata.saidata:
+                saidata.saidata = SaidataMetadata()
+
+            # Get model name from config (always returns a non-empty string)
+            model_name = self._get_model_name(provider_name)
+            saidata.saidata.model = model_name
+            saidata.saidata.generation_date = datetime.now(timezone.utc).isoformat()
+
             # Apply URL validation filter if enabled
             if self.enable_url_filter:
                 if self.logger:
@@ -243,6 +256,10 @@ class GenerationEngine:
             self._update_metrics(llm_response)
 
             generation_time = time.time() - start_time
+
+            # Add generation time to metadata
+            if saidata.saidata:
+                saidata.saidata.generation_time = round(generation_time, 2)
 
             result = GenerationResult(
                 success=True,
@@ -1228,12 +1245,44 @@ class GenerationEngine:
         if llm_response.cost_estimate:
             self._total_cost += llm_response.cost_estimate
 
-    async def save_saidata(self, saidata: SaiData, output_path: Path) -> None:
+    def _get_model_name(self, provider_name: str) -> str:
+        """Get the model name for a given provider.
+
+        Args:
+            provider_name: Name of the LLM provider
+
+        Returns:
+            Model name or provider name if model not found
+        """
+        # Try to get from config
+        if self.config and "llm_providers" in self.config:
+            llm_providers = self.config["llm_providers"]
+            if provider_name in llm_providers:
+                provider_config = llm_providers[provider_name]
+                if isinstance(provider_config, dict) and "model" in provider_config:
+                    model = provider_config["model"]
+                    if model:  # Only return if not None or empty
+                        return model
+
+        # Try from config object
+        if self.config_obj and hasattr(self.config_obj, "llm_providers"):
+            if provider_name in self.config_obj.llm_providers:
+                provider_config = self.config_obj.llm_providers[provider_name]
+                if hasattr(provider_config, "model") and provider_config.model:
+                    return provider_config.model
+
+        # Fallback to provider name (always return something)
+        return provider_name if provider_name else "unknown"
+
+    async def save_saidata(
+        self, saidata: SaiData, output_path: Path, model_name: Optional[str] = None
+    ) -> None:
         """Save saidata to file.
 
         Args:
             saidata: SaiData instance to save
             output_path: Path to save the file
+            model_name: Name of the LLM model used for generation (optional)
 
         Raises:
             GenerationEngineError: If saving fails
@@ -1245,6 +1294,17 @@ class GenerationEngine:
                 ) as log_output:
                     # Ensure output directory exists
                     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    # Add generation metadata if model_name is provided
+                    if model_name:
+                        from datetime import datetime, timezone
+
+                        from ..models.saidata import SaidataMetadata
+
+                        if not saidata.saidata:
+                            saidata.saidata = SaidataMetadata()
+                        saidata.saidata.model = model_name
+                        saidata.saidata.generation_date = datetime.now(timezone.utc).isoformat()
 
                     # Convert to dict and save as YAML
                     data = saidata.model_dump(exclude_none=True)
@@ -1259,11 +1319,23 @@ class GenerationEngine:
                             "output_path": str(output_path),
                             "file_size_bytes": file_size,
                             "providers_count": len(saidata.providers) if saidata.providers else 0,
+                            "model_name": model_name,
                         }
                     )
             else:
                 # Ensure output directory exists
                 output_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Add generation metadata if model_name is provided
+                if model_name:
+                    from datetime import datetime, timezone
+
+                    from ..models.saidata import SaidataMetadata
+
+                    if not saidata.saidata:
+                        saidata.saidata = SaidataMetadata()
+                    saidata.saidata.model = model_name
+                    saidata.saidata.generation_date = datetime.now(timezone.utc).isoformat()
 
                 # Convert to dict and save as YAML
                 data = saidata.model_dump(exclude_none=True)

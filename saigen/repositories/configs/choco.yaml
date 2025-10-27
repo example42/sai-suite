@@ -1,0 +1,39 @@
+version: '1.0'
+repositories:
+- name: choco-windows
+  type: choco
+  platform: windows
+  distribution:
+  - windows
+  architecture:
+  - x64
+  - x86
+  endpoints:
+    packages: https://community.chocolatey.org/api/v2/Packages
+    search: https://community.chocolatey.org/api/v2/Packages?$filter=substringof('{query}',tolower(Id))
+    info: https://community.chocolatey.org/api/v2/Packages?$filter=Id%20eq%20'{package}'
+  parsing:
+    format: xml
+    encoding: utf-8
+    patterns:
+      package_xpath: .//entry
+    fields:
+      name: title
+      version: properties/Version
+      description: summary
+      homepage: properties/ProjectUrl
+      license: properties/LicenseUrl
+      maintainer: author/name
+      tags: properties/Tags
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: Chocolatey Community Repository
+    maintainer: Chocolatey Software
+    priority: 85
+    enabled: true
+    official: true
+    url: https://community.chocolatey.org
+  eol: false
+  query_type: api

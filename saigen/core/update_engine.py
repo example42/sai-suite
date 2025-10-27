@@ -89,7 +89,7 @@ class UpdateEngine:
         self,
         existing_saidata: SaiData,
         target_providers: List[str] = None,
-        llm_provider: LLMProvider = LLMProvider.OPENAI,
+        llm_provider: str = "openai",
         use_rag: bool = True,
         merge_strategy: str = "enhance",
         interactive: bool = False,
@@ -100,7 +100,7 @@ class UpdateEngine:
         Args:
             existing_saidata: Current saidata to update
             target_providers: Target providers for updated saidata
-            llm_provider: LLM provider to use
+            llm_provider: LLM provider name from config (e.g., 'openai', 'ollama_qwen3')
             use_rag: Whether to use RAG for context
             merge_strategy: Strategy for merging data
             interactive: Whether to prompt for conflict resolution

@@ -125,7 +125,7 @@
       "properties": {
         "name": { "type": "string" },
         "service_name": { "type": "string" },
-        "type": { "type": "string", "enum": ["systemd", "init", "launchd", "windows_service", "docker", "kubernetes"] },
+        "type": { "type": "string", "enum": ["systemd", "init", "launchd", "windows_service", "docker", "kubernetes", "none"] },
         "enabled": { "type": "boolean" },
         "config_files": { "type": "array", "items": { "type": "string" } }
       },

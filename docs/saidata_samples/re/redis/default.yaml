@@ -1,152 +1,165 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "redis"
-  display_name: "Redis"
-  description: "In-memory data structure store used as database, cache, and message broker"
-  version: "7.0.12"
-  category: "database"
-  subcategory: "nosql"
-  tags: ["redis", "cache", "database", "nosql", "in-memory", "key-value"]
-  license: "BSD-3-Clause"
-  language: "C"
-  maintainer: "Redis Ltd."
+  name: redis
+  display_name: Redis
+  description: In-memory data structure store used as database, cache, and message broker
+  version: 7.0.12
+  category: database
+  subcategory: nosql
+  tags:
+  - redis
+  - cache
+  - database
+  - nosql
+  - in-memory
+  - key-value
+  license: BSD-3-Clause
+  language: C
+  maintainer: Redis Ltd.
   urls:
-    website: "https://redis.io"
-    documentation: "https://redis.io/docs"
-    source: "https://github.com/redis/redis"
-    issues: "https://github.com/redis/redis/issues"
-    support: "https://redis.io/support"
-    download: "https://redis.io/download"
-    changelog: "https://github.com/redis/redis/releases"
-    license: "https://github.com/redis/redis/blob/unstable/COPYING"
+    website: https://redis.io
+    documentation: https://redis.io/docs
+    source: https://github.com/redis/redis
+    issues: https://github.com/redis/redis/issues
+    support: https://redis.io/support
+    download: https://redis.io/download
+    changelog: https://github.com/redis/redis/releases
+    license: https://github.com/redis/redis/blob/unstable/COPYING
   security:
-    security_contact: "security@redis.io"
-    vulnerability_disclosure: "https://redis.io/security"
-
+    security_contact: security@redis.io
+    vulnerability_disclosure: https://redis.io/security
 packages:
-  - name: "redis"
-    package_name: "redis"
-    version: "7.0.12"
-    alternatives: ["redis-server", "redis-tools"]
-
+- name: redis
+  package_name: redis
+  version: 7.0.12
+  alternatives:
+  - redis-server
+  - redis-tools
 services:
-  - name: "redis"
-    service_name: "redis-server"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/redis/redis.conf"]
-
+- name: redis
+  service_name: redis-server
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/redis/redis.conf
 files:
-  - name: "config"
-    path: "/etc/redis/redis.conf"
-    type: "config"
-    owner: "redis"
-    group: "redis"
-    mode: "0640"
-    backup: true
-  - name: "log"
-    path: "/var/log/redis/redis-server.log"
-    type: "log"
-    owner: "redis"
-    group: "redis"
-    mode: "0640"
-
+- name: config
+  path: /etc/redis/redis.conf
+  type: config
+  owner: redis
+  group: redis
+  mode: '0640'
+  backup: true
+- name: log
+  path: /var/log/redis/redis-server.log
+  type: log
+  owner: redis
+  group: redis
+  mode: '0640'
 directories:
-  - name: "data"
-    path: "/var/lib/redis"
-    owner: "redis"
-    group: "redis"
-    mode: "0750"
-  - name: "log"
-    path: "/var/log/redis"
-    owner: "redis"
-    group: "redis"
-    mode: "0750"
-
+- name: data
+  path: /var/lib/redis
+  owner: redis
+  group: redis
+  mode: '0750'
+- name: log
+  path: /var/log/redis
+  owner: redis
+  group: redis
+  mode: '0750'
 commands:
-  - name: "redis-server"
-    path: "/usr/bin/redis-server"
-    shell_completion: false
-    man_page: "redis-server(1)"
-  - name: "redis-cli"
-    path: "/usr/bin/redis-cli"
-    shell_completion: true
-    man_page: "redis-cli(1)"
-
+- name: redis-server
+  path: /usr/bin/redis-server
+  shell_completion: false
+  man_page: redis-server(1)
+- name: redis-cli
+  path: /usr/bin/redis-cli
+  shell_completion: true
+  man_page: redis-cli(1)
 ports:
-  - port: 6379
-    protocol: "tcp"
-    service: "redis"
-    description: "Redis server"
-
+- port: 6379
+  protocol: tcp
+  service: redis
+  description: Redis server
 providers:
   apt:
     packages:
-      - name: "redis"
-        package_name: "redis-server"
-        version: "7.0.12"
-        alternatives: ["redis"]
-
+    - name: redis
+      package_name: redis-server
+      alternatives:
+      - redis
   dnf:
     packages:
-      - name: "redis"
-        package_name: "redis"
-        version: "7.0.12"
-
+    - name: redis
+      package_name: redis
   brew:
     packages:
-      - name: "redis"
-        package_name: "redis"
-        version: "7.0.12"
-
+    - name: redis
+      package_name: redis
   choco:
     packages:
-      - name: "redis"
-        package_name: "redis"
-        version: "7.0.12"
-
+    - name: redis
+      package_name: redis
   docker:
     containers:
-      - name: "redis"
-        image: "redis"
-        tag: "7.0.12"
-        registry: "docker.io"
-        ports: ["6379:6379"]
-        volumes: ["/data:/data"]
-
+    - name: redis
+      image: redis
+      tag: 7.0.12
+      registry: docker.io
+      ports:
+      - 6379:6379
+      volumes:
+      - /data:/data
   helm:
     repositories:
-      - name: "bitnami"
-        url: "https://charts.bitnami.com/bitnami"
-        type: "third-party"
-        packages:
-          - name: "redis"
-            package_name: "redis"
-
+    - name: bitnami
+      url: https://charts.bitnami.com/bitnami
+      type: third-party
+      packages:
+      - name: redis
+        package_name: redis
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "choco"
-      platform: "windows"
-      architecture: ["amd64"]
-      supported: true
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: choco
+    platform: windows
+    architecture:
+    - amd64
+    supported: true
+  - provider: docker
+    platform:
+    - linux
+    - macos
+    - windows
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true

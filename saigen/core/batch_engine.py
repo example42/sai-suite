@@ -300,7 +300,11 @@ class BatchGenerationEngine:
                     # Save to file if successful and output directory specified
                     if result.success and result.saidata and request.output_directory:
                         output_path = self._get_output_path(software_name, request.output_directory)
-                        await self.generation_engine.save_saidata(result.saidata, output_path)
+                        # Get model name from the result
+                        model_name = self.generation_engine._get_model_name(result.llm_provider_used)
+                        await self.generation_engine.save_saidata(
+                            result.saidata, output_path, model_name=model_name
+                        )
 
                     # Update progress
                     progress_reporter.update(result.success, software_name)

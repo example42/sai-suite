@@ -53,6 +53,50 @@ Demonstrates working with sample data and fixtures.
 python scripts/development/saigen/sample_data_demo.py
 ```
 
+### compare-llm-providers.sh
+Compares saidata generation quality across different LLM providers (Ollama, Claude, OpenAI).
+
+**Features:**
+- Batch generates saidata using multiple LLM providers
+- Runs quality assessment on all generated files
+- Creates organized output directories per provider
+- Generates comprehensive comparison report
+- Highlights best results for each software
+
+**Usage:**
+```bash
+./scripts/development/saigen/compare-llm-providers.sh <software-list-file>
+
+# Example with sample list
+./scripts/development/saigen/compare-llm-providers.sh scripts/development/saigen/software-list-sample.txt
+
+# Custom output directory
+OUTPUT_BASE_DIR=/tmp/llm-test ./scripts/development/saigen/compare-llm-providers.sh software-list.txt
+```
+
+**Software List Format:**
+```
+# Comments start with #
+nginx
+redis
+postgresql
+```
+
+**Output Structure:**
+```
+llm-comparison-YYYYMMDD-HHMMSS/
+├── ollama/
+│   ├── nginx.yaml
+│   └── quality-report.json
+├── claude/
+│   ├── nginx.yaml
+│   └── quality-report.json
+├── openai/
+│   ├── nginx.yaml
+│   └── quality-report.json
+└── comparison-report.md
+```
+
 ### start-vllm-dgx.sh
 Starts vLLM server optimized for NVIDIA GB10 (Grace Blackwell) systems.
 

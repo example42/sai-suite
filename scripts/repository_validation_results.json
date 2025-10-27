@@ -1,0 +1,1469 @@
+{
+  "validation": {
+    "total_repos": 65,
+    "valid_repos": 65,
+    "invalid_repos": 0,
+    "warnings": [
+      "[WARNING] apk-alpine-3.18: version_mapping value 'v3.18' should be lowercase alphanumeric",
+      "[WARNING] apk-alpine-3.19: version_mapping value 'v3.19' should be lowercase alphanumeric",
+      "[WARNING] brew-macos: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] brew-cask-macos: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] crates-io: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] choco-windows: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] choco-windows: API repo should have rate limiting configuration",
+      "[WARNING] packagist: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] packagist: parsing.fields not defined",
+      "[WARNING] packagist: API repo should have rate limiting configuration",
+      "[WARNING] emerge-gentoo: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] emerge-gentoo: API repo should have rate limiting configuration",
+      "[WARNING] apt-ubuntu-jammy: parsing.fields not defined",
+      "[WARNING] apt-ubuntu-focal: parsing.fields not defined",
+      "[WARNING] flathub: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] flathub: API repo should have rate limiting configuration",
+      "[WARNING] rubygems: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] rubygems: API repo should have rate limiting configuration",
+      "[WARNING] maven-central: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] maven-central: API repo should have rate limiting configuration",
+      "[WARNING] nix-nixos: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] nix-nixos: API repo missing recommended limits: concurrent_requests",
+      "[WARNING] npm-registry: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] nuget-org: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] nuget-org: API repo should have rate limiting configuration",
+      "[WARNING] pacman-arch: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] pacman-arch: API repo should have rate limiting configuration",
+      "[WARNING] pypi: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] conda-forge: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] snapcraft: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] snapcraft: API repo should have rate limiting configuration",
+      "[WARNING] winget-windows: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] winget-windows: API repo missing recommended limits: concurrent_requests",
+      "[WARNING] msstore-windows: No version_mapping defined (OS-specific queries not supported)",
+      "[WARNING] msstore-windows: API repo should have rate limiting configuration",
+      "[WARNING] zypper-opensuse-tumbleweed: version_mapping key 'tumbleweed' should be numeric (e.g., '22.04', '11')"
+    ],
+    "errors": [],
+    "endpoint_tests": [],
+    "eol_repos": [
+      "apt-debian-stretch",
+      "dnf-rhel-7",
+      "dnf-centos-stream-8",
+      "apt-ubuntu-focal",
+      "zypper-sles-12"
+    ]
+  },
+  "endpoint_tests": [
+    {
+      "repo": "apk-alpine-3.18",
+      "endpoint_type": "packages",
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.18/main/amd64/APKINDEX.tar.gz",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.0919179916381836,
+      "error": null
+    },
+    {
+      "repo": "apk-alpine-3.18",
+      "endpoint_type": "search",
+      "url": "https://pkgs.alpinelinux.org/packages?name=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.2146759033203125,
+      "error": null
+    },
+    {
+      "repo": "apk-alpine-3.19",
+      "endpoint_type": "packages",
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.19/main/amd64/APKINDEX.tar.gz",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.06713414192199707,
+      "error": null
+    },
+    {
+      "repo": "apk-alpine-3.19",
+      "endpoint_type": "search",
+      "url": "https://pkgs.alpinelinux.org/packages?name=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.09441924095153809,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-focal",
+      "endpoint_type": "packages",
+      "url": "http://archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.09736180305480957,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-focal",
+      "endpoint_type": "search",
+      "url": "https://packages.ubuntu.com/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.20215106010437012,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-focal",
+      "endpoint_type": "info",
+      "url": "https://packages.ubuntu.com/focal/test",
+      "status": "error",
+      "status_code": 500,
+      "response_time": 0.11339807510375977,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-jammy",
+      "endpoint_type": "packages",
+      "url": "http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.03254818916320801,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-jammy",
+      "endpoint_type": "search",
+      "url": "https://packages.ubuntu.com/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.19493508338928223,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-jammy",
+      "endpoint_type": "info",
+      "url": "https://packages.ubuntu.com/jammy/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.12992596626281738,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-noble",
+      "endpoint_type": "packages",
+      "url": "http://archive.ubuntu.com/ubuntu/dists/noble/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.03178095817565918,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-noble",
+      "endpoint_type": "search",
+      "url": "https://packages.ubuntu.com/search?keywords=test",
+      "status": "error",
+      "status_code": 500,
+      "response_time": 0.10604715347290039,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-noble",
+      "endpoint_type": "info",
+      "url": "https://packages.ubuntu.com/noble/test",
+      "status": "error",
+      "status_code": 500,
+      "response_time": 0.1077260971069336,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-oracular",
+      "endpoint_type": "packages",
+      "url": "http://archive.ubuntu.com/ubuntu/dists/oracular/main/binary-amd64/Packages.gz",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.031308889389038086,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-oracular",
+      "endpoint_type": "search",
+      "url": "https://packages.ubuntu.com/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.18708395957946777,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-oracular",
+      "endpoint_type": "info",
+      "url": "https://packages.ubuntu.com/oracular/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.12745189666748047,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-stretch",
+      "endpoint_type": "packages",
+      "url": "http://archive.debian.org/debian/dists/stretch/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.033529043197631836,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-stretch",
+      "endpoint_type": "search",
+      "url": "https://packages.debian.org/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.22347593307495117,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-stretch",
+      "endpoint_type": "info",
+      "url": "https://packages.debian.org/stretch/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.29496192932128906,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-buster",
+      "endpoint_type": "packages",
+      "url": "http://deb.debian.org/debian/dists/buster/main/binary-amd64/Packages.gz",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.05024600028991699,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-buster",
+      "endpoint_type": "search",
+      "url": "https://packages.debian.org/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.12360715866088867,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-buster",
+      "endpoint_type": "info",
+      "url": "https://packages.debian.org/buster/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.07961487770080566,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-bullseye",
+      "endpoint_type": "packages",
+      "url": "http://deb.debian.org/debian/dists/bullseye/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.02838301658630371,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-bullseye",
+      "endpoint_type": "search",
+      "url": "https://packages.debian.org/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.08756518363952637,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-bullseye",
+      "endpoint_type": "info",
+      "url": "https://packages.debian.org/bullseye/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.14440321922302246,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-bookworm",
+      "endpoint_type": "packages",
+      "url": "http://deb.debian.org/debian/dists/bookworm/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.027699947357177734,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-bookworm",
+      "endpoint_type": "search",
+      "url": "https://packages.debian.org/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.3429279327392578,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-bookworm",
+      "endpoint_type": "info",
+      "url": "https://packages.debian.org/bookworm/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.059699296951293945,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-trixie",
+      "endpoint_type": "packages",
+      "url": "http://deb.debian.org/debian/dists/trixie/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.028912782669067383,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-trixie",
+      "endpoint_type": "search",
+      "url": "https://packages.debian.org/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.1790311336517334,
+      "error": null
+    },
+    {
+      "repo": "apt-debian-trixie",
+      "endpoint_type": "info",
+      "url": "https://packages.debian.org/trixie/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.3360912799835205,
+      "error": null
+    },
+    {
+      "repo": "apt-mint-22",
+      "endpoint_type": "packages",
+      "url": "http://packages.linuxmint.com/dists/wilma/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.25263309478759766,
+      "error": null
+    },
+    {
+      "repo": "apt-mint-22",
+      "endpoint_type": "search",
+      "url": "https://community.linuxmint.com/software/search?q=test",
+      "status": "error",
+      "status_code": 400,
+      "response_time": 0.2647721767425537,
+      "error": null
+    },
+    {
+      "repo": "apt-mint-22",
+      "endpoint_type": "info",
+      "url": "http://packages.linuxmint.com/pool/main/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.11957311630249023,
+      "error": null
+    },
+    {
+      "repo": "brew-macos",
+      "endpoint_type": "packages",
+      "url": "https://formulae.brew.sh/api/formula.json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.16093182563781738,
+      "error": null
+    },
+    {
+      "repo": "brew-macos",
+      "endpoint_type": "search",
+      "url": "https://formulae.brew.sh/api/formula/test.json",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.12788796424865723,
+      "error": null
+    },
+    {
+      "repo": "brew-macos",
+      "endpoint_type": "info",
+      "url": "https://formulae.brew.sh/api/formula/test.json",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.009760856628417969,
+      "error": null
+    },
+    {
+      "repo": "brew-cask-macos",
+      "endpoint_type": "packages",
+      "url": "https://formulae.brew.sh/api/cask.json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.009376049041748047,
+      "error": null
+    },
+    {
+      "repo": "brew-cask-macos",
+      "endpoint_type": "search",
+      "url": "https://formulae.brew.sh/api/cask/test.json",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.12362504005432129,
+      "error": null
+    },
+    {
+      "repo": "brew-cask-macos",
+      "endpoint_type": "info",
+      "url": "https://formulae.brew.sh/api/cask/test.json",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.011107683181762695,
+      "error": null
+    },
+    {
+      "repo": "crates-io",
+      "endpoint_type": "packages",
+      "url": "https://crates.io/api/v1/crates?page=1&per_page=100&sort=alphabetical",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.19599390029907227,
+      "error": null
+    },
+    {
+      "repo": "crates-io",
+      "endpoint_type": "search",
+      "url": "https://crates.io/api/v1/crates?q=test&per_page=100",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 1.5749082565307617,
+      "error": null
+    },
+    {
+      "repo": "crates-io",
+      "endpoint_type": "info",
+      "url": "https://crates.io/api/v1/crates/test",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.14010000228881836,
+      "error": null
+    },
+    {
+      "repo": "choco-windows",
+      "endpoint_type": "packages",
+      "url": "https://community.chocolatey.org/api/v2/Packages",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.0982668399810791,
+      "error": null
+    },
+    {
+      "repo": "choco-windows",
+      "endpoint_type": "search",
+      "url": "https://community.chocolatey.org/api/v2/Packages?$filter=substringof('test',tolower(Id))",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.5089428424835205,
+      "error": null
+    },
+    {
+      "repo": "choco-windows",
+      "endpoint_type": "info",
+      "url": "https://community.chocolatey.org/api/v2/Packages?$filter=Id%20eq%20'test'",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.4451711177825928,
+      "error": null
+    },
+    {
+      "repo": "packagist",
+      "endpoint_type": "packages",
+      "url": "https://packagist.org/packages/list.json?type=library",
+      "status": "timeout",
+      "status_code": null,
+      "response_time": null,
+      "error": "Request timeout"
+    },
+    {
+      "repo": "packagist",
+      "endpoint_type": "search",
+      "url": "https://packagist.org/search.json?q=test&per_page=100",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.24897193908691406,
+      "error": null
+    },
+    {
+      "repo": "packagist",
+      "endpoint_type": "info",
+      "url": "https://packagist.org/packages/test.json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.30796194076538086,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f38",
+      "endpoint_type": "packages",
+      "url": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f38&arch=amd64",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.38935208320617676,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f38",
+      "endpoint_type": "search",
+      "url": "https://packages.fedoraproject.org/search?query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.3991570472717285,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f38",
+      "endpoint_type": "info",
+      "url": "https://packages.fedoraproject.org/pkgs/test/",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.3971371650695801,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f39",
+      "endpoint_type": "packages",
+      "url": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f39&arch=amd64",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.1192018985748291,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f39",
+      "endpoint_type": "search",
+      "url": "https://packages.fedoraproject.org/search?query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.3499321937561035,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f39",
+      "endpoint_type": "info",
+      "url": "https://packages.fedoraproject.org/pkgs/test/",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.42072129249572754,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f40",
+      "endpoint_type": "packages",
+      "url": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f40&arch=amd64",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.1206519603729248,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f40",
+      "endpoint_type": "search",
+      "url": "https://packages.fedoraproject.org/search?query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.17703914642333984,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f40",
+      "endpoint_type": "info",
+      "url": "https://packages.fedoraproject.org/pkgs/test/",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 3.586364984512329,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f41",
+      "endpoint_type": "packages",
+      "url": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f41&arch=amd64",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.1199941635131836,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f41",
+      "endpoint_type": "search",
+      "url": "https://packages.fedoraproject.org/search?query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.3344399929046631,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f41",
+      "endpoint_type": "info",
+      "url": "https://packages.fedoraproject.org/pkgs/test/",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.37004780769348145,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f42",
+      "endpoint_type": "packages",
+      "url": "https://mirrors.fedoraproject.org/metalink?repo=updates-released-f42&arch=amd64",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.1187748908996582,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f42",
+      "endpoint_type": "search",
+      "url": "https://packages.fedoraproject.org/search?query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.13054704666137695,
+      "error": null
+    },
+    {
+      "repo": "dnf-fedora-f42",
+      "endpoint_type": "info",
+      "url": "https://packages.fedoraproject.org/pkgs/test/",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.38031601905822754,
+      "error": null
+    },
+    {
+      "repo": "dnf-rocky-8",
+      "endpoint_type": "packages",
+      "url": "https://dl.rockylinux.org/pub/rocky/8/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.19633102416992188,
+      "error": null
+    },
+    {
+      "repo": "dnf-rocky-9",
+      "endpoint_type": "packages",
+      "url": "https://dl.rockylinux.org/pub/rocky/9/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.29462289810180664,
+      "error": null
+    },
+    {
+      "repo": "dnf-alma-8",
+      "endpoint_type": "packages",
+      "url": "https://repo.almalinux.org/almalinux/8/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.19688105583190918,
+      "error": null
+    },
+    {
+      "repo": "dnf-alma-9",
+      "endpoint_type": "packages",
+      "url": "https://repo.almalinux.org/almalinux/9/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.369722843170166,
+      "error": null
+    },
+    {
+      "repo": "dnf-rocky-10",
+      "endpoint_type": "packages",
+      "url": "https://dl.rockylinux.org/pub/rocky/10/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.11973118782043457,
+      "error": null
+    },
+    {
+      "repo": "dnf-alma-10",
+      "endpoint_type": "packages",
+      "url": "https://repo.almalinux.org/almalinux/10/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.36505770683288574,
+      "error": null
+    },
+    {
+      "repo": "dnf-rhel-7",
+      "endpoint_type": "packages",
+      "url": "https://cdn.redhat.com/content/dist/rhel/server/7/amd64/os/repodata/repomd.xml",
+      "status": "error",
+      "status_code": null,
+      "response_time": null,
+      "error": "Cannot connect to host cdn.redhat.com:443 ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1032)')]"
+    },
+    {
+      "repo": "dnf-rhel-8",
+      "endpoint_type": "packages",
+      "url": "https://cdn.redhat.com/content/dist/rhel8/amd64/appstream/os/repodata/repomd.xml",
+      "status": "error",
+      "status_code": null,
+      "response_time": null,
+      "error": "Cannot connect to host cdn.redhat.com:443 ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1032)')]"
+    },
+    {
+      "repo": "dnf-rhel-9",
+      "endpoint_type": "packages",
+      "url": "https://cdn.redhat.com/content/dist/rhel9/amd64/appstream/os/repodata/repomd.xml",
+      "status": "error",
+      "status_code": null,
+      "response_time": null,
+      "error": "Cannot connect to host cdn.redhat.com:443 ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1032)')]"
+    },
+    {
+      "repo": "dnf-rhel-10",
+      "endpoint_type": "packages",
+      "url": "https://cdn.redhat.com/content/dist/rhel10/amd64/appstream/os/repodata/repomd.xml",
+      "status": "error",
+      "status_code": null,
+      "response_time": null,
+      "error": "Cannot connect to host cdn.redhat.com:443 ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1032)')]"
+    },
+    {
+      "repo": "dnf-centos-stream-8",
+      "endpoint_type": "packages",
+      "url": "https://vault.centos.org/8-stream/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.9415760040283203,
+      "error": null
+    },
+    {
+      "repo": "dnf-centos-stream-9",
+      "endpoint_type": "packages",
+      "url": "https://mirror.stream.centos.org/9-stream/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 1.000885009765625,
+      "error": null
+    },
+    {
+      "repo": "dnf-centos-stream-10",
+      "endpoint_type": "packages",
+      "url": "https://mirror.stream.centos.org/10-stream/AppStream/amd64/os/repodata/repomd.xml",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.8247978687286377,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-focal",
+      "endpoint_type": "packages",
+      "url": "https://download.docker.com/linux/ubuntu/dists/focal/stable/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.06434416770935059,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-focal",
+      "endpoint_type": "search",
+      "url": "https://download.docker.com/linux/ubuntu/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010317087173461914,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-focal",
+      "endpoint_type": "info",
+      "url": "https://docs.docker.com/engine/install/ubuntu/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.07074618339538574,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-jammy",
+      "endpoint_type": "packages",
+      "url": "https://download.docker.com/linux/ubuntu/dists/jammy/stable/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010439872741699219,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-jammy",
+      "endpoint_type": "search",
+      "url": "https://download.docker.com/linux/ubuntu/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.011036157608032227,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-jammy",
+      "endpoint_type": "info",
+      "url": "https://docs.docker.com/engine/install/ubuntu/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.07376623153686523,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-noble",
+      "endpoint_type": "packages",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/stable/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.011981964111328125,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-noble",
+      "endpoint_type": "search",
+      "url": "https://download.docker.com/linux/ubuntu/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010826826095581055,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-ubuntu-noble",
+      "endpoint_type": "info",
+      "url": "https://docs.docker.com/engine/install/ubuntu/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.16730785369873047,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-buster",
+      "endpoint_type": "packages",
+      "url": "https://download.docker.com/linux/debian/dists/buster/stable/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.022164344787597656,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-buster",
+      "endpoint_type": "search",
+      "url": "https://download.docker.com/linux/debian/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.01191091537475586,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-buster",
+      "endpoint_type": "info",
+      "url": "https://docs.docker.com/engine/install/debian/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.07795906066894531,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-bullseye",
+      "endpoint_type": "packages",
+      "url": "https://download.docker.com/linux/debian/dists/bullseye/stable/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010365962982177734,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-bullseye",
+      "endpoint_type": "search",
+      "url": "https://download.docker.com/linux/debian/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010917901992797852,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-bullseye",
+      "endpoint_type": "info",
+      "url": "https://docs.docker.com/engine/install/debian/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.07777786254882812,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-bookworm",
+      "endpoint_type": "packages",
+      "url": "https://download.docker.com/linux/debian/dists/bookworm/stable/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010264158248901367,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-bookworm",
+      "endpoint_type": "search",
+      "url": "https://download.docker.com/linux/debian/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.01080012321472168,
+      "error": null
+    },
+    {
+      "repo": "docker-apt-debian-bookworm",
+      "endpoint_type": "info",
+      "url": "https://docs.docker.com/engine/install/debian/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.05522775650024414,
+      "error": null
+    },
+    {
+      "repo": "emerge-gentoo",
+      "endpoint_type": "packages",
+      "url": "https://packages.gentoo.org/packages/search?q=test&format=json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 2.1245157718658447,
+      "error": null
+    },
+    {
+      "repo": "emerge-gentoo",
+      "endpoint_type": "search",
+      "url": "https://packages.gentoo.org/packages/search?q=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 1.1270952224731445,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-jammy",
+      "endpoint_type": "packages",
+      "url": "http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.0715949535369873,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-jammy",
+      "endpoint_type": "search",
+      "url": "https://packages.ubuntu.com/search?keywords=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.17299818992614746,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-focal",
+      "endpoint_type": "packages",
+      "url": "http://archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.0338437557220459,
+      "error": null
+    },
+    {
+      "repo": "apt-ubuntu-focal",
+      "endpoint_type": "search",
+      "url": "https://packages.ubuntu.com/search?keywords=test",
+      "status": "error",
+      "status_code": 500,
+      "response_time": 0.10885095596313477,
+      "error": null
+    },
+    {
+      "repo": "flathub",
+      "endpoint_type": "packages",
+      "url": "https://flathub.org/api/v2/appstream",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.23795413970947266,
+      "error": null
+    },
+    {
+      "repo": "flathub",
+      "endpoint_type": "search",
+      "url": "https://flathub.org/api/v1/apps/search/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.28110790252685547,
+      "error": null
+    },
+    {
+      "repo": "flathub",
+      "endpoint_type": "info",
+      "url": "https://flathub.org/api/v1/apps/test",
+      "status": "error",
+      "status_code": 422,
+      "response_time": 0.2530350685119629,
+      "error": null
+    },
+    {
+      "repo": "rubygems",
+      "endpoint_type": "packages",
+      "url": "https://rubygems.org/api/v1/gems.json",
+      "status": "error",
+      "status_code": 401,
+      "response_time": 0.7653019428253174,
+      "error": null
+    },
+    {
+      "repo": "rubygems",
+      "endpoint_type": "search",
+      "url": "https://rubygems.org/api/v1/search.json?query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.5470857620239258,
+      "error": null
+    },
+    {
+      "repo": "rubygems",
+      "endpoint_type": "info",
+      "url": "https://rubygems.org/api/v1/gems/test.json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.6735661029815674,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-focal",
+      "endpoint_type": "packages",
+      "url": "https://apt.releases.hashicorp.com/dists/focal/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.0626370906829834,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-focal",
+      "endpoint_type": "search",
+      "url": "https://apt.releases.hashicorp.com/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.011337995529174805,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-focal",
+      "endpoint_type": "info",
+      "url": "https://www.hashicorp.com/official-packaging-guide",
+      "status": "error",
+      "status_code": 429,
+      "response_time": 0.08372306823730469,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-jammy",
+      "endpoint_type": "packages",
+      "url": "https://apt.releases.hashicorp.com/dists/jammy/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.34543681144714355,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-jammy",
+      "endpoint_type": "search",
+      "url": "https://apt.releases.hashicorp.com/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010558128356933594,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-jammy",
+      "endpoint_type": "info",
+      "url": "https://www.hashicorp.com/official-packaging-guide",
+      "status": "error",
+      "status_code": 429,
+      "response_time": 0.07036113739013672,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-noble",
+      "endpoint_type": "packages",
+      "url": "https://apt.releases.hashicorp.com/dists/noble/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.024468183517456055,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-noble",
+      "endpoint_type": "search",
+      "url": "https://apt.releases.hashicorp.com/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.011781692504882812,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-ubuntu-noble",
+      "endpoint_type": "info",
+      "url": "https://www.hashicorp.com/official-packaging-guide",
+      "status": "error",
+      "status_code": 429,
+      "response_time": 0.07329106330871582,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-debian-bullseye",
+      "endpoint_type": "packages",
+      "url": "https://apt.releases.hashicorp.com/dists/bullseye/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.33295488357543945,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-debian-bullseye",
+      "endpoint_type": "search",
+      "url": "https://apt.releases.hashicorp.com/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010829925537109375,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-debian-bullseye",
+      "endpoint_type": "info",
+      "url": "https://www.hashicorp.com/official-packaging-guide",
+      "status": "error",
+      "status_code": 429,
+      "response_time": 0.07441377639770508,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-debian-bookworm",
+      "endpoint_type": "packages",
+      "url": "https://apt.releases.hashicorp.com/dists/bookworm/main/binary-amd64/Packages.gz",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.0240020751953125,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-debian-bookworm",
+      "endpoint_type": "search",
+      "url": "https://apt.releases.hashicorp.com/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.010890960693359375,
+      "error": null
+    },
+    {
+      "repo": "hashicorp-apt-debian-bookworm",
+      "endpoint_type": "info",
+      "url": "https://www.hashicorp.com/official-packaging-guide",
+      "status": "error",
+      "status_code": 429,
+      "response_time": 0.08426690101623535,
+      "error": null
+    },
+    {
+      "repo": "maven-central",
+      "endpoint_type": "packages",
+      "url": "https://search.maven.org/solrsearch/select?q=*:*&rows=50000&wt=json",
+      "status": "timeout",
+      "status_code": null,
+      "response_time": null,
+      "error": "Request timeout"
+    },
+    {
+      "repo": "maven-central",
+      "endpoint_type": "search",
+      "url": "https://search.maven.org/solrsearch/select?q=test&rows=100&wt=json",
+      "status": "error",
+      "status_code": 405,
+      "response_time": 0.14173007011413574,
+      "error": null
+    },
+    {
+      "repo": "maven-central",
+      "endpoint_type": "info",
+      "url": "https://search.maven.org/solrsearch/select?q=g:{group}+AND+a:{artifact}&wt=json",
+      "status": "error",
+      "status_code": 405,
+      "response_time": 0.13875031471252441,
+      "error": null
+    },
+    {
+      "repo": "nix-nixos",
+      "endpoint_type": "packages",
+      "url": "https://channels.nixos.org/nixos-unstable/packages.json.br",
+      "status": "error",
+      "status_code": null,
+      "response_time": null,
+      "error": "400, message='Can not decode content-encoding: brotli (br). Please install `Brotli`', url='https://releases.nixos.org/nixos/unstable/nixos-25.11pre880095.5e2a59a5b1a8/packages.json.br'"
+    },
+    {
+      "repo": "nix-nixos",
+      "endpoint_type": "search",
+      "url": "https://search.nixos.org/packages?channel=unstable&query=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.09165096282958984,
+      "error": null
+    },
+    {
+      "repo": "nix-nixos",
+      "endpoint_type": "info",
+      "url": "https://search.nixos.org/packages?channel=unstable&show=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.021216869354248047,
+      "error": null
+    },
+    {
+      "repo": "npm-registry",
+      "endpoint_type": "packages",
+      "url": "https://replicate.npmjs.com/_all_docs?include_docs=true",
+      "status": "error",
+      "status_code": 400,
+      "response_time": 0.8483099937438965,
+      "error": null
+    },
+    {
+      "repo": "npm-registry",
+      "endpoint_type": "search",
+      "url": "https://registry.npmjs.org/-/v1/search?text=test&size=250",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 1.0361840724945068,
+      "error": null
+    },
+    {
+      "repo": "npm-registry",
+      "endpoint_type": "info",
+      "url": "https://registry.npmjs.org/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.07134604454040527,
+      "error": null
+    },
+    {
+      "repo": "nuget-org",
+      "endpoint_type": "packages",
+      "url": "https://azuresearch-usnc.nuget.org/query?q=*&take=1000&prerelease=false",
+      "status": "error",
+      "status_code": 405,
+      "response_time": 0.5390551090240479,
+      "error": null
+    },
+    {
+      "repo": "nuget-org",
+      "endpoint_type": "search",
+      "url": "https://azuresearch-usnc.nuget.org/query?q=test&take=100",
+      "status": "error",
+      "status_code": 405,
+      "response_time": 0.4560577869415283,
+      "error": null
+    },
+    {
+      "repo": "nuget-org",
+      "endpoint_type": "info",
+      "url": "https://api.nuget.org/v3-flatcontainer/test/index.json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.40623998641967773,
+      "error": null
+    },
+    {
+      "repo": "pacman-arch",
+      "endpoint_type": "packages",
+      "url": "https://archlinux.org/packages/core/x86_64/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.20970702171325684,
+      "error": null
+    },
+    {
+      "repo": "pacman-arch",
+      "endpoint_type": "search",
+      "url": "https://archlinux.org/packages/search/json/?q=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 1.7218081951141357,
+      "error": null
+    },
+    {
+      "repo": "pacman-arch",
+      "endpoint_type": "info",
+      "url": "https://archlinux.org/packages/core/x86_64/test/",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.13433289527893066,
+      "error": null
+    },
+    {
+      "repo": "pypi",
+      "endpoint_type": "packages",
+      "url": "https://pypi.org/simple/",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.03594207763671875,
+      "error": null
+    },
+    {
+      "repo": "pypi",
+      "endpoint_type": "search",
+      "url": "https://pypi.org/search/?q=test&o=-created",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.12165093421936035,
+      "error": null
+    },
+    {
+      "repo": "pypi",
+      "endpoint_type": "info",
+      "url": "https://pypi.org/pypi/test/json",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.18619585037231445,
+      "error": null
+    },
+    {
+      "repo": "conda-forge",
+      "endpoint_type": "packages",
+      "url": "https://conda.anaconda.org/conda-forge/linux-64/repodata.json",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.08338785171508789,
+      "error": null
+    },
+    {
+      "repo": "conda-forge",
+      "endpoint_type": "search",
+      "url": "https://anaconda.org/search?q=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 1.300097942352295,
+      "error": null
+    },
+    {
+      "repo": "conda-forge",
+      "endpoint_type": "info",
+      "url": "https://anaconda.org/conda-forge/test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.36560678482055664,
+      "error": null
+    },
+    {
+      "repo": "snapcraft",
+      "endpoint_type": "packages",
+      "url": "https://api.snapcraft.io/v2/snaps/find",
+      "status": "error",
+      "status_code": 400,
+      "response_time": 0.1644878387451172,
+      "error": null
+    },
+    {
+      "repo": "snapcraft",
+      "endpoint_type": "search",
+      "url": "https://api.snapcraft.io/v2/snaps/find?q=test",
+      "status": "error",
+      "status_code": 400,
+      "response_time": 0.31989526748657227,
+      "error": null
+    },
+    {
+      "repo": "snapcraft",
+      "endpoint_type": "info",
+      "url": "https://api.snapcraft.io/v2/snaps/info/test",
+      "status": "error",
+      "status_code": 400,
+      "response_time": 0.1631622314453125,
+      "error": null
+    },
+    {
+      "repo": "winget-windows",
+      "endpoint_type": "packages",
+      "url": "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.26297998428344727,
+      "error": null
+    },
+    {
+      "repo": "winget-windows",
+      "endpoint_type": "search",
+      "url": "https://api.github.com/search/code?q=repo:microsoft/winget-pkgs+test+in:file+filename:*.yaml",
+      "status": "error",
+      "status_code": 401,
+      "response_time": 0.21110200881958008,
+      "error": null
+    },
+    {
+      "repo": "winget-windows",
+      "endpoint_type": "info",
+      "url": "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/test",
+      "status": "not_found",
+      "status_code": 404,
+      "response_time": 0.19308972358703613,
+      "error": null
+    },
+    {
+      "repo": "msstore-windows",
+      "endpoint_type": "packages",
+      "url": "https://storeedgefd.dsx.mp.microsoft.com/v9.0/manifestSearch",
+      "status": "error",
+      "status_code": 500,
+      "response_time": 0.2056751251220703,
+      "error": null
+    },
+    {
+      "repo": "msstore-windows",
+      "endpoint_type": "search",
+      "url": "https://storeedgefd.dsx.mp.microsoft.com/v9.0/manifestSearch?query=test",
+      "status": "error",
+      "status_code": 500,
+      "response_time": 0.3301970958709717,
+      "error": null
+    },
+    {
+      "repo": "zypper-opensuse-leap-15",
+      "endpoint_type": "packages",
+      "url": "http://download.opensuse.org/distribution/leap/15.5/repo/oss/repodata/repomd.xml",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.0671241283416748,
+      "error": null
+    },
+    {
+      "repo": "zypper-opensuse-leap-15",
+      "endpoint_type": "search",
+      "url": "https://software.opensuse.org/search?q=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 1.3209280967712402,
+      "error": null
+    },
+    {
+      "repo": "zypper-opensuse-tumbleweed",
+      "endpoint_type": "packages",
+      "url": "http://download.opensuse.org/tumbleweed/repo/oss/repodata/repomd.xml",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.028973102569580078,
+      "error": null
+    },
+    {
+      "repo": "zypper-opensuse-tumbleweed",
+      "endpoint_type": "search",
+      "url": "https://software.opensuse.org/search?q=test",
+      "status": "success",
+      "status_code": 200,
+      "response_time": 0.1568608283996582,
+      "error": null
+    },
+    {
+      "repo": "zypper-sles-12",
+      "endpoint_type": "packages",
+      "url": "https://updates.suse.com/SUSE/Products/SLE-Product-SLES/12-SP5/amd64/product/repodata/repomd.xml",
+      "status": "forbidden",
+      "status_code": 403,
+      "response_time": 0.07298994064331055,
+      "error": null
+    },
+    {
+      "repo": "zypper-sles-15",
+      "endpoint_type": "packages",
+      "url": "https://updates.suse.com/SUSE/Products/SLE-Product-SLES/15-SP5/amd64/product/repodata/repomd.xml",
+      "status": "forbidden",
+      "status_code": 403,
+      "response_time": 0.010421991348266602,
+      "error": null
+    }
+  ]
+}

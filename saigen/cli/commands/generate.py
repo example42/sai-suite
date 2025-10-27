@@ -200,43 +200,42 @@ def generate(
 
         # Determine LLM provider
         if llm_provider:
-            try:
-                provider_enum = LLMProvider(llm_provider)
-            except ValueError:
-                error_msg = f"Invalid LLM provider '{llm_provider}'. Available: {
-                    [
-                        p.value for p in LLMProvider]}"
+            # Validate that the provider exists in config
+            if not config.llm_providers or llm_provider not in config.llm_providers:
+                available = list(config.llm_providers.keys()) if config.llm_providers else []
+                error_msg = (
+                    f"Invalid LLM provider '{llm_provider}'. "
+                    f"Available providers: {', '.join(available) if available else 'none configured'}"
+                )
                 if generation_logger:
                     generation_logger.log_error(error_msg)
                 click.echo(f"Error: {error_msg}", err=True)
                 ctx.exit(1)
+            provider_name = llm_provider
         else:
             # Use default from config or fallback
             if hasattr(config, "llm_providers") and config.llm_providers:
                 # Get first enabled provider from config
                 first_provider = None
-                for provider_name, provider_config in config.llm_providers.items():
+                for prov_name, provider_config in config.llm_providers.items():
                     if provider_config.enabled:
-                        first_provider = provider_name
+                        first_provider = prov_name
                         break
 
                 if not first_provider:
                     # No enabled providers, use first one anyway
                     first_provider = next(iter(config.llm_providers.keys()), "openai")
 
-                try:
-                    provider_enum = LLMProvider(first_provider)
-                except ValueError:
-                    provider_enum = LLMProvider.OPENAI  # Fallback
+                provider_name = first_provider
             else:
-                provider_enum = LLMProvider.OPENAI  # Fallback
+                provider_name = "openai"  # Fallback
 
         # Create generation request
         target_providers_list = list(providers) if providers else []
         request = GenerationRequest(
             software_name=software_name,
             target_providers=target_providers_list,
-            llm_provider=provider_enum,
+            llm_provider=provider_name,
             use_rag=not no_rag,
             user_hints=None,
             existing_saidata=None,
@@ -249,7 +248,7 @@ def generate(
         if verbose:
             click.echo(f"Generating saidata for: {software_name}")
             click.echo(f"Schema version: 0.3")
-            click.echo(f"LLM Provider: {provider_enum.value}")
+            click.echo(f"LLM Provider: {provider_name}")
             click.echo(f"Target providers: {request.target_providers}")
             click.echo(f"RAG enabled: {request.use_rag}")
             click.echo(f"Output file: {output}")
@@ -260,7 +259,9 @@ def generate(
         async def run_generation():
             result = await engine.generate_saidata(request)
             if result.success:
-                await engine.save_saidata(result.saidata, output)
+                # Get model name from the result
+                model_name = engine._get_model_name(result.llm_provider_used)
+                await engine.save_saidata(result.saidata, output, model_name=model_name)
             return result
 
         result = asyncio.run(run_generation())
