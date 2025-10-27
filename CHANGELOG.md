@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saidata Generation Metadata**: Added comprehensive metadata tracking for generated saidata files
+  - New `saidata` metadata section in saidata-0.3-schema.json with model, generation_date, generation_time, test_date, and human_review_date fields
+  - Automatic metadata injection during saidata generation with LLM model name and ISO 8601 timestamps
+  - Generation time tracking in seconds for performance monitoring
+  - Support for test and human review date tracking for lifecycle management
+- **Saidata Directory Exclusion**: Added `saidata/` to .gitignore to prevent accidental commits of generated saidata files
+- **Development Container Update**: Updated devcontainer base image from Python 3.11-slim to Ubuntu 24.04 for better compatibility
 - **Repository Search Relevance Scoring**: Implemented intelligent search result ranking system
   - New `_calculate_relevance_score()` method in UniversalRepositoryDownloader for scoring search results
   - Exact name matches score 100, name prefix matches score 50, name contains query scores 25, description matches score 5
@@ -232,6 +239,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **Generation Engine Metadata Handling**: Enhanced save_saidata method to accept optional model_name parameter for metadata injection
+- **CLI Commands Metadata Integration**: Updated generate, update, and batch commands to pass model name to save_saidata for proper metadata tracking
+- **Git Auto-Commit Hook**: Updated hook prompt to include --no-pager flag for git diff commands
 - **Repository Search Implementation**: Refactored search logic for better performance and accuracy
   - Search now applies limit at manager level instead of CLI level for better efficiency
   - Removed redundant limit application in CLI after manager already limits results

@@ -259,7 +259,9 @@ def generate(
         async def run_generation():
             result = await engine.generate_saidata(request)
             if result.success:
-                await engine.save_saidata(result.saidata, output)
+                # Get model name from the result
+                model_name = engine._get_model_name(result.llm_provider_used)
+                await engine.save_saidata(result.saidata, output, model_name=model_name)
             return result
 
         result = asyncio.run(run_generation())

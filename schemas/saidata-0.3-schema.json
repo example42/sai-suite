@@ -55,6 +55,36 @@
         "name"
       ]
     },
+    "saidata": {
+      "type": "object",
+      "description": "Metadata about the saidata file generation and lifecycle",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Name of the LLM model used to generate this saidata"
+        },
+        "generation_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when this saidata was generated"
+        },
+        "generation_time": {
+          "type": "number",
+          "description": "Time taken to generate this saidata in seconds",
+          "minimum": 0
+        },
+        "test_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when this saidata was last tested"
+        },
+        "human_review_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when this saidata was last reviewed by a human"
+        }
+      }
+    },
     "packages": {
       "type": "array",
       "description": "Default package definitions that apply across providers",

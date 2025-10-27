@@ -201,7 +201,9 @@ def update(
         if result.success:
             # Save updated saidata
             async def save_result():
-                await generation_engine.save_saidata(result.saidata, output_path)
+                # Get model name from the result
+                model_name = generation_engine._get_model_name(result.llm_provider_used)
+                await generation_engine.save_saidata(result.saidata, output_path, model_name=model_name)
 
             asyncio.run(save_result())
 
