@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest System Inspection Tools**: Complete implementation of LangGraph tools for system inspection and verification
+  - Created `saitest/tools/system.py` with three inspection tools for comprehensive system analysis
+  - Implemented inspect_service tool for checking systemd service status and configuration
+  - Implemented check_listening_ports tool for discovering network ports and associated processes
+  - Implemented find_config_files tool for locating software configuration files
+  - All tools return structured results with success/failure status and detailed observations
+  - Comprehensive error handling with graceful fallbacks for missing tools or permissions
+  - Support for both systemd and non-systemd systems with appropriate detection
+  - Comprehensive test suite in `tests/saitest/tools/test_system.py` with 12 test cases
+  - Updated `saitest/tools/__init__.py` to export all system inspection tools
+  - Marked task 7 as complete in saitest specification
 - **Saitest Unified Installation Tool**: Complete implementation of LangGraph tool for package installation with filesystem monitoring
   - Created `saitest/tools/package.py` with install_package LangGraph tool for unified installation across all providers
   - Integrated ProviderCommandExecutor for executing providerdata-based installation commands

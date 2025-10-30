@@ -76,7 +76,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Return structured results with provider, success, observations
   - _Requirements: 17, 18_
 
-- [ ] 7. Implement system inspection tools
+- [x] 7. Implement system inspection tools
   - Create saitest/tools/system.py
   - Implement inspect_service tool for systemd services
   - Implement check_listening_ports tool
