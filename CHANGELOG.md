@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Unified Installation Tool**: Complete implementation of LangGraph tool for package installation with filesystem monitoring
+  - Created `saitest/tools/package.py` with install_package LangGraph tool for unified installation across all providers
+  - Integrated ProviderCommandExecutor for executing providerdata-based installation commands
+  - Integrated FilesystemMonitor for capturing filesystem changes during installation
+  - Integrated ContainerManager for Docker-based isolated testing environments
+  - Returns structured results with observations (files, services, binaries, packages)
+  - Supports optional saidata context for template resolution or simple package name substitution
+  - Comprehensive error handling with detailed error messages and duration tracking
+  - Test command execution with success/failure tracking
+  - Automatic observation creation with confidence scores for different resource types
+  - Added langchain-core dependency to pyproject.toml for LangGraph tool decorator
+  - Comprehensive test suite in `tests/saitest/tools/test_package.py`
+  - Marked task 6 as complete in saitest specification
 - **Saitest Documentation in Steering Files**: Updated project steering documentation to include SAITEST package
   - Added SAITEST overview and core purpose to product.md steering file
   - Added SAITEST features, target users, and distribution methods to product.md
