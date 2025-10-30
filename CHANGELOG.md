@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Installation Agent**: Complete implementation of LangGraph installation agent for executing software installations
+  - Created `saitest/agents/installation.py` with installation_agent function for LangGraph workflow
+  - Binds install_package tool to LLM (GPT-4o) for executing installations
+  - Executes installation for current platform-provider combination from state
+  - Creates Observation objects from installation results with proper typing
+  - Creates PlatformResult with provider field, success status, observations, errors, and duration
+  - Handles installation failures gracefully with detailed error messages
+  - Implemented get_next_combination() function to iterate through platform-provider combinations
+  - Tracks tested combinations and sets current_platform/current_provider for next test
+  - Returns False when all combinations are tested to signal workflow completion
+  - Comprehensive test suite in `tests/saitest/agents/test_installation.py` with success, failure, and edge case scenarios
+  - Updated `saitest/agents/__init__.py` to export installation agent functions
+  - Marked task 11 as complete in saitest specification
 - **Saitest Platform Selection Agent**: Complete implementation of LangGraph platform selection agent for choosing test platforms
   - Created `saitest/agents/platform.py` with platform_selection_agent function for LangGraph workflow
   - Uses user-specified platforms if provided via target_platforms parameter
