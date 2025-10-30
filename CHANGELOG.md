@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Documentation in Steering Files**: Updated project steering documentation to include SAITEST package
+  - Added SAITEST overview and core purpose to product.md steering file
+  - Added SAITEST features, target users, and distribution methods to product.md
+  - Added SAITEST package structure and organization to structure.md steering file
+  - Added SAITEST architecture, LangGraph workflow, and container management to tech.md steering file
+  - Added SAITEST CLI commands and usage examples to tech.md
+  - Updated all references to include saitest alongside sai and saigen packages
 - **Saitest Provider Command Executor**: Complete implementation of providerdata integration for unified installation commands
   - Created `saitest/utils/provider_executor.py` with ProviderCommandExecutor class for executing provider-specific commands
   - Implemented _load_providers() method to scan and load all providerdata files from providers/ directory

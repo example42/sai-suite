@@ -7,6 +7,8 @@
 - **Template Engine**: Variable substitution using `{{variable}}` syntax with sai-specific functions
 - **Environment Autodetection**: Automatic detection of platform, OS, and OS version with intelligent caching
 - **Cross-Platform**: Native support for Linux, macOS, and Windows
+- **Agent Orchestration**: LangGraph-based workflow for intelligent saidata verification and generation (saitest)
+- **Container Isolation**: Docker-based testing environments for multi-platform verification (saitest)
 
 ## Data Schemas
 
@@ -134,6 +136,7 @@ SAI performs automatic environment detection on each execution:
 
 ## Common Commands
 
+### SAI Commands
 ```bash
 # Basic software management
 sai install <software> [--provider <name>]
@@ -160,6 +163,27 @@ sai list
 --yes/-y             # Auto-confirm prompts
 --quiet/-q           # Suppress output
 --json               # JSON output format
+```
+
+### SAITEST Commands
+```bash
+# Verify software and generate saidata
+saitest verify <software> [--platforms <list>] [--output-dir <path>]
+
+# Test existing saidata
+saitest test <saidata_file>
+
+# Options
+--platforms          # Comma-separated list of platforms (e.g., ubuntu:22.04,rockylinux:8)
+--output-dir/-o      # Directory for generated saidata files
+--format/-f          # Output format (yaml, json)
+--verbose/-v         # Detailed output
+--config/-c          # Custom config file
+
+# Examples
+saitest verify nginx --platforms ubuntu:22.04,debian:12
+saitest verify apache --output-dir ./generated
+saitest test software/ap/apache/default.yaml
 ```
 
 ## Saidata File Structure
@@ -221,6 +245,50 @@ providers:
         url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
 ```
 
+## SAITEST Architecture
+
+### LangGraph Workflow
+SAITEST uses LangGraph for agent-based workflow orchestration with the following components:
+
+**Agents**:
+- **Discovery Agent**: Queries repositories and providerdata to find available installation methods
+- **Platform Selection Agent**: Selects representative platforms for testing
+- **Installation Agent**: Executes installations in Docker containers and captures observations
+- **Analysis Agent**: Aggregates observations and identifies patterns across platforms
+- **Generation Agent**: Creates saidata files (default.yaml and OS-specific overrides)
+- **Quality Check Agent**: Validates generated saidata and calculates confidence scores
+
+**State Management**:
+- **VerificationState**: TypedDict tracking workflow state across all agents
+- **Observation**: Pydantic model for installation observations (files, services, ports, etc.)
+- **PlatformResult**: Pydantic model for platform-specific test results with provider tracking
+- **Checkpointing**: SqliteSaver for workflow state persistence
+
+**Tools**:
+- **install_package**: Executes provider-based installation commands
+- **inspect_service**: Checks systemd service status
+- **check_listening_ports**: Identifies network ports
+- **find_config_files**: Locates configuration files
+
+### Container Management
+- **ContainerManager**: Spawns and manages Docker containers for isolated testing
+- **ContainerWrapper**: Provides exec, read_file, and list_files methods
+- **Platform Mapping**: Maps OS/version to Docker images (ubuntu:22.04, rockylinux:8, etc.)
+- **Cleanup**: Automatic container removal on exit
+
+### Filesystem Monitoring
+- **FilesystemMonitor**: Captures filesystem changes during installation
+- **Baseline Capture**: Records pre-installation state
+- **Change Detection**: Identifies new/modified files, services, and binaries
+- **Service Discovery**: Extracts systemd service files
+- **Binary Detection**: Locates installed executables
+
+### Provider Integration
+- **ProviderCommandExecutor**: Loads providerdata and executes installation commands
+- **Template Resolution**: Uses sai's template engine for variable substitution
+- **Multi-Provider Support**: Tests all available providers for comprehensive coverage
+- **Repository Integration**: Queries saigen's RepositoryDownloader for package metadata
+
 ## Development Guidelines
 
 - All YAML files must validate against saidata-0.3-schema.json
@@ -234,3 +302,6 @@ providers:
 - **Field Specification**: Use the `field` parameter in template functions to explicitly specify which field to extract
 - **Security**: Include checksums for sources, binaries, and scripts to ensure integrity
 - **URL Templating**: Use `{{version}}`, `{{platform}}`, `{{architecture}}` placeholders for dynamic URLs
+- **SAITEST Verification**: Use saitest to automatically generate and validate saidata across multiple platforms and providers
+- **Confidence Scoring**: Review saitest-generated saidata with low confidence scores before committing
+- **Provider Coverage**: Ensure providerdata exists for all providers you want saitest to test
