@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Package Configuration**: Initial setup of saitest package in monorepo
+  - Added saitest optional dependencies to pyproject.toml (langgraph, langchain-openai, langchain-anthropic, docker, watchdog)
+  - Configured setuptools to include saitest package in build
+  - Added saitest to coverage configuration for test tracking
+  - Updated isort and pytest configuration to include saitest source paths
+  - Marked tasks 1 and 1.1 as complete in saitest specification
 - **Saitest Specification Updates**: Enhanced saitest design and requirements for multi-provider support
   - **Multi-Provider Testing**: Added support for testing multiple installation providers (apt, dnf, pip, gem, npm, brew, source, binary, script) on the same platform
   - **Saigen Repository Integration**: Discovery agent now queries saigen's repository cache for package metadata before falling back to LLM research

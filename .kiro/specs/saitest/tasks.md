@@ -6,13 +6,13 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 1: Foundation and Core Infrastructure
 
-- [ ] 1. Set up saitest package structure in monorepo
+- [x] 1. Set up saitest package structure in monorepo
   - Create saitest/ directory with cli/, core/, agents/, tools/, models/, utils/ subdirectories
   - Create __init__.py files for all packages
   - Add saitest to pyproject.toml with optional dependencies
   - _Requirements: 15_
 
-- [ ] 1.1 Configure optional dependencies in pyproject.toml
+- [x] 1.1 Configure optional dependencies in pyproject.toml
   - Add [project.optional-dependencies.saitest] section
   - Include langgraph, langchain-openai, langchain-anthropic, docker, watchdog
   - Test installation with `pip install -e .[saitest]`
