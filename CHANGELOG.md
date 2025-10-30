@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Filesystem Monitoring**: Complete implementation of filesystem change detection for installation verification
+  - Created `saitest/utils/fs_monitor.py` with FilesystemMonitor class for tracking filesystem changes
+  - Implemented capture_baseline() method to snapshot filesystem state before installation
+  - Implemented capture_changes() method to detect new files after installation
+  - Added get_service_files() method to find systemd service files created during installation
+  - Added get_binaries() method to find executable binaries created during installation
+  - FileChange dataclass for representing detected changes with path, type, timestamp, size, and permissions
+  - Monitors key directories: /usr/bin, /usr/sbin, /usr/local/bin, /etc, systemd paths, /opt, /var/lib
+  - Comprehensive test suite in `tests/saitest/utils/test_fs_monitor.py` with 9 test cases
+  - Marked task 4 as complete in saitest specification
 - **Saitest Docker Container Management**: Complete implementation of Docker container lifecycle management for testing
   - Created `saitest/utils/docker_manager.py` with ContainerManager and ContainerWrapper classes
   - Implemented spawn_container context manager for automatic container cleanup
