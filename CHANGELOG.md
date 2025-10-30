@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Discovery Agent**: Complete implementation of LangGraph discovery agent for identifying installation methods
+  - Created `saitest/agents/discovery.py` with discovery_agent function for LangGraph workflow
+  - Integrated saigen's RepositoryManager for querying package metadata from cached repositories
+  - Implemented _query_repository_cache() to search for packages across all repository types
+  - Implemented _predict_expected_resources() using LLM to predict services, files, and ports
+  - Implemented _llm_discovery() as fallback when no repository data is available
+  - Cross-references repository data with available providerdata to find valid installation methods
+  - Returns structured discovery results with installation methods, versions, and expected resources
+  - Supports both exact and partial package name matching for flexible discovery
+  - Graceful fallback to LLM research when repository cache is empty
+  - Added get_available_providers() convenience function for provider discovery
+  - Updated `saitest/agents/__init__.py` to export discovery agent functions
+  - Marked task 9 as complete in saitest specification
 - **Saitest Repository Integration**: Complete implementation of saigen repository integration for provider discovery
   - Created `saitest/utils/repository_integration.py` with RepositoryIntegration class for querying saigen's repository cache
   - Implemented discover_providers() function to scan providers/ directory and find available providerdata files
