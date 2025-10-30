@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Docker Container Management**: Complete implementation of Docker container lifecycle management for testing
+  - Created `saitest/utils/docker_manager.py` with ContainerManager and ContainerWrapper classes
+  - Implemented spawn_container context manager for automatic container cleanup
+  - Added ContainerWrapper with exec, read_file, and list_files methods for container operations
+  - Platform-to-image mapping supporting Ubuntu, Debian, Fedora, CentOS, Rocky Linux, and Alpine
+  - Comprehensive error handling for Docker connection errors and container operations
+  - Automatic image pulling when not cached locally
+  - Timeout handling for container operations with configurable limits
+  - Privileged container support for system-level testing
+  - Proper cleanup of containers on exit with force removal
+  - Tracking of active containers for bulk cleanup operations
+  - Marked tasks 3 and 3.1 as complete in saitest specification
 - **Saitest Core State Models**: Implemented core state management for verification workflow
   - Created `saitest/models/observation.py` with Observation Pydantic model for tracking verification observations
   - Created `saitest/models/state.py` with PlatformResult Pydantic model for platform-specific test results

@@ -31,14 +31,14 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Test state initialization and updates
   - _Requirements: 13, 16_
 
-- [ ] 3. Implement Docker container management
+- [x] 3. Implement Docker container management
   - Create saitest/utils/docker_manager.py with ContainerManager class
   - Implement spawn_container context manager
   - Implement ContainerWrapper with exec, read_file, list_files methods
   - Add platform-to-image mapping
   - _Requirements: 4_
 
-- [ ] 3.1 Add container cleanup and error handling
+- [x] 3.1 Add container cleanup and error handling
   - Ensure containers are stopped and removed on exit
   - Handle Docker connection errors gracefully
   - Add timeout handling for container operations
