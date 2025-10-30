@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Core State Models**: Implemented core state management for verification workflow
+  - Created `saitest/models/observation.py` with Observation Pydantic model for tracking verification observations
+  - Created `saitest/models/state.py` with PlatformResult Pydantic model for platform-specific test results
+  - Created `saitest/core/state.py` with VerificationState TypedDict for agent state management
+  - Added provider tracking fields to support multi-provider testing (current_provider, provider_combinations, package_versions)
+  - Added expected_dependencies dictionary for dependency validation
+  - Implemented create_initial_state() helper function for state initialization
+  - Updated package __init__.py files to export core models and functions
+  - Marked tasks 2 and 2.1 as complete in saitest specification
 - **Saitest Package Configuration**: Initial setup of saitest package in monorepo
   - Added saitest optional dependencies to pyproject.toml (langgraph, langchain-openai, langchain-anthropic, docker, watchdog)
   - Configured setuptools to include saitest package in build

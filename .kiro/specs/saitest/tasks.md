@@ -18,14 +18,14 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Test installation with `pip install -e .[saitest]`
   - _Requirements: 15_
 
-- [ ] 2. Implement core state models
+- [x] 2. Implement core state models
   - Create saitest/models/observation.py with Observation Pydantic model
   - Create saitest/models/state.py with PlatformResult Pydantic model
   - Create saitest/core/state.py with VerificationState TypedDict
   - Include provider field in Observation and PlatformResult
   - _Requirements: 16_
 
-- [ ] 2.1 Add provider tracking to VerificationState
+- [x] 2.1 Add provider tracking to VerificationState
   - Add current_provider, provider_combinations, package_versions fields
   - Add expected_dependencies dictionary
   - Test state initialization and updates
