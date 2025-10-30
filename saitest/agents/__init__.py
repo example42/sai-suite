@@ -4,6 +4,7 @@ from saitest.agents.discovery import discovery_agent, get_available_providers
 from saitest.agents.platform import platform_selection_agent, create_provider_combinations
 from saitest.agents.installation import installation_agent, get_next_combination
 from saitest.agents.analysis import analysis_agent
+from saitest.agents.generation import generation_agent, write_saidata_files
 
 __all__ = [
     "discovery_agent",
@@ -13,4 +14,6 @@ __all__ = [
     "installation_agent",
     "get_next_combination",
     "analysis_agent",
+    "generation_agent",
+    "write_saidata_files",
 ]

@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Generation Agent**: Complete implementation of LangGraph generation agent for creating saidata YAML files
+  - Created `saitest/agents/generation.py` with generation_agent function for LangGraph workflow
+  - Uses LLM (GPT-4o) to generate default.yaml with common configuration across all platforms
+  - Uses LLM to generate OS-specific override files for platform variations (e.g., ubuntu/22.04.yaml, debian/12.yaml)
+  - Includes provider-specific overrides for all tested providers
+  - Parses YAML and stores in VerificationState for downstream processing
+  - Implemented write_saidata_files() function to write files to proper directory structure
+  - Creates hierarchical directory structure: software/{name}/default.yaml and software/{name}/{os}/{version}.yaml
+  - Comprehensive error handling with YAML parsing validation and graceful fallbacks
+  - Comprehensive test suite in `tests/saitest/agents/test_generation.py` with success and error scenarios
+  - Updated `saitest/agents/__init__.py` to export generation agent functions
+  - Marked tasks 13 and 13.1 as complete in saitest specification
 - **Saitest Analysis Agent**: Complete implementation of LangGraph analysis agent for identifying patterns and variations
   - Created `saitest/agents/analysis.py` with analysis_agent function for LangGraph workflow
   - Aggregates observations by type (file, service, port, etc.) and provider

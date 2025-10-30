@@ -139,7 +139,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Update VerificationState with patterns, variations, confidence_scores
   - _Requirements: 7_
 
-- [ ] 13. Implement Generation Agent
+- [x] 13. Implement Generation Agent
   - Create saitest/agents/generation.py
   - Use LLM to generate default.yaml with common configuration
   - Use LLM to generate OS-specific override files
@@ -147,7 +147,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Parse YAML and store in VerificationState
   - _Requirements: 8, 19_
 
-- [ ] 13.1 Implement saidata file writing
+- [x] 13.1 Implement saidata file writing
   - Create function to write default.yaml
   - Create function to write OS-specific overrides (os/version.yaml)
   - Organize files in proper directory structure
