@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Platform Selection Agent**: Complete implementation of LangGraph platform selection agent for choosing test platforms
+  - Created `saitest/agents/platform.py` with platform_selection_agent function for LangGraph workflow
+  - Uses user-specified platforms if provided via target_platforms parameter
+  - Otherwise uses LLM (GPT-4o) to intelligently select 2-4 representative platforms
+  - Considers different package managers, OS families, and current stable versions
+  - Falls back to default platforms (ubuntu:22.04, debian:12) if LLM selection fails
+  - Implemented create_provider_combinations() to generate all platform-provider test combinations
+  - Returns structured platform selection with reasoning and combinations to test
+  - Comprehensive error handling with JSON parsing and graceful fallbacks
+  - Updated `saitest/agents/__init__.py` to export platform selection functions
+  - Marked tasks 10 and 10.1 as complete in saitest specification
 - **Saitest Discovery Agent**: Complete implementation of LangGraph discovery agent for identifying installation methods
   - Created `saitest/agents/discovery.py` with discovery_agent function for LangGraph workflow
   - Integrated saigen's RepositoryManager for querying package metadata from cached repositories
