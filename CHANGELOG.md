@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Specification Updates**: Enhanced saitest design and requirements for multi-provider support
+  - **Multi-Provider Testing**: Added support for testing multiple installation providers (apt, dnf, pip, gem, npm, brew, source, binary, script) on the same platform
+  - **Saigen Repository Integration**: Discovery agent now queries saigen's repository cache for package metadata before falling back to LLM research
+  - **Providerdata Integration**: Unified installation tool that uses providerdata commands for any provider, eliminating hardcoded provider-specific tools
+  - **Provider Extensibility**: Automatic support for new providers when providerdata is added to providers/ directory
+  - **OS-Specific Override Generation**: Generate saidata with default.yaml and OS-specific override files (e.g., ubuntu/22.04.yaml, debian/12.yaml)
+  - **Enhanced Data Models**: Updated Observation and PlatformResult models to include provider field for tracking which provider was used
+  - **System Inspection Tools**: Added find_config_files tool for discovering software configuration file locations
+  - **Requirements Updates**: Added 7 new requirements (13-20) covering multi-provider testing, saigen integration, providerdata usage, and OS-specific overrides
 - **Saidata Generation Metadata**: Added comprehensive metadata tracking for generated saidata files
   - New `saidata` metadata section in saidata-0.3-schema.json with model, generation_date, generation_time, test_date, and human_review_date fields
   - Automatic metadata injection during saidata generation with LLM model name and ISO 8601 timestamps

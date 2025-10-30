@@ -1,0 +1,48 @@
+Please create a complete saidata YAML file following the provided saidata-0.3-schema.json specification for the software defined at the bottom.
+
+Requested Information:
+
+Software Details:
+
+Official name and common aliases
+Current stable version
+Brief description and primary use case
+Official website and documentation URLs
+
+Installation Methods (include all applicable, if you are not sure about a specific method, do not include it):
+Packages: Package names
+Sources: Build from source URLs, build system (autotools, cmake, make, meson), configure arguments
+Binaries: Pre-compiled download URLs with platform/architecture variants
+Scripts: Official installation script URLs with interpreter requirements
+
+Resources to Define:
+
+Services: Service names for systemd/launchd/Windows services (include the services key only if services are present)
+Files: Key configuration files and their paths (include only if you are sure about them)
+Directories: Important data/config directories (include only if you are sure about them)
+Commands: Executable names and common CLI commands (include only if you are sure about them)
+Ports: Default network ports used (include the ports key only if ports are involved)
+Containers: Docker/Podman container configurations if applicable (include only if you are sure about them)
+
+
+Platform Support:
+Supported operating systems (Linux distros, macOS versions, Windows)
+Architecture compatibility (x86_64, arm64, etc.)
+OS-specific variations in package names or configurations
+
+Security related links and information as in the schema.
+
+Provider Overrides:
+If necessary, and only when different from default values, provide provider specific overrides for packages, services, files and directories.
+
+
+Output Format:
+
+Valid YAML following saidata-0.3-schema.json, before sending the answer validate it according to the provided saidata json schema and fix accordingly.
+
+Use URL templating: {{version}}, {{platform}}, {{architecture}}
+Include both name (logical) and package_name (actual) for packages, use logical names to manage overrides for providers.
+
+Reply ONY with a YAML file which follows saidata schema, DO NOT add any other comment (you can add clarifications inside Yaml if necessary) or furhter request.
+
+Software to generate: [SOFTWARE_NAME]
