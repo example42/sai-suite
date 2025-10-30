@@ -85,14 +85,14 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 3: Saigen Integration
 
-- [ ] 8. Implement repository integration
+- [x] 8. Implement repository integration
   - Import RepositoryDownloader from saigen
   - Create helper function to query all repository types
   - Create helper function to scan providers/ directory
   - Cross-reference repository data with available providerdata
   - _Requirements: 14, 20_
 
-- [ ] 8.1 Add provider discovery logic
+- [x] 8.1 Add provider discovery logic
   - Implement get_available_providers function
   - Validate providers have both repository data AND providerdata
   - Handle missing repository data gracefully

@@ -130,11 +130,14 @@ class ProviderCommandExecutor:
                     invalid_providers.append(provider_name)
                     continue
                 
-                # Validate install action has command
+                # Validate install action has command, template, or steps
                 install_action = provider_data.actions["install"]
-                if not (install_action.command or install_action.template):
+                has_command = install_action.command or install_action.template
+                has_steps = hasattr(install_action, 'steps') and install_action.steps
+                
+                if not (has_command or has_steps):
                     self._logger.warning(
-                        f"Provider '{provider_name}' install action missing command/template"
+                        f"Provider '{provider_name}' install action missing command/template/steps"
                     )
                     invalid_providers.append(provider_name)
                     continue
@@ -223,12 +226,30 @@ class ProviderCommandExecutor:
                 f"Install action not found for provider '{provider_name}'"
             )
         
-        # Get command template
-        command_template = install_action.command or install_action.template
+        # Get command template - check for steps, command, or template
+        command_template = None
+        
+        # Check if action uses steps (multi-step commands)
+        if hasattr(install_action, 'steps') and install_action.steps:
+            # Combine all steps into a single command with &&
+            step_commands = []
+            for step in install_action.steps:
+                if hasattr(step, 'command') and step.command:
+                    step_commands.append(step.command)
+            
+            if step_commands:
+                command_template = " && ".join(step_commands)
+                self._logger.debug(
+                    f"Provider '{provider_name}' uses steps, combined into: {command_template}"
+                )
+        
+        # Fall back to single command or template
+        if not command_template:
+            command_template = install_action.command or install_action.template
         
         if not command_template:
             raise ProviderExecutorError(
-                f"No command template found for install action in provider '{provider_name}'"
+                f"No command, template, or steps found for install action in provider '{provider_name}'"
             )
         
         # Resolve template
@@ -323,8 +344,26 @@ class ProviderCommandExecutor:
             )
             return None
         
-        # Get command template
-        command_template = test_action.command or test_action.template
+        # Get command template - check for steps, command, or template
+        command_template = None
+        
+        # Check if action uses steps (multi-step commands)
+        if hasattr(test_action, 'steps') and test_action.steps:
+            # Combine all steps into a single command with &&
+            step_commands = []
+            for step in test_action.steps:
+                if hasattr(step, 'command') and step.command:
+                    step_commands.append(step.command)
+            
+            if step_commands:
+                command_template = " && ".join(step_commands)
+                self._logger.debug(
+                    f"Provider '{provider_name}' test action uses steps, combined into: {command_template}"
+                )
+        
+        # Fall back to single command or template
+        if not command_template:
+            command_template = test_action.command or test_action.template
         
         if not command_template:
             self._logger.debug(

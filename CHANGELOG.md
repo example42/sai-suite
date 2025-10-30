@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Repository Integration**: Complete implementation of saigen repository integration for provider discovery
+  - Created `saitest/utils/repository_integration.py` with RepositoryIntegration class for querying saigen's repository cache
+  - Implemented discover_providers() function to scan providers/ directory and find available providerdata files
+  - Implemented get_available_providers_with_validation() function to cross-reference repository data with providerdata
+  - Added query_repository() method to search for packages across all cached repositories
+  - Added get_package_info() method to retrieve detailed package metadata from repository cache
+  - Graceful handling of missing repository data with appropriate warnings
+  - Integration with saigen's UniversalRepositoryManager for consistent repository access
+  - Comprehensive documentation in `saitest/utils/README_repository_integration.md`
+  - Updated `saitest/utils/__init__.py` to export repository integration functions
+  - Marked tasks 8 and 8.1 as complete in saitest specification
+- **Saitest Provider Executor Multi-Step Support**: Enhanced ProviderCommandExecutor to support multi-step provider actions
+  - Added support for providerdata actions with `steps` field (multi-step commands)
+  - Automatic combination of multiple steps into single command using && operator
+  - Enhanced validation to accept actions with command, template, OR steps
+  - Applied to both install and test command resolution
+  - Better logging for multi-step command execution
+  - Maintains backward compatibility with single-command actions
 - **Saitest System Inspection Tools**: Complete implementation of LangGraph tools for system inspection and verification
   - Created `saitest/tools/system.py` with three inspection tools for comprehensive system analysis
   - Implemented inspect_service tool for checking systemd service status and configuration
