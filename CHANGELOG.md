@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Quality Check Agent**: Complete implementation of LangGraph quality check agent for validating generated saidata
+  - Validates generated saidata against schema 0.3 using jsonschema
+  - Uses LLM to assess completeness and accuracy of generated files
+  - Calculates confidence scores and flags low-confidence results for human review
+  - Marked task 14 as complete in saitest specification
+- **Saitest Workflow Orchestrator**: Complete implementation of LangGraph workflow orchestration for verification process
+  - Created `saitest/core/orchestrator.py` with create_verification_workflow function
+  - Added all agent nodes to StateGraph (discovery, platform, installation, analysis, generation, quality)
+  - Implemented workflow routing logic with route_to_platforms, check_more_combinations, and route_after_quality_check functions
+  - Added conditional edges for intelligent workflow navigation
+  - Configured SqliteSaver for checkpointing and state persistence
+  - Compiled workflow with checkpointer for resumable verification sessions
+  - Marked tasks 15, 15.1, and 15.2 as complete in saitest specification
 - **Saitest Generation Agent**: Complete implementation of LangGraph generation agent for creating saidata YAML files
   - Created `saitest/agents/generation.py` with generation_agent function for LangGraph workflow
   - Uses LLM (GPT-4o) to generate default.yaml with common configuration across all platforms

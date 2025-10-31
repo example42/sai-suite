@@ -153,7 +153,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Organize files in proper directory structure
   - _Requirements: 19_
 
-- [ ] 14. Implement Quality Check Agent
+- [x] 14. Implement Quality Check Agent
   - Create saitest/agents/quality.py
   - Validate generated saidata against schema 0.3 using jsonschema
   - Use LLM to assess completeness and accuracy
@@ -163,21 +163,21 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 5: LangGraph Workflow Orchestration
 
-- [ ] 15. Implement workflow orchestrator
+- [x] 15. Implement workflow orchestrator
   - Create saitest/core/orchestrator.py
   - Implement create_verification_workflow function
   - Add all agent nodes to StateGraph
   - Set entry point to discovery agent
   - _Requirements: 1_
 
-- [ ] 15.1 Implement workflow routing logic
+- [x] 15.1 Implement workflow routing logic
   - Implement route_to_platforms function
   - Implement check_more_combinations function (for platform-provider pairs)
   - Implement route_after_quality_check function
   - Add conditional edges to workflow
   - _Requirements: 1, 6, 12_
 
-- [ ] 15.2 Add checkpointing and state persistence
+- [x] 15.2 Add checkpointing and state persistence
   - Configure SqliteSaver for checkpointing
   - Compile workflow with checkpointer
   - _Requirements: 1_
