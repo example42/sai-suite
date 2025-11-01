@@ -9,10 +9,13 @@ from contextlib import contextmanager
 from typing import Dict, Any, List, Optional
 import docker
 from docker.models.containers import Container
-from docker.errors import DockerException, ImageNotFound, APIError
+from docker.errors import DockerException, ImageNotFound, APIError, ContainerError, NotFound
+
+from saitest.utils.logging_config import get_logger, log_exception
+from saitest.utils.config_loader import get_config
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Platform to Docker image mapping
@@ -88,6 +91,7 @@ class ContainerWrapper:
                 self._logger.warning(
                     f"Command failed with exit code {exit_code}: {command[:100]}"
                 )
+                self._logger.debug(f"Command output: {output[:500]}")
             
             return {
                 "exit_code": exit_code,
@@ -95,11 +99,25 @@ class ContainerWrapper:
                 "success": success
             }
             
-        except Exception as e:
-            self._logger.error(f"Error executing command: {e}")
+        except ContainerError as e:
+            log_exception(self._logger, f"Container error executing command: {command[:100]}", e, include_traceback=False)
+            return {
+                "exit_code": e.exit_status if hasattr(e, 'exit_status') else -1,
+                "output": str(e),
+                "success": False
+            }
+        except NotFound as e:
+            log_exception(self._logger, "Container not found", e, include_traceback=False)
             return {
                 "exit_code": -1,
-                "output": str(e),
+                "output": "Container not found or has been removed",
+                "success": False
+            }
+        except Exception as e:
+            log_exception(self._logger, f"Unexpected error executing command: {command[:100]}", e)
+            return {
+                "exit_code": -1,
+                "output": f"{type(e).__name__}: {str(e)}",
                 "success": False
             }
     
@@ -190,32 +208,62 @@ class ContainerManager:
             )
         return image
     
-    def _pull_image_if_needed(self, image: str) -> None:
+    def _pull_image_if_needed(self, image: str, pull_timeout: int = 600) -> None:
         """Pull Docker image if not already cached.
         
         Args:
             image: Docker image name
+            pull_timeout: Timeout for image pull in seconds (default: 600)
+        
+        Raises:
+            RuntimeError: If image pull fails
         """
         try:
+            # Check if image exists locally (cached)
             self.client.images.get(image)
-            self._logger.debug(f"Image {image} already cached")
+            self._logger.debug(f"Image {image} already cached locally")
         except ImageNotFound:
-            self._logger.info(f"Pulling image {image}...")
+            self._logger.info(f"Image {image} not cached, pulling from registry...")
             try:
-                self.client.images.pull(image)
-                self._logger.info(f"Successfully pulled image {image}")
+                # Pull with timeout
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError(f"Image pull timed out after {pull_timeout} seconds")
+                
+                # Set timeout for pull operation
+                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(pull_timeout)
+                
+                try:
+                    self.client.images.pull(image)
+                    self._logger.info(f"Successfully pulled and cached image {image}")
+                finally:
+                    # Cancel alarm and restore handler
+                    signal.alarm(0)
+                    signal.signal(signal.SIGALRM, old_handler)
+                    
+            except TimeoutError as e:
+                log_exception(self._logger, f"Timeout pulling image {image}", e, include_traceback=False)
+                raise RuntimeError(f"Failed to pull image {image}: {e}") from e
+            except APIError as e:
+                log_exception(self._logger, f"Docker API error pulling image {image}", e, include_traceback=False)
+                raise RuntimeError(f"Failed to pull image {image}: {e}") from e
             except Exception as e:
-                self._logger.error(f"Failed to pull image {image}: {e}")
-                raise
+                log_exception(self._logger, f"Failed to pull image {image}", e)
+                raise RuntimeError(f"Failed to pull image {image}: {e}") from e
     
     @contextmanager
-    def spawn_container(self, platform: str):
+    def spawn_container(self, platform: str, pull_timeout: Optional[int] = None, 
+                       startup_timeout: Optional[int] = None):
         """Spawn a container for the specified platform.
         
         This is a context manager that ensures proper container cleanup.
         
         Args:
             platform: Platform identifier (e.g., "ubuntu:22.04")
+            pull_timeout: Timeout for image pull in seconds (default: from config)
+            startup_timeout: Timeout for container startup in seconds (default: from config)
         
         Yields:
             ContainerWrapper instance for container operations
@@ -230,12 +278,19 @@ class ContainerManager:
             ...     result = container.exec("apt-get update")
             ...     print(result["success"])
         """
+        # Load timeouts from config if not provided
+        config = get_config()
+        if pull_timeout is None:
+            pull_timeout = config.get("containers.pull_timeout", 600)
+        if startup_timeout is None:
+            startup_timeout = config.get("containers.startup_timeout", 30)
+        
         image = self.get_image_for_platform(platform)
         container = None
         
         try:
-            # Pull image if needed
-            self._pull_image_if_needed(image)
+            # Pull image if needed (with caching)
+            self._pull_image_if_needed(image, pull_timeout=pull_timeout)
             
             # Create container
             self._logger.info(f"Creating container for platform {platform}")
@@ -249,9 +304,20 @@ class ContainerManager:
                 name=f"saitest-{platform.replace(':', '-')}-{id(self)}"
             )
             
+            # Wait for container to be ready with timeout
+            import time
+            start_time = time.time()
+            while time.time() - start_time < startup_timeout:
+                container.reload()
+                if container.status == 'running':
+                    break
+                time.sleep(0.5)
+            else:
+                raise RuntimeError(f"Container failed to start within {startup_timeout} seconds")
+            
             # Track active container
             self.active_containers[platform] = container
-            self._logger.info(f"Container {container.short_id} created for {platform}")
+            self._logger.info(f"Container {container.short_id} created and ready for {platform}")
             
             # Yield wrapper
             yield ContainerWrapper(container, platform)
@@ -273,8 +339,12 @@ class ContainerManager:
                     self._logger.info(f"Removing container {container.short_id}")
                     container.remove(force=True)
                     self._logger.info(f"Container {container.short_id} cleaned up")
+                except NotFound:
+                    self._logger.warning(f"Container {container.short_id} already removed")
+                except APIError as e:
+                    log_exception(self._logger, f"Docker API error cleaning up container {container.short_id}", e, include_traceback=False)
                 except Exception as e:
-                    self._logger.error(f"Error cleaning up container: {e}")
+                    log_exception(self._logger, f"Error cleaning up container {container.short_id}", e)
                 finally:
                     # Remove from active containers
                     if platform in self.active_containers:
@@ -286,7 +356,11 @@ class ContainerManager:
         This method should be called on shutdown to ensure no containers
         are left running.
         """
-        self._logger.info("Cleaning up all active containers")
+        if not self.active_containers:
+            self._logger.debug("No active containers to clean up")
+            return
+        
+        self._logger.info(f"Cleaning up {len(self.active_containers)} active containers")
         
         for platform, container in list(self.active_containers.items()):
             try:
@@ -294,10 +368,15 @@ class ContainerManager:
                 container.stop(timeout=10)
                 container.remove(force=True)
                 self._logger.info(f"Container for {platform} cleaned up")
+            except NotFound:
+                self._logger.warning(f"Container for {platform} already removed")
+            except APIError as e:
+                log_exception(self._logger, f"Docker API error cleaning up container for {platform}", e, include_traceback=False)
             except Exception as e:
-                self._logger.error(f"Error cleaning up container for {platform}: {e}")
+                log_exception(self._logger, f"Error cleaning up container for {platform}", e)
             finally:
-                del self.active_containers[platform]
+                if platform in self.active_containers:
+                    del self.active_containers[platform]
         
         self._logger.info("All containers cleaned up")
     

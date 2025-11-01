@@ -10,6 +10,7 @@ This agent analyzes observations from all platform-provider combinations to:
 
 import json
 import logging
+import time
 from typing import Dict, List, Any
 from collections import defaultdict
 
@@ -19,9 +20,10 @@ from langchain_core.messages import HumanMessage
 from saitest.core.state import VerificationState
 from saitest.models.observation import Observation
 from saitest.models.state import PlatformResult
+from saitest.utils.logging_config import get_logger, ProgressIndicator, log_exception, log_operation_complete
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def analysis_agent(state: VerificationState) -> VerificationState:
@@ -42,62 +44,112 @@ async def analysis_agent(state: VerificationState) -> VerificationState:
     """
     software = state["software"]
     platform_results = state["platform_results"]
+    start_time = time.time()
     
     if not platform_results:
         logger.warning(f"No platform results to analyze for {software}")
         state["messages"].append("Analysis skipped: No platform results available")
         return state
     
-    logger.info(
-        f"Starting analysis for {software}: "
-        f"{len(platform_results)} platform-provider combinations tested"
-    )
-    
-    # Step 1: Aggregate observations by type and provider
-    aggregated = _aggregate_observations(platform_results)
-    state["aggregated_observations"] = aggregated
-    
-    logger.info(
-        f"Aggregated observations: "
-        f"{sum(len(obs) for obs in aggregated.values())} total observations "
-        f"across {len(aggregated)} types"
-    )
-    
-    # Step 2: Identify common patterns using LLM
-    patterns = await _identify_patterns(software, aggregated, platform_results)
-    state["patterns"] = patterns
-    
-    logger.info(f"Identified {len(patterns)} common patterns")
-    
-    # Step 3: Identify platform-specific and provider-specific variations using LLM
-    variations = await _identify_variations(software, aggregated, platform_results)
-    state["variations"] = variations
-    
-    logger.info(
-        f"Identified variations for {len(variations)} platform-provider combinations"
-    )
-    
-    # Step 4: Calculate confidence scores
-    confidence_scores = _calculate_confidence_scores(
-        platform_results,
-        patterns,
-        variations
-    )
-    state["confidence_scores"] = confidence_scores
-    
-    logger.info(
-        f"Calculated confidence scores: "
-        f"pattern={confidence_scores.get('pattern_confidence', 0):.2f}, "
-        f"variation={confidence_scores.get('variation_confidence', 0):.2f}, "
-        f"overall={confidence_scores.get('overall_confidence', 0):.2f}"
-    )
-    
-    # Update messages
-    state["messages"].append(
-        f"Analysis complete: {len(patterns)} patterns, "
-        f"{len(variations)} variations, "
-        f"confidence={confidence_scores.get('overall_confidence', 0):.2f}"
-    )
+    try:
+        with ProgressIndicator(f"Analyzing results for {software}", logger) as progress:
+            logger.info(
+                f"Starting analysis for {software}: "
+                f"{len(platform_results)} platform-provider combinations tested"
+            )
+            
+            # Step 1: Aggregate observations by type and provider
+            progress.update("Aggregating observations...")
+            try:
+                aggregated = _aggregate_observations(platform_results)
+                state["aggregated_observations"] = aggregated
+                
+                total_obs = sum(len(obs) for obs in aggregated.values())
+                logger.info(
+                    f"Aggregated observations: {total_obs} total observations "
+                    f"across {len(aggregated)} types"
+                )
+                progress.update(f"Aggregated {total_obs} observations")
+            except Exception as e:
+                log_exception(logger, "Failed to aggregate observations", e)
+                state["messages"].append(f"Analysis failed: Could not aggregate observations - {str(e)}")
+                return state
+            
+            # Step 2: Identify common patterns using LLM
+            progress.update("Identifying common patterns...")
+            try:
+                patterns = await _identify_patterns(software, aggregated, platform_results)
+                state["patterns"] = patterns
+                
+                pattern_count = sum(len(v) if isinstance(v, list) else 0 for v in patterns.values())
+                logger.info(f"Identified {pattern_count} common patterns")
+                progress.update(f"Identified {pattern_count} patterns")
+            except Exception as e:
+                log_exception(logger, "Failed to identify patterns", e)
+                state["patterns"] = {}
+                state["messages"].append(f"Pattern identification failed: {str(e)}")
+            
+            # Step 3: Identify platform-specific and provider-specific variations using LLM
+            progress.update("Identifying variations...")
+            try:
+                variations = await _identify_variations(software, aggregated, platform_results)
+                state["variations"] = variations
+                
+                logger.info(
+                    f"Identified variations for {len(variations)} platform-provider combinations"
+                )
+                progress.update(f"Identified {len(variations)} variations")
+            except Exception as e:
+                log_exception(logger, "Failed to identify variations", e)
+                state["variations"] = {}
+                state["messages"].append(f"Variation identification failed: {str(e)}")
+            
+            # Step 4: Calculate confidence scores
+            progress.update("Calculating confidence scores...")
+            try:
+                confidence_scores = _calculate_confidence_scores(
+                    platform_results,
+                    state.get("patterns", {}),
+                    state.get("variations", {})
+                )
+                state["confidence_scores"] = confidence_scores
+                
+                logger.info(
+                    f"Calculated confidence scores: "
+                    f"pattern={confidence_scores.get('pattern_confidence', 0):.2f}, "
+                    f"variation={confidence_scores.get('variation_confidence', 0):.2f}, "
+                    f"overall={confidence_scores.get('overall_confidence', 0):.2f}"
+                )
+            except Exception as e:
+                log_exception(logger, "Failed to calculate confidence scores", e)
+                state["confidence_scores"] = {"overall_confidence": 0.0}
+                state["messages"].append(f"Confidence calculation failed: {str(e)}")
+            
+            # Update messages
+            state["messages"].append(
+                f"Analysis complete: {len(state.get('patterns', {}))} patterns, "
+                f"{len(state.get('variations', {}))} variations, "
+                f"confidence={state.get('confidence_scores', {}).get('overall_confidence', 0):.2f}"
+            )
+        
+        log_operation_complete(
+            logger,
+            "Analysis",
+            success=True,
+            duration=time.time() - start_time,
+            patterns=len(state.get("patterns", {})),
+            variations=len(state.get("variations", {}))
+        )
+        
+    except Exception as e:
+        log_exception(logger, "Analysis agent failed with unexpected error", e)
+        state["messages"].append(f"Analysis failed with unexpected error: {type(e).__name__}: {str(e)}")
+        log_operation_complete(
+            logger,
+            "Analysis",
+            success=False,
+            duration=time.time() - start_time
+        )
     
     return state
 

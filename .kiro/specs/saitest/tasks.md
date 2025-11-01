@@ -272,13 +272,13 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Update CI/CD
   - _Requirements: 14, 15, 18_
 
-- [ ] 25. Add error handling and logging
+- [x] 25. Add error handling and logging
   - Add comprehensive error handling throughout
   - Add logging for debugging
   - Add progress indicators for long-running operations
   - _Requirements: 12_
 
-- [ ] 26. Performance optimization
+- [x] 26. Performance optimization
   - Add caching for Docker images
   - Optimize filesystem scanning
   - Add timeout controls

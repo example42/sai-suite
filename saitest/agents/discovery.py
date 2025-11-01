@@ -10,6 +10,7 @@ This agent discovers available installation methods for software by:
 import asyncio
 import json
 import logging
+import time
 from typing import Dict, List, Optional, Any
 
 from langchain_openai import ChatOpenAI
@@ -17,10 +18,11 @@ from langchain_core.messages import HumanMessage
 
 from saitest.core.state import VerificationState
 from saitest.utils.provider_executor import ProviderCommandExecutor
+from saitest.utils.logging_config import get_logger, ProgressIndicator, log_exception, log_operation_complete
 from saigen.repositories.manager import RepositoryManager
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def discovery_agent(state: VerificationState) -> VerificationState:
@@ -40,61 +42,95 @@ async def discovery_agent(state: VerificationState) -> VerificationState:
         Updated verification state with discovery results
     """
     software = state["software"]
-    logger.info(f"Starting discovery for software: {software}")
+    start_time = time.time()
     
-    # Initialize provider executor to get available providerdata
-    provider_executor = ProviderCommandExecutor()
-    available_providers = provider_executor.get_available_providers()
-    
-    logger.info(f"Found {len(available_providers)} providers with providerdata: {', '.join(available_providers)}")
-    
-    # Query repository cache for package metadata
-    providers_with_packages = await _query_repository_cache(software, available_providers)
-    
-    if providers_with_packages:
-        # We found package data in repositories
-        logger.info(
-            f"Found package data in repositories for {len(providers_with_packages)} providers: "
-            f"{', '.join(providers_with_packages.keys())}"
+    try:
+        with ProgressIndicator(f"Discovering installation methods for {software}", logger) as progress:
+            # Initialize provider executor to get available providerdata
+            try:
+                provider_executor = ProviderCommandExecutor()
+                available_providers = provider_executor.get_available_providers()
+                
+                logger.info(f"Found {len(available_providers)} providers with providerdata: {', '.join(available_providers)}")
+                progress.update(f"Found {len(available_providers)} available providers")
+                
+            except Exception as e:
+                log_exception(logger, "Failed to load provider data", e)
+                state["discovery_complete"] = False
+                state["messages"].append(f"Discovery failed: Could not load provider data - {str(e)}")
+                return state
+            
+            # Query repository cache for package metadata
+            progress.update("Querying repository cache...")
+            providers_with_packages = await _query_repository_cache(software, available_providers)
+            
+            if providers_with_packages:
+                # We found package data in repositories
+                logger.info(
+                    f"Found package data in repositories for {len(providers_with_packages)} providers: "
+                    f"{', '.join(providers_with_packages.keys())}"
+                )
+                progress.update(f"Found {len(providers_with_packages)} providers in repository cache")
+                
+                # Update state with discovered providers
+                state["installation_methods"] = list(providers_with_packages.keys())
+                state["package_versions"] = {
+                    provider: info["version"]
+                    for provider, info in providers_with_packages.items()
+                    if info.get("version")
+                }
+                state["expected_dependencies"] = {
+                    provider: info.get("dependencies", [])
+                    for provider, info in providers_with_packages.items()
+                }
+                
+                # Use LLM to predict expected services, files, and ports
+                progress.update("Predicting expected resources...")
+                await _predict_expected_resources(state, providers_with_packages)
+                
+                state["discovery_complete"] = True
+                state["messages"].append(
+                    f"Discovery complete: Found {len(providers_with_packages)} installation methods"
+                )
+                
+            else:
+                # No repository data found, use LLM for research
+                logger.info(f"No repository data found for {software}, using LLM for research")
+                progress.update("No repository data found, using LLM research...")
+                
+                success = await _llm_discovery(state, available_providers)
+                
+                if success:
+                    state["discovery_complete"] = True
+                    state["messages"].append(
+                        f"Discovery complete via LLM: Found {len(state['installation_methods'])} installation methods"
+                    )
+                    progress.update(f"LLM discovered {len(state['installation_methods'])} installation methods")
+                else:
+                    state["discovery_complete"] = False
+                    state["messages"].append(
+                        f"Discovery failed: Could not find installation methods for {software}"
+                    )
+                    logger.error(f"Discovery failed for {software}")
+        
+        log_operation_complete(
+            logger,
+            "Discovery",
+            success=state["discovery_complete"],
+            duration=time.time() - start_time,
+            methods_found=len(state.get("installation_methods", []))
         )
         
-        # Update state with discovered providers
-        state["installation_methods"] = list(providers_with_packages.keys())
-        state["package_versions"] = {
-            provider: info["version"]
-            for provider, info in providers_with_packages.items()
-            if info.get("version")
-        }
-        state["expected_dependencies"] = {
-            provider: info.get("dependencies", [])
-            for provider, info in providers_with_packages.items()
-        }
-        
-        # Use LLM to predict expected services, files, and ports
-        await _predict_expected_resources(state, providers_with_packages)
-        
-        state["discovery_complete"] = True
-        state["messages"].append(
-            f"Discovery complete: Found {len(providers_with_packages)} installation methods"
+    except Exception as e:
+        log_exception(logger, "Discovery agent failed with unexpected error", e)
+        state["discovery_complete"] = False
+        state["messages"].append(f"Discovery failed with unexpected error: {type(e).__name__}: {str(e)}")
+        log_operation_complete(
+            logger,
+            "Discovery",
+            success=False,
+            duration=time.time() - start_time
         )
-        
-    else:
-        # No repository data found, use LLM for research
-        logger.info(f"No repository data found for {software}, using LLM for research")
-        
-        success = await _llm_discovery(state, available_providers)
-        
-        if success:
-            state["discovery_complete"] = True
-            state["messages"].append(
-                f"Discovery complete via LLM: Found {len(state['installation_methods'])} installation methods"
-            )
-        else:
-            state["discovery_complete"] = False
-            state["messages"].append(
-                f"Discovery failed: Could not find installation methods for {software}"
-            )
-            logger.error(f"Discovery failed for {software}")
     
     return state
 

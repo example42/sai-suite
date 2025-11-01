@@ -14,9 +14,10 @@ from sai.providers.loader import ProviderLoader, ProviderLoadError, ProviderVali
 from sai.providers.template_engine import TemplateEngine, TemplateResolutionError
 from sai.models.provider_data import ProviderData
 from saigen.models.saidata import SaiData
+from saitest.utils.logging_config import get_logger, log_exception
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ProviderExecutorError(Exception):
@@ -87,13 +88,16 @@ class ProviderCommandExecutor:
                 f"{', '.join(self.providers.keys())}"
             )
             
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             self._logger.warning(
                 f"Providers directory not found: {self.providers_dir}. "
                 "No providers will be available."
             )
+        except ProviderLoadError as e:
+            log_exception(self._logger, "Provider load error", e, include_traceback=False)
+            # Continue with empty providers dict
         except Exception as e:
-            self._logger.error(f"Error loading providers: {e}")
+            log_exception(self._logger, "Unexpected error loading providers", e)
             # Continue with empty providers dict
     
     def _validate_providers(self) -> None:

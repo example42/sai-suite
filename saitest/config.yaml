@@ -56,6 +56,14 @@ containers:
   # Includes image pull, container creation, and command execution
   timeout: 600
   
+  # Timeout for Docker image pull operations (seconds)
+  # Separate from general timeout to handle slow network conditions
+  pull_timeout: 600
+  
+  # Timeout for container startup (seconds)
+  # Time to wait for container to reach 'running' state
+  startup_timeout: 30
+  
   # Maximum number of concurrent containers
   # Limits resource usage during parallel testing
   max_concurrent: 4
@@ -101,6 +109,19 @@ verification:
   
   # Timeout for individual installation attempts (seconds)
   installation_timeout: 300
+  
+  # Filesystem monitoring configuration
+  filesystem:
+    # Timeout for filesystem scan operations (seconds)
+    scan_timeout: 120
+    
+    # Maximum directory depth for scanning
+    # Lower values improve performance but may miss deeply nested files
+    max_depth: 10
+    
+    # Custom paths to monitor (empty list uses defaults)
+    # Default paths: /usr/bin, /usr/sbin, /etc, /lib/systemd/system, etc.
+    monitored_paths: []
 
 # Provider Configuration
 providers:

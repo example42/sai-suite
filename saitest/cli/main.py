@@ -9,18 +9,18 @@ import sys
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional
+from datetime import datetime
 
 import click
 
 from saitest import __version__
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Import logging configuration
+from saitest.utils.logging_config import setup_logging, get_logger
+
+# Initialize logger (will be configured per command)
+logger = get_logger(__name__)
 
 
 def check_docker_available() -> bool:
@@ -159,11 +159,16 @@ def verify(
     # Import here to avoid loading heavy dependencies at CLI startup
     from saitest.core.orchestrator import run_verification
     from saitest.agents.generation import write_saidata_files
+    from pathlib import Path as PathLib
     
     # Configure logging based on verbose flag
-    if verbose:
-        logging.getLogger('saitest').setLevel(logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
+    log_file = PathLib.home() / '.saitest' / 'logs' / f'verify-{software}-{datetime.now().strftime("%Y%m%d-%H%M%S")}.log'
+    setup_logging(
+        level=logging.INFO,
+        log_file=log_file if verbose else None,
+        verbose=verbose,
+        quiet=False
+    )
     
     # Check Docker availability
     if not check_docker_available():
@@ -330,11 +335,16 @@ def test(
     # Import here to avoid loading heavy dependencies at CLI startup
     import yaml
     from saitest.core.orchestrator import run_verification
+    from pathlib import Path as PathLib
     
     # Configure logging based on verbose flag
-    if verbose:
-        logging.getLogger('saitest').setLevel(logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
+    log_file = PathLib.home() / '.saitest' / 'logs' / f'test-{saidata_file.stem}-{datetime.now().strftime("%Y%m%d-%H%M%S")}.log'
+    setup_logging(
+        level=logging.INFO,
+        log_file=log_file if verbose else None,
+        verbose=verbose,
+        quiet=False
+    )
     
     # Check Docker availability
     if not check_docker_available():

@@ -7,6 +7,7 @@ all agents in the verification process.
 import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
+import time
 
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -21,9 +22,10 @@ from saitest.agents.installation import installation_agent
 from saitest.agents.analysis import analysis_agent
 from saitest.agents.generation import generation_agent
 from saitest.agents.quality import quality_check_agent
+from saitest.utils.logging_config import get_logger, ProgressIndicator, log_exception, log_operation_complete
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_verification_workflow(
@@ -319,29 +321,54 @@ def run_verification(
         f"target_platforms={platforms or 'auto-select'}"
     )
     
-    # Invoke workflow
+    # Invoke workflow with progress tracking
     logger.info("Invoking workflow - starting agent execution")
+    workflow_start = time.time()
+    
     try:
-        # Run the workflow with the initial state
-        # The workflow will execute all agents and return the final state
-        # Provide a thread_id for checkpointing
-        config_dict = {"configurable": {"thread_id": f"verify-{software}"}}
-        final_state = workflow.invoke(initial_state, config=config_dict)
-        
-        logger.info(
-            f"Workflow completed successfully for {software}. "
-            f"Confidence: {final_state.get('overall_confidence', 0.0):.2f}, "
-            f"Platforms tested: {len(final_state.get('platform_results', []))}"
-        )
+        with ProgressIndicator("Verification workflow", logger) as progress:
+            # Run the workflow with the initial state
+            # The workflow will execute all agents and return the final state
+            # Provide a thread_id for checkpointing
+            config_dict = {"configurable": {"thread_id": f"verify-{software}"}}
+            
+            progress.update("Discovering installation methods...")
+            final_state = workflow.invoke(initial_state, config=config_dict)
+            
+            workflow_duration = time.time() - workflow_start
+            
+            log_operation_complete(
+                logger,
+                "Verification workflow",
+                success=True,
+                duration=workflow_duration,
+                confidence=final_state.get('overall_confidence', 0.0),
+                platforms_tested=len(final_state.get('platform_results', []))
+            )
         
         return final_state
         
+    except KeyboardInterrupt:
+        logger.warning("Workflow interrupted by user")
+        error_state = initial_state.copy()
+        error_state["messages"].append("Workflow interrupted by user")
+        error_state["overall_confidence"] = 0.0
+        error_state["needs_human_review"] = True
+        return error_state
+        
     except Exception as e:
-        logger.error(f"Workflow execution failed: {str(e)}", exc_info=True)
+        workflow_duration = time.time() - workflow_start
+        log_exception(logger, "Workflow execution failed", e, include_traceback=True)
+        log_operation_complete(
+            logger,
+            "Verification workflow",
+            success=False,
+            duration=workflow_duration
+        )
         
         # Return state with error information
         error_state = initial_state.copy()
-        error_state["messages"].append(f"Workflow failed with error: {str(e)}")
+        error_state["messages"].append(f"Workflow failed with error: {type(e).__name__}: {str(e)}")
         error_state["overall_confidence"] = 0.0
         error_state["needs_human_review"] = True
         
