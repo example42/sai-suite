@@ -20,7 +20,7 @@ if [[ -z "$VIRTUAL_ENV" ]]; then
 fi
 
 # Parse arguments
-INSTALL_MODE=${1:-both}
+INSTALL_MODE=${1:-all}
 
 case $INSTALL_MODE in
     sai)
@@ -33,15 +33,21 @@ case $INSTALL_MODE in
         pip install -e ./saigen[dev]
         echo "✅ SAIGEN installed in editable mode"
         ;;
-    both)
-        echo "📦 Installing both SAI and SAIGEN..."
+    saitest)
+        echo "📦 Installing SAITEST only..."
+        pip install -e ./saitest[dev]
+        echo "✅ SAITEST installed in editable mode"
+        ;;
+    all)
+        echo "📦 Installing all packages (SAI, SAIGEN, SAITEST)..."
         pip install -e ./sai[dev]
         pip install -e ./saigen[dev]
-        echo "✅ Both packages installed in editable mode"
+        pip install -e ./saitest[dev]
+        echo "✅ All packages installed in editable mode"
         ;;
     *)
         echo "❌ Invalid argument: $INSTALL_MODE"
-        echo "Usage: $0 [sai|saigen|both]"
+        echo "Usage: $0 [sai|saigen|saitest|all]"
         exit 1
         ;;
 esac
@@ -50,7 +56,12 @@ echo ""
 echo "🎉 Installation complete!"
 echo ""
 echo "Verify installation:"
-echo "  sai --version"
-if [[ $INSTALL_MODE == "saigen" || $INSTALL_MODE == "both" ]]; then
+if [[ $INSTALL_MODE == "sai" || $INSTALL_MODE == "all" ]]; then
+    echo "  sai --version"
+fi
+if [[ $INSTALL_MODE == "saigen" || $INSTALL_MODE == "all" ]]; then
     echo "  saigen --version"
+fi
+if [[ $INSTALL_MODE == "saitest" || $INSTALL_MODE == "all" ]]; then
+    echo "  saitest --version"
 fi

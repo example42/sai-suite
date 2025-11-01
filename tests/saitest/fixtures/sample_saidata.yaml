@@ -1,0 +1,185 @@
+# Sample saidata file for testing
+# This represents a complete, valid saidata file following schema 0.3
+
+version: "0.3"
+
+metadata:
+  name: nginx
+  description: "High-performance HTTP server and reverse proxy"
+  homepage: "https://nginx.org"
+  license: "BSD-2-Clause"
+  tags:
+    - web-server
+    - reverse-proxy
+    - load-balancer
+  maintainer: "nginx team"
+  documentation: "https://nginx.org/en/docs/"
+
+packages:
+  - name: nginx
+    package_name: nginx
+    version: "1.24.0"
+    description: "Main nginx package"
+
+services:
+  - name: nginx
+    type: systemd
+    enabled: true
+    description: "Nginx HTTP server"
+
+files:
+  - path: /usr/bin/nginx
+    purpose: binary
+    description: "Main nginx executable"
+  
+  - path: /etc/nginx/nginx.conf
+    purpose: config
+    description: "Main nginx configuration file"
+  
+  - path: /etc/nginx/sites-available/default
+    purpose: config
+    description: "Default site configuration"
+  
+  - path: /var/log/nginx/access.log
+    purpose: log
+    description: "Access log file"
+  
+  - path: /var/log/nginx/error.log
+    purpose: log
+    description: "Error log file"
+
+directories:
+  - path: /etc/nginx
+    purpose: config
+    description: "Nginx configuration directory"
+  
+  - path: /var/www/html
+    purpose: data
+    description: "Default web root directory"
+  
+  - path: /var/log/nginx
+    purpose: log
+    description: "Nginx log directory"
+
+commands:
+  - name: nginx
+    path: /usr/bin/nginx
+    description: "Main nginx command"
+  
+  - name: nginx-debug
+    path: /usr/bin/nginx-debug
+    description: "Nginx with debug symbols"
+
+ports:
+  - number: 80
+    protocol: tcp
+    description: "HTTP port"
+  
+  - number: 443
+    protocol: tcp
+    description: "HTTPS port"
+
+# Provider-specific overrides
+providers:
+  apt:
+    packages:
+      - name: nginx
+        package_name: nginx-full
+        version: "1.18.0"
+        description: "Full nginx package with all modules"
+    
+    dependencies:
+      - libssl-dev
+      - libpcre3-dev
+      - zlib1g-dev
+  
+  dnf:
+    packages:
+      - name: nginx
+        package_name: nginx
+        version: "1.20.1"
+    
+    dependencies:
+      - openssl-devel
+      - pcre-devel
+      - zlib-devel
+  
+  brew:
+    packages:
+      - name: nginx
+        package_name: nginx
+        version: "1.24.0"
+    
+    files:
+      - path: /opt/homebrew/bin/nginx
+        purpose: binary
+      
+      - path: /opt/homebrew/etc/nginx/nginx.conf
+        purpose: config
+
+# Installation methods
+sources:
+  - name: main
+    url: "https://nginx.org/download/nginx-{{version}}.tar.gz"
+    build_system: autotools
+    checksum: "sha256:b4c5b1e0e8b0c8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0"
+    configure_args:
+      - "--with-http_ssl_module"
+      - "--with-http_v2_module"
+      - "--with-http_realip_module"
+    build_dependencies:
+      - gcc
+      - make
+      - libssl-dev
+      - libpcre3-dev
+      - zlib1g-dev
+
+binaries:
+  - name: main
+    url: "https://nginx.org/packages/mainline/ubuntu/pool/nginx/n/nginx/nginx_{{version}}-1~jammy_amd64.deb"
+    checksum: "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+    platform: linux
+    architecture: amd64
+    install_path: "/usr/bin"
+
+scripts:
+  - name: official
+    url: "https://nginx.org/packages/keys/nginx_signing.key"
+    checksum: "sha256:1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b"
+    interpreter: bash
+    timeout: 600
+    description: "Official nginx installation script"
+
+# Security information
+security:
+  vulnerabilities:
+    - id: CVE-2023-44487
+      severity: high
+      description: "HTTP/2 Rapid Reset Attack"
+      fixed_in: "1.25.2"
+  
+  checksums:
+    - algorithm: sha256
+      value: "b4c5b1e0e8b0c8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0e8b0"
+
+# Compatibility information
+compatibility:
+  platforms:
+    - linux
+    - macos
+  
+  architectures:
+    - amd64
+    - arm64
+  
+  os_versions:
+    ubuntu:
+      - "20.04"
+      - "22.04"
+      - "24.04"
+    debian:
+      - "11"
+      - "12"
+    centos:
+      - "8"
+      - "9"

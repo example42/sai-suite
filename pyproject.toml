@@ -42,6 +42,9 @@ saitest = [
     "watchdog>=3.0.0",
 ]
 
+[project.scripts]
+saitest = "saitest.cli.main:main"
+
 [tool.black]
 line-length = 100
 target-version = ['py38', 'py39', 'py310', 'py311', 'py312']

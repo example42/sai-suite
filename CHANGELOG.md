@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Integration with Build and CI/CD Pipeline**: Complete integration of saitest package into monorepo build and deployment infrastructure
+  - Added saitest to GitHub Actions workflows (build-and-test.yml, ci.yml)
+  - Updated build-packages.sh to build saitest package alongside sai and saigen
+  - Updated install-local.sh to support saitest installation with new 'all' option
+  - Updated publish-packages.sh to publish saitest to PyPI (test and prod)
+  - Added saitest entry point to root pyproject.toml for CLI command
+  - Fixed circular import in saitest/core/__init__.py
+  - Created test fixtures directory with mock LLM responses and sample data
+  - Marked tasks 23 and 24 as complete in saitest specification
 - **Saitest CLI Interface and Verification Entry Point**: Complete implementation of CLI interface and main verification workflow entry point
   - Created `saitest/cli/main.py` with Click-based CLI structure
   - Implemented `verify` command with software argument and options (--platforms, --output-dir, --format, --verbose)

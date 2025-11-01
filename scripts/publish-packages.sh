@@ -1,11 +1,11 @@
 #!/bin/bash
 # Publish packages to PyPI
-# Usage: ./scripts/publish-packages.sh [test|prod] [sai|saigen|both]
+# Usage: ./scripts/publish-packages.sh [test|prod] [sai|saigen|saitest|all]
 
 set -e
 
 ENVIRONMENT=${1:-test}
-PACKAGE=${2:-both}
+PACKAGE=${2:-all}
 
 if [[ $ENVIRONMENT == "test" ]]; then
     REPO="testpypi"
@@ -23,7 +23,7 @@ elif [[ $ENVIRONMENT == "prod" ]]; then
     fi
 else
     echo "❌ Invalid environment: $ENVIRONMENT"
-    echo "Usage: $0 [test|prod] [sai|saigen|both]"
+    echo "Usage: $0 [test|prod] [sai|saigen|saitest|all]"
     exit 1
 fi
 
@@ -51,14 +51,19 @@ case $PACKAGE in
         echo "📦 Publishing SAIGEN package..."
         twine upload --repository $REPO dist/saigen-*.whl dist/saigen-*.tar.gz
         ;;
-    both)
-        echo "📦 Publishing both packages..."
+    saitest)
+        echo "📦 Publishing SAITEST package..."
+        twine upload --repository $REPO dist/saitest-*.whl dist/saitest-*.tar.gz
+        ;;
+    all)
+        echo "📦 Publishing all packages..."
         twine upload --repository $REPO dist/sai-*.whl dist/sai-*.tar.gz
         twine upload --repository $REPO dist/saigen-*.whl dist/saigen-*.tar.gz
+        twine upload --repository $REPO dist/saitest-*.whl dist/saitest-*.tar.gz
         ;;
     *)
         echo "❌ Invalid package: $PACKAGE"
-        echo "Usage: $0 [test|prod] [sai|saigen|both]"
+        echo "Usage: $0 [test|prod] [sai|saigen|saitest|all]"
         exit 1
         ;;
 esac
@@ -67,9 +72,12 @@ echo ""
 echo "✅ Publishing complete!"
 echo ""
 echo "Install from $ENVIRONMENT:"
-if [[ $PACKAGE == "sai" || $PACKAGE == "both" ]]; then
+if [[ $PACKAGE == "sai" || $PACKAGE == "all" ]]; then
     echo "  pip install --index-url $REPO_URL sai"
 fi
-if [[ $PACKAGE == "saigen" || $PACKAGE == "both" ]]; then
+if [[ $PACKAGE == "saigen" || $PACKAGE == "all" ]]; then
     echo "  pip install --index-url $REPO_URL saigen"
+fi
+if [[ $PACKAGE == "saitest" || $PACKAGE == "all" ]]; then
+    echo "  pip install --index-url $REPO_URL saitest"
 fi

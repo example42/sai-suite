@@ -254,7 +254,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Test error scenarios
   - _Requirements: All_
 
-- [ ] 23. Create test fixtures
+- [x] 23. Create test fixtures
   - Create tests/saitest/fixtures/sample_states.py
   - Create tests/saitest/fixtures/sample_observations.py
   - Create tests/saitest/fixtures/sample_saidata.yaml
@@ -263,11 +263,13 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 9: Integration and Polish
 
-- [ ] 24. Integrate with existing sai-suite
+- [x] 24. Integrate with existing sai-suite
   - Update root pyproject.toml with saitest entry point
   - Ensure imports from saigen work correctly
   - Ensure providerdata loading works correctly
   - Test optional dependency installation
+  - Update release scripts
+  - Update CI/CD
   - _Requirements: 14, 15, 18_
 
 - [ ] 25. Add error handling and logging
