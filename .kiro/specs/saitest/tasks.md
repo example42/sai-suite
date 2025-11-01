@@ -182,7 +182,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Compile workflow with checkpointer
   - _Requirements: 1_
 
-- [ ] 16. Implement run_verification function
+- [x] 16. Implement run_verification function
   - Initialize VerificationState with input parameters
   - Invoke workflow with initial state
   - Return final VerificationState with results
@@ -190,13 +190,13 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 6: CLI Interface
 
-- [ ] 17. Implement main CLI structure
+- [x] 17. Implement main CLI structure
   - Create saitest/cli/main.py
   - Set up Click CLI with main group
   - Add version option
   - _Requirements: 10_
 
-- [ ] 17.1 Implement verify command
+- [x] 17.1 Implement verify command
   - Create verify command with software argument
   - Add --platforms, --output-dir, --format, --verbose options
   - Call run_verification function
@@ -204,13 +204,13 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Write saidata files to output directory
   - _Requirements: 10_
 
-- [ ] 17.2 Add Docker availability check
+- [x] 17.2 Add Docker availability check
   - Check if Docker is available before running
   - Display helpful error message if Docker not found
   - Provide installation instructions
   - _Requirements: 15_
 
-- [ ] 18. Implement test command
+- [x] 18. Implement test command
   - Create test command with saidata_file argument
   - Load existing saidata
   - Extract software name from metadata
@@ -221,7 +221,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 7: Configuration and Documentation
 
-- [ ] 19. Create configuration file
+- [x] 19. Create configuration file
   - Create saitest/config.yaml with default settings
   - Include LLM provider, model, temperature settings
   - Include platform defaults
@@ -229,7 +229,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Include verification settings (max_retries, confidence_threshold)
   - _Requirements: 1_
 
-- [ ] 20. Create saitest documentation
+- [x] 20. Create saitest documentation
   - Create saitest/docs/README.md with overview
   - Create saitest/docs/architecture.md with design details
   - Create saitest/docs/cli-reference.md with command documentation
@@ -238,7 +238,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
 
 ## Phase 8: Testing and Quality Assurance
 
-- [ ] 21. Create unit tests for core components
+- [x] 21. Create unit tests for core components
   - Create tests/saitest/unit/test_state.py
   - Create tests/saitest/unit/test_container_manager.py
   - Create tests/saitest/unit/test_fs_monitor.py
@@ -246,7 +246,7 @@ This task list implements saitest, an agent-based verification tool using LangGr
   - Mock external dependencies (Docker, LLM)
   - _Requirements: All_
 
-- [ ] 22. Create integration tests
+- [x] 22. Create integration tests
   - Create tests/saitest/integration/test_workflow.py
   - Test full workflow with real containers
   - Test with known software (nginx as example)

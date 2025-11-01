@@ -247,3 +247,102 @@ def route_after_quality_check(state: VerificationState) -> str:
             f"Max retries reached, completing with confidence {overall_confidence:.2f}"
         )
         return "end"
+
+
+def run_verification(
+    software: str,
+    platforms: Optional[list] = None,
+    config: Optional[Dict[str, Any]] = None
+) -> VerificationState:
+    """Execute the verification workflow for a software package.
+    
+    This is the main entry point for running a verification workflow. It:
+    1. Creates the workflow graph
+    2. Initializes the verification state with input parameters
+    3. Invokes the workflow to execute all agents
+    4. Returns the final state with results
+    
+    The workflow will automatically:
+    - Discover installation methods
+    - Select platforms (or use provided ones)
+    - Test installations on each platform-provider combination
+    - Analyze results and identify patterns
+    - Generate saidata files
+    - Perform quality checks
+    
+    Args:
+        software: Name of the software to verify (e.g., "nginx", "apache")
+        platforms: Optional list of platform identifiers to test
+                  (e.g., ["ubuntu:22.04", "debian:12"])
+                  If None, the workflow will select platforms automatically
+        config: Optional configuration dictionary with settings:
+                - max_retries: Maximum retry attempts (default: 2)
+                - checkpoint_dir: Directory for workflow checkpointing
+                - input_saidata: Existing saidata for testing
+    
+    Returns:
+        VerificationState containing all results, including:
+        - platform_results: Results from each platform-provider test
+        - generated_saidata: Generated saidata structure
+        - overall_confidence: Confidence score (0.0 to 1.0)
+        - validation_errors: Any schema validation errors
+        - messages: Log messages from the workflow
+    
+    Example:
+        >>> result = run_verification("nginx", platforms=["ubuntu:22.04"])
+        >>> print(f"Confidence: {result['overall_confidence']}")
+        >>> print(f"Platforms tested: {len(result['platform_results'])}")
+    """
+    logger.info(f"Starting verification workflow for software: {software}")
+    
+    # Extract configuration
+    config = config or {}
+    max_retries = config.get("max_retries", 2)
+    checkpoint_dir = config.get("checkpoint_dir")
+    input_saidata = config.get("input_saidata")
+    
+    # Create the workflow
+    logger.info("Creating verification workflow graph")
+    workflow = create_verification_workflow(checkpoint_dir=checkpoint_dir)
+    
+    # Initialize state
+    logger.info(f"Initializing verification state for {software}")
+    initial_state = create_initial_state(
+        software=software,
+        target_platforms=platforms,
+        input_saidata=input_saidata,
+        max_retries=max_retries
+    )
+    
+    logger.info(
+        f"Configuration: max_retries={max_retries}, "
+        f"target_platforms={platforms or 'auto-select'}"
+    )
+    
+    # Invoke workflow
+    logger.info("Invoking workflow - starting agent execution")
+    try:
+        # Run the workflow with the initial state
+        # The workflow will execute all agents and return the final state
+        # Provide a thread_id for checkpointing
+        config_dict = {"configurable": {"thread_id": f"verify-{software}"}}
+        final_state = workflow.invoke(initial_state, config=config_dict)
+        
+        logger.info(
+            f"Workflow completed successfully for {software}. "
+            f"Confidence: {final_state.get('overall_confidence', 0.0):.2f}, "
+            f"Platforms tested: {len(final_state.get('platform_results', []))}"
+        )
+        
+        return final_state
+        
+    except Exception as e:
+        logger.error(f"Workflow execution failed: {str(e)}", exc_info=True)
+        
+        # Return state with error information
+        error_state = initial_state.copy()
+        error_state["messages"].append(f"Workflow failed with error: {str(e)}")
+        error_state["overall_confidence"] = 0.0
+        error_state["needs_human_review"] = True
+        
+        return error_state

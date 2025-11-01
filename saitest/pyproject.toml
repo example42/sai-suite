@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "saitest"
+version = "0.1.0"
+description = "Saitest: Agent-based verification tool for generating and validating saidata"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [
+    {name = "SAI Team", email = "team@sai.software"}
+]
+maintainers = [
+    {name = "SAI Team", email = "team@sai.software"}
+]
+keywords = [
+    "software-verification",
+    "testing",
+    "saidata",
+    "langgraph",
+    "agents",
+    "docker",
+    "automation",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+requires-python = ">=3.8"
+
+# Core dependencies for saitest
+dependencies = [
+    "pydantic>=2.0.0,<3.0.0",
+    "click>=8.0.0,<9.0.0",
+    "pyyaml>=6.0,<7.0",
+    "jsonschema>=4.0.0,<5.0.0",
+    "langgraph>=0.1.0",
+    "langchain-core>=0.1.0",
+    "langchain-openai>=0.1.0",
+    "langchain-anthropic>=0.1.0",
+    "docker>=7.0.0",
+    "watchdog>=3.0.0",
+]
+
+[project.optional-dependencies]
+# Development dependencies
+dev = [
+    "pytest>=7.0.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "black>=23.0.0,<24.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "flake8>=6.0.0,<7.0.0",
+    "mypy>=1.0.0,<2.0.0",
+]
+
+# Testing only
+test = [
+    "pytest>=7.0.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+]
+
+# All optional features
+all = [
+    "saitest[dev]",
+]
+
+[project.urls]
+Homepage = "https://sai.software"
+Documentation = "https://sai.software/docs/saitest"
+Repository = "https://github.com/example42/sai-suite"
+Issues = "https://github.com/example42/sai-suite/issues"
+"Source Code" = "https://github.com/example42/sai-suite/tree/main/saitest"
+
+[project.scripts]
+saitest = "saitest.cli.main:main"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+packages = ["saitest"]
+
+[tool.setuptools.package-dir]
+saitest = "."
+
+[tool.setuptools.package-data]
+saitest = ["py.typed", "*.yaml", "*.yml", "*.json"]
