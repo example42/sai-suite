@@ -1,6 +1,6 @@
 # SAI Software Management Suite
 
-> A comprehensive monorepo containing two complementary Python tools for software management and metadata generation.
+> The SAI suite of tools to generate, test and use saidata.
 
 **Repository:** [github.com/example42/sai-suite](https://github.com/example42/sai-suite)  
 **Website:** [sai.software](https://sai.software)  

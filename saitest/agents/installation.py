@@ -31,7 +31,7 @@ async def installation_agent(state: VerificationState) -> VerificationState:
     """Installation agent that executes software installation.
     
     This agent:
-    1. Gets the current platform-provider combination from state
+    1. Determines the next platform-provider combination to test
     2. Binds the install_package tool to an LLM
     3. Executes installation using the tool
     4. Creates Observation objects from the installation results
@@ -40,20 +40,37 @@ async def installation_agent(state: VerificationState) -> VerificationState:
     7. Updates VerificationState with the platform result
     
     Args:
-        state: Current verification state with current_platform and current_provider
+        state: Current verification state
     
     Returns:
         Updated verification state with new PlatformResult added
     """
     software = state["software"]
-    platform = state.get("current_platform")
-    provider = state.get("current_provider")
     
-    if not platform or not provider:
-        error_msg = "Installation agent called without platform or provider set"
+    # Determine next combination to test
+    all_combinations = state.get("provider_combinations", [])
+    platform_results = state.get("platform_results", [])
+    
+    # Build set of tested combinations
+    tested = {(r.platform, r.provider) for r in platform_results}
+    
+    # Find remaining combinations
+    remaining = [c for c in all_combinations if c not in tested]
+    
+    if not remaining:
+        error_msg = "Installation agent called but no combinations remaining to test"
         logger.error(error_msg)
         state["messages"].append(error_msg)
         return state
+    
+    # Get next combination
+    platform, provider = remaining[0]
+    
+    # Update state with current combination
+    state["current_platform"] = platform
+    state["current_provider"] = provider
+    
+    logger.info(f"Testing combination: {platform} + {provider} ({len(remaining)} remaining)")
     
     start_time = time.time()
     

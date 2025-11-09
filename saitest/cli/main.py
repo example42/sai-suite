@@ -4,6 +4,7 @@ This module provides the command-line interface for saitest, including
 the verify and test commands for software verification and validation.
 """
 
+import asyncio
 import logging
 import sys
 import subprocess
@@ -194,12 +195,12 @@ def verify(
         # Run verification workflow
         click.echo("⚙️  Running verification workflow...")
         
-        # Run the workflow (it's synchronous)
-        result = run_verification(
+        # Run the async workflow
+        result = asyncio.run(run_verification(
             software=software,
             platforms=platform_list,
             config={}
-        )
+        ))
         
         # Display results
         click.echo()
@@ -388,11 +389,11 @@ def test(
         # Run verification workflow
         click.echo("⚙️  Running verification workflow...")
         
-        result = run_verification(
+        result = asyncio.run(run_verification(
             software=software,
             platforms=platform_list,
             config={'input_saidata': existing_saidata}
-        )
+        ))
         
         # Display results
         click.echo()

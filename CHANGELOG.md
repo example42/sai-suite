@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Async Workflow Execution**: Converted verification workflow to async execution for better performance
+  - Changed `run_verification()` to async function using `ainvoke()` instead of `invoke()`
+  - Updated CLI commands to use `asyncio.run()` for executing async workflow
+  - Improved workflow responsiveness and resource utilization
+- **Saitest Installation Agent State Management**: Refactored installation agent to manage platform-provider combinations internally
+  - Installation agent now determines next combination to test from state
+  - Removed external state manipulation from routing functions
+  - Cleaner separation of concerns between orchestrator and agents
+  - Better tracking of tested vs remaining combinations
+- **Saitest Quality Check Simplification**: Disabled retry logic to prevent workflow recursion issues
+  - Quality check now always routes to END regardless of confidence score
+  - Removed retry loop that could cause infinite recursion
+  - Low confidence results flagged for manual review instead of automatic retry
+  - More predictable workflow completion behavior
 - **Saitest Enhanced Error Handling and Logging**: Comprehensive error handling and structured logging improvements across all saitest components
   - Created centralized logging configuration in `saitest/utils/logging_config.py` with structured logging, progress indicators, and exception tracking
   - Enhanced all agents (discovery, installation, analysis) with try-catch blocks, detailed error messages, and graceful degradation

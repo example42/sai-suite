@@ -99,13 +99,12 @@ def create_verification_workflow(
     # Generation -> Quality Check (always)
     workflow.add_edge("generation", "quality_check")
     
-    # Quality Check -> END or retry (conditional)
+    # Quality Check -> END (always)
     workflow.add_conditional_edges(
         "quality_check",
         route_after_quality_check,
         {
-            "end": END,
-            "retry": "installation"
+            "end": END
         }
     )
     
@@ -147,10 +146,7 @@ def route_to_platforms(state: VerificationState) -> str:
     combinations = state.get("provider_combinations", [])
     
     if combinations:
-        # Set the first combination as current
         platform, provider = combinations[0]
-        state["current_platform"] = platform
-        state["current_provider"] = provider
         
         logger.info(
             f"Routing to installation: {len(combinations)} combinations to test, "
@@ -166,8 +162,8 @@ def check_more_combinations(state: VerificationState) -> str:
     """Check if more platform-provider combinations need testing.
     
     This function determines if there are remaining combinations to test.
-    If yes, it sets the next combination as current and routes back to installation.
-    If no, it routes to analysis.
+    If yes, routes back to installation (which will set the next combination).
+    If no, routes to analysis.
     
     Args:
         state: Current verification state
@@ -186,10 +182,7 @@ def check_more_combinations(state: VerificationState) -> str:
     remaining = [c for c in all_combinations if c not in tested]
     
     if remaining:
-        # Set next combination as current
         platform, provider = remaining[0]
-        state["current_platform"] = platform
-        state["current_provider"] = provider
         
         logger.info(
             f"More combinations to test: {len(remaining)} remaining, "
@@ -209,17 +202,17 @@ def route_after_quality_check(state: VerificationState) -> str:
     
     This function decides whether to:
     - End the workflow (confidence is acceptable or max retries reached)
-    - Retry installation (confidence is low and retries remain)
+    
+    Note: Retry logic is disabled to prevent recursion issues. The workflow
+    will complete after the first quality check regardless of confidence.
     
     Args:
         state: Current verification state
     
     Returns:
-        "end" to finish workflow, "retry" to retry installation
+        "end" to finish workflow
     """
     overall_confidence = state.get("overall_confidence", 0.0)
-    retry_count = state.get("retry_count", 0)
-    max_retries = state.get("max_retries", 2)
     
     # Check if confidence is acceptable (>= 0.5)
     if overall_confidence >= 0.5:
@@ -227,31 +220,19 @@ def route_after_quality_check(state: VerificationState) -> str:
             f"Quality check passed with confidence {overall_confidence:.2f}, "
             f"ending workflow"
         )
-        return "end"
-    
-    # Check if we can retry
-    if retry_count < max_retries:
-        state["retry_count"] = retry_count + 1
-        logger.warning(
-            f"Quality check failed with confidence {overall_confidence:.2f}, "
-            f"retrying (attempt {retry_count + 1}/{max_retries})"
-        )
-        state["messages"].append(
-            f"Retrying verification due to low confidence (attempt {retry_count + 1})"
-        )
-        return "retry"
     else:
         logger.warning(
-            f"Quality check failed with confidence {overall_confidence:.2f}, "
-            f"max retries ({max_retries}) reached, ending workflow"
+            f"Quality check completed with low confidence {overall_confidence:.2f}, "
+            f"ending workflow (retry disabled)"
         )
         state["messages"].append(
-            f"Max retries reached, completing with confidence {overall_confidence:.2f}"
+            f"Completed with low confidence {overall_confidence:.2f} - manual review recommended"
         )
-        return "end"
+    
+    return "end"
 
 
-def run_verification(
+async def run_verification(
     software: str,
     platforms: Optional[list] = None,
     config: Optional[Dict[str, Any]] = None
@@ -291,7 +272,7 @@ def run_verification(
         - messages: Log messages from the workflow
     
     Example:
-        >>> result = run_verification("nginx", platforms=["ubuntu:22.04"])
+        >>> result = await run_verification("nginx", platforms=["ubuntu:22.04"])
         >>> print(f"Confidence: {result['overall_confidence']}")
         >>> print(f"Platforms tested: {len(result['platform_results'])}")
     """
@@ -333,7 +314,7 @@ def run_verification(
             config_dict = {"configurable": {"thread_id": f"verify-{software}"}}
             
             progress.update("Discovering installation methods...")
-            final_state = workflow.invoke(initial_state, config=config_dict)
+            final_state = await workflow.ainvoke(initial_state, config=config_dict)
             
             workflow_duration = time.time() - workflow_start
             
