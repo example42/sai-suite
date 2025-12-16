@@ -74,6 +74,25 @@ class SaiConfig(BaseModel):
     saidata_require_checksums: bool = False
     saidata_security_level: str = "moderate"  # strict, moderate, permissive
     saidata_allow_insecure_urls: bool = False
+    allowed_detection_binaries: List[str] = Field(
+        default_factory=lambda: [
+            "which",
+            "ls",
+            "cat",
+            "dpkg",
+            "rpm",
+            "brew",
+            "apt",
+            "yum",
+            "dnf",
+            "zypper",
+            "pacman",
+            "apk",
+            "pkg",
+            "choco",
+            "winget",
+        ]
+    )
 
     # Advanced settings
     max_concurrent_actions: int = 3
@@ -132,3 +151,14 @@ class SaiConfig(BaseModel):
         if v.lower() not in valid_levels:
             raise ValueError(f"Security level must be one of: {', '.join(valid_levels)}")
         return v.lower()
+
+    @field_validator("allowed_detection_binaries")
+    @classmethod
+    def validate_allowed_binaries(cls, v):
+        """Validate allowed binaries list is not empty."""
+        if not v:
+            raise ValueError("Allowed detection binaries list cannot be empty")
+        # Ensure all entries are non-empty strings
+        if not all(isinstance(binary, str) and binary.strip() for binary in v):
+            raise ValueError("All allowed binaries must be non-empty strings")
+        return [binary.strip() for binary in v]

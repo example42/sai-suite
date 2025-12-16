@@ -95,19 +95,49 @@ class BaseProvider:
             # Resolve the detection command template
             resolved_command = self.template_engine.resolve_template(detection_template, saidata)
 
-            # Execute the detection command
+            import os
+            import shlex
             import subprocess
 
+            from sai.utils.config import get_config
+            from sai.utils.errors import SecurityError
+
+            # Convert to argument list if needed
+            args = resolved_command if isinstance(resolved_command, list) else shlex.split(resolved_command)
+            if not args:
+                raise SecurityError("Empty detection command")
+
+            # Get allowed binaries from configuration
+            config = get_config()
+            allowed_binaries = set(config.allowed_detection_binaries)
+
+            # Validate executable against allowlist
+            exe_name = os.path.basename(args[0])
+            if exe_name not in allowed_binaries:
+                raise SecurityError(
+                    f"Executable '{exe_name}' not allowed in detection command",
+                    security_issue="unauthorized_binary",
+                    details={
+                        "executable": exe_name,
+                        "allowed_binaries": list(allowed_binaries),
+                    },
+                    suggestions=[
+                        f"Add '{exe_name}' to allowed_detection_binaries in your config",
+                        "Use SAI_ALLOWED_DETECTION_BINARIES environment variable",
+                        "Check if the detection command is correct",
+                    ],
+                )
+
             result = subprocess.run(
-                resolved_command,
-                shell=True,
+                args,
+                shell=False,
                 capture_output=True,
                 text=True,
                 timeout=10,  # Short timeout for detection
             )
 
             success = result.returncode == 0
-            logger.debug(f"Detection command for '{self.name}': '{resolved_command}' -> {success}")
+            logger.debug(f"Detection command for '{self.name}': '{args}' -> {success}")
             return success
 
         except Exception as e:
