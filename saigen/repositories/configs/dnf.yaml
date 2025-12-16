@@ -1,0 +1,659 @@
+version: '1.0'
+repositories:
+- name: dnf-fedora-f38
+  type: dnf
+  platform: linux
+  distribution:
+  - fedora
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '38': f38
+  endpoints:
+    packages: https://mirrors.fedoraproject.org/metalink?repo=updates-released-f38&arch={arch}
+    search: https://packages.fedoraproject.org/search?query={query}
+    info: https://packages.fedoraproject.org/pkgs/{package}/
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+      size: size
+      category: group
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: Fedora 38 Updates Repository
+    maintainer: Fedora Project
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.fedoraproject.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-fedora-f39
+  type: dnf
+  platform: linux
+  distribution:
+  - fedora
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '39': f39
+  endpoints:
+    packages: https://mirrors.fedoraproject.org/metalink?repo=updates-released-f39&arch={arch}
+    search: https://packages.fedoraproject.org/search?query={query}
+    info: https://packages.fedoraproject.org/pkgs/{package}/
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+      size: size
+      category: group
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: Fedora 39 Updates Repository
+    maintainer: Fedora Project
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.fedoraproject.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-fedora-f40
+  type: dnf
+  platform: linux
+  distribution:
+  - fedora
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '40': f40
+  endpoints:
+    packages: https://mirrors.fedoraproject.org/metalink?repo=updates-released-f40&arch={arch}
+    search: https://packages.fedoraproject.org/search?query={query}
+    info: https://packages.fedoraproject.org/pkgs/{package}/
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+      size: size
+      category: group
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: Fedora 40 Updates Repository
+    maintainer: Fedora Project
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.fedoraproject.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-fedora-f41
+  type: dnf
+  platform: linux
+  distribution:
+  - fedora
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '41': f41
+  endpoints:
+    packages: https://mirrors.fedoraproject.org/metalink?repo=updates-released-f41&arch={arch}
+    search: https://packages.fedoraproject.org/search?query={query}
+    info: https://packages.fedoraproject.org/pkgs/{package}/
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+      size: size
+      category: group
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: Fedora 41 Updates Repository
+    maintainer: Fedora Project
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.fedoraproject.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-fedora-f42
+  type: dnf
+  platform: linux
+  distribution:
+  - fedora
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '42': f42
+  endpoints:
+    packages: https://mirrors.fedoraproject.org/metalink?repo=updates-released-f42&arch={arch}
+    search: https://packages.fedoraproject.org/search?query={query}
+    info: https://packages.fedoraproject.org/pkgs/{package}/
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+      size: size
+      category: group
+  cache:
+    ttl_hours: 168
+    max_size_mb: 150
+  metadata:
+    description: Fedora 42 Updates Repository
+    maintainer: Fedora Project
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.fedoraproject.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-rocky-8
+  type: dnf
+  platform: linux
+  distribution:
+  - rocky
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '8': '8'
+  endpoints:
+    packages: https://dl.rockylinux.org/pub/rocky/8/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: Rocky Linux 8 AppStream Repository
+    maintainer: Rocky Enterprise Software Foundation
+    priority: 80
+    enabled: true
+    official: true
+    url: https://rockylinux.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-rocky-9
+  type: dnf
+  platform: linux
+  distribution:
+  - rocky
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '9': '9'
+  endpoints:
+    packages: https://dl.rockylinux.org/pub/rocky/9/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: Rocky Linux 9 AppStream Repository
+    maintainer: Rocky Enterprise Software Foundation
+    priority: 80
+    enabled: true
+    official: true
+    url: https://rockylinux.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-alma-8
+  type: dnf
+  platform: linux
+  distribution:
+  - alma
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '8': '8'
+  endpoints:
+    packages: https://repo.almalinux.org/almalinux/8/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: AlmaLinux 8 AppStream Repository
+    maintainer: AlmaLinux OS Foundation
+    priority: 80
+    enabled: true
+    official: true
+    url: https://almalinux.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-alma-9
+  type: dnf
+  platform: linux
+  distribution:
+  - alma
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '9': '9'
+  endpoints:
+    packages: https://repo.almalinux.org/almalinux/9/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: AlmaLinux 9 AppStream Repository
+    maintainer: AlmaLinux OS Foundation
+    priority: 80
+    enabled: true
+    official: true
+    url: https://almalinux.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-rocky-10
+  type: dnf
+  platform: linux
+  distribution:
+  - rocky
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '10': '10'
+  endpoints:
+    packages: https://dl.rockylinux.org/pub/rocky/10/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: Rocky Linux 10 AppStream Repository
+    maintainer: Rocky Enterprise Software Foundation
+    priority: 80
+    enabled: true
+    official: true
+    url: https://rockylinux.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-alma-10
+  type: dnf
+  platform: linux
+  distribution:
+  - alma
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '10': '10'
+  endpoints:
+    packages: https://repo.almalinux.org/almalinux/10/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: AlmaLinux 10 AppStream Repository
+    maintainer: AlmaLinux OS Foundation
+    priority: 80
+    enabled: true
+    official: true
+    url: https://almalinux.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-rhel-7
+  type: dnf
+  platform: linux
+  distribution:
+  - rhel
+  architecture:
+  - x86_64
+  version_mapping:
+    '7': '7'
+  endpoints:
+    packages: https://cdn.redhat.com/content/dist/rhel/server/7/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  auth:
+    type: basic
+  metadata:
+    description: RHEL 7 Server Repository
+    maintainer: Red Hat
+    priority: 80
+    enabled: false
+    official: true
+    url: https://access.redhat.com
+  eol: true
+  query_type: bulk_download
+- name: dnf-rhel-8
+  type: dnf
+  platform: linux
+  distribution:
+  - rhel
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '8': '8'
+  endpoints:
+    packages: https://cdn.redhat.com/content/dist/rhel8/{arch}/appstream/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  auth:
+    type: basic
+  metadata:
+    description: RHEL 8 AppStream Repository
+    maintainer: Red Hat
+    priority: 80
+    enabled: false
+    official: true
+    url: https://access.redhat.com
+  eol: false
+  query_type: bulk_download
+- name: dnf-rhel-9
+  type: dnf
+  platform: linux
+  distribution:
+  - rhel
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '9': '9'
+  endpoints:
+    packages: https://cdn.redhat.com/content/dist/rhel9/{arch}/appstream/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  auth:
+    type: basic
+  metadata:
+    description: RHEL 9 AppStream Repository
+    maintainer: Red Hat
+    priority: 80
+    enabled: false
+    official: true
+    url: https://access.redhat.com
+  eol: false
+  query_type: bulk_download
+- name: dnf-rhel-10
+  type: dnf
+  platform: linux
+  distribution:
+  - rhel
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '10': '10'
+  endpoints:
+    packages: https://cdn.redhat.com/content/dist/rhel10/{arch}/appstream/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  auth:
+    type: basic
+  metadata:
+    description: RHEL 10 AppStream Repository
+    maintainer: Red Hat
+    priority: 80
+    enabled: false
+    official: true
+    url: https://access.redhat.com
+  eol: false
+  query_type: bulk_download
+- name: dnf-centos-stream-8
+  type: dnf
+  platform: linux
+  distribution:
+  - centos
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '8': '8'
+  endpoints:
+    packages: https://vault.centos.org/8-stream/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: CentOS Stream 8 AppStream Repository
+    maintainer: CentOS Project
+    priority: 80
+    enabled: true
+    official: true
+    url: https://www.centos.org
+  eol: true
+  query_type: bulk_download
+- name: dnf-centos-stream-9
+  type: dnf
+  platform: linux
+  distribution:
+  - centos
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '9': '9'
+  endpoints:
+    packages: https://mirror.stream.centos.org/9-stream/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: CentOS Stream 9 AppStream Repository
+    maintainer: CentOS Project
+    priority: 80
+    enabled: true
+    official: true
+    url: https://www.centos.org
+  eol: false
+  query_type: bulk_download
+- name: dnf-centos-stream-10
+  type: dnf
+  platform: linux
+  distribution:
+  - centos
+  architecture:
+  - x86_64
+  - aarch64
+  version_mapping:
+    '10': '10'
+  endpoints:
+    packages: https://mirror.stream.centos.org/10-stream/AppStream/{arch}/os/repodata/repomd.xml
+  parsing:
+    format: rpm_metadata
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: name
+      version: version
+      description: description
+      maintainer: packager
+      homepage: url
+      license: license
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: CentOS Stream 10 AppStream Repository
+    maintainer: CentOS Project
+    priority: 80
+    enabled: true
+    official: true
+    url: https://www.centos.org
+  eol: false
+  query_type: bulk_download

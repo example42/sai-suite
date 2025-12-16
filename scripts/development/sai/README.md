@@ -1,6 +1,6 @@
 # SAI Development Scripts
 
-Demo and development scripts for SAI (Software Action Interface).
+Demo and development scripts for SAI.
 
 ## Scripts
 

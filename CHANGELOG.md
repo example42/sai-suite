@@ -8,6 +8,332 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Saitest Async Workflow Execution**: Converted verification workflow to async execution for better performance
+  - Changed `run_verification()` to async function using `ainvoke()` instead of `invoke()`
+  - Updated CLI commands to use `asyncio.run()` for executing async workflow
+  - Improved workflow responsiveness and resource utilization
+- **Saitest Installation Agent State Management**: Refactored installation agent to manage platform-provider combinations internally
+  - Installation agent now determines next combination to test from state
+  - Removed external state manipulation from routing functions
+  - Cleaner separation of concerns between orchestrator and agents
+  - Better tracking of tested vs remaining combinations
+- **Saitest Quality Check Simplification**: Disabled retry logic to prevent workflow recursion issues
+  - Quality check now always routes to END regardless of confidence score
+  - Removed retry loop that could cause infinite recursion
+  - Low confidence results flagged for manual review instead of automatic retry
+  - More predictable workflow completion behavior
+- **Saitest Enhanced Error Handling and Logging**: Comprehensive error handling and structured logging improvements across all saitest components
+  - Created centralized logging configuration in `saitest/utils/logging_config.py` with structured logging, progress indicators, and exception tracking
+  - Enhanced all agents (discovery, installation, analysis) with try-catch blocks, detailed error messages, and graceful degradation
+  - Added timeout handling for Docker operations (image pull, container startup, filesystem scans)
+  - Improved filesystem monitoring with optimized batch operations and configurable timeouts
+  - Enhanced container management with better error recovery and cleanup
+  - Added operation completion logging with duration tracking and success/failure metrics
+  - Updated CLI to use structured logging with optional log file output
+  - Enhanced config.yaml with timeout settings for containers and filesystem operations
+  - Comprehensive error context in all exception handlers with type information
+  - Progress indicators for long-running operations (workflow, installation, scanning)
+  - Marked task 25 as complete in saitest specification
+- **Saitest Integration with Build and CI/CD Pipeline**: Complete integration of saitest package into monorepo build and deployment infrastructure
+  - Added saitest to GitHub Actions workflows (build-and-test.yml, ci.yml)
+  - Updated build-packages.sh to build saitest package alongside sai and saigen
+  - Updated install-local.sh to support saitest installation with new 'all' option
+  - Updated publish-packages.sh to publish saitest to PyPI (test and prod)
+  - Added saitest entry point to root pyproject.toml for CLI command
+  - Fixed circular import in saitest/core/__init__.py
+  - Created test fixtures directory with mock LLM responses and sample data
+  - Marked tasks 23 and 24 as complete in saitest specification
+- **Saitest CLI Interface and Verification Entry Point**: Complete implementation of CLI interface and main verification workflow entry point
+  - Created `saitest/cli/main.py` with Click-based CLI structure
+  - Implemented `verify` command with software argument and options (--platforms, --output-dir, --format, --verbose)
+  - Implemented `test` command for testing existing saidata files
+  - Added Docker availability check with helpful error messages and installation instructions
+  - Implemented `run_verification()` function in `saitest/core/orchestrator.py` as main entry point for verification workflow
+  - Initializes VerificationState with input parameters and invokes workflow
+  - Returns final VerificationState with all results including platform_results, generated_saidata, and confidence scores
+  - Comprehensive documentation with examples and parameter descriptions
+  - Updated `saitest/cli/__init__.py` and `saitest/core/__init__.py` to export CLI and orchestrator functions
+  - Marked tasks 16, 17, 17.1, 17.2, and 18 as complete in saitest specification
+- **Saitest Configuration and Documentation**: Complete configuration file and comprehensive documentation
+  - Created `saitest/config.yaml` with default settings for LLM provider, model, temperature, platform defaults, and verification settings
+  - Created `saitest/docs/README.md` with overview and getting started guide
+  - Created `saitest/docs/architecture.md` with detailed design documentation
+  - Created `saitest/docs/cli-reference.md` with command documentation and examples
+  - Created `saitest/docs/examples/` directory with verification workflow examples
+  - Marked tasks 19 and 20 as complete in saitest specification
+- **Saitest Testing and Quality Assurance**: Comprehensive test suite for all saitest components
+  - Created unit tests in `tests/saitest/unit/` for state, container_manager, fs_monitor, and provider_executor
+  - Created integration tests in `tests/saitest/integration/` for full workflow testing with real containers
+  - Tested with known software (nginx) as example
+  - Mocked external dependencies (Docker, LLM) for reliable unit testing
+  - Marked tasks 21 and 22 as complete in saitest specification
+- **Saitest Quality Check Agent**: Complete implementation of LangGraph quality check agent for validating generated saidata
+  - Validates generated saidata against schema 0.3 using jsonschema
+  - Uses LLM to assess completeness and accuracy of generated files
+  - Calculates confidence scores and flags low-confidence results for human review
+  - Marked task 14 as complete in saitest specification
+- **Saitest Workflow Orchestrator**: Complete implementation of LangGraph workflow orchestration for verification process
+  - Created `saitest/core/orchestrator.py` with create_verification_workflow function
+  - Added all agent nodes to StateGraph (discovery, platform, installation, analysis, generation, quality)
+  - Implemented workflow routing logic with route_to_platforms, check_more_combinations, and route_after_quality_check functions
+  - Added conditional edges for intelligent workflow navigation
+  - Configured SqliteSaver for checkpointing and state persistence
+  - Compiled workflow with checkpointer for resumable verification sessions
+  - Marked tasks 15, 15.1, and 15.2 as complete in saitest specification
+- **Saitest Generation Agent**: Complete implementation of LangGraph generation agent for creating saidata YAML files
+  - Created `saitest/agents/generation.py` with generation_agent function for LangGraph workflow
+  - Uses LLM (GPT-4o) to generate default.yaml with common configuration across all platforms
+  - Uses LLM to generate OS-specific override files for platform variations (e.g., ubuntu/22.04.yaml, debian/12.yaml)
+  - Includes provider-specific overrides for all tested providers
+  - Parses YAML and stores in VerificationState for downstream processing
+  - Implemented write_saidata_files() function to write files to proper directory structure
+  - Creates hierarchical directory structure: software/{name}/default.yaml and software/{name}/{os}/{version}.yaml
+  - Comprehensive error handling with YAML parsing validation and graceful fallbacks
+  - Comprehensive test suite in `tests/saitest/agents/test_generation.py` with success and error scenarios
+  - Updated `saitest/agents/__init__.py` to export generation agent functions
+  - Marked tasks 13 and 13.1 as complete in saitest specification
+- **Saitest Analysis Agent**: Complete implementation of LangGraph analysis agent for identifying patterns and variations
+  - Created `saitest/agents/analysis.py` with analysis_agent function for LangGraph workflow
+  - Aggregates observations by type (file, service, port, etc.) and provider
+  - Uses LLM (GPT-4o) to identify common patterns across all platforms
+  - Uses LLM to identify platform-specific and provider-specific variations
+  - Calculates confidence scores based on success rate, pattern consistency, and observation consistency
+  - Returns structured analysis with patterns, variations, and confidence metrics
+  - Comprehensive error handling with JSON parsing and graceful fallbacks
+  - Updated `saitest/agents/__init__.py` to export analysis agent function
+  - Marked task 12 as complete in saitest specification
+- **Saitest Installation Agent**: Complete implementation of LangGraph installation agent for executing software installations
+  - Created `saitest/agents/installation.py` with installation_agent function for LangGraph workflow
+  - Binds install_package tool to LLM (GPT-4o) for executing installations
+  - Executes installation for current platform-provider combination from state
+  - Creates Observation objects from installation results with proper typing
+  - Creates PlatformResult with provider field, success status, observations, errors, and duration
+  - Handles installation failures gracefully with detailed error messages
+  - Implemented get_next_combination() function to iterate through platform-provider combinations
+  - Tracks tested combinations and sets current_platform/current_provider for next test
+  - Returns False when all combinations are tested to signal workflow completion
+  - Comprehensive test suite in `tests/saitest/agents/test_installation.py` with success, failure, and edge case scenarios
+  - Updated `saitest/agents/__init__.py` to export installation agent functions
+  - Marked task 11 as complete in saitest specification
+- **Saitest Platform Selection Agent**: Complete implementation of LangGraph platform selection agent for choosing test platforms
+  - Created `saitest/agents/platform.py` with platform_selection_agent function for LangGraph workflow
+  - Uses user-specified platforms if provided via target_platforms parameter
+  - Otherwise uses LLM (GPT-4o) to intelligently select 2-4 representative platforms
+  - Considers different package managers, OS families, and current stable versions
+  - Falls back to default platforms (ubuntu:22.04, debian:12) if LLM selection fails
+  - Implemented create_provider_combinations() to generate all platform-provider test combinations
+  - Returns structured platform selection with reasoning and combinations to test
+  - Comprehensive error handling with JSON parsing and graceful fallbacks
+  - Updated `saitest/agents/__init__.py` to export platform selection functions
+  - Marked tasks 10 and 10.1 as complete in saitest specification
+- **Saitest Discovery Agent**: Complete implementation of LangGraph discovery agent for identifying installation methods
+  - Created `saitest/agents/discovery.py` with discovery_agent function for LangGraph workflow
+  - Integrated saigen's RepositoryManager for querying package metadata from cached repositories
+  - Implemented _query_repository_cache() to search for packages across all repository types
+  - Implemented _predict_expected_resources() using LLM to predict services, files, and ports
+  - Implemented _llm_discovery() as fallback when no repository data is available
+  - Cross-references repository data with available providerdata to find valid installation methods
+  - Returns structured discovery results with installation methods, versions, and expected resources
+  - Supports both exact and partial package name matching for flexible discovery
+  - Graceful fallback to LLM research when repository cache is empty
+  - Added get_available_providers() convenience function for provider discovery
+  - Updated `saitest/agents/__init__.py` to export discovery agent functions
+  - Marked task 9 as complete in saitest specification
+- **Saitest Repository Integration**: Complete implementation of saigen repository integration for provider discovery
+  - Created `saitest/utils/repository_integration.py` with RepositoryIntegration class for querying saigen's repository cache
+  - Implemented discover_providers() function to scan providers/ directory and find available providerdata files
+  - Implemented get_available_providers_with_validation() function to cross-reference repository data with providerdata
+  - Added query_repository() method to search for packages across all cached repositories
+  - Added get_package_info() method to retrieve detailed package metadata from repository cache
+  - Graceful handling of missing repository data with appropriate warnings
+  - Integration with saigen's UniversalRepositoryManager for consistent repository access
+  - Comprehensive documentation in `saitest/utils/README_repository_integration.md`
+  - Updated `saitest/utils/__init__.py` to export repository integration functions
+  - Marked tasks 8 and 8.1 as complete in saitest specification
+- **Saitest Provider Executor Multi-Step Support**: Enhanced ProviderCommandExecutor to support multi-step provider actions
+  - Added support for providerdata actions with `steps` field (multi-step commands)
+  - Automatic combination of multiple steps into single command using && operator
+  - Enhanced validation to accept actions with command, template, OR steps
+  - Applied to both install and test command resolution
+  - Better logging for multi-step command execution
+  - Maintains backward compatibility with single-command actions
+- **Saitest System Inspection Tools**: Complete implementation of LangGraph tools for system inspection and verification
+  - Created `saitest/tools/system.py` with three inspection tools for comprehensive system analysis
+  - Implemented inspect_service tool for checking systemd service status and configuration
+  - Implemented check_listening_ports tool for discovering network ports and associated processes
+  - Implemented find_config_files tool for locating software configuration files
+  - All tools return structured results with success/failure status and detailed observations
+  - Comprehensive error handling with graceful fallbacks for missing tools or permissions
+  - Support for both systemd and non-systemd systems with appropriate detection
+  - Comprehensive test suite in `tests/saitest/tools/test_system.py` with 12 test cases
+  - Updated `saitest/tools/__init__.py` to export all system inspection tools
+  - Marked task 7 as complete in saitest specification
+- **Saitest Unified Installation Tool**: Complete implementation of LangGraph tool for package installation with filesystem monitoring
+  - Created `saitest/tools/package.py` with install_package LangGraph tool for unified installation across all providers
+  - Integrated ProviderCommandExecutor for executing providerdata-based installation commands
+  - Integrated FilesystemMonitor for capturing filesystem changes during installation
+  - Integrated ContainerManager for Docker-based isolated testing environments
+  - Returns structured results with observations (files, services, binaries, packages)
+  - Supports optional saidata context for template resolution or simple package name substitution
+  - Comprehensive error handling with detailed error messages and duration tracking
+  - Test command execution with success/failure tracking
+  - Automatic observation creation with confidence scores for different resource types
+  - Added langchain-core dependency to pyproject.toml for LangGraph tool decorator
+  - Comprehensive test suite in `tests/saitest/tools/test_package.py`
+  - Marked task 6 as complete in saitest specification
+- **Saitest Documentation in Steering Files**: Updated project steering documentation to include SAITEST package
+  - Added SAITEST overview and core purpose to product.md steering file
+  - Added SAITEST features, target users, and distribution methods to product.md
+  - Added SAITEST package structure and organization to structure.md steering file
+  - Added SAITEST architecture, LangGraph workflow, and container management to tech.md steering file
+  - Added SAITEST CLI commands and usage examples to tech.md
+  - Updated all references to include saitest alongside sai and saigen packages
+- **Saitest Provider Command Executor**: Complete implementation of providerdata integration for unified installation commands
+  - Created `saitest/utils/provider_executor.py` with ProviderCommandExecutor class for executing provider-specific commands
+  - Implemented _load_providers() method to scan and load all providerdata files from providers/ directory
+  - Implemented get_install_command() method to resolve installation commands using sai's template engine
+  - Implemented get_test_command() method to resolve test/verification commands for installed software
+  - Added _validate_providers() method with comprehensive validation of providerdata structure
+  - Support for both full saidata context and simple package name substitution
+  - Integration with sai's ProviderLoader and TemplateEngine for consistent behavior
+  - Graceful error handling for missing providers and invalid providerdata
+  - Automatic detection of available providers with get_available_providers() method
+  - Provider information retrieval with get_provider_info() method
+  - Marked tasks 5 and 5.1 as complete in saitest specification
+- **Saitest Filesystem Monitoring**: Complete implementation of filesystem change detection for installation verification
+  - Created `saitest/utils/fs_monitor.py` with FilesystemMonitor class for tracking filesystem changes
+  - Implemented capture_baseline() method to snapshot filesystem state before installation
+  - Implemented capture_changes() method to detect new files after installation
+  - Added get_service_files() method to find systemd service files created during installation
+  - Added get_binaries() method to find executable binaries created during installation
+  - FileChange dataclass for representing detected changes with path, type, timestamp, size, and permissions
+  - Monitors key directories: /usr/bin, /usr/sbin, /usr/local/bin, /etc, systemd paths, /opt, /var/lib
+  - Comprehensive test suite in `tests/saitest/utils/test_fs_monitor.py` with 9 test cases
+  - Marked task 4 as complete in saitest specification
+- **Saitest Docker Container Management**: Complete implementation of Docker container lifecycle management for testing
+  - Created `saitest/utils/docker_manager.py` with ContainerManager and ContainerWrapper classes
+  - Implemented spawn_container context manager for automatic container cleanup
+  - Added ContainerWrapper with exec, read_file, and list_files methods for container operations
+  - Platform-to-image mapping supporting Ubuntu, Debian, Fedora, CentOS, Rocky Linux, and Alpine
+  - Comprehensive error handling for Docker connection errors and container operations
+  - Automatic image pulling when not cached locally
+  - Timeout handling for container operations with configurable limits
+  - Privileged container support for system-level testing
+  - Proper cleanup of containers on exit with force removal
+  - Tracking of active containers for bulk cleanup operations
+  - Marked tasks 3 and 3.1 as complete in saitest specification
+- **Saitest Core State Models**: Implemented core state management for verification workflow
+  - Created `saitest/models/observation.py` with Observation Pydantic model for tracking verification observations
+  - Created `saitest/models/state.py` with PlatformResult Pydantic model for platform-specific test results
+  - Created `saitest/core/state.py` with VerificationState TypedDict for agent state management
+  - Added provider tracking fields to support multi-provider testing (current_provider, provider_combinations, package_versions)
+  - Added expected_dependencies dictionary for dependency validation
+  - Implemented create_initial_state() helper function for state initialization
+  - Updated package __init__.py files to export core models and functions
+  - Marked tasks 2 and 2.1 as complete in saitest specification
+- **Saitest Package Configuration**: Initial setup of saitest package in monorepo
+  - Added saitest optional dependencies to pyproject.toml (langgraph, langchain-openai, langchain-anthropic, docker, watchdog)
+  - Configured setuptools to include saitest package in build
+  - Added saitest to coverage configuration for test tracking
+  - Updated isort and pytest configuration to include saitest source paths
+  - Marked tasks 1 and 1.1 as complete in saitest specification
+- **Saitest Specification Updates**: Enhanced saitest design and requirements for multi-provider support
+  - **Multi-Provider Testing**: Added support for testing multiple installation providers (apt, dnf, pip, gem, npm, brew, source, binary, script) on the same platform
+  - **Saigen Repository Integration**: Discovery agent now queries saigen's repository cache for package metadata before falling back to LLM research
+  - **Providerdata Integration**: Unified installation tool that uses providerdata commands for any provider, eliminating hardcoded provider-specific tools
+  - **Provider Extensibility**: Automatic support for new providers when providerdata is added to providers/ directory
+  - **OS-Specific Override Generation**: Generate saidata with default.yaml and OS-specific override files (e.g., ubuntu/22.04.yaml, debian/12.yaml)
+  - **Enhanced Data Models**: Updated Observation and PlatformResult models to include provider field for tracking which provider was used
+  - **System Inspection Tools**: Added find_config_files tool for discovering software configuration file locations
+  - **Requirements Updates**: Added 7 new requirements (13-20) covering multi-provider testing, saigen integration, providerdata usage, and OS-specific overrides
+- **Saidata Generation Metadata**: Added comprehensive metadata tracking for generated saidata files
+  - New `saidata` metadata section in saidata-0.3-schema.json with model, generation_date, generation_time, test_date, and human_review_date fields
+  - Automatic metadata injection during saidata generation with LLM model name and ISO 8601 timestamps
+  - Generation time tracking in seconds for performance monitoring
+  - Support for test and human review date tracking for lifecycle management
+- **Saidata Directory Exclusion**: Added `saidata/` to .gitignore to prevent accidental commits of generated saidata files
+- **Development Container Update**: Updated devcontainer base image from Python 3.11-slim to Ubuntu 24.04 for better compatibility
+- **Repository Search Relevance Scoring**: Implemented intelligent search result ranking system
+  - New `_calculate_relevance_score()` method in UniversalRepositoryDownloader for scoring search results
+  - Exact name matches score 100, name prefix matches score 50, name contains query scores 25, description matches score 5
+  - Search results automatically sorted by relevance score (highest first)
+  - Improved search quality by prioritizing more relevant packages
+- **Repository Search Result Diversity**: Enhanced search to show results from multiple repositories
+  - Round-robin interleaving of results from different repositories for better diversity
+  - Configurable max results per repository (minimum 3) to ensure representation from multiple sources
+  - Prevents single repository from dominating search results
+  - Better user experience with varied package sources
+- **Repository Search Deduplication**: Added deduplication of packages within each repository
+  - Removes duplicate packages with same name+version (e.g., different architecture variants)
+  - Reduces noise in search results while maintaining unique packages
+  - Improved logging to show both total and unique package counts
+- **RPM Repository Parser**: Complete implementation of RPM package metadata parser with comprehensive format support
+  - New enhanced RPM parser for parsing repomd.xml and primary.xml metadata
+  - Support for standard repomd.xml format (Rocky, AlmaLinux, CentOS Stream)
+  - Support for Fedora metalink format with automatic mirror selection
+  - Support for gzip compression (.gz) - standard format
+  - Support for zstandard compression (.zst) - Fedora 41, openSUSE Tumbleweed
+  - Proper XML namespace handling for reliable package extraction
+  - Extraction of package name, version, description, homepage, license, maintainer, size, category
+  - Integration with universal repository manager
+  - Test script for validating RPM parser functionality
+  - **New dependency**: `zstandard>=0.20.0,<1.0.0` for .zst compression support
+  - Successfully tested with 12 repositories totaling 301,641 packages
+- **Repository Fixes and Enhancements**: Multiple improvements to repository handling
+  - Fixed DNF/YUM repository URL handling and metadata parsing
+  - Enhanced universal downloader with better error handling
+  - Improved repository type detection and validation
+  - Updated repository configurations for better reliability
+  - Comprehensive documentation of repository fixes
+- **Multi-Provider Instance Support**: Configure multiple instances of the same LLM provider type
+  - Support for multiple Ollama models with unique names (e.g., `ollama_qwen3`, `ollama_deepseek`)
+  - Support for multiple OpenAI endpoints (official, Azure, local)
+  - New `provider` field in configuration to explicitly specify provider type
+  - Provider type extraction from name prefix as fallback (e.g., `ollama_qwen3` → `ollama`)
+  - Enhanced provider validation with `validate_provider_name()` method
+  - New `extract_provider_type()` method for flexible provider type detection
+  - Comprehensive multi-provider guide documentation
+  - Support for model comparison workflows and A/B testing
+- **Quality Command Score Format**: New `--format score` option for `saigen quality` command
+  - Returns just the numeric quality score (0.000-1.000) without additional text
+  - Useful for automation, scripting, and CI/CD pipelines
+  - Suppresses progress messages when using score format
+  - Works with both overall score and specific metric scores
+- **API-Based Repository Support**: Complete implementation of API-based repository downloaders
+  - New `ApiDownloader` class for fetching package data from REST APIs
+  - Support for API-based repositories (Docker Hub, Hashicorp, etc.)
+  - Enhanced repository configuration schema with API endpoint support
+  - Codename resolution system for Ubuntu/Debian version mapping
+- **Repository Configuration Reorganization**: Restructured repository configs for better maintainability
+  - Split monolithic config files into individual per-provider YAML files
+  - New `saigen/repositories/configs/` directory with 20+ provider-specific configs
+  - Enhanced repository type classification (package_manager, api, language, universal)
+  - Improved documentation in `docs/repository-types.md`
+- **Enhanced Repository Management**: Improved repository cache and validation
+  - `CodenameResolver` for Ubuntu/Debian codename to version mapping
+  - Enhanced `UniversalRepositoryManager` with API repository support
+  - Improved cache update logic for API-based repositories
+  - Better error handling and validation for repository configurations
+- **Override Validation System**: New validation framework for provider overrides
+  - `OverrideValidator` class for validating provider-specific configurations
+  - Integration with refresh-versions command for override validation
+  - Comprehensive validation of package names, versions, and provider-specific fields
+- **Weekly Version Update Automation**: Complete automation framework for version updates
+  - `weekly_version_update.py` script for automated saidata version refreshes
+  - Cron job setup script (`setup-cronjob.sh`) for scheduled execution
+  - Configuration file support for customizing update behavior
+  - Email notification support for update results
+- **Enhanced Testing Framework**: Comprehensive test coverage for new features
+  - Integration tests for refresh-versions command
+  - Unit tests for API downloader, codename resolver, and override validator
+  - Performance and error handling tests
+  - Real saidata validation tests
+- **Documentation Enhancements**: Extensive documentation for new features
+  - Repository configuration guide with examples
+  - Upstream repositories guide
+  - Refresh-versions troubleshooting guide
+  - Saidata structure guide
+  - Weekly update automation guides
 - **🚀 MAJOR FEATURE: Configurable Saidata Repository System**: Complete implementation of repository-based saidata management
   - **GitRepositoryHandler**: Full git repository operations with shallow clone support, authentication (SSH keys, tokens), and automatic updates
   - **TarballRepositoryHandler**: Fallback HTTP download system with GitHub releases API integration and checksum verification
@@ -151,6 +477,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Enhancements**: File size limits for provider YAML files to prevent DoS attacks
 
 ### Changed
+- **Generation Engine Metadata Handling**: Enhanced save_saidata method to accept optional model_name parameter for metadata injection
+- **CLI Commands Metadata Integration**: Updated generate, update, and batch commands to pass model name to save_saidata for proper metadata tracking
+- **Git Auto-Commit Hook**: Updated hook prompt to include --no-pager flag for git diff commands
+- **Repository Search Implementation**: Refactored search logic for better performance and accuracy
+  - Search now applies limit at manager level instead of CLI level for better efficiency
+  - Removed redundant limit application in CLI after manager already limits results
+  - Enhanced search to return pre-sorted, deduplicated, and limited results
+- **Repository Cache Access**: Fixed cache entry data access pattern
+  - Changed from `cache_entry.packages` to `cache_entry.data` for correct attribute access
+  - Ensures proper retrieval of cached package data
+  - Consistent with cache entry data model structure
+- **LLM Provider Manager**: Enhanced to support multiple instances of the same provider type
+  - Provider initialization now extracts base type from configuration or name
+  - Improved error messages showing both provider name and type
+  - Better handling of provider-specific configurations
+  - Support for both dict and Pydantic model configs
+- **Configuration Documentation**: Enhanced configuration guide with multi-provider examples
+  - Added comprehensive examples for multiple Ollama models
+  - Added examples for multiple OpenAI endpoints
+  - Documented naming conventions and best practices
+  - Added troubleshooting section for common issues
+- **Repository Configuration Architecture**: Major restructuring of repository configuration system
+  - Migrated from monolithic YAML files to individual provider configs
+  - Enhanced schema with API endpoint and authentication support
+  - Improved repository type classification and validation
+- **Refresh-Versions Command**: Enhanced with override validation and better error handling
+  - Added `--validate-overrides` flag for provider override validation
+  - Improved package name update logic with better conflict resolution
+  - Enhanced progress reporting and error messages
+- **Repository Cache System**: Improved cache management for API repositories
+  - Better handling of API-based repository updates
+  - Enhanced cache invalidation and refresh logic
+  - Improved error handling for network failures
+- **CLI Repository Commands**: Enhanced repository management commands
+  - Improved `saigen repositories list` with better formatting
+  - Enhanced repository configuration validation
+  - Better error messages and troubleshooting guidance
+- **Development Scripts Organization**: Cleaned up and reorganized development scripts
+  - Removed obsolete analysis and test scripts
+  - Better organization in `scripts/development/` directory
+  - Enhanced README documentation for scripts
 - **🔄 BREAKING CHANGE: Default Saidata Source**: SAI now uses repository-based saidata by default instead of local files
   - Default saidata paths now prioritize `~/.sai/cache/repositories/saidata-main`
   - Local saidata directory removed from project (moved to repository-based system)
@@ -223,6 +590,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment Hardening**: Minimal secure environment variables, removal of dangerous PATH entries
 
 ### Fixed
+- **API Repository Cache Updates**: Fixed cache update logic for API-based repositories
+  - Resolved issue where API repositories weren't being updated properly
+  - Enhanced cache invalidation for API endpoints
+  - Improved error handling for API request failures
+- **Repository Configuration Validation**: Fixed validation issues with new schema
+  - Corrected repository type validation
+  - Fixed API endpoint configuration validation
+  - Improved error messages for invalid configurations
+- **Codename Resolution**: Fixed Ubuntu/Debian version to codename mapping
+  - Added comprehensive codename mapping for all Ubuntu LTS versions
+  - Improved fallback logic for unknown versions
+  - Better error handling for unsupported distributions
+- **Override Validation**: Fixed validation of provider-specific overrides
+  - Corrected package name validation logic
+  - Improved version format validation
+  - Better handling of missing or invalid override fields
+- **Path Utilities**: Fixed path resolution for repository configurations
+  - Corrected relative path handling
+  - Improved cross-platform path compatibility
+  - Better error messages for invalid paths
 - **🐛 Test Infrastructure**: Fixed pytest collection warnings by renaming test fixture classes
   - Renamed `TestRepository` → `TestRepositoryConfig` to avoid pytest collection conflicts
   - Fixed test class naming conflicts in repository test fixtures

@@ -1,132 +1,142 @@
-version: "0.3"
-
+version: '0.3'
 metadata:
-  name: "grafana"
-  display_name: "Grafana"
-  description: "Open source analytics and interactive visualization web application"
-  version: "10.0.0"
-  category: "monitoring"
-  subcategory: "visualization"
-  tags: ["grafana", "monitoring", "visualization", "dashboard", "observability"]
-  license: "AGPL-3.0"
-  language: "Go"
-  maintainer: "Grafana Labs"
+  name: grafana
+  display_name: Grafana
+  description: Open source analytics and interactive visualization web application
+  version: 10.0.0
+  category: monitoring
+  subcategory: visualization
+  tags:
+  - grafana
+  - monitoring
+  - visualization
+  - dashboard
+  - observability
+  license: AGPL-3.0
+  language: Go
+  maintainer: Grafana Labs
   urls:
-    website: "https://grafana.com"
-    documentation: "https://grafana.com/docs"
-    source: "https://github.com/grafana/grafana"
-    issues: "https://github.com/grafana/grafana/issues"
-    support: "https://grafana.com/support"
-    download: "https://grafana.com/grafana/download"
-    changelog: "https://github.com/grafana/grafana/blob/main/CHANGELOG.md"
-    license: "https://github.com/grafana/grafana/blob/main/LICENSE"
+    website: https://grafana.com
+    documentation: https://grafana.com/docs
+    source: https://github.com/grafana/grafana
+    issues: https://github.com/grafana/grafana/issues
+    support: https://grafana.com/support
+    download: https://grafana.com/grafana/download
+    changelog: https://github.com/grafana/grafana/blob/main/CHANGELOG.md
+    license: https://github.com/grafana/grafana/blob/main/LICENSE
   security:
-    security_contact: "security@grafana.com"
-    vulnerability_disclosure: "https://grafana.com/security"
-
+    security_contact: security@grafana.com
+    vulnerability_disclosure: https://grafana.com/security
 packages:
-  - name: "grafana"
-    package_name: "grafana"
-    version: "10.0.0"
-
+- name: grafana
+  package_name: grafana
+  version: 10.0.0
 services:
-  - name: "grafana"
-    service_name: "grafana-server"
-    type: "systemd"
-    enabled: true
-    config_files: ["/etc/grafana/grafana.ini"]
-
+- name: grafana
+  service_name: grafana-server
+  type: systemd
+  enabled: true
+  config_files:
+  - /etc/grafana/grafana.ini
 files:
-  - name: "config"
-    path: "/etc/grafana/grafana.ini"
-    type: "config"
-    owner: "root"
-    group: "grafana"
-    mode: "0640"
-    backup: true
-
+- name: config
+  path: /etc/grafana/grafana.ini
+  type: config
+  owner: root
+  group: grafana
+  mode: '0640'
+  backup: true
 directories:
-  - name: "config"
-    path: "/etc/grafana"
-    owner: "root"
-    group: "grafana"
-    mode: "0750"
-  - name: "data"
-    path: "/var/lib/grafana"
-    owner: "grafana"
-    group: "grafana"
-    mode: "0750"
-
+- name: config
+  path: /etc/grafana
+  owner: root
+  group: grafana
+  mode: '0750'
+- name: data
+  path: /var/lib/grafana
+  owner: grafana
+  group: grafana
+  mode: '0750'
 commands:
-  - name: "grafana-server"
-    path: "/usr/sbin/grafana-server"
-    shell_completion: false
-  - name: "grafana-cli"
-    path: "/usr/sbin/grafana-cli"
-    shell_completion: true
-
+- name: grafana-server
+  path: /usr/sbin/grafana-server
+  shell_completion: false
+- name: grafana-cli
+  path: /usr/sbin/grafana-cli
+  shell_completion: true
 ports:
-  - port: 3000
-    protocol: "tcp"
-    service: "http"
-    description: "Grafana web interface"
-
+- port: 3000
+  protocol: tcp
+  service: http
+  description: Grafana web interface
 providers:
   apt:
     repositories:
-      - name: "grafana-official"
-        url: "https://apt.grafana.com"
-        key: "https://apt.grafana.com/gpg.key"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "grafana"
-            package_name: "grafana"
-            version: "10.0.0"
-
+    - name: grafana-official
+      url: https://apt.grafana.com
+      key: https://apt.grafana.com/gpg.key
+      type: upstream
+      recommended: true
+      packages:
+      - name: grafana
+        package_name: grafana
   dnf:
     repositories:
-      - name: "grafana-official"
-        url: "https://rpm.grafana.com"
-        key: "https://rpm.grafana.com/gpg.key"
-        type: "upstream"
-        recommended: true
-        packages:
-          - name: "grafana"
-            package_name: "grafana"
-            version: "10.0.0"
-
+    - name: grafana-official
+      url: https://rpm.grafana.com
+      key: https://rpm.grafana.com/gpg.key
+      type: upstream
+      recommended: true
+      packages:
+      - name: grafana
+        package_name: grafana
   brew:
     packages:
-      - name: "grafana"
-        package_name: "grafana"
-        version: "10.0.0"
-
+    - name: grafana
+      package_name: grafana
   docker:
     containers:
-      - name: "grafana"
-        image: "grafana/grafana"
-        tag: "10.0.0"
-        registry: "docker.io"
-        ports: ["3000:3000"]
-
+    - name: grafana
+      image: grafana/grafana
+      tag: 10.0.0
+      registry: docker.io
+      ports:
+      - 3000:3000
 compatibility:
   matrix:
-    - provider: "apt"
-      platform: ["ubuntu", "debian"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
-    - provider: "dnf"
-      platform: ["fedora", "rhel", "centos", "rocky", "alma"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "brew"
-      platform: "macos"
-      architecture: ["amd64", "arm64"]
-      supported: true
-    - provider: "docker"
-      platform: ["linux", "macos", "windows"]
-      architecture: ["amd64", "arm64"]
-      supported: true
-      recommended: true
+  - provider: apt
+    platform:
+    - ubuntu
+    - debian
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true
+  - provider: dnf
+    platform:
+    - fedora
+    - rhel
+    - centos
+    - rocky
+    - alma
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: brew
+    platform: macos
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+  - provider: docker
+    platform:
+    - linux
+    - macos
+    - windows
+    architecture:
+    - amd64
+    - arm64
+    supported: true
+    recommended: true

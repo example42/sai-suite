@@ -1,0 +1,282 @@
+# Saitest Configuration File
+# 
+# This file contains default settings for the saitest verification tool.
+# These settings can be overridden via CLI options or environment variables.
+
+# LLM Provider Configuration
+llm:
+  # Primary LLM provider (openai, anthropic, ollama)
+  provider: openai
+  
+  # Model to use for agent tasks
+  # OpenAI: gpt-4o, gpt-4-turbo, gpt-3.5-turbo
+  # Anthropic: claude-3-5-sonnet-20241022, claude-3-opus-20240229
+  # Ollama: llama3, mistral, codellama
+  model: gpt-4o
+  
+  # Temperature for LLM responses (0.0 = deterministic, 1.0 = creative)
+  # Lower values recommended for structured output generation
+  temperature: 0.0
+  
+  # Maximum tokens for LLM responses
+  max_tokens: 4096
+  
+  # Timeout for LLM API calls (seconds)
+  timeout: 60
+
+# Platform Configuration
+platforms:
+  # Default platforms to test if none specified
+  # Format: os:version (e.g., ubuntu:22.04, debian:12)
+  defaults:
+    - ubuntu:22.04
+    - debian:12
+  
+  # Maximum number of platforms to auto-select
+  max_auto_select: 4
+  
+  # Platform to Docker image mapping
+  # Used by ContainerManager to spawn appropriate containers
+  images:
+    ubuntu:22.04: ubuntu:22.04
+    ubuntu:24.04: ubuntu:24.04
+    debian:11: debian:11
+    debian:12: debian:12
+    fedora:39: fedora:39
+    fedora:40: fedora:40
+    rockylinux:8: rockylinux:8
+    rockylinux:9: rockylinux:9
+    centos:7: centos:7
+    alpine:3.18: alpine:3.18
+    alpine:3.19: alpine:3.19
+
+# Container Configuration
+containers:
+  # Timeout for container operations (seconds)
+  # Includes image pull, container creation, and command execution
+  timeout: 600
+  
+  # Timeout for Docker image pull operations (seconds)
+  # Separate from general timeout to handle slow network conditions
+  pull_timeout: 600
+  
+  # Timeout for container startup (seconds)
+  # Time to wait for container to reach 'running' state
+  startup_timeout: 30
+  
+  # Maximum number of concurrent containers
+  # Limits resource usage during parallel testing
+  max_concurrent: 4
+  
+  # Container resource limits
+  resources:
+    # CPU limit (number of cores)
+    cpu_limit: 2
+    
+    # Memory limit (in MB)
+    memory_limit: 2048
+  
+  # Automatically pull images if not cached locally
+  auto_pull: true
+  
+  # Remove containers after use
+  auto_cleanup: true
+  
+  # Container network mode (bridge, host, none)
+  network_mode: bridge
+
+# Verification Configuration
+verification:
+  # Maximum retry attempts for failed verifications
+  max_retries: 2
+  
+  # Confidence threshold for quality checks (0.0 to 1.0)
+  # Results below this threshold trigger human review flag
+  confidence_threshold: 0.7
+  
+  # Minimum confidence for accepting results (0.0 to 1.0)
+  # Results below this threshold trigger retry
+  min_confidence: 0.5
+  
+  # Enable filesystem monitoring during installation
+  filesystem_monitoring: true
+  
+  # Enable service discovery
+  service_discovery: true
+  
+  # Enable port scanning
+  port_scanning: true
+  
+  # Timeout for individual installation attempts (seconds)
+  installation_timeout: 300
+  
+  # Filesystem monitoring configuration
+  filesystem:
+    # Timeout for filesystem scan operations (seconds)
+    scan_timeout: 120
+    
+    # Maximum directory depth for scanning
+    # Lower values improve performance but may miss deeply nested files
+    max_depth: 10
+    
+    # Custom paths to monitor (empty list uses defaults)
+    # Default paths: /usr/bin, /usr/sbin, /etc, /lib/systemd/system, etc.
+    monitored_paths: []
+
+# Provider Configuration
+providers:
+  # Directory containing providerdata files
+  providerdata_dir: providers
+  
+  # Automatically discover available providers
+  auto_discover: true
+  
+  # Preferred providers for testing (in order of preference)
+  # Empty list means test all available providers
+  preferred: []
+  
+  # Providers to exclude from testing
+  excluded: []
+
+# Repository Integration
+repositories:
+  # Enable saigen repository integration
+  enabled: true
+  
+  # Repository cache directory
+  cache_dir: ~/.sai/cache/repositories
+  
+  # Timeout for repository queries (seconds)
+  query_timeout: 30
+
+# Output Configuration
+output:
+  # Default output directory for generated saidata
+  default_dir: ./saidata
+  
+  # Default output format (yaml, json)
+  format: yaml
+  
+  # Generate OS-specific override files
+  generate_overrides: true
+  
+  # Include provider-specific overrides
+  include_provider_overrides: true
+  
+  # Pretty print YAML output
+  pretty_print: true
+  
+  # Include comments in generated files
+  include_comments: true
+
+# Logging Configuration
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: INFO
+  
+  # Log format
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  
+  # Enable file logging
+  file_logging: false
+  
+  # Log file path (if file_logging is true)
+  log_file: saitest.log
+  
+  # Enable workflow state logging
+  workflow_logging: true
+
+# Checkpointing Configuration
+checkpointing:
+  # Enable workflow checkpointing for resume capability
+  enabled: false
+  
+  # Checkpoint storage directory
+  checkpoint_dir: ~/.saitest/checkpoints
+  
+  # Checkpoint storage backend (memory, sqlite, postgres)
+  backend: memory
+
+# Agent Configuration
+agents:
+  # Discovery agent settings
+  discovery:
+    # Use LLM for discovery when repository data unavailable
+    use_llm_fallback: true
+    
+    # Timeout for discovery phase (seconds)
+    timeout: 120
+  
+  # Platform selection agent settings
+  platform_selection:
+    # Use LLM for platform selection
+    use_llm: true
+    
+    # Fallback platforms if LLM fails
+    fallback_platforms:
+      - ubuntu:22.04
+      - debian:12
+  
+  # Installation agent settings
+  installation:
+    # Capture filesystem baseline before installation
+    capture_baseline: true
+    
+    # Run test commands after installation
+    run_tests: true
+  
+  # Analysis agent settings
+  analysis:
+    # Minimum observations required for pattern detection
+    min_observations: 2
+    
+    # Confidence threshold for pattern identification
+    pattern_confidence: 0.6
+  
+  # Generation agent settings
+  generation:
+    # Include metadata in generated saidata
+    include_metadata: true
+    
+    # Generate provider overrides
+    generate_provider_overrides: true
+  
+  # Quality check agent settings
+  quality:
+    # Perform schema validation
+    schema_validation: true
+    
+    # Use LLM for quality assessment
+    llm_assessment: true
+    
+    # Completeness score threshold
+    completeness_threshold: 0.7
+    
+    # Accuracy score threshold
+    accuracy_threshold: 0.7
+
+# Feature Flags
+features:
+  # Enable multi-provider testing
+  multi_provider: true
+  
+  # Enable parallel platform testing (future enhancement)
+  parallel_testing: false
+  
+  # Enable incremental verification (future enhancement)
+  incremental_verification: false
+  
+  # Enable web UI (future enhancement)
+  web_ui: false
+
+# Environment Variables
+# These can be overridden by setting environment variables:
+# - SAITEST_LLM_PROVIDER: Override llm.provider
+# - SAITEST_LLM_MODEL: Override llm.model
+# - SAITEST_LLM_TEMPERATURE: Override llm.temperature
+# - SAITEST_MAX_RETRIES: Override verification.max_retries
+# - SAITEST_CONFIDENCE_THRESHOLD: Override verification.confidence_threshold
+# - SAITEST_CONTAINER_TIMEOUT: Override containers.timeout
+# - SAITEST_LOG_LEVEL: Override logging.level
+# - OPENAI_API_KEY: OpenAI API key (required for OpenAI provider)
+# - ANTHROPIC_API_KEY: Anthropic API key (required for Anthropic provider)

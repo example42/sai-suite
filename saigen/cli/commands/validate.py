@@ -8,6 +8,7 @@ import click
 import yaml
 
 from ...core.advanced_validator import AdvancedSaidataValidator
+from ...core.override_validator import OverrideValidator
 from ...core.validator import SaidataValidator
 from ...models.saidata import SaiData
 from ...repositories.manager import RepositoryManager
@@ -481,3 +482,371 @@ async def _run_advanced_validation(
 
 if __name__ == "__main__":
     validate()
+
+
+
+@click.command()
+@click.argument("saidata_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--remove-duplicates",
+    is_flag=True,
+    help="Automatically remove fields identical to default.yaml",
+)
+@click.option(
+    "--no-backup",
+    is_flag=True,
+    help="Skip creating backup before removing duplicates",
+)
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format for validation results",
+)
+def validate_overrides(
+    saidata_path: Path,
+    remove_duplicates: bool = False,
+    no_backup: bool = False,
+    output_format: str = "text",
+) -> None:
+    """Validate OS-specific saidata files for unnecessary duplications.
+
+    This command compares OS-specific saidata files against their default.yaml
+    to identify fields that are identical and could be removed to reduce duplication.
+
+    \b
+    🔍 VALIDATION CHECKS:
+    • Identifies fields identical to default.yaml (unnecessary duplicates)
+    • Identifies fields that differ (necessary overrides)
+    • Identifies fields only in OS-specific file (new additions)
+
+    \b
+    🧹 AUTOMATIC CLEANUP:
+    Use --remove-duplicates to automatically remove unnecessary duplications.
+    A backup is created by default (use --no-backup to skip).
+
+    \b
+    Examples:
+
+    • Validate a single OS-specific file\n
+        saigen validate-overrides software/ng/nginx/ubuntu/22.04.yaml
+
+    • Validate all OS-specific files in a directory\n
+        saigen validate-overrides software/ng/nginx/
+
+    • Automatically remove duplicates with backup\n
+        saigen validate-overrides software/ng/nginx/ubuntu/22.04.yaml --remove-duplicates
+
+    • Remove duplicates without backup (use with caution)\n
+        saigen validate-overrides software/ng/nginx/ --remove-duplicates --no-backup
+
+    • JSON output for automation\n
+        saigen validate-overrides software/ng/nginx/ --format json
+    """
+    validator = OverrideValidator()
+
+    # Determine if path is file or directory
+    if saidata_path.is_file():
+        # Single file validation
+        _validate_single_file(
+            validator,
+            saidata_path,
+            remove_duplicates,
+            not no_backup,
+            output_format,
+        )
+    elif saidata_path.is_dir():
+        # Directory validation - find all OS-specific files
+        _validate_directory(
+            validator,
+            saidata_path,
+            remove_duplicates,
+            not no_backup,
+            output_format,
+        )
+    else:
+        raise click.ClickException(f"Invalid path: {saidata_path}")
+
+
+def _validate_single_file(
+    validator: OverrideValidator,
+    os_specific_file: Path,
+    remove_duplicates: bool,
+    backup: bool,
+    output_format: str,
+) -> None:
+    """Validate a single OS-specific file."""
+    # Find default.yaml
+    default_file = _find_default_file(os_specific_file)
+
+    if not default_file:
+        raise click.ClickException(
+            f"Could not find default.yaml for {os_specific_file}"
+        )
+
+    # Compare files
+    try:
+        comparison = validator.compare_saidata_files(os_specific_file, default_file)
+    except Exception as e:
+        raise click.ClickException(f"Comparison failed: {e}")
+
+    # Display results
+    if output_format == "json":
+        import json
+
+        output = {
+            "file": str(os_specific_file),
+            "default_file": str(default_file),
+            "identical_fields": comparison["identical_fields"],
+            "different_fields": comparison["different_fields"],
+            "os_only_fields": comparison["os_only_fields"],
+            "total_identical": len(comparison["identical_fields"]),
+            "total_different": len(comparison["different_fields"]),
+            "total_os_only": len(comparison["os_only_fields"]),
+        }
+
+        if remove_duplicates:
+            cleaned_data, removed_fields = validator.remove_duplicate_fields(
+                os_specific_file, comparison["identical_fields"], backup
+            )
+            validator.save_cleaned_data(cleaned_data, os_specific_file)
+
+            output["removed_fields"] = removed_fields
+            output["backup_created"] = backup
+
+        click.echo(json.dumps(output, indent=2))
+    else:
+        # Text output
+        click.echo(f"📋 Override Validation Report")
+        click.echo(f"File: {os_specific_file}")
+        click.echo(f"Default: {default_file}")
+        click.echo("")
+
+        # Summary
+        total_identical = len(comparison["identical_fields"])
+        total_different = len(comparison["different_fields"])
+        total_os_only = len(comparison["os_only_fields"])
+
+        click.echo(f"Summary:")
+        click.echo(f"  ⚠️  Identical fields (unnecessary duplicates): {total_identical}")
+        click.echo(f"  ✓  Different fields (necessary overrides): {total_different}")
+        click.echo(f"  ℹ️  OS-only fields (new additions): {total_os_only}")
+        click.echo("")
+
+        # Show identical fields (duplicates)
+        if total_identical > 0:
+            click.echo("⚠️  Unnecessary Duplications (identical to default.yaml):")
+            for field in comparison["identical_fields"]:
+                click.echo(f"  • {field}")
+            click.echo("")
+
+            if not remove_duplicates:
+                click.echo(
+                    "💡 Tip: Use --remove-duplicates to automatically remove these fields"
+                )
+                click.echo("")
+
+        # Show different fields (necessary overrides)
+        if total_different > 0:
+            click.echo("✓  Necessary Overrides (differ from default.yaml):")
+            for field in comparison["different_fields"]:
+                click.echo(f"  • {field}")
+            click.echo("")
+
+        # Show OS-only fields
+        if total_os_only > 0:
+            click.echo("ℹ️  OS-Only Fields (not in default.yaml):")
+            for field in comparison["os_only_fields"]:
+                click.echo(f"  • {field}")
+            click.echo("")
+
+        # Remove duplicates if requested
+        if remove_duplicates and total_identical > 0:
+            click.echo("🧹 Removing duplicate fields...")
+
+            cleaned_data, removed_fields = validator.remove_duplicate_fields(
+                os_specific_file, comparison["identical_fields"], backup
+            )
+            validator.save_cleaned_data(cleaned_data, os_specific_file)
+
+            click.echo(f"✓  Removed {len(removed_fields)} duplicate fields")
+
+            if backup:
+                backup_file = os_specific_file.with_suffix(
+                    f".{click.get_current_context().obj.get('timestamp', 'backup')}.backup"
+                )
+                click.echo(f"✓  Backup created: {backup_file}")
+
+            click.echo("")
+            click.echo("Removed fields:")
+            for field in removed_fields:
+                click.echo(f"  • {field}")
+
+
+def _validate_directory(
+    validator: OverrideValidator,
+    directory: Path,
+    remove_duplicates: bool,
+    backup: bool,
+    output_format: str,
+) -> None:
+    """Validate all OS-specific files in a directory."""
+    # Find all OS-specific YAML files
+    os_specific_files = []
+
+    for yaml_file in directory.rglob("*.yaml"):
+        # Skip default.yaml
+        if yaml_file.name == "default.yaml":
+            continue
+
+        # Check if this is an OS-specific file (has parent directory that's not the base)
+        if yaml_file.parent != directory and yaml_file.parent.name != directory.name:
+            os_specific_files.append(yaml_file)
+
+    if not os_specific_files:
+        click.echo(f"No OS-specific files found in {directory}")
+        return
+
+    # Validate each file
+    results = []
+
+    for os_file in os_specific_files:
+        default_file = _find_default_file(os_file)
+
+        if not default_file:
+            click.echo(f"⚠️  Skipping {os_file}: no default.yaml found", err=True)
+            continue
+
+        try:
+            comparison = validator.compare_saidata_files(os_file, default_file)
+            results.append(
+                {
+                    "file": os_file,
+                    "default_file": default_file,
+                    "comparison": comparison,
+                }
+            )
+        except Exception as e:
+            click.echo(f"⚠️  Error validating {os_file}: {e}", err=True)
+
+    # Display results
+    if output_format == "json":
+        import json
+
+        output = {
+            "directory": str(directory),
+            "total_files": len(results),
+            "files": [],
+        }
+
+        for result in results:
+            file_output = {
+                "file": str(result["file"]),
+                "default_file": str(result["default_file"]),
+                "identical_fields": result["comparison"]["identical_fields"],
+                "different_fields": result["comparison"]["different_fields"],
+                "os_only_fields": result["comparison"]["os_only_fields"],
+                "total_identical": len(result["comparison"]["identical_fields"]),
+                "total_different": len(result["comparison"]["different_fields"]),
+                "total_os_only": len(result["comparison"]["os_only_fields"]),
+            }
+
+            if remove_duplicates:
+                cleaned_data, removed_fields = validator.remove_duplicate_fields(
+                    result["file"],
+                    result["comparison"]["identical_fields"],
+                    backup,
+                )
+                validator.save_cleaned_data(cleaned_data, result["file"])
+
+                file_output["removed_fields"] = removed_fields
+                file_output["backup_created"] = backup
+
+            output["files"].append(file_output)
+
+        click.echo(json.dumps(output, indent=2))
+    else:
+        # Text output
+        click.echo(f"📋 Override Validation Report")
+        click.echo(f"Directory: {directory}")
+        click.echo(f"Files validated: {len(results)}")
+        click.echo("")
+
+        # Summary across all files
+        total_identical = sum(
+            len(r["comparison"]["identical_fields"]) for r in results
+        )
+        total_different = sum(
+            len(r["comparison"]["different_fields"]) for r in results
+        )
+        total_os_only = sum(len(r["comparison"]["os_only_fields"]) for r in results)
+
+        click.echo("Overall Summary:")
+        click.echo(f"  ⚠️  Total identical fields: {total_identical}")
+        click.echo(f"  ✓  Total different fields: {total_different}")
+        click.echo(f"  ℹ️  Total OS-only fields: {total_os_only}")
+        click.echo("")
+
+        # Per-file results
+        for result in results:
+            file_identical = len(result["comparison"]["identical_fields"])
+            file_different = len(result["comparison"]["different_fields"])
+            file_os_only = len(result["comparison"]["os_only_fields"])
+
+            click.echo(f"File: {result['file'].relative_to(directory)}")
+            click.echo(
+                f"  ⚠️  Identical: {file_identical}  ✓  Different: {file_different}  ℹ️  OS-only: {file_os_only}"
+            )
+
+            if file_identical > 0:
+                click.echo("  Unnecessary duplications:")
+                for field in result["comparison"]["identical_fields"]:
+                    click.echo(f"    • {field}")
+
+            click.echo("")
+
+        # Remove duplicates if requested
+        if remove_duplicates and total_identical > 0:
+            click.echo("🧹 Removing duplicate fields from all files...")
+
+            total_removed = 0
+            for result in results:
+                if result["comparison"]["identical_fields"]:
+                    cleaned_data, removed_fields = validator.remove_duplicate_fields(
+                        result["file"],
+                        result["comparison"]["identical_fields"],
+                        backup,
+                    )
+                    validator.save_cleaned_data(cleaned_data, result["file"])
+                    total_removed += len(removed_fields)
+
+            click.echo(f"✓  Removed {total_removed} duplicate fields across all files")
+
+            if backup:
+                click.echo("✓  Backups created for all modified files")
+
+
+def _find_default_file(os_specific_file: Path) -> Optional[Path]:
+    """
+    Find the default.yaml file for an OS-specific file.
+
+    Args:
+        os_specific_file: Path to OS-specific file (e.g., software/ng/nginx/ubuntu/22.04.yaml)
+
+    Returns:
+        Path to default.yaml or None if not found
+
+    Example:
+        software/ng/nginx/ubuntu/22.04.yaml -> software/ng/nginx/default.yaml
+    """
+    # Go up two levels (from ubuntu/22.04.yaml to ng/nginx/)
+    software_dir = os_specific_file.parent.parent
+
+    # Look for default.yaml
+    default_file = software_dir / "default.yaml"
+
+    if default_file.exists():
+        return default_file
+
+    return None

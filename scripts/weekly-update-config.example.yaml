@@ -1,0 +1,173 @@
+# Weekly Version Update Configuration Example
+#
+# This configuration file can be used with the Python version update script
+# for more advanced control over the update process.
+#
+# Usage:
+#   ./scripts/weekly_version_update.py --config scripts/weekly-update-config.yaml
+
+# Paths configuration
+paths:
+  saidata_dir: ~/saidata
+  backup_dir: ~/saidata-backups
+  log_dir: ~/logs/saidata-updates
+
+# Processing options
+processing:
+  # Enable parallel processing for faster updates
+  parallel: true
+  
+  # Maximum number of concurrent workers
+  max_workers: 4
+  
+  # Skip default.yaml files (only update OS-specific)
+  skip_default: false
+  
+  # Use cached repository data (faster but may be outdated)
+  use_cache: true
+
+# Backup management
+backup:
+  # Create backups before modifying files
+  enabled: true
+  
+  # Clean up old backups automatically
+  cleanup: true
+  
+  # Number of days to retain backups
+  retention_days: 30
+
+# Logging configuration
+logging:
+  # Enable verbose output
+  verbose: false
+  
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: INFO
+  
+  # Save detailed JSON results
+  save_json: true
+
+# Repository configuration
+repositories:
+  # Update repository cache before processing
+  update_cache: false
+  
+  # Force cache update even if valid
+  force_update: false
+  
+  # Specific repositories to use (empty = all available)
+  include: []
+  # Example:
+  # include:
+  #   - apt-ubuntu-22.04
+  #   - brew
+  #   - dnf-fedora-39
+  
+  # Repositories to exclude
+  exclude: []
+  # Example:
+  # exclude:
+  #   - winget
+
+# Filtering options
+filters:
+  # Include only specific software (empty = all)
+  include_software: []
+  # Example:
+  # include_software:
+  #   - nginx
+  #   - apache
+  #   - postgresql
+  
+  # Exclude specific software
+  exclude_software: []
+  # Example:
+  # exclude_software:
+  #   - experimental-package
+  
+  # Include only specific providers
+  include_providers: []
+  # Example:
+  # include_providers:
+  #   - apt
+  #   - brew
+  
+  # Exclude specific providers
+  exclude_providers: []
+
+# Notification configuration (optional)
+notifications:
+  # Enable email notifications
+  email:
+    enabled: false
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    smtp_user: your-email@gmail.com
+    smtp_password: your-app-password
+    from_address: your-email@gmail.com
+    to_addresses:
+      - admin@example.com
+    # Send email only on errors
+    on_error_only: true
+  
+  # Enable Slack notifications
+  slack:
+    enabled: false
+    webhook_url: https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+    channel: "#saidata-updates"
+    on_error_only: true
+  
+  # Enable webhook notifications
+  webhook:
+    enabled: false
+    url: https://your-webhook-endpoint.com/notify
+    method: POST
+    headers:
+      Content-Type: application/json
+    on_error_only: false
+
+# Error handling
+error_handling:
+  # Continue processing even if some directories fail
+  continue_on_error: true
+  
+  # Maximum number of retries for failed operations
+  max_retries: 3
+  
+  # Delay between retries (seconds)
+  retry_delay: 5
+
+# Performance tuning
+performance:
+  # Timeout for individual directory processing (seconds)
+  directory_timeout: 300
+  
+  # Timeout for repository queries (seconds)
+  query_timeout: 30
+  
+  # Enable caching of intermediate results
+  cache_results: true
+
+# Dry run mode (preview changes without modifying files)
+dry_run: false
+
+# Advanced options
+advanced:
+  # Create missing OS-specific files
+  create_missing: false
+  
+  # Interactive mode (prompt before applying changes)
+  interactive: false
+  
+  # Show unchanged packages in output
+  show_unchanged: false
+  
+  # Validate saidata files after update
+  validate_after_update: true
+  
+  # Generate diff files for changes
+  generate_diffs: false
+  
+  # Diff output directory
+  diff_dir: ~/saidata-diffs

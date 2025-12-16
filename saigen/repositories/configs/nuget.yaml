@@ -1,0 +1,33 @@
+version: '1.0'
+repositories:
+- name: nuget-org
+  type: nuget
+  platform: universal
+  distribution:
+  - universal
+  architecture:
+  - all
+  endpoints:
+    packages: https://azuresearch-usnc.nuget.org/query?q=*&take=1000&prerelease=false
+    search: https://azuresearch-usnc.nuget.org/query?q={query}&take=100
+    info: https://api.nuget.org/v3-flatcontainer/{package}/index.json
+  parsing:
+    format: json
+    patterns:
+      json_path: data
+    fields:
+      name: id
+      version: version
+      description: description
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: NuGet Gallery
+    maintainer: Microsoft
+    priority: 95
+    enabled: true
+    official: true
+    url: https://www.nuget.org
+  eol: false
+  query_type: api

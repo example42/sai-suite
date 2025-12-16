@@ -155,6 +155,9 @@ class ConfigManager:
             "SAI_REPOSITORY_TIMEOUT": lambda val: setattr(
                 self._config, "saidata_repository_timeout", int(val)
             ),
+            "SAI_ALLOWED_DETECTION_BINARIES": lambda val: setattr(
+                self._config, "allowed_detection_binaries", [b.strip() for b in val.split(",")]
+            ),
         }
 
         for env_var, setter in env_overrides.items():

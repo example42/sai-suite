@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sai"
 dynamic = ["version"]
-description = "SAI - Software Action Interface: Lightweight CLI for executing software management actions"
+description = "SAI: Lightweight CLI for executing software management actions"
 readme = "README.md"
-license = {text = "MIT"}
+license = "Apache-2.0"
 authors = [
     {name = "SAI Team", email = "team@sai.software"}
 ]
@@ -27,7 +27,6 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
@@ -124,6 +123,6 @@ sai = ["py.typed", "*.yaml", "*.yml", "*.json"]
 
 [tool.setuptools_scm]
 root = ".."
-write_to = "sai/_version.py"
+write_to = "_version.py"
 version_scheme = "post-release"
 local_scheme = "dirty-tag"

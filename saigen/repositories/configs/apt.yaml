@@ -1,0 +1,423 @@
+version: '1.0'
+repositories:
+- name: apt-ubuntu-focal
+  type: apt
+  platform: linux
+  distribution:
+  - ubuntu
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  version_mapping:
+    '20.04': focal
+  endpoints:
+    packages: http://archive.ubuntu.com/ubuntu/dists/focal/main/binary-{arch}/Packages.gz
+    search: https://packages.ubuntu.com/search?keywords={query}
+    info: https://packages.ubuntu.com/focal/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+      download_url: Filename
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  limits:
+    requests_per_minute: 60
+    timeout_seconds: 300
+  metadata:
+    description: Ubuntu 20.04 (Focal) Main Repository
+    maintainer: Ubuntu
+    priority: 90
+    enabled: true
+    official: true
+    url: https://packages.ubuntu.com
+  eol: false
+  query_type: bulk_download
+- name: apt-ubuntu-jammy
+  type: apt
+  platform: linux
+  distribution:
+  - ubuntu
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  version_mapping:
+    '22.04': jammy
+  endpoints:
+    packages: http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-{arch}/Packages.gz
+    search: https://packages.ubuntu.com/search?keywords={query}
+    info: https://packages.ubuntu.com/jammy/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+      download_url: Filename
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  limits:
+    requests_per_minute: 60
+    timeout_seconds: 300
+  metadata:
+    description: Ubuntu 22.04 (Jammy) Main Repository
+    maintainer: Ubuntu
+    priority: 90
+    enabled: true
+    official: true
+    url: https://packages.ubuntu.com
+  eol: false
+  query_type: bulk_download
+- name: apt-ubuntu-noble
+  type: apt
+  platform: linux
+  distribution:
+  - ubuntu
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  version_mapping:
+    '24.04': noble
+  endpoints:
+    packages: http://archive.ubuntu.com/ubuntu/dists/noble/main/binary-{arch}/Packages.gz
+    search: https://packages.ubuntu.com/search?keywords={query}
+    info: https://packages.ubuntu.com/noble/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+      download_url: Filename
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  limits:
+    requests_per_minute: 60
+    timeout_seconds: 300
+  metadata:
+    description: Ubuntu 24.04 (Noble) Main Repository
+    maintainer: Ubuntu
+    priority: 90
+    enabled: true
+    official: true
+    url: https://packages.ubuntu.com
+  eol: false
+  query_type: bulk_download
+- name: apt-ubuntu-oracular
+  type: apt
+  platform: linux
+  distribution:
+  - ubuntu
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  version_mapping:
+    '26.04': oracular
+  endpoints:
+    packages: http://archive.ubuntu.com/ubuntu/dists/oracular/main/binary-{arch}/Packages.gz
+    search: https://packages.ubuntu.com/search?keywords={query}
+    info: https://packages.ubuntu.com/oracular/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+      download_url: Filename
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  limits:
+    requests_per_minute: 60
+    timeout_seconds: 300
+  metadata:
+    description: Ubuntu 26.04 (Oracular) Main Repository
+    maintainer: Ubuntu
+    priority: 90
+    enabled: true
+    official: true
+    url: https://packages.ubuntu.com
+  eol: false
+  query_type: bulk_download
+- name: apt-debian-stretch
+  type: apt
+  platform: linux
+  distribution:
+  - debian
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  - i386
+  version_mapping:
+    '9': stretch
+  endpoints:
+    packages: http://archive.debian.org/debian/dists/stretch/main/binary-{arch}/Packages.gz
+    search: https://packages.debian.org/search?keywords={query}
+    info: https://packages.debian.org/stretch/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Debian 9 (Stretch) Main Repository (EOL - Archive)
+    maintainer: Debian
+    priority: 85
+    enabled: true
+    official: true
+    url: https://archive.debian.org
+  eol: true
+  query_type: bulk_download
+- name: apt-debian-buster
+  type: apt
+  platform: linux
+  distribution:
+  - debian
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  - i386
+  version_mapping:
+    '10': buster
+  endpoints:
+    packages: http://deb.debian.org/debian/dists/buster/main/binary-{arch}/Packages.gz
+    search: https://packages.debian.org/search?keywords={query}
+    info: https://packages.debian.org/buster/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Debian 10 (Buster) Main Repository
+    maintainer: Debian
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.debian.org
+  eol: false
+  query_type: bulk_download
+- name: apt-debian-bullseye
+  type: apt
+  platform: linux
+  distribution:
+  - debian
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  - i386
+  version_mapping:
+    '11': bullseye
+  endpoints:
+    packages: http://deb.debian.org/debian/dists/bullseye/main/binary-{arch}/Packages.gz
+    search: https://packages.debian.org/search?keywords={query}
+    info: https://packages.debian.org/bullseye/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Debian 11 (Bullseye) Main Repository
+    maintainer: Debian
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.debian.org
+  eol: false
+  query_type: bulk_download
+- name: apt-debian-bookworm
+  type: apt
+  platform: linux
+  distribution:
+  - debian
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  - i386
+  version_mapping:
+    '12': bookworm
+  endpoints:
+    packages: http://deb.debian.org/debian/dists/bookworm/main/binary-{arch}/Packages.gz
+    search: https://packages.debian.org/search?keywords={query}
+    info: https://packages.debian.org/bookworm/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Debian 12 (Bookworm) Main Repository
+    maintainer: Debian
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.debian.org
+  eol: false
+  query_type: bulk_download
+- name: apt-debian-trixie
+  type: apt
+  platform: linux
+  distribution:
+  - debian
+  architecture:
+  - amd64
+  - arm64
+  - armhf
+  - i386
+  version_mapping:
+    '13': trixie
+  endpoints:
+    packages: http://deb.debian.org/debian/dists/trixie/main/binary-{arch}/Packages.gz
+    search: https://packages.debian.org/search?keywords={query}
+    info: https://packages.debian.org/trixie/{package}
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Debian 13 (Trixie) Main Repository
+    maintainer: Debian
+    priority: 85
+    enabled: true
+    official: true
+    url: https://packages.debian.org
+  eol: false
+  query_type: bulk_download
+- name: apt-mint-22
+  type: apt
+  platform: linux
+  distribution:
+  - linuxmint
+  - mint
+  architecture:
+  - amd64
+  - arm64
+  version_mapping:
+    '22': wilma
+  endpoints:
+    packages: http://packages.linuxmint.com/dists/wilma/main/binary-{arch}/Packages.gz
+    search: https://community.linuxmint.com/software/search?q={query}
+    info: http://packages.linuxmint.com/pool/main/
+  parsing:
+    format: debian_packages
+    compression: gzip
+    encoding: utf-8
+    fields:
+      name: Package
+      version: Version
+      description: Description
+      maintainer: Maintainer
+      homepage: Homepage
+      dependencies: Depends
+      size: Installed-Size
+      category: Section
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  metadata:
+    description: Linux Mint 22 (Wilma) Main Repository
+    maintainer: Linux Mint
+    priority: 85
+    enabled: true
+    official: true
+    url: https://www.linuxmint.com
+  eol: false
+  query_type: bulk_download

@@ -31,10 +31,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ./sai[test]
         pip install -e ./saigen[test]
+        pip install -e ./saitest[test]
 
     - name: Run tests
       run: |
-        pytest --cov=sai --cov=saigen --cov-report=xml --cov-report=term
+        pytest --cov=sai --cov=saigen --cov=saitest --cov-report=xml --cov-report=term
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -61,18 +62,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ./sai[dev]
         pip install -e ./saigen[dev]
+        pip install -e ./saitest[dev]
 
     - name: Run black
-      run: black --check sai saigen tests
+      run: black --check sai saigen saitest tests
 
     - name: Run isort
-      run: isort --check-only sai saigen tests
+      run: isort --check-only sai saigen saitest tests
 
     - name: Run flake8
-      run: flake8 sai saigen tests
+      run: flake8 sai saigen saitest tests
 
     - name: Run mypy
-      run: mypy sai saigen
+      run: mypy sai saigen saitest
 
   build:
     name: Build Packages
@@ -106,6 +108,12 @@ jobs:
         python -m build
         twine check dist/*
 
+    - name: Build SAITEST package
+      run: |
+        cd saitest
+        python -m build
+        twine check dist/*
+
     - name: Upload SAI artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -117,3 +125,9 @@ jobs:
       with:
         name: saigen-dist
         path: saigen/dist/
+
+    - name: Upload SAITEST artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: saitest-dist
+        path: saitest/dist/

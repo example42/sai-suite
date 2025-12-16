@@ -1,0 +1,38 @@
+version: '1.0'
+repositories:
+- name: pacman-arch
+  type: pacman
+  platform: linux
+  distribution:
+  - arch
+  - manjaro
+  - endeavouros
+  architecture:
+  - x86_64
+  endpoints:
+    packages: https://archlinux.org/packages/core/x86_64/
+    search: https://archlinux.org/packages/search/json/?q={query}
+    info: https://archlinux.org/packages/core/x86_64/{package}/
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: pkgname
+      version: pkgver
+      description: pkgdesc
+      maintainer: maintainers
+      homepage: url
+      license: licenses
+      dependencies: depends
+  cache:
+    ttl_hours: 168
+    max_size_mb: 50
+  metadata:
+    description: Arch Linux Core Repository
+    maintainer: Arch Linux
+    priority: 85
+    enabled: true
+    official: true
+    url: https://archlinux.org/packages
+  eol: false
+  query_type: api

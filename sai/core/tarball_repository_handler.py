@@ -30,6 +30,55 @@ from ..utils.security import (
 logger = logging.getLogger(__name__)
 
 
+def _is_within_directory(base: str, target: str) -> bool:
+    """Check if target path is within base directory.
+
+    Args:
+        base: Base directory path
+        target: Target path to check
+
+    Returns:
+        True if target is within base directory
+    """
+    base = str(Path(base).resolve())
+    target = str(Path(target).resolve())
+    return target.startswith(base + "/") or target == base
+
+
+def safe_extract_tar(tar, target_dir):
+    """Safely extract tar archive with path traversal protection.
+
+    Args:
+        tar: Tarfile object
+        target_dir: Target directory for extraction
+
+    Raises:
+        SecurityError: If path traversal is detected
+    """
+    for m in tar.getmembers():
+        dest = str(Path(target_dir) / m.name)
+        if not _is_within_directory(target_dir, dest):
+            raise SecurityError(f"Blocked path traversal: {m.name}")
+        tar.extract(m, target_dir)
+
+
+def safe_extract_zip(zip_file, target_dir):
+    """Safely extract zip archive with path traversal protection.
+
+    Args:
+        zip_file: ZipFile object
+        target_dir: Target directory for extraction
+
+    Raises:
+        SecurityError: If path traversal is detected
+    """
+    for zinfo in zip_file.infolist():
+        dest = str(Path(target_dir) / zinfo.filename)
+        if not _is_within_directory(target_dir, dest):
+            raise SecurityError(f"Blocked path traversal: {zinfo.filename}")
+        zip_file.extract(zinfo, target_dir)
+
+
 @dataclass
 class ReleaseInfo:
     """Information about a repository release."""
@@ -757,19 +806,8 @@ class TarballRepositoryHandler:
             target_dir: Target directory for extraction
         """
         with tarfile.open(archive_path, "r:*") as tar:
-            # Security check: validate all member paths
-            for member in tar.getmembers():
-                # Prevent path traversal attacks
-                if member.name.startswith("/") or ".." in member.name:
-                    raise Exception(f"Unsafe path in archive: {member.name}")
-
-                # Prevent extraction of device files, etc.
-                if not (member.isfile() or member.isdir() or member.issym() or member.islnk()):
-                    logger.warning(f"Skipping special file: {member.name}")
-                    continue
-
-            # Extract all members
-            tar.extractall(target_dir)
+            # Security check: validate all member paths and extract safely
+            safe_extract_tar(tar, target_dir)
 
     def _extract_zip(self, archive_path: Path, target_dir: Path):
         """Extract zip archive with security checks.
@@ -779,14 +817,8 @@ class TarballRepositoryHandler:
             target_dir: Target directory for extraction
         """
         with zipfile.ZipFile(archive_path, "r") as zip_file:
-            # Security check: validate all member paths
-            for member in zip_file.namelist():
-                # Prevent path traversal attacks
-                if member.startswith("/") or ".." in member:
-                    raise Exception(f"Unsafe path in archive: {member}")
-
-            # Extract all members
-            zip_file.extractall(target_dir)
+            # Security check: validate all member paths and extract safely
+            safe_extract_zip(zip_file, target_dir)
 
     def _is_temporary_network_error(self, error_message: str) -> bool:
         """Determine if a network error is likely temporary.

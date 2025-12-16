@@ -358,11 +358,22 @@ class Compatibility(BaseModel):
     versions: Optional[VersionCompatibility] = None
 
 
+class SaidataMetadata(BaseModel):
+    """Metadata about the saidata file generation and lifecycle."""
+
+    model: Optional[str] = None
+    generation_date: Optional[str] = None
+    generation_time: Optional[float] = None
+    test_date: Optional[str] = None
+    human_review_date: Optional[str] = None
+
+
 class SaiData(BaseModel):
     """Complete SaiData structure."""
 
     version: str = Field(default="0.3", pattern=r"^\d+\.\d+(\.\d+)?$")
     metadata: Metadata
+    saidata: Optional[SaidataMetadata] = None
     packages: Optional[List[Package]] = None
     services: Optional[List[Service]] = None
     files: Optional[List[File]] = None

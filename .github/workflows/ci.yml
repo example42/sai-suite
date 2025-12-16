@@ -45,17 +45,17 @@ jobs:
 
     - name: Run linting
       run: |
-        black --check --diff sai saigen tests
-        isort --check-only --diff sai saigen tests
-        flake8 sai saigen tests
+        black --check --diff sai saigen saitest tests
+        isort --check-only --diff sai saigen saitest tests
+        flake8 sai saigen saitest tests
 
     - name: Run type checking
       run: |
-        mypy sai saigen
+        mypy sai saigen saitest
 
     - name: Run tests
       run: |
-        pytest --cov=sai --cov=saigen --cov-report=xml --cov-report=term-missing
+        pytest --cov=sai --cov=saigen --cov=saitest --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
@@ -82,8 +82,8 @@ jobs:
 
     - name: Run security checks with bandit
       run: |
-        bandit -r sai saigen -f json -o bandit-report.json || true
-        bandit -r sai saigen
+        bandit -r sai saigen saitest -f json -o bandit-report.json || true
+        bandit -r sai saigen saitest
 
     - name: Check dependencies for known vulnerabilities
       run: |
@@ -153,6 +153,7 @@ jobs:
       run: |
         sai --help
         saigen --help
+        saitest --help
         sai providers list || true  # May fail if no providers available
         sai config show || true     # May fail if no config exists
 

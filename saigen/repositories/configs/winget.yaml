@@ -1,0 +1,77 @@
+version: '1.0'
+repositories:
+- name: winget-windows
+  type: winget
+  platform: windows
+  distribution:
+  - windows
+  architecture:
+  - x64
+  - x86
+  - arm64
+  endpoints:
+    packages: https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests
+    search: https://api.github.com/search/code?q=repo:microsoft/winget-pkgs+{query}+in:file+filename:*.yaml
+    info: https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/{package}
+  parsing:
+    format: github_directory
+    encoding: utf-8
+    patterns:
+      file_extension: ''
+    fields:
+      name: PackageIdentifier
+      version: PackageVersion
+      description: ShortDescription
+      homepage: PackageUrl
+      license: License
+      maintainer: Publisher
+  cache:
+    ttl_hours: 168
+    max_size_mb: 100
+  limits:
+    requests_per_minute: 60
+    timeout_seconds: 300
+  auth:
+    type: bearer
+  metadata:
+    description: Windows Package Manager Community Repository
+    maintainer: Microsoft
+    priority: 95
+    enabled: true
+    official: true
+    url: https://github.com/microsoft/winget-pkgs
+  eol: false
+  query_type: api
+- name: msstore-windows
+  type: winget
+  platform: windows
+  distribution:
+  - windows
+  architecture:
+  - x64
+  - x86
+  - arm64
+  endpoints:
+    packages: https://storeedgefd.dsx.mp.microsoft.com/v9.0/manifestSearch
+    search: https://storeedgefd.dsx.mp.microsoft.com/v9.0/manifestSearch?query={query}
+  parsing:
+    format: json
+    encoding: utf-8
+    fields:
+      name: PackageIdentifier
+      version: PackageVersion
+      description: ShortDescription
+      homepage: PackageUrl
+      maintainer: Publisher
+  cache:
+    ttl_hours: 168
+    max_size_mb: 200
+  metadata:
+    description: Microsoft Store
+    maintainer: Microsoft
+    priority: 70
+    enabled: true
+    official: true
+    url: https://www.microsoft.com/store
+  eol: false
+  query_type: api

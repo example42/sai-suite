@@ -86,6 +86,47 @@ saigen validate nginx.yaml
 saigen validate nginx.yaml --strict
 ```
 
+#### quality
+Assess quality metrics for saidata file.
+
+```bash
+saigen quality [OPTIONS] FILE
+```
+
+**Options:**
+- `--metric TEXT` - Focus on specific metric (completeness, metadata_richness, cross_reference_integrity, repository_alignment, consistency)
+- `--threshold FLOAT` - Quality score threshold for pass/fail (default: 0.7)
+- `--no-repository-check` - Skip repository accuracy checking
+- `--format TEXT` - Output format: text, json, csv, score (default: text)
+- `--export PATH` - Export detailed report to file
+
+**Examples:**
+```bash
+# Basic quality assessment
+saigen quality nginx.yaml
+
+# Get just the numeric score
+saigen quality --format score nginx.yaml
+
+# Focus on specific metric
+saigen quality --metric completeness --format score nginx.yaml
+
+# Custom threshold with JSON output
+saigen quality --threshold 0.8 --format json nginx.yaml
+
+# Export detailed report
+saigen quality --format json --export report.json nginx.yaml
+
+# Skip repository checks for faster assessment
+saigen quality --no-repository-check nginx.yaml
+```
+
+**Output Formats:**
+- `text` - Human-readable report with details and recommendations
+- `json` - Structured JSON output for automation
+- `csv` - CSV format for spreadsheet analysis
+- `score` - Just the numeric score value (0.000-1.000)
+
 #### test
 Test saidata file using MCP server.
 

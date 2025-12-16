@@ -23,6 +23,7 @@ log_level: info  # debug, info, warning, error
 log_file: ~/.saigen/logs/saigen.log  # Optional log file
 
 # LLM Provider Configuration
+# Multiple instances of the same provider type are supported by using unique names
 llm_providers:
   openai:
     provider: openai
@@ -44,10 +45,23 @@ llm_providers:
     enabled: false
     # api_key: set via ANTHROPIC_API_KEY environment variable
   
-  ollama:
+  # Multiple Ollama instances with different models
+  ollama_qwen3:
     provider: ollama
     api_base: http://localhost:11434
-    model: llama2
+    model: qwen3-coder:30b
+    enabled: true
+  
+  ollama_deepseek:
+    provider: ollama
+    api_base: http://localhost:11434
+    model: deepseek-r1:8b
+    enabled: true
+  
+  ollama_phi3:
+    provider: ollama
+    api_base: http://localhost:11434
+    model: phi3:latest
     enabled: false
 
 # Repository Configuration
@@ -146,6 +160,41 @@ generation:
 user_agent: "saigen/0.1.0"
 max_concurrent_requests: 5
 request_timeout: 30
+```
+
+## Multiple Provider Instances
+
+You can configure multiple instances of the same provider type (e.g., multiple Ollama models) by using unique provider names. The provider type is determined by the `provider` field in the configuration.
+
+### Naming Convention
+- Use descriptive names like `ollama_qwen3`, `ollama_deepseek`, etc.
+- The base provider type (before the underscore) is used for grouping
+- Each instance can have different models, endpoints, or settings
+
+### Example: Multiple Ollama Models
+```yaml
+llm_providers:
+  ollama_qwen3:
+    provider: ollama
+    api_base: http://localhost:11434
+    model: qwen3-coder:30b
+    enabled: true
+  
+  ollama_deepseek:
+    provider: ollama
+    api_base: http://localhost:11434
+    model: deepseek-r1:8b
+    enabled: true
+```
+
+### Using Specific Providers
+Specify the exact provider name when generating:
+```bash
+# Use the qwen3 model
+saigen generate nginx --llm-provider ollama_qwen3
+
+# Use the deepseek model
+saigen generate nginx --llm-provider ollama_deepseek
 ```
 
 ## Environment Variables

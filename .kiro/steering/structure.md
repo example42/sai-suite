@@ -11,8 +11,8 @@
   - `providerdata-0.1-schema.json` - Provider action definitions
   - `applydata-0.1-schema.json` - Batch operation definitions
 - **Scripts**: `scripts/` - Build, deployment, and utility scripts
-- **Development Scripts**: `scripts/development/` - All demo and development scripts organized by package (sai/, saigen/)
-- **Tests**: `tests/` - Comprehensive test suite organized by package (sai/, saigen/, shared/, integration/)
+- **Development Scripts**: `scripts/development/` - All demo and development scripts organized by package (sai/, saigen/, saitest/)
+- **Tests**: `tests/` - Comprehensive test suite organized by package (sai/, saigen/, saitest/, shared/, integration/)
   - `tests/fixtures/` - Test fixtures including saidata examples
 - **Saidata**: Repository-based saidata (cached in `~/.sai/cache/repositories/`)
 - **Providerdata**: `providers/` - Provider data to support actions
@@ -41,6 +41,16 @@
 - **`saigen/docs/`** - SAIGEN-specific documentation (CLI reference, generation guides, repository management)
 - **`saigen/docs/examples/`** - SAIGEN examples (repository configs, saidata samples, testing examples, software lists)
 
+### SAITEST Verification Tool (`saitest/`)
+- **`saitest/cli/`** - Command-line interface for verification commands
+- **`saitest/core/`** - LangGraph workflow orchestration and state management
+- **`saitest/agents/`** - LangGraph agents (discovery, platform, installation, analysis, generation, quality)
+- **`saitest/tools/`** - LangGraph tools for package installation and system inspection
+- **`saitest/models/`** - Data models for observations, state, and results
+- **`saitest/utils/`** - Docker container management, filesystem monitoring, provider execution
+- **`saitest/docs/`** - SAITEST-specific documentation (architecture, CLI reference, workflow guides)
+- **`saitest/docs/examples/`** - SAITEST examples (verification workflows, multi-provider testing)
+
 ### Modular Architecture
 - Clear separation of concerns between modules
 - Each module has specific responsibility
@@ -59,6 +69,8 @@
   - CLI reference, configuration guides, examples
 - **`saigen/docs/`** - SAIGEN generation tool documentation
   - CLI reference, generation guides, repository management, testing, examples
+- **`saitest/docs/`** - SAITEST verification tool documentation
+  - Architecture, CLI reference, workflow guides, agent documentation, examples
 
 ### Documentation Organization
 - Each documentation directory has a README.md index
@@ -72,10 +84,12 @@
 - **`examples/`** - Shared examples only (CI/CD integrations)
 - **`sai/docs/examples/`** - SAI-specific examples (action files, configurations)
 - **`saigen/docs/examples/`** - SAIGEN-specific examples (repository configs, saidata samples, testing)
+- **`saitest/docs/examples/`** - SAITEST-specific examples (verification workflows, multi-provider testing)
 
 ### Development Scripts Structure
 - **`scripts/development/sai/`** - SAI demo and development scripts
 - **`scripts/development/saigen/`** - SAIGEN demo and development scripts
+- **`scripts/development/saitest/`** - SAITEST demo and development scripts
 - Each directory has a README.md explaining the scripts
 
 ### Examples Guidelines
@@ -89,6 +103,7 @@
 ### Tests Structure
 - **`tests/sai/`** - SAI-specific tests (CLI, execution engine, providers)
 - **`tests/saigen/`** - SAIGEN-specific tests (generation, LLM, repositories)
+- **`tests/saitest/`** - SAITEST-specific tests (agents, workflow, container management, filesystem monitoring)
 - **`tests/shared/`** - Shared component tests (models, config)
 - **`tests/integration/`** - Integration tests (cross-component, workflows)
 - **`tests/fixtures/`** - Shared test fixtures
@@ -97,7 +112,7 @@
 ### Tests Guidelines
 - Tests organized by package matching code structure
 - Each test directory has a README.md
-- Run package-specific tests: `pytest tests/sai/` or `pytest tests/saigen/`
+- Run package-specific tests: `pytest tests/sai/`, `pytest tests/saigen/`, or `pytest tests/saitest/`
 - Integration tests cover cross-component functionality
 - Obsolete tests archived, not deleted
 - Obsolete examples archived in `docs/archive/examples/`

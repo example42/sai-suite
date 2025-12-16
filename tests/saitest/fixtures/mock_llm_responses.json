@@ -1,0 +1,366 @@
+{
+  "discovery_agent": {
+    "success": {
+      "installation_methods": ["apt", "pip", "source", "binary"],
+      "expected_services": ["nginx"],
+      "expected_files": [
+        "/usr/bin/nginx",
+        "/etc/nginx/nginx.conf",
+        "/var/log/nginx/access.log",
+        "/var/log/nginx/error.log"
+      ],
+      "expected_ports": [80, 443],
+      "expected_commands": ["nginx", "nginx-debug"],
+      "package_versions": {
+        "apt": "1.18.0",
+        "pip": "0.5.2",
+        "source": "1.24.0"
+      },
+      "dependencies": {
+        "apt": ["libssl-dev", "libpcre3-dev", "zlib1g-dev"],
+        "source": ["gcc", "make", "libssl-dev", "libpcre3-dev"]
+      }
+    },
+    "partial": {
+      "installation_methods": ["apt"],
+      "expected_services": ["nginx"],
+      "expected_files": ["/usr/bin/nginx"],
+      "expected_ports": [80]
+    },
+    "invalid_json": "This is not valid JSON {incomplete"
+  },
+  
+  "platform_selection_agent": {
+    "success": {
+      "selected_platforms": [
+        "ubuntu:22.04",
+        "debian:12",
+        "rockylinux:8"
+      ],
+      "rationale": "Selected Ubuntu 22.04 (popular LTS), Debian 12 (stable), and Rocky Linux 8 (RHEL-based) for good coverage across different package managers and distributions."
+    },
+    "minimal": {
+      "selected_platforms": [
+        "ubuntu:22.04",
+        "debian:12"
+      ],
+      "rationale": "Selected two popular Debian-based distributions for basic coverage."
+    },
+    "fallback": {
+      "selected_platforms": [
+        "ubuntu:22.04"
+      ],
+      "rationale": "Fallback to single most popular platform."
+    }
+  },
+  
+  "analysis_agent": {
+    "success": {
+      "patterns": {
+        "services": ["nginx"],
+        "ports": [80, 443],
+        "commands": [
+          {
+            "name": "nginx",
+            "path": "/usr/bin/nginx"
+          }
+        ],
+        "files": [
+          {
+            "path": "/usr/bin/nginx",
+            "purpose": "binary"
+          },
+          {
+            "path": "/etc/nginx/nginx.conf",
+            "purpose": "config"
+          }
+        ]
+      },
+      "variations": {
+        "ubuntu:22.04": {
+          "apt": {
+            "package_name": "nginx-full",
+            "version": "1.18.0",
+            "config_path": "/etc/nginx/sites-available/default"
+          },
+          "pip": {
+            "package_name": "nginx-config-builder",
+            "version": "0.5.2"
+          }
+        },
+        "debian:12": {
+          "apt": {
+            "package_name": "nginx-light",
+            "version": "1.22.1",
+            "config_path": "/etc/nginx/nginx.conf"
+          }
+        },
+        "rockylinux:8": {
+          "dnf": {
+            "package_name": "nginx",
+            "version": "1.20.1",
+            "config_path": "/etc/nginx/nginx.conf"
+          }
+        }
+      },
+      "confidence_scores": {
+        "services": 0.95,
+        "ports": 0.90,
+        "files": 0.92,
+        "commands": 0.98,
+        "packages": 0.88
+      }
+    },
+    "low_confidence": {
+      "patterns": {
+        "services": ["custom-service"],
+        "ports": [8080]
+      },
+      "variations": {},
+      "confidence_scores": {
+        "services": 0.45,
+        "ports": 0.40,
+        "files": 0.35
+      }
+    }
+  },
+  
+  "generation_agent": {
+    "success_default": {
+      "version": "0.3",
+      "metadata": {
+        "name": "nginx",
+        "description": "High-performance HTTP server and reverse proxy",
+        "homepage": "https://nginx.org",
+        "license": "BSD-2-Clause"
+      },
+      "packages": [
+        {
+          "name": "nginx",
+          "package_name": "nginx"
+        }
+      ],
+      "services": [
+        {
+          "name": "nginx",
+          "type": "systemd",
+          "enabled": true
+        }
+      ],
+      "files": [
+        {
+          "path": "/usr/bin/nginx",
+          "purpose": "binary"
+        },
+        {
+          "path": "/etc/nginx/nginx.conf",
+          "purpose": "config"
+        }
+      ],
+      "commands": [
+        {
+          "name": "nginx",
+          "path": "/usr/bin/nginx"
+        }
+      ],
+      "ports": [
+        {
+          "number": 80,
+          "protocol": "tcp"
+        },
+        {
+          "number": 443,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "success_ubuntu_override": {
+      "version": "0.3",
+      "providers": {
+        "apt": {
+          "packages": [
+            {
+              "name": "nginx",
+              "package_name": "nginx-full",
+              "version": "1.18.0"
+            }
+          ]
+        },
+        "pip": {
+          "packages": [
+            {
+              "name": "nginx",
+              "package_name": "nginx-config-builder",
+              "version": "0.5.2"
+            }
+          ]
+        }
+      }
+    },
+    "success_debian_override": {
+      "version": "0.3",
+      "providers": {
+        "apt": {
+          "packages": [
+            {
+              "name": "nginx",
+              "package_name": "nginx-light",
+              "version": "1.22.1"
+            }
+          ]
+        }
+      }
+    },
+    "invalid_yaml": "version: 0.3\nmetadata:\n  name: nginx\n  invalid: [unclosed bracket"
+  },
+  
+  "quality_check_agent": {
+    "high_quality": {
+      "validation_result": "passed",
+      "validation_errors": [],
+      "completeness_score": 0.92,
+      "accuracy_score": 0.88,
+      "overall_confidence": 0.90,
+      "needs_human_review": false,
+      "assessment": "Generated saidata is complete and accurate. All required fields are present, schema validation passed, and observations are well-supported by installation results."
+    },
+    "medium_quality": {
+      "validation_result": "passed_with_warnings",
+      "validation_errors": [],
+      "completeness_score": 0.75,
+      "accuracy_score": 0.72,
+      "overall_confidence": 0.74,
+      "needs_human_review": false,
+      "assessment": "Generated saidata is acceptable but could be improved. Some optional fields are missing, but core functionality is well-documented."
+    },
+    "low_quality": {
+      "validation_result": "failed",
+      "validation_errors": [
+        "Missing required field: metadata.license",
+        "Invalid port number: -1",
+        "Service name does not match observed service"
+      ],
+      "completeness_score": 0.58,
+      "accuracy_score": 0.52,
+      "overall_confidence": 0.55,
+      "needs_human_review": true,
+      "assessment": "Generated saidata has significant issues. Schema validation failed, several required fields are missing, and some data does not match observations. Human review required."
+    },
+    "schema_validation_errors": {
+      "validation_result": "failed",
+      "validation_errors": [
+        "Missing required field: version",
+        "Missing required field: metadata.name",
+        "Invalid type for field 'ports': expected array, got object",
+        "Additional property not allowed: 'unknown_field'"
+      ],
+      "completeness_score": 0.45,
+      "accuracy_score": 0.40,
+      "overall_confidence": 0.42,
+      "needs_human_review": true,
+      "assessment": "Critical schema validation errors. Saidata does not conform to schema 0.3 specification."
+    }
+  },
+  
+  "installation_tool": {
+    "success_apt": {
+      "provider": "apt",
+      "success": true,
+      "output": "Reading package lists...\nBuilding dependency tree...\nReading state information...\nThe following NEW packages will be installed:\n  nginx\n0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.\nNeed to get 0 B/604 kB of archives.\nAfter this operation, 2,118 kB of additional disk space will be used.\nSelecting previously unselected package nginx.\n(Reading database ... 123456 files and directories currently installed.)\nPreparing to unpack .../nginx_1.18.0-0ubuntu1_amd64.deb ...\nUnpacking nginx (1.18.0-0ubuntu1) ...\nSetting up nginx (1.18.0-0ubuntu1) ...\nProcessing triggers for systemd (245.4-4ubuntu3) ...",
+      "test_output": "nginx/1.18.0-0ubuntu1",
+      "test_success": true,
+      "files_created": [
+        "/usr/bin/nginx",
+        "/etc/nginx/nginx.conf",
+        "/etc/nginx/sites-available/default",
+        "/var/log/nginx/access.log",
+        "/var/log/nginx/error.log"
+      ],
+      "services_found": [
+        "/lib/systemd/system/nginx.service"
+      ],
+      "binaries_found": [
+        "/usr/bin/nginx"
+      ],
+      "platform": "ubuntu:22.04"
+    },
+    "success_pip": {
+      "provider": "pip",
+      "success": true,
+      "output": "Collecting nginx-config-builder\n  Downloading nginx_config_builder-0.5.2-py3-none-any.whl (15 kB)\nInstalling collected packages: nginx-config-builder\nSuccessfully installed nginx-config-builder-0.5.2",
+      "test_output": "nginx-config-builder 0.5.2",
+      "test_success": true,
+      "files_created": [
+        "/usr/local/bin/nginx-config-builder",
+        "/usr/local/lib/python3.10/site-packages/nginx_config_builder"
+      ],
+      "services_found": [],
+      "binaries_found": [
+        "/usr/local/bin/nginx-config-builder"
+      ],
+      "platform": "ubuntu:22.04"
+    },
+    "failure_not_found": {
+      "provider": "pip",
+      "success": false,
+      "output": "ERROR: Could not find a version that satisfies the requirement nonexistent-package (from versions: none)\nERROR: No matching distribution found for nonexistent-package",
+      "test_output": null,
+      "test_success": false,
+      "files_created": [],
+      "services_found": [],
+      "binaries_found": [],
+      "platform": "ubuntu:22.04",
+      "error": "Package not found in pip repository"
+    },
+    "failure_timeout": {
+      "provider": "apt",
+      "success": false,
+      "output": "Reading package lists...\nE: Could not get lock /var/lib/dpkg/lock-frontend - open (11: Resource temporarily unavailable)\nE: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), is another process using it?",
+      "test_output": null,
+      "test_success": false,
+      "files_created": [],
+      "services_found": [],
+      "binaries_found": [],
+      "platform": "ubuntu:22.04",
+      "error": "Installation timeout or lock conflict"
+    }
+  },
+  
+  "system_inspection_tools": {
+    "inspect_service_success": {
+      "service_name": "nginx",
+      "status": "active (running)",
+      "config": "[Unit]\nDescription=A high performance web server and a reverse proxy server\nDocumentation=man:nginx(8)\nAfter=network.target\n\n[Service]\nType=forking\nPIDFile=/run/nginx.pid\nExecStartPre=/usr/sbin/nginx -t -q -g 'daemon on; master_process on;'\nExecStart=/usr/sbin/nginx -g 'daemon on; master_process on;'\nExecReload=/usr/sbin/nginx -s reload\nExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid\nTimeoutStopSec=5\nKillMode=mixed\n\n[Install]\nWantedBy=multi-user.target",
+      "enabled": true
+    },
+    "inspect_service_not_found": {
+      "service_name": "nonexistent",
+      "status": "not found",
+      "config": null,
+      "enabled": false,
+      "error": "Unit nonexistent.service could not be found."
+    },
+    "check_listening_ports_success": [
+      {
+        "port": 80,
+        "protocol": "tcp",
+        "address": "0.0.0.0",
+        "process": "nginx"
+      },
+      {
+        "port": 443,
+        "protocol": "tcp",
+        "address": "0.0.0.0",
+        "process": "nginx"
+      }
+    ],
+    "check_listening_ports_empty": [],
+    "find_config_files_success": [
+      "/etc/nginx/nginx.conf",
+      "/etc/nginx/sites-available/default",
+      "/etc/nginx/sites-enabled/default",
+      "/etc/nginx/conf.d"
+    ],
+    "find_config_files_not_found": []
+  }
+}

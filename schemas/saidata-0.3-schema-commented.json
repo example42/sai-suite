@@ -1,0 +1,2294 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "SaiData Schema v0.3",
+    "description": "Comprehensive schema for defining software metadata, installation methods, and provider-specific configurations. Supports multiple installation approaches: package managers, source builds, binary downloads, and installation scripts. Includes hierarchical configuration with OS-specific overrides and provider customizations.",
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+            "description": "Saidata schema version. Use version 0.3.",
+            "examples": [
+                "0.3"
+            ]
+        },
+        "metadata": {
+            "type": "object",
+            "description": "Core metadata about the software being described. This section provides essential information for identification, categorization, and discovery",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Unique identifier for the software. Used as the primary key for lookups and file naming. Should be lowercase, alphanumeric with hyphens",
+                    "examples": [
+                        "nginx",
+                        "apache",
+                        "postgresql",
+                        "docker-compose"
+                    ]
+                },
+                "display_name": {
+                    "type": "string",
+                    "description": "Human-readable name for display in UIs and documentation. Can include proper capitalization and spacing",
+                    "examples": [
+                        "NGINX",
+                        "Apache HTTP Server",
+                        "PostgreSQL",
+                        "Docker Compose"
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Brief description of the software's purpose and functionality. Should be concise (1-2 sentences)",
+                    "examples": [
+                        "High-performance HTTP server and reverse proxy",
+                        "Open-source relational database management system",
+                        "Tool for defining and running multi-container Docker applications"
+                    ]
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Default or recommended version of the software. Can be overridden in specific installation method definitions",
+                    "examples": [
+                        "1.24.0",
+                        "2.4.58",
+                        "15.3",
+                        "latest"
+                    ]
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Primary category for software classification. Used for organization and filtering",
+                    "examples": [
+                        "web-server",
+                        "database",
+                        "container",
+                        "development-tool",
+                        "monitoring",
+                        "security"
+                    ]
+                },
+                "subcategory": {
+                    "type": "string",
+                    "description": "More specific classification within the primary category",
+                    "examples": [
+                        "http-server",
+                        "reverse-proxy",
+                        "sql-database",
+                        "nosql-database",
+                        "orchestration"
+                    ]
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Searchable keywords for discovery and filtering. Include technology stack, use cases, and features",
+                    "examples": [
+                        [
+                            "http",
+                            "proxy",
+                            "load-balancer",
+                            "ssl"
+                        ],
+                        [
+                            "sql",
+                            "relational",
+                            "acid",
+                            "postgresql"
+                        ],
+                        [
+                            "container",
+                            "orchestration",
+                            "docker",
+                            "compose"
+                        ]
+                    ]
+                },
+                "license": {
+                    "type": "string",
+                    "description": "Software license identifier. Use SPDX identifiers when possible",
+                    "examples": [
+                        "MIT",
+                        "Apache-2.0",
+                        "GPL-3.0",
+                        "BSD-3-Clause",
+                        "Proprietary"
+                    ]
+                },
+                "language": {
+                    "type": "string",
+                    "description": "Primary programming language the software is written in",
+                    "examples": [
+                        "C",
+                        "C++",
+                        "Python",
+                        "Go",
+                        "Rust",
+                        "Java",
+                        "JavaScript"
+                    ]
+                },
+                "maintainer": {
+                    "type": "string",
+                    "description": "Organization or individual maintaining the software",
+                    "examples": [
+                        "NGINX Inc.",
+                        "Apache Software Foundation",
+                        "PostgreSQL Global Development Group"
+                    ]
+                },
+                "urls": {
+                    "$ref": "#/definitions/urls",
+                    "description": "Collection of relevant URLs for the software (website, documentation, source code, etc.)"
+                },
+                "security": {
+                    "$ref": "#/definitions/security_metadata",
+                    "description": "Security-related metadata including vulnerability disclosure, signing keys, and SBOM information"
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "saidata": {
+            "type": "object",
+            "description": "Metadata about the saidata file generation and lifecycle",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "description": "Name of the LLM model used to generate this saidata"
+                },
+                "generation_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 timestamp when this saidata was generated"
+                },
+                "generation_time": {
+                    "type": "number",
+                    "description": "Time taken to generate this saidata in seconds",
+                    "minimum": 0
+                },
+                "test_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 timestamp when this saidata was last tested"
+                },
+                "human_review_date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 timestamp when this saidata was last reviewed by a human"
+                }
+            }
+        },
+        "packages": {
+            "type": "array",
+            "description": "Default package definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/package"
+            }
+        },
+        "services": {
+            "type": "array",
+            "description": "Default service definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/service"
+            }
+        },
+        "files": {
+            "type": "array",
+            "description": "Default file definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/file"
+            }
+        },
+        "directories": {
+            "type": "array",
+            "description": "Default directory definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/directory"
+            }
+        },
+        "commands": {
+            "type": "array",
+            "description": "Default command definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/command"
+            }
+        },
+        "ports": {
+            "type": "array",
+            "description": "Default port definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/port"
+            }
+        },
+        "containers": {
+            "type": "array",
+            "description": "Default container definitions that apply across providers",
+            "items": {
+                "$ref": "#/definitions/container"
+            }
+        },
+        "sources": {
+            "type": "array",
+            "description": "Default source build definitions that apply across providers. Used for building software from source code with various build systems (autotools, cmake, make, etc.)",
+            "items": {
+                "$ref": "#/definitions/source"
+            },
+            "examples": [
+                [
+                    {
+                        "name": "main",
+                        "url": "https://example.com/software-{{version}}.tar.gz",
+                        "version": "1.0.0",
+                        "build_system": "autotools",
+                        "configure_args": [
+                            "--enable-ssl",
+                            "--with-modules"
+                        ]
+                    }
+                ]
+            ]
+        },
+        "binaries": {
+            "type": "array",
+            "description": "Default binary download definitions that apply across providers. Used for downloading pre-compiled binaries with OS/architecture templating support",
+            "items": {
+                "$ref": "#/definitions/binary"
+            },
+            "examples": [
+                [
+                    {
+                        "name": "main",
+                        "url": "https://releases.example.com/{{version}}/software_{{version}}_{{platform}}_{{architecture}}.zip",
+                        "version": "1.0.0",
+                        "checksum": "sha256:abc123...",
+                        "install_path": "/usr/local/bin"
+                    }
+                ]
+            ]
+        },
+        "scripts": {
+            "type": "array",
+            "description": "Default script installation definitions that apply across providers. Used for executing installation scripts with security measures and environment variable support",
+            "items": {
+                "$ref": "#/definitions/script"
+            },
+            "examples": [
+                [
+                    {
+                        "name": "official",
+                        "url": "https://get.example.com/install.sh",
+                        "checksum": "sha256:def456...",
+                        "interpreter": "bash",
+                        "timeout": 300
+                    }
+                ]
+            ]
+        },
+        "providers": {
+            "type": "object",
+            "description": "Provider-specific configurations that override or extend default resource definitions. Each key is a provider name (e.g., 'apt', 'brew', 'dnf', 'docker', 'source', 'binary', 'script'). Provider configurations take precedence over defaults in the template resolution hierarchy",
+            "additionalProperties": {
+                "$ref": "#/definitions/provider_config"
+            },
+            "examples": [
+                {
+                    "apt": {
+                        "packages": [
+                            {
+                                "name": "nginx",
+                                "package_name": "nginx-full"
+                            }
+                        ],
+                        "services": [
+                            {
+                                "name": "nginx",
+                                "service_name": "nginx"
+                            }
+                        ]
+                    },
+                    "brew": {
+                        "packages": [
+                            {
+                                "name": "nginx",
+                                "package_name": "nginx"
+                            }
+                        ]
+                    },
+                    "docker": {
+                        "containers": [
+                            {
+                                "name": "nginx",
+                                "image": "nginx",
+                                "tag": "latest"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "compatibility": {
+            "type": "object",
+            "description": "Compatibility information defining which providers, platforms, architectures, and OS versions are supported. Used for validation and provider selection",
+            "properties": {
+                "matrix": {
+                    "type": "array",
+                    "description": "Compatibility matrix showing which providers work on which platforms, architectures, and OS versions. Each entry defines support status, testing status, and recommendations",
+                    "items": {
+                        "$ref": "#/definitions/compatibility_entry"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "provider": "apt",
+                                "platform": [
+                                    "linux"
+                                ],
+                                "architecture": [
+                                    "amd64",
+                                    "arm64"
+                                ],
+                                "os_version": [
+                                    "ubuntu-22.04",
+                                    "ubuntu-20.04",
+                                    "debian-11"
+                                ],
+                                "supported": true,
+                                "tested": true,
+                                "recommended": true
+                            },
+                            {
+                                "provider": "brew",
+                                "platform": "darwin",
+                                "architecture": [
+                                    "amd64",
+                                    "arm64"
+                                ],
+                                "supported": true,
+                                "tested": true,
+                                "recommended": true
+                            }
+                        ]
+                    ]
+                },
+                "versions": {
+                    "$ref": "#/definitions/versions",
+                    "description": "Version information including latest, minimum supported, and LTS versions"
+                }
+            }
+        }
+    },
+    "required": [
+        "version",
+        "metadata"
+    ],
+    "definitions": {
+        "provider_config": {
+            "type": "object",
+            "description": "Provider-specific configuration that overrides or extends default resource definitions. All resource types defined here take precedence over defaults in the template resolution hierarchy",
+            "properties": {
+                "prerequisites": {
+                    "type": "array",
+                    "description": "Required packages that must be installed before this provider can be used. Commonly used for build tools, compilers, and development libraries",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "build-essential",
+                            "libssl-dev",
+                            "zlib1g-dev"
+                        ],
+                        [
+                            "gcc",
+                            "make",
+                            "cmake"
+                        ],
+                        [
+                            "python3-dev",
+                            "python3-pip"
+                        ]
+                    ]
+                },
+                "build_commands": {
+                    "type": "array",
+                    "description": "Custom build commands specific to this provider. Used primarily with source provider for non-standard build processes",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "./configure --prefix=/usr/local",
+                            "make -j$(nproc)",
+                            "make install"
+                        ],
+                        [
+                            "cmake -B build -DCMAKE_BUILD_TYPE=Release",
+                            "cmake --build build",
+                            "cmake --install build"
+                        ]
+                    ]
+                },
+                "packages": {
+                    "type": "array",
+                    "description": "Provider-specific package definitions that override defaults. Use this to specify different package names, versions, or options for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/package"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "name": "nginx",
+                                "package_name": "nginx-full",
+                                "version": "1.24.0"
+                            },
+                            {
+                                "name": "nginx-module-geoip",
+                                "package_name": "libnginx-mod-http-geoip"
+                            }
+                        ]
+                    ]
+                },
+                "package_sources": {
+                    "type": "array",
+                    "description": "Defines multiple package sources with priorities and recommendations. Useful when software is available from multiple repositories (official, backports, third-party)",
+                    "items": {
+                        "$ref": "#/definitions/package_source"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "name": "official",
+                                "priority": 1,
+                                "recommended": true,
+                                "repository": "nginx-official",
+                                "packages": [
+                                    {
+                                        "name": "nginx",
+                                        "package_name": "nginx"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "os-default",
+                                "priority": 2,
+                                "recommended": false,
+                                "repository": "ubuntu-main",
+                                "packages": [
+                                    {
+                                        "name": "nginx",
+                                        "package_name": "nginx"
+                                    }
+                                ],
+                                "notes": "Older version but more stable"
+                            }
+                        ]
+                    ]
+                },
+                "repositories": {
+                    "type": "array",
+                    "description": "Repository definitions for adding third-party or official software repositories. Includes repository URLs, GPG keys, and resource overrides specific to that repository",
+                    "items": {
+                        "$ref": "#/definitions/repository"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "name": "nginx-official",
+                                "url": "http://nginx.org/packages/ubuntu",
+                                "key": "https://nginx.org/keys/nginx_signing.key",
+                                "type": "upstream",
+                                "priority": 1,
+                                "recommended": true
+                            }
+                        ]
+                    ]
+                },
+                "services": {
+                    "type": "array",
+                    "description": "Provider-specific service definitions. Override service names, types, or configurations for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/service"
+                    }
+                },
+                "files": {
+                    "type": "array",
+                    "description": "Provider-specific file definitions. Override file paths, permissions, or types for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/file"
+                    }
+                },
+                "directories": {
+                    "type": "array",
+                    "description": "Provider-specific directory definitions. Override directory paths, permissions, or ownership for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/directory"
+                    }
+                },
+                "commands": {
+                    "type": "array",
+                    "description": "Provider-specific command definitions. Override command paths or arguments for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/command"
+                    }
+                },
+                "ports": {
+                    "type": "array",
+                    "description": "Provider-specific port definitions. Override port numbers or protocols for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/port"
+                    }
+                },
+                "containers": {
+                    "type": "array",
+                    "description": "Provider-specific container definitions. Override container images, tags, or configurations for specific providers",
+                    "items": {
+                        "$ref": "#/definitions/container"
+                    }
+                },
+                "sources": {
+                    "type": "array",
+                    "description": "Provider-specific source build configurations that override or extend default sources",
+                    "items": {
+                        "$ref": "#/definitions/source"
+                    }
+                },
+                "binaries": {
+                    "type": "array",
+                    "description": "Provider-specific binary download configurations that override or extend default binaries",
+                    "items": {
+                        "$ref": "#/definitions/binary"
+                    }
+                },
+                "scripts": {
+                    "type": "array",
+                    "description": "Provider-specific script installation configurations that override or extend default scripts",
+                    "items": {
+                        "$ref": "#/definitions/script"
+                    }
+                }
+            }
+        },
+        "package": {
+            "type": "object",
+            "description": "Package definition for package manager-based installations. Distinguishes between logical names (f cross-referencing) and actual package names (for installation)",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "tion": "Logical name used as key for OS overrides and provider-specific configurations. Used in template functions like {{sai_package(0, 'name')}}",
+                    "examples": [
+                        "nginx",
+                        "main-package",
+                        "core",
+                        "plugin-ssl"
+                    ]
+                },
+                "package_name": {
+                    "type": "string",
+                    "description": "Actual package name used by package managers (apt, dnf, brew, etc.). This is what gets passed to 'apt install', 'dnf install', etc. Used in template functions like {{sai_package(0, 'package_name', 'apt')}}",
+                    "examples": [
+                        "nginx",
+                        "nginx-full",
+                        "httpd",
+                        "posl-15"
+                    ]
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Specific version to install. If omitted, the latest available version is used",
+                    "examples": [
+                        "1.24.0",
+                        "2.4.58",
+                        "15.3",
+                        ">=1.20.0"
+                    ]
+                },
+                "alternatives": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Alternative package names that provide similar functionality. Used as fallbacks if the primary package is unavailable",
+                    "examples": [
+                        [
+                            "nginx-light",
+                            "nginx-extras"
+                        ],
+                        [
+                            "postgresql",
+                            "postgresql-client"
+                        ],
+                        [
+                            "python3",
+                            "python3.11",
+                            "python3.10"
+                        ]
+                    ]
+                },
+                "install_options": {
+                    "type": "string",
+                    "description": "Additional options passed to the package manager during installation",
+                    "examples": [
+                        "--no-install-recommends",
+                        "--allow-downgrades",
+                        "-y --quiet"
+                    ]
+                },
+                "repository": {
+                    "type": "string",
+                    "description": "Specific repository name to use for this package. References a repository defined in the repositories array",
+                    "examples": [
+                        "nginx-official",
+                        "postgresql-apt",
+                        "docker-ce"
+                    ]
+                },
+                "checksum": {
+                    "type": "string",
+                    "description": "Expected checksum for package verification. Format: algorithm:hash",
+                    "pattern": "^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$",
+                    "examples": [
+                        "sha256:abc123def456..."
+                    ]
+                },
+                "signature": {
+                    "type": "string",
+                    "description": "GPG signature URL or fingerprint for package verification",
+                    "examples": [
+                        "https://example.com/package.sig",
+                        "0x1234567890ABCDEF"
+                    ]
+                },
+                "download_url": {
+                    "type": "string",
+                    "description": "Direct download URL for the package file. Used when package is not available through standard repositories",
+                    "examples": [
+                        "https://example.com/packages/software_1.0.0_amd64.deb"
+                    ]
+                }
+            },
+            "required": [
+                "name",
+                "package_name"
+            ]
+        },
+        "service": {
+            "type": "object",
+            "description": "Service definition for managing system services. Supports multiple service management systems across different platforms",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the service. Used in template functions like {{sai_service(0, 'name')}}",
+                    "examples": [
+                        "nginx",
+                        "web-server",
+                        "database",
+                        "cache"
+                    ]
+                },
+                "service_name": {
+                    "type": "string",
+                    "description": "Actual service name used by the service manager (systemd, init, launchd, etc.). This is what gets passed to 'systemctl', 'service', etc. Used in template functions like {{sai_service(0, 'service_name')}}",
+                    "examples": [
+                        "nginx",
+                        "nginx.service",
+                        "httpd",
+                        "postgresql@15-main"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "systemd",
+                        "init",
+                        "launchd",
+                        "windows_service",
+                        "docker",
+                        "kubernetes",
+                        "none"
+                    ],
+                    "description": "Service management system type. Determines which commands are used for service operations (start, stop, restart, etc.)",
+                    "examples": [
+                        "systemd",
+                        "launchd",
+                        "docker"
+                    ]
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Whether the service should be enabled to start automatically on boot. Defaults to false",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "config_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of configuration file paths associated with this service. Used for configuration management and validation",
+                    "examples": [
+                        [
+                            "/etc/nginx/nginx.conf",
+                            "/etc/nginx/sites-enabled/default"
+                        ],
+                        [
+                            "/etc/postgresql/15/main/postgresql.conf"
+                        ],
+                        [
+                            "/usr/local/etc/redis.conf"
+                        ]
+                    ]
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "file": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the file (e.g., config, dotconf, log, data, binary)"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "config",
+                        "binary",
+                        "library",
+                        "data",
+                        "log",
+                        "temp",
+                        "socket"
+                    ]
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "backup": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "name",
+                "path"
+            ]
+        },
+        "directory": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the directory (e.g., config, dotconf, log, data, lib)"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "recursive": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "name",
+                "path"
+            ]
+        },
+        "command": {
+            "type": "object",
+            "description": "Command-line executable definition. Tracks installed commands, their locations, and associated metadata",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the command. Used in template functions like {{sai_command(0, 'name')}}",
+                    "examples": [
+                        "nginx",
+                        "psql",
+                        "docker",
+                        "kubectl"
+                    ]
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Full path to the command executable. Used in template functions like {{sai_command(0, 'path')}}",
+                    "examples": [
+                        "/usr/bin/nginx",
+                        "/usr/local/bin/docker",
+                        "/opt/bin/kubectl"
+                    ]
+                },
+                "arguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Default arguments or common usage patterns for the command",
+                    "examples": [
+                        [
+                            "-t",
+                            "-c /etc/nginx/nginx.conf"
+                        ],
+                        [
+                            "--version"
+                        ],
+                        [
+                            "ps",
+                            "-a"
+                        ]
+                    ]
+                },
+                "aliases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Alternative names or symlinks for the command",
+                    "examples": [
+                        [
+                            "nginx-debug"
+                        ],
+                        [
+                            "psql15",
+                            "postgresql-client"
+                        ],
+                        [
+                            "docker-compose",
+                            "docker compose"
+                        ]
+                    ]
+                },
+                "shell_completion": {
+                    "type": "boolean",
+                    "description": "Whether shell completion is available for this command",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "man_page": {
+                    "type": "string",
+                    "description": "Manual page name or path for documentation",
+                    "examples": [
+                        "nginx(8)",
+                        "psql(1)",
+                        "/usr/share/man/man1/docker.1.gz"
+                    ]
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "port": {
+            "type": "object",
+            "description": "Network port definition. Tracks ports used by the software for network communication",
+            "properties": {
+                "port": {
+                    "type": "integer",
+                    "description": "Port number (1-65535). Used in template functions like {{sai_port(0, 'port')}}",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "examples": [
+                        80,
+                        443,
+                        5432,
+                        3306,
+                        6379
+                    ]
+                },
+                "protocol": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp",
+                        "sctp"
+                    ],
+                    "description": "Network protocol used by this port",
+                    "examples": [
+                        "tcp",
+                        "udp"
+                    ]
+                },
+                "service": {
+                    "type": "string",
+                    "description": "Service or purpose of this port",
+                    "examples": [
+                        "http",
+                        "https",
+                        "postgresql",
+                        "mysql",
+                        "redis",
+                        "ssh"
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable description of what this port is used for",
+                    "examples": [
+                        "HTTP web traffic",
+                        "HTTPS encrypted web traffic",
+                        "PostgreSQL database connections",
+                        "Redis cache server"
+                    ]
+                }
+            },
+            "required": [
+                "port"
+            ]
+        },
+        "container": {
+            "type": "object",
+            "description": "Container definition for Docker/Podman-based deployments. Defines container images, configurations, and runtime parameters",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Container name. Used in template functions like {{container_name}}",
+                    "examples": [
+                        "nginx",
+                        "web-server",
+                        "database",
+                        "redis-cache"
+                    ]
+                },
+                "image": {
+                    "type": "string",
+                    "description": "Container image name without tag or registry. Combined with registry and tag to form the full image reference",
+                    "examples": [
+                        "nginx",
+                        "postgres",
+                        "redis",
+                        "mysql"
+                    ]
+                },
+                "tag": {
+                    "type": "string",
+                    "description": "Image tag/version. Defaults to 'latest' if not specified",
+                    "examples": [
+                        "latest",
+                        "1.24",
+                        "15-alpine",
+                        "stable",
+                        "8.0"
+                    ]
+                },
+                "registry": {
+                    "type": "string",
+                    "description": "Container registry URL. Defaults to Docker Hub if not specified",
+                    "examples": [
+                        "docker.io",
+                        "ghcr.io",
+                        "quay.io",
+                        "gcr.io",
+                        "registry.example.com"
+                    ]
+                },
+                "platform": {
+                    "type": "string",
+                    "description": "Target platform for multi-architecture images. Format: os/architecture",
+                    "examples": [
+                        "linux/amd64",
+                        "linux/arm64",
+                        "linux/arm/v7"
+                    ]
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Port mappings in Docker format. Format: [host_ip:]host_port:container_port[/protocol]",
+                    "examples": [
+                        [
+                            "80:80",
+                            "443:443"
+                        ],
+                        [
+                            "8080:80",
+                            "8443:443"
+                        ],
+                        [
+                            "127.0.0.1:5432:5432",
+                            "6379:6379/tcp"
+                        ]
+                    ]
+                },
+                "volumes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Volume mounts in Docker format. Format: [host_path:]container_path[:options]",
+                    "examples": [
+                        [
+                            "/var/lib/nginx:/usr/share/nginx/html:ro",
+                            "/etc/nginx:/etc/nginx:ro"
+                        ],
+                        [
+                            "nginx-data:/var/lib/nginx",
+                            "/host/path:/container/path:rw"
+                        ]
+                    ]
+                },
+                "environment": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Environment variables passed to the container. Key-value pairs",
+                    "examples": [
+                        {
+                            "POSTGRES_PASSWORD": "secret",
+                            "POSTGRES_DB": "mydb"
+                        },
+                        {
+                            "NGINX_HOST": "example.com",
+                            "NGINX_PORT": "80"
+                        }
+                    ]
+                },
+                "networks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Docker networks to connect the container to",
+                    "examples": [
+                        [
+                            "frontend",
+                            "backend"
+                        ],
+                        [
+                            "web-network",
+                            "database-network"
+                        ]
+                    ]
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Container labels for metadata and organization. Key-value pairs",
+                    "examples": [
+                        {
+                            "com.example.version": "1.0",
+                            "com.example.environment": "production"
+                        },
+                        {
+                            "traefik.enable": "true",
+                            "traefik.http.routers.app.rule": "Host(`example.com`)"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "name",
+                "image"
+            ]
+        },
+        "source": {
+            "type": "object",
+            "description": "Source build configuration for compiling software from source code",
+            "examples": [
+                {
+                    "name": "main",
+                    "url": "https://nginx.org/download/nginx-{{version}}.tar.gz",
+                    "version": "1.24.0",
+                    "build_system": "autotools",
+                    "configure_args": [
+                        "--with-http_ssl_module",
+                        "--with-http_v2_module"
+                    ],
+                    "prerequisites": [
+                        "build-essential",
+                        "libssl-dev"
+                    ],
+                    "checksum": "sha256:abc123..."
+                }
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the source build (e.g., main, stable, dev). Used for referencing in template functions and provider configurations",
+                    "examples": [
+                        "main",
+                        "stable",
+                        "dev",
+                        "latest"
+                    ]
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Source code download URL. Supports templating with {{version}}, {{platform}}, {{architecture}} placeholders",
+                    "examples": [
+                        "https://nginx.org/download/nginx-{{version}}.tar.gz",
+                        "https://github.com/user/repo/archive/v{{version}}.tar.gz"
+                    ]
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version to build. Used in URL templating and for version detection",
+                    "examples": [
+                        "1.24.0",
+                        "2.4.58",
+                        "latest"
+                    ]
+                },
+                "build_system": {
+                    "type": "string",
+                    "enum": [
+                        "autotools",
+                        "cmake",
+                        "make",
+                        "meson",
+                        "ninja",
+                        "custom"
+                    ],
+                    "description": "Build system type. Determines the default build commands used by the source provider",
+                    "examples": [
+                        "autotools",
+                        "cmake",
+                        "make"
+                    ]
+                },
+                "build_dir": {
+                    "type": "string",
+                    "description": "Directory for building. Defaults to /tmp/sai-build-{software-name} if not specified",
+                    "examples": [
+                        "/tmp/sai-build-nginx",
+                        "/var/tmp/build",
+                        "~/build"
+                    ]
+                },
+                "source_dir": {
+                    "type": "string",
+                    "description": "Directory containing extracted source code. Auto-detected from archive structure if not specified",
+                    "examples": [
+                        "/tmp/sai-build-nginx/nginx-1.24.0",
+                        "build/src"
+                    ]
+                },
+                "install_prefix": {
+                    "type": "string",
+                    "description": "Installation prefix for compiled binaries and files. Defaults to /usr/local",
+                    "examples": [
+                        "/usr/local",
+                        "/opt/software",
+                        "~/local"
+                    ]
+                },
+                "configure_args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Arguments passed to the configure step (autotools/cmake)",
+                    "examples": [
+                        [
+                            "--with-http_ssl_module",
+                            "--enable-shared"
+                        ],
+                        [
+                            "-DCMAKE_BUILD_TYPE=Release",
+                            "-DENABLE_SSL=ON"
+                        ]
+                    ]
+                },
+                "build_args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Arguments passed to the build step (make/ninja)",
+                    "examples": [
+                        [
+                            "-j4",
+                            "VERBOSE=1"
+                        ],
+                        [
+                            "--parallel",
+                            "4"
+                        ]
+                    ]
+                },
+                "install_args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Arguments passed to the install step",
+                    "examples": [
+                        [
+                            "DESTDIR=/tmp/staging"
+                        ],
+                        [
+                            "--prefix=/usr/local"
+                        ]
+                    ]
+                },
+                "prerequisites": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Required packages/tools that must be installed before building",
+                    "examples": [
+                        [
+                            "build-essential",
+                            "libssl-dev",
+                            "cmake"
+                        ],
+                        [
+                            "gcc",
+                            "make",
+                            "autotools-dev"
+                        ]
+                    ]
+                },
+                "environment": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Environment variables set during the build process",
+                    "examples": [
+                        {
+                            "CC": "gcc",
+                            "CFLAGS": "-O2 -g",
+                            "LDFLAGS": "-L/usr/local/lib"
+                        }
+                    ]
+                },
+                "checksum": {
+                    "type": "string",
+                    "description": "Expected checksum of source archive for integrity verification. Format: algorithm:hash",
+                    "pattern": "^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$",
+                    "examples": [
+                        "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7",
+                        "sha512:abc123def456..."
+                    ]
+                },
+                "custom_commands": {
+                    "type": "object",
+                    "description": "Custom commands that override default build system behavior",
+                    "properties": {
+                        "download": {
+                            "type": "string",
+                            "description": "Custom command to download source code. Overrides default wget/curl behavior",
+                            "examples": [
+                                "git clone https://github.com/user/repo.git",
+                                "wget -O source.tar.gz {{url}}"
+                            ]
+                        },
+                        "extract": {
+                            "type": "string",
+                            "description": "Custom command to extract downloaded archive. Overrides default tar/unzip behavior",
+                            "examples": [
+                                "tar -xzf source.tar.gz",
+                                "unzip -q archive.zip"
+                            ]
+                        },
+                        "configure": {
+                            "type": "string",
+                            "description": "Custom configure command. Overrides default autotools/cmake configure step",
+                            "examples": [
+                                "./configure --prefix=/usr/local --enable-ssl",
+                                "cmake -DCMAKE_BUILD_TYPE=Release ."
+                            ]
+                        },
+                        "build": {
+                            "type": "string",
+                            "description": "Custom build command. Overrides default make/ninja build step",
+                            "examples": [
+                                "make -j$(nproc)",
+                                "ninja",
+                                "cargo build --release"
+                            ]
+                        },
+                        "install": {
+                            "type": "string",
+                            "description": "Custom install command. Overrides default make install behavior",
+                            "examples": [
+                                "make install",
+                                "ninja install",
+                                "cp binary /usr/local/bin/"
+                            ]
+                        },
+                        "uninstall": {
+                            "type": "string",
+                            "description": "Custom uninstall command for removing installed files",
+                            "examples": [
+                                "make uninstall",
+                                "rm -rf /usr/local/bin/software /etc/software"
+                            ]
+                        },
+                        "validation": {
+                            "type": "string",
+                            "description": "Command to validate successful installation",
+                            "examples": [
+                                "nginx -t",
+                                "software --version",
+                                "systemctl is-active software"
+                            ]
+                        },
+                        "version": {
+                            "type": "string",
+                            "description": "Command to get installed version for tracking",
+                            "examples": [
+                                "nginx -v 2>&1 | grep -o 'nginx/[0-9.]*'",
+                                "software --version | cut -d' ' -f2"
+                            ]
+                        }
+                    }
+                }
+            },
+            "required": [
+                "name",
+                "url",
+                "build_system"
+            ]
+        },
+        "binary": {
+            "type": "object",
+            "description": "Binary download configuration for installing pre-compiled executables",
+            "examples": [
+                {
+                    "name": "main",
+                    "url": "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip",
+                    "version": "1.5.0",
+                    "checksum": "sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5",
+                    "install_path": "/usr/local/bin",
+                    "executable": "terraform"
+                }
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the binary download (e.g., main, stable, dev). Used for referencing in template functions",
+                    "examples": [
+                        "main",
+                        "stable",
+                        "dev",
+                        "latest",
+                        "lts"
+                    ]
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Binary download URL. Supports templating with {{version}}, {{platform}}, {{architecture}} placeholders. Platform values: linux, darwin, windows. Architecture values: amd64, arm64, 386",
+                    "examples": [
+                        "https://releases.hashicorp.com/terraform/{{version}}/terraform_{{version}}_{{platform}}_{{architecture}}.zip",
+                        "https://github.com/user/repo/releases/download/v{{version}}/binary-{{platform}}-{{architecture}}.tar.gz"
+                    ]
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version to download. Used in URL templating and for version tracking",
+                    "examples": [
+                        "1.5.0",
+                        "2.1.3",
+                        "latest"
+                    ]
+                },
+                "architecture": {
+                    "type": "string",
+                    "description": "Target architecture. Auto-detected if not specified. Common values: amd64, arm64, 386",
+                    "examples": [
+                        "amd64",
+                        "arm64",
+                        "386"
+                    ]
+                },
+                "platform": {
+                    "type": "string",
+                    "description": "Target platform/OS. Auto-detected if not specified. Common values: linux, darwin, windows",
+                    "examples": [
+                        "linux",
+                        "darwin",
+                        "windows"
+                    ]
+                },
+                "checksum": {
+                    "type": "string",
+                    "description": "Expected checksum of binary file for integrity verification. Format: algorithm:hash",
+                    "pattern": "^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$",
+                    "examples": [
+                        "sha256:fa16d72a078210a54c47dd5bef2f8b9b8a01d94909a51453956b3ec6442ea4c5"
+                    ]
+                },
+                "install_path": {
+                    "type": "string",
+                    "description": "Installation directory for the binary. Defaults to /usr/local/bin",
+                    "examples": [
+                        "/usr/local/bin",
+                        "/opt/bin",
+                        "~/bin"
+                    ]
+                },
+                "executable": {
+                    "type": "string",
+                    "description": "Executable name within archive or final executable name. Defaults to software name",
+                    "examples": [
+                        "terraform",
+                        "kubectl",
+                        "docker"
+                    ]
+                },
+                "archive": {
+                    "type": "object",
+                    "description": "Archive extraction configuration for compressed binary downloads",
+                    "properties": {
+                        "format": {
+                            "type": "string",
+                            "enum": [
+                                "tar.gz",
+                                "tar.bz2",
+                                "tar.xz",
+                                "zip",
+                                "7z",
+                                "none"
+                            ],
+                            "description": "Archive format. Auto-detected from URL extension if not specified. Use 'none' for direct binary downloads",
+                            "examples": [
+                                "zip",
+                                "tar.gz",
+                                "none"
+                            ]
+                        },
+                        "strip_prefix": {
+                            "type": "string",
+                            "description": "Directory prefix to strip during extraction. Useful when archive contains a single top-level directory",
+                            "examples": [
+                                "terraform_1.5.0_linux_amd64/",
+                                "software-v1.0.0/"
+                            ]
+                        },
+                        "extract_path": {
+                            "type": "string",
+                            "description": "Specific path within archive to extract. Defaults to extracting entire archive",
+                            "examples": [
+                                "bin/",
+                                "dist/",
+                                "release/"
+                            ]
+                        }
+                    }
+                },
+                "permissions": {
+                    "type": "string",
+                    "pattern": "^[0-7]{3,4}$",
+                    "description": "File permissions in octal format (defaults to 0755)"
+                },
+                "custom_commands": {
+                    "type": "object",
+                    "description": "Custom commands that override default binary installation behavior",
+                    "properties": {
+                        "download": {
+                            "type": "string",
+                            "description": "Custom command to download binary. Overrides default wget/curl behavior",
+                            "examples": [
+                                "curl -L -o binary.zip {{url}}",
+                                "wget --progress=bar {{url}}"
+                            ]
+                        },
+                        "extract": {
+                            "type": "string",
+                            "description": "Custom command to extract downloaded archive. Overrides default unzip/tar behavior",
+                            "examples": [
+                                "unzip -q binary.zip",
+                                "tar -xzf binary.tar.gz"
+                            ]
+                        },
+                        "install": {
+                            "type": "string",
+                            "description": "Custom install command. Overrides default file copy and permission setting",
+                            "examples": [
+                                "mv binary /usr/local/bin/ && chmod +x /usr/local/bin/binary",
+                                "install -m 755 binary /usr/local/bin/"
+                            ]
+                        },
+                        "uninstall": {
+                            "type": "string",
+                            "description": "Custom uninstall command for removing installed binary",
+                            "examples": [
+                                "rm -f /usr/local/bin/binary",
+                                "rm -rf /opt/software"
+                            ]
+                        },
+                        "validation": {
+                            "type": "string",
+                            "description": "Command to validate successful installation",
+                            "examples": [
+                                "binary --version",
+                                "which binary",
+                                "test -x /usr/local/bin/binary"
+                            ]
+                        },
+                        "version": {
+                            "type": "string",
+                            "description": "Command to get installed version for tracking",
+                            "examples": [
+                                "binary --version | cut -d' ' -f2",
+                                "binary version | head -n1"
+                            ]
+                        }
+                    }
+                }
+            },
+            "required": [
+                "name",
+                "url"
+            ]
+        },
+        "script": {
+            "type": "object",
+            "description": "Script installation configuration for executing installation scripts with security measures",
+            "examples": [
+                {
+                    "name": "official",
+                    "url": "https://get.docker.com",
+                    "checksum": "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7",
+                    "interpreter": "bash",
+                    "arguments": [
+                        "--channel",
+                        "stable"
+                    ],
+                    "timeout": 600
+                }
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Logical name for the script installation (e.g., main, official, dev). Used for referencing in template functions",
+                    "examples": [
+                        "official",
+                        "convenience",
+                        "installer",
+                        "setup"
+                    ]
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Script download URL. Should use HTTPS for security. Supports templating with {{version}} placeholder",
+                    "examples": [
+                        "https://get.docker.com",
+                        "https://sh.rustup.rs",
+                        "https://raw.githubusercontent.com/user/repo/{{version}}/install.sh"
+                    ]
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version identifier used in URL templating and for tracking",
+                    "examples": [
+                        "latest",
+                        "v1.0.0",
+                        "stable"
+                    ]
+                },
+                "interpreter": {
+                    "type": "string",
+                    "description": "Script interpreter. Auto-detected from shebang if not specified. Common values: bash, sh, python, python3",
+                    "examples": [
+                        "bash",
+                        "sh",
+                        "python",
+                        "python3",
+                        "zsh"
+                    ]
+                },
+                "checksum": {
+                    "type": "string",
+                    "description": "Expected checksum of script file for security verification. Format: algorithm:hash",
+                    "pattern": "^(sha256|sha512|md5):[a-fA-F0-9]{32,128}$",
+                    "examples": [
+                        "sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"
+                    ]
+                },
+                "arguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Arguments passed to the script during execution",
+                    "examples": [
+                        [
+                            "--channel",
+                            "stable"
+                        ],
+                        [
+                            "--yes",
+                            "--quiet"
+                        ],
+                        [
+                            "install",
+                            "--user"
+                        ]
+                    ]
+                },
+                "environment": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Environment variables set during script execution",
+                    "examples": [
+                        {
+                            "CHANNEL": "stable",
+                            "DOWNLOAD_URL": "https://download.docker.com"
+                        }
+                    ]
+                },
+                "working_dir": {
+                    "type": "string",
+                    "description": "Working directory for script execution. Defaults to temporary directory",
+                    "examples": [
+                        "/tmp",
+                        "~/Downloads",
+                        "/var/tmp"
+                    ]
+                },
+                "timeout": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3600,
+                    "description": "Execution timeout in seconds. Defaults to 300 (5 minutes)",
+                    "examples": [
+                        300,
+                        600,
+                        1800
+                    ]
+                },
+                "custom_commands": {
+                    "type": "object",
+                    "description": "Custom commands that override default script execution behavior",
+                    "properties": {
+                        "download": {
+                            "type": "string",
+                            "description": "Custom command to download script. Overrides default wget/curl behavior",
+                            "examples": [
+                                "curl -fsSL {{url}} -o install.sh",
+                                "wget -q {{url}}"
+                            ]
+                        },
+                        "install": {
+                            "type": "string",
+                            "description": "Custom install command that completely overrides script execution",
+                            "examples": [
+                                "bash install.sh --yes --quiet",
+                                "python3 setup.py install --user"
+                            ]
+                        },
+                        "uninstall": {
+                            "type": "string",
+                            "description": "Custom uninstall command for removing software installed by script",
+                            "examples": [
+                                "bash uninstall.sh",
+                                "pip uninstall -y package",
+                                "rm -rf /opt/software"
+                            ]
+                        },
+                        "validation": {
+                            "type": "string",
+                            "description": "Command to validate successful installation",
+                            "examples": [
+                                "software --version",
+                                "systemctl is-active software",
+                                "which software"
+                            ]
+                        },
+                        "version": {
+                            "type": "string",
+                            "description": "Command to get installed version for tracking",
+                            "examples": [
+                                "software --version | cut -d' ' -f2",
+                                "software version"
+                            ]
+                        }
+                    }
+                }
+            },
+            "required": [
+                "name",
+                "url"
+            ]
+        },
+        "package_source": {
+            "type": "object",
+            "description": "Package source definition that groups packages from a specific repository with priority and recommendation information. Used when software is available from multiple sources with different characteristics",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Source identifier describing the origin or purpose of this package source",
+                    "examples": [
+                        "official",
+                        "os-default",
+                        "backports",
+                        "testing",
+                        "stable",
+                        "upstream"
+                    ]
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority order for source selection (1 = highest priority). Higher priority sources are preferred when multiple sources are available",
+                    "minimum": 1,
+                    "examples": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "recommended": {
+                    "type": "boolean",
+                    "description": "Whether this source is recommended for general use. True indicates the preferred source for most users",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "repository": {
+                    "type": "string",
+                    "description": "Repository name to use for this source. References a repository defined in the repositories array",
+                    "examples": [
+                        "nginx-official",
+                        "ubuntu-main",
+                        "postgresql-apt"
+                    ]
+                },
+                "packages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/package"
+                    },
+                    "description": "List of packages available from this source. Can override package names, versions, or options specific to this source"
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Additional information about this source. Use for version differences, stability notes, or special requirements",
+                    "examples": [
+                        "Latest upstream version with newest features",
+                        "Older but more stable version from OS repository",
+                        "Requires additional configuration for SSL support"
+                    ]
+                }
+            },
+            "required": [
+                "name",
+                "repository",
+                "packages"
+            ]
+        },
+        "repository": {
+            "type": "object",
+            "description": "Repository definition for adding third-party or official software repositories. Includes repository configuration and resource overrides specific to packages from this repository",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Unique identifier for the repository. Used for referencing in package definitions",
+                    "examples": [
+                        "nginx-official",
+                        "postgresql-apt",
+                        "docker-ce",
+                        "homebrew-core"
+                    ]
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Repository URL. Format varies by package manager (apt: deb URL, dnf: baseurl, brew: tap URL)",
+                    "examples": [
+                        "http://nginx.org/packages/ubuntu",
+                        "https://download.postgresql.org/pub/repos/yum/15/redhat/rhel-8-x86_64",
+                        "https://download.docker.com/linux/ubuntu"
+                    ]
+                },
+                "key": {
+                    "type": "string",
+                    "description": "GPG key URL or fingerprint for repository verification. Required for secure package installation",
+                    "examples": [
+                        "https://nginx.org/keys/nginx_signing.key",
+                        "https://www.postgresql.org/media/keys/ACCC4CF8.asc",
+                        "0x1234567890ABCDEF"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "upstream",
+                        "os-default",
+                        "os-backports",
+                        "third-party"
+                    ],
+                    "description": "Repository type classification. upstream: official software repository, os-default: OS distribution repository, os-backports: OS backports repository, third-party: community or unofficial repository",
+                    "examples": [
+                        "upstream",
+                        "os-default",
+                        "third-party"
+                    ]
+                },
+                "components": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Repository components (Debian/Ubuntu specific). Common values: main, contrib, non-free, stable, testing",
+                    "examples": [
+                        [
+                            "main"
+                        ],
+                        [
+                            "main",
+                            "contrib"
+                        ],
+                        [
+                            "stable",
+                            "main"
+                        ]
+                    ]
+                },
+                "maintainer": {
+                    "type": "string",
+                    "description": "Organization or individual maintaining this repository",
+                    "examples": [
+                        "NGINX Inc.",
+                        "PostgreSQL Global Development Group",
+                        "Docker Inc."
+                    ]
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority order for repository selection (1 = highest priority). Used when multiple repositories provide the same package",
+                    "minimum": 1,
+                    "examples": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "recommended": {
+                    "type": "boolean",
+                    "description": "Whether this repository is recommended for general use. False indicates experimental or less stable repositories",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Additional information about this repository. Use for warnings, requirements, or special instructions",
+                    "examples": [
+                        "Official upstream repository - recommended for latest versions",
+                        "Requires manual GPG key import",
+                        "Contains older but more stable versions"
+                    ]
+                },
+                "packages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/package"
+                    },
+                    "description": "Package overrides for this repository"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service"
+                    },
+                    "description": "Service overrides/additions for this repository"
+                },
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/file"
+                    },
+                    "description": "File overrides/additions for this repository"
+                },
+                "directories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/directory"
+                    },
+                    "description": "Directory overrides/additions for this repository"
+                },
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/command"
+                    },
+                    "description": "Command overrides/additions for this repository"
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/port"
+                    },
+                    "description": "Port overrides/additions for this repository"
+                },
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container"
+                    },
+                    "description": "Container overrides/additions for this repository"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/source"
+                    },
+                    "description": "Source build overrides/additions for this repository"
+                },
+                "binaries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/binary"
+                    },
+                    "description": "Binary download overrides/additions for this repository"
+                },
+                "scripts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/script"
+                    },
+                    "description": "Script installation overrides/additions for this repository"
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "compatibility_entry": {
+            "type": "object",
+            "description": "Single entry in the compatibility matrix defining support for a specific provider/platform/architecture/OS version combination",
+            "properties": {
+                "provider": {
+                    "type": "string",
+                    "description": "Provider name this compatibility entry applies to",
+                    "examples": [
+                        "apt",
+                        "dnf",
+                        "brew",
+                        "docker",
+                        "source",
+                        "binary",
+                        "script"
+                    ]
+                },
+                "platform": {
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "description": "Platform(s) this provider supports. Can be a single string or array of strings. Common values: linux, darwin, windows",
+                    "examples": [
+                        "linux",
+                        [
+                            "linux",
+                            "darwin"
+                        ],
+                        "darwin"
+                    ]
+                },
+                "architecture": {
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "description": "Architecture(s) this provider supports. Can be a single string or array of strings. Common values: amd64, arm64, 386, armv7",
+                    "examples": [
+                        "amd64",
+                        [
+                            "amd64",
+                            "arm64"
+                        ],
+                        "arm64"
+                    ]
+                },
+                "os_version": {
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "description": "OS version(s) this provider supports. Can be a single string or array of strings. Format: os-version (e.g., ubuntu-22.04, debian-11, macos-13)",
+                    "examples": [
+                        "ubuntu-22.04",
+                        [
+                            "ubuntu-22.04",
+                            "ubuntu-20.04",
+                            "debian-11"
+                        ],
+                        "macos-13"
+                    ]
+                },
+                "supported": {
+                    "type": "boolean",
+                    "description": "Whether this combination is officially supported. False indicates known incompatibility",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Additional information about this compatibility entry. Use for caveats, workarounds, or special requirements",
+                    "examples": [
+                        "Requires manual repository configuration",
+                        "Limited functionality on this platform",
+                        "Experimental support - use with caution"
+                    ]
+                },
+                "tested": {
+                    "type": "boolean",
+                    "description": "Whether this combination has been tested. True indicates verified functionality",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                },
+                "recommended": {
+                    "type": "boolean",
+                    "description": "Whether this is the recommended provider for this platform/architecture/OS combination",
+                    "examples": [
+                        true,
+                        false
+                    ]
+                }
+            },
+            "required": [
+                "provider",
+                "platform",
+                "supported"
+            ]
+        },
+        "versions": {
+            "type": "object",
+            "description": "Version information for the software. Tracks latest, minimum supported, and LTS versions",
+            "properties": {
+                "latest": {
+                    "type": "string",
+                    "description": "Latest stable version available",
+                    "examples": [
+                        "1.24.0",
+                        "2.4.58",
+                        "15.3"
+                    ]
+                },
+                "minimum": {
+                    "type": "string",
+                    "description": "Minimum version supported by this saidata configuration",
+                    "examples": [
+                        "1.20.0",
+                        "2.4.0",
+                        "14.0"
+                    ]
+                },
+                "latest_lts": {
+                    "type": "string",
+                    "description": "Latest Long-Term Support (LTS) version",
+                    "examples": [
+                        "1.22.1",
+                        "2.4.54",
+                        "14.8"
+                    ]
+                },
+                "latest_minimum": {
+                    "type": "string",
+                    "description": "Latest version of the minimum supported major version",
+                    "examples": [
+                        "1.20.2",
+                        "2.4.10",
+                        "14.9"
+                    ]
+                }
+            }
+        },
+        "security_metadata": {
+            "type": "object",
+            "description": "Security-related metadata for vulnerability management, verification, and disclosure",
+            "properties": {
+                "cve_exceptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of CVE IDs that are known but accepted/mitigated. Used to suppress false positives in security scanning",
+                    "examples": [
+                        [
+                            "CVE-2023-1234",
+                            "CVE-2023-5678"
+                        ],
+                        [
+                            "CVE-2022-9999"
+                        ]
+                    ]
+                },
+                "security_contact": {
+                    "type": "string",
+                    "description": "Email address or URL for reporting security vulnerabilities",
+                    "examples": [
+                        "security@example.com",
+                        "https://example.com/security"
+                    ]
+                },
+                "vulnerability_disclosure": {
+                    "type": "string",
+                    "description": "URL to the vulnerability disclosure policy or security advisories page",
+                    "examples": [
+                        "https://example.com/security/disclosure",
+                        "https://github.com/user/repo/security/advisories"
+                    ]
+                },
+                "sbom_url": {
+                    "type": "string",
+                    "description": "URL to the Software Bill of Materials (SBOM) document. Can be in SPDX, CycloneDX, or other formats",
+                    "examples": [
+                        "https://example.com/sbom/software-1.0.0.spdx.json",
+                        "https://github.com/user/repo/releases/download/v1.0.0/sbom.cyclonedx.xml"
+                    ]
+                },
+                "signing_key": {
+                    "type": "string",
+                    "description": "GPG/PGP public key fingerprint or URL for verifying package signatures",
+                    "examples": [
+                        "0x1234567890ABCDEF",
+                        "https://example.com/keys/signing-key.asc"
+                    ]
+                }
+            }
+        },
+        "urls": {
+            "type": "object",
+            "description": "Collection of relevant URLs for the software. Provides links to documentation, source code, support, and other resources",
+            "properties": {
+                "website": {
+                    "type": "string",
+                    "description": "Official website homepage",
+                    "examples": [
+                        "https://nginx.org",
+                        "https://www.postgresql.org",
+                        "https://www.docker.com"
+                    ]
+                },
+                "documentation": {
+                    "type": "string",
+                    "description": "Official documentation URL",
+                    "examples": [
+                        "https://nginx.org/en/docs/",
+                        "https://www.postgresql.org/docs/",
+                        "https://docs.docker.com"
+                    ]
+                },
+                "source": {
+                    "type": "string",
+                    "description": "Source code repository URL (GitHub, GitLab, etc.)",
+                    "examples": [
+                        "https://github.com/nginx/nginx",
+                        "https://github.com/postgres/postgres",
+                        "https://github.com/docker/docker"
+                    ]
+                },
+                "issues": {
+                    "type": "string",
+                    "description": "Issue tracker URL for bug reports and feature requests",
+                    "examples": [
+                        "https://github.com/nginx/nginx/issues",
+                        "https://github.com/postgres/postgres/issues"
+                    ]
+                },
+                "support": {
+                    "type": "string",
+                    "description": "Support or community forum URL",
+                    "examples": [
+                        "https://forum.nginx.org",
+                        "https://www.postgresql.org/support/",
+                        "https://forums.docker.com"
+                    ]
+                },
+                "download": {
+                    "type": "string",
+                    "description": "Official download page URL",
+                    "examples": [
+                        "https://nginx.org/en/download.html",
+                        "https://www.postgresql.org/download/",
+                        "https://www.docker.com/get-started"
+                    ]
+                },
+                "changelog": {
+                    "type": "string",
+                    "description": "Changelog or release notes URL",
+                    "examples": [
+                        "https://nginx.org/en/CHANGES",
+                        "https://www.postgresql.org/docs/release/",
+                        "https://github.com/docker/docker/releases"
+                    ]
+                },
+                "license": {
+                    "type": "string",
+                    "description": "License text URL",
+                    "examples": [
+                        "https://nginx.org/LICENSE",
+                        "https://www.postgresql.org/about/licence/",
+                        "https://github.com/docker/docker/blob/master/LICENSE"
+                    ]
+                },
+                "sbom": {
+                    "type": "string",
+                    "description": "Software Bill of Materials (SBOM) URL. Deprecated - use security.sbom_url instead",
+                    "examples": [
+                        "https://example.com/sbom/software-1.0.0.spdx.json"
+                    ]
+                },
+                "icon": {
+                    "type": "string",
+                    "description": "Icon or logo image URL for UI display",
+                    "examples": [
+                        "https://nginx.org/nginx.png",
+                        "https://www.postgresql.org/media/img/about/press/elephant.png"
+                    ]
+                }
+            }
+        }
+    }
+}
