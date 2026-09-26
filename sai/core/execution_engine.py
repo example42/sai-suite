@@ -12,11 +12,8 @@ from typing import Any, Dict, List, Optional
 from ..models.provider_data import Action
 from ..models.saidata import SaiData
 from ..providers.base import BaseProvider
-from ..utils.errors import (
-    ExecutionError,
-    ProviderSelectionError,
-)
-from ..utils.execution_tracker import ExecutionStatus, get_execution_tracker
+from ..utils.errors import ExecutionError, ProviderSelectionError
+from ..utils.execution_tracker import get_execution_tracker
 from ..utils.logging import get_logger
 from ..utils.system import get_system_info
 
@@ -85,8 +82,7 @@ class ExecutionEngine:
         self.execution_tracker = get_execution_tracker(config)
 
         logger.info(
-            f"ExecutionEngine initialized with {len(self.providers)} providers "
-            f"({len(self.available_providers)} available)"
+            f"ExecutionEngine initialized with {len(self.providers)} providers ({len(self.available_providers)} available)"
         )
 
     def execute_action(self, context: ExecutionContext) -> ExecutionResult:
@@ -125,8 +121,7 @@ class ExecutionEngine:
             )
 
             logger.info(
-                f"Executing action '{context.action}' for '{context.software}' "
-                f"using provider '{selected_provider.name}' (ID: {execution_id})"
+                f"Executing action '{context.action}' for '{context.software}' using provider '{selected_provider.name}' (ID: {execution_id})"
             )
 
             # Get the action definition
@@ -219,9 +214,8 @@ class ExecutionEngine:
                         return provider
                     else:
                         raise ProviderSelectionError(
-                            f"Provider '{
-                                context.provider}' does not support action '{
-                                context.action}'")
+                            f"Provider '{context.provider}' does not support action '{context.action}'"
+                        )
 
             raise ProviderSelectionError(f"Requested provider '{context.provider}' not available")
 
@@ -234,8 +228,7 @@ class ExecutionEngine:
                 available_actions.update(p.get_supported_actions())
 
             raise ProviderSelectionError(
-                f"No available provider supports action '{context.action}'. "
-                f"Available actions: {sorted(available_actions)}"
+                f"No available provider supports action '{context.action}'. Available actions: {sorted(available_actions)}"
             )
 
         # Sort by priority (higher priority first)
@@ -243,8 +236,7 @@ class ExecutionEngine:
 
         selected = suitable_providers[0]
         logger.debug(
-            f"Selected provider '{selected.name}' (priority: {selected.get_priority()}) "
-            f"from {len(suitable_providers)} suitable providers"
+            f"Selected provider '{selected.name}' (priority: {selected.get_priority()}) from {len(suitable_providers)} suitable providers"
         )
 
         return selected
@@ -707,16 +699,6 @@ class ExecutionEngine:
         except Exception as e:
             logger.error(f"Command execution error: {e}")
             return {"success": False, "error": str(e), "exit_code": -1, "stdout": "", "stderr": ""}
-
-    def _get_current_time(self) -> float:
-        """Get current time in seconds since epoch.
-
-        Returns:
-            Current time as float
-        """
-        import time
-
-        return time.time()
 
     def _validate_command_security(
         self, cmd_args: List[str], requires_root: bool

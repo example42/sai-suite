@@ -75,6 +75,7 @@ class SaidataLoader:
         self.config = config or SaiConfig()
         self._repository_manager = repository_manager
         self._schema_cache: Optional[Dict[str, Any]] = None
+        self._schema_version: Optional[str] = None
 
         # Initialize hierarchical path resolver
         search_paths = self.get_search_paths()
@@ -155,9 +156,7 @@ class SaidataLoader:
         # Validate the merged data
         validation_result = self.validate_saidata(merged_data)
         if validation_result.has_errors:
-            error_msg = f"Saidata validation failed for {software_name}: {
-                '; '.join(
-                    validation_result.errors)}"
+            error_msg = f"Saidata validation failed for {software_name}: {'; '.join(validation_result.errors)}"
             logger.error(error_msg)
             raise ValidationError(error_msg)
 
@@ -205,8 +204,9 @@ class SaidataLoader:
 
         try:
             # Load JSON schema if not cached
-            if self._schema_cache is None:
-                self._load_schema()
+            schema_version = "0.4" if data.get("version") == "0.4" else "0.3"
+            if self._schema_cache is None or self._schema_version != schema_version:
+                self._load_schema(schema_version)
 
             # Validate against JSON schema
             jsonschema.validate(data, self._schema_cache)
@@ -688,16 +688,22 @@ class SaidataLoader:
 
         return result
 
-    def _load_schema(self) -> None:
+    def _load_schema(self, version: str = "0.3") -> None:
         """Load the JSON schema for saidata validation."""
-        schema_path = Path(__file__).parent.parent.parent / "schemas" / "saidata-0.3-schema.json"
+        schema_name = f"saidata-{version}-schema.json"
+        schema_path = Path(__file__).parent.parent / "schemas" / schema_name
+        if not schema_path.exists():
+            schema_path = Path(__file__).parent.parent.parent / "schemas" / schema_name
 
         try:
             with open(schema_path, "r", encoding="utf-8") as f:
                 self._schema_cache = json.load(f)
-            logger.info(f"Loaded saidata schema version 0.3 from: {schema_path}")
+            self._schema_version = version
+            logger.info(f"Loaded saidata schema version {version} from: {schema_path}")
         except Exception as e:
             logger.error(f"Failed to load saidata schema: {e}")
+            if version == "0.4":
+                raise
             # Use minimal schema as fallback for 0.3 format
             self._schema_cache = {
                 "type": "object",
@@ -754,8 +760,7 @@ class SaidataLoader:
 
             if not package.get("package_name"):
                 errors.append(
-                    f"Package {i} must have a 'package_name' field (actual package name used by package managers). "
-                    "In schema 0.3, both 'name' and 'package_name' are required."
+                    f"Package {i} must have a 'package_name' field (actual package name used by package managers). In schema 0.3, both 'name' and 'package_name' are required."
                 )
 
     def _validate_sources(
@@ -793,8 +798,7 @@ class SaidataLoader:
                 "custom",
             ]:
                 errors.append(
-                    f"Source {i} has invalid build_system: {build_system}. "
-                    "Must be one of: autotools, cmake, make, meson, ninja, custom"
+                    f"Source {i} has invalid build_system: {build_system}. Must be one of: autotools, cmake, make, meson, ninja, custom"
                 )
 
             # Validate checksum format if present
@@ -862,9 +866,7 @@ class SaidataLoader:
                     "zip",
                     "tar",
                 ]:
-                    warnings.append(
-                        f"Binary {i} has uncommon archive format: {archive_format}"
-                    )
+                    warnings.append(f"Binary {i} has uncommon archive format: {archive_format}")
 
     def _validate_scripts(
         self, data: Dict[str, Any], errors: List[str], warnings: List[str]
@@ -899,9 +901,7 @@ class SaidataLoader:
                         f"Script {i} checksum should be prefixed with algorithm (e.g., 'sha256:...')"
                     )
             elif not checksum:
-                warnings.append(
-                    f"Script {i} should have a checksum for security verification"
-                )
+                warnings.append(f"Script {i} should have a checksum for security verification")
 
             # Validate interpreter if present
             interpreter = script.get("interpreter")
@@ -913,9 +913,7 @@ class SaidataLoader:
                 "perl",
                 "ruby",
             ]:
-                warnings.append(
-                    f"Script {i} has uncommon interpreter: {interpreter}"
-                )
+                warnings.append(f"Script {i} has uncommon interpreter: {interpreter}")
 
             # Validate timeout if present
             timeout = script.get("timeout")

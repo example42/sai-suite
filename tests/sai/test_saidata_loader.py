@@ -86,69 +86,65 @@ class TestSaidataLoader:
                 == temp_path / "software" / "ap" / "apache" / "default.yaml"
             )
 
-    def test_load_saidata_file_yaml(self):
+    def test_load_saidata_file_yaml(self, tmp_path):
         """Test loading YAML saidata files."""
-        test_data = {"version": "0.2.0", "metadata": {"name": "test"}}
+        path = tmp_path / "software" / "te" / "test" / "default.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text(yaml.safe_dump({"version": "0.2", "metadata": {"name": "test"}}))
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            yaml.dump(test_data, f)
-            temp_path = Path(f.name)
+        loader = SaidataLoader(SaiConfig(saidata_paths=[str(tmp_path)], cache_enabled=False))
+        assert loader.load_saidata("test").metadata.name == "test"
 
-        try:
-            loader = SaidataLoader()
-            loaded_data = loader._load_saidata_file(temp_path)
-            assert loaded_data == test_data
-        finally:
-            temp_path.unlink()
-
-    def test_load_saidata_file_json(self):
+    def test_load_saidata_file_json(self, tmp_path):
         """Test loading JSON saidata files."""
-        test_data = {"version": "0.2.0", "metadata": {"name": "test"}}
+        path = tmp_path / "software" / "te" / "test" / "default.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({"version": "0.2", "metadata": {"name": "test"}}))
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            json.dump(test_data, f)
-            temp_path = Path(f.name)
+        loader = SaidataLoader(SaiConfig(saidata_paths=[str(tmp_path)], cache_enabled=False))
+        assert loader.load_saidata("test").metadata.name == "test"
 
-        try:
-            loader = SaidataLoader()
-            loaded_data = loader._load_saidata_file(temp_path)
-            assert loaded_data == test_data
-        finally:
-            temp_path.unlink()
-
-    def test_load_saidata_file_invalid_format(self):
+    def test_load_saidata_file_invalid_format(self, tmp_path):
         """Test loading file with invalid format."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            f.write("invalid content")
-            temp_path = Path(f.name)
+        path = tmp_path / "software" / "te" / "test" / "default.txt"
+        path.parent.mkdir(parents=True)
+        path.write_text("invalid content")
 
-        try:
-            loader = SaidataLoader()
-            with pytest.raises(ValueError, match="Unsupported file format"):
-                loader._load_saidata_file(temp_path)
-        finally:
-            temp_path.unlink()
+        loader = SaidataLoader(SaiConfig(saidata_paths=[str(tmp_path)], cache_enabled=False))
+        with pytest.raises(SaidataNotFoundError):
+            loader.load_saidata("test")
 
-    def test_deep_merge(self):
-        """Test deep merging of dictionaries."""
-        loader = SaidataLoader()
+    def test_deep_merge(self, tmp_path):
+        """Test merging records from two configured search paths."""
 
         base = {
+            "version": "0.2",
             "metadata": {"name": "test", "description": "base description"},
-            "packages": [{"name": "pkg1"}],
-            "providers": {"apt": {"packages": [{"name": "apt-pkg1"}]}},
+            "packages": [{"name": "pkg1", "package_name": "pkg1"}],
+            "providers": {"apt": {"packages": [{"name": "apt-pkg1", "package_name": "apt-pkg1"}]}},
         }
 
         override = {
             "metadata": {"description": "override description", "tags": ["web"]},
-            "packages": [{"name": "pkg2"}],
+            "packages": [{"name": "pkg2", "package_name": "pkg2"}],
             "providers": {
-                "apt": {"packages": [{"name": "apt-pkg2"}]},
-                "brew": {"packages": [{"name": "brew-pkg1"}]},
+                "apt": {"packages": [{"name": "apt-pkg2", "package_name": "apt-pkg2"}]},
+                "brew": {"packages": [{"name": "brew-pkg1", "package_name": "brew-pkg1"}]},
             },
         }
 
-        result = loader._deep_merge(base, override)
+        base_path = tmp_path / "base" / "software" / "te" / "test" / "default.yaml"
+        override_path = tmp_path / "override" / "software" / "te" / "test" / "default.yaml"
+        for path, data in [(base_path, base), (override_path, override)]:
+            path.parent.mkdir(parents=True)
+            path.write_text(yaml.safe_dump(data))
+        loader = SaidataLoader(
+            SaiConfig(
+                saidata_paths=[str(tmp_path / "override"), str(tmp_path / "base")],
+                cache_enabled=False,
+            )
+        )
+        result = loader.load_saidata("test").model_dump(exclude_none=True)
 
         # Check metadata merge
         assert result["metadata"]["name"] == "test"  # From base
@@ -157,8 +153,8 @@ class TestSaidataLoader:
 
         # Check list merge (packages)
         assert len(result["packages"]) == 2
-        assert {"name": "pkg1"} in result["packages"]
-        assert {"name": "pkg2"} in result["packages"]
+        assert {"name": "pkg1", "package_name": "pkg1"} in result["packages"]
+        assert {"name": "pkg2", "package_name": "pkg2"} in result["packages"]
 
         # Check nested dict merge (providers)
         assert "apt" in result["providers"]
@@ -174,9 +170,10 @@ class TestSaidataLoader:
             base_data = {
                 "version": "0.2.0",
                 "metadata": {"name": "nginx", "description": "base"},
-                "packages": [{"name": "nginx"}],
+                "packages": [{"name": "nginx", "package_name": "nginx"}],
             }
-            base_file = temp_path / "base.yaml"
+            base_file = temp_path / "base" / "software" / "ng" / "nginx" / "default.yaml"
+            base_file.parent.mkdir(parents=True)
             with open(base_file, "w") as f:
                 yaml.dump(base_data, f)
 
@@ -184,14 +181,20 @@ class TestSaidataLoader:
             override_data = {
                 "version": "0.2.0",
                 "metadata": {"description": "override"},
-                "packages": [{"name": "nginx-extras"}],
+                "packages": [{"name": "nginx-extras", "package_name": "nginx-extras"}],
             }
-            override_file = temp_path / "override.yaml"
+            override_file = temp_path / "override" / "software" / "ng" / "nginx" / "default.yaml"
+            override_file.parent.mkdir(parents=True)
             with open(override_file, "w") as f:
                 yaml.dump(override_data, f)
 
-            loader = SaidataLoader()
-            result = loader._merge_saidata_files([override_file, base_file])
+            loader = SaidataLoader(
+                SaiConfig(
+                    saidata_paths=[str(temp_path / "override"), str(temp_path / "base")],
+                    cache_enabled=False,
+                )
+            )
+            result = loader.load_saidata("nginx").model_dump(exclude_none=True)
 
             assert result["metadata"]["name"] == "nginx"
             assert result["metadata"]["description"] == "override"
@@ -202,8 +205,10 @@ class TestSaidataLoader:
         valid_data = {
             "version": "0.2.0",
             "metadata": {"name": "test-software", "description": "Test software"},
-            "packages": [{"name": "test-package"}],
-            "providers": {"apt": {"packages": [{"name": "test-package"}]}},
+            "packages": [{"name": "test-package", "package_name": "test-package"}],
+            "providers": {
+                "apt": {"packages": [{"name": "test-package", "package_name": "test-package"}]}
+            },
         }
 
         loader = SaidataLoader()
@@ -253,7 +258,7 @@ class TestSaidataLoader:
             test_data = {
                 "version": "0.2.0",
                 "metadata": {"name": "nginx", "description": "Web server"},
-                "packages": [{"name": "nginx"}],
+                "packages": [{"name": "nginx", "package_name": "nginx"}],
                 "services": [{"name": "nginx", "type": "systemd"}],
             }
 

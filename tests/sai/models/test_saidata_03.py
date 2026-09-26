@@ -7,7 +7,6 @@ from sai.models.saidata import (
     Binary,
     BuildSystem,
     CustomCommands,
-    Metadata,
     Package,
     ProviderConfig,
     SaiData,
@@ -21,11 +20,7 @@ class TestPackageModel03:
 
     def test_package_with_both_names(self):
         """Test package with both name and package_name."""
-        package = Package(
-            name="nginx",
-            package_name="nginx-full",
-            version="1.24.0"
-        )
+        package = Package(name="nginx", package_name="nginx-full", version="1.24.0")
         assert package.name == "nginx"
         assert package.package_name == "nginx-full"
         assert package.version == "1.24.0"
@@ -50,7 +45,7 @@ class TestSourceModel03:
         source = Source(
             name="main",
             url="https://example.com/app-1.0.0.tar.gz",
-            build_system=BuildSystem.AUTOTOOLS
+            build_system=BuildSystem.AUTOTOOLS,
         )
         assert source.name == "main"
         assert source.url == "https://example.com/app-1.0.0.tar.gz"
@@ -71,7 +66,7 @@ class TestSourceModel03:
             install_args=["install"],
             prerequisites=["build-essential", "libssl-dev"],
             environment={"CC": "gcc", "CFLAGS": "-O2"},
-            checksum="sha256:abc123def456789abc123def456789abc123def456789abc123def456789abc12"
+            checksum="sha256:abc123def456789abc123def456789abc123def456789abc123def456789abc12",
         )
         assert source.version == "1.24.0"
         assert len(source.configure_args) == 2
@@ -86,13 +81,13 @@ class TestSourceModel03:
             extract="tar xzf archive.tar.gz",
             configure="./configure --prefix={{install_prefix}}",
             build="make -j4",
-            install="make install"
+            install="make install",
         )
         source = Source(
             name="main",
             url="https://example.com/app.tar.gz",
             build_system=BuildSystem.CUSTOM,
-            custom_commands=custom_commands
+            custom_commands=custom_commands,
         )
         assert source.custom_commands.download == "wget {{url}}"
         assert source.custom_commands.build == "make -j4"
@@ -112,10 +107,7 @@ class TestBinaryModel03:
 
     def test_minimal_binary(self):
         """Test minimal binary configuration."""
-        binary = Binary(
-            name="main",
-            url="https://example.com/app-linux-amd64.tar.gz"
-        )
+        binary = Binary(name="main", url="https://example.com/app-linux-amd64.tar.gz")
         assert binary.name == "main"
         assert binary.url == "https://example.com/app-linux-amd64.tar.gz"
 
@@ -130,7 +122,7 @@ class TestBinaryModel03:
             checksum="sha256:def456789abc123def456789abc123def456789abc123def456789abc123def4",
             install_path="/usr/local/bin",
             executable="app",
-            permissions="0755"
+            permissions="0755",
         )
         assert binary.version == "1.5.0"
         assert binary.architecture == "amd64"
@@ -143,17 +135,9 @@ class TestBinaryModel03:
     def test_binary_with_archive_config(self):
         """Test binary with archive extraction configuration."""
         from sai.models.saidata import ArchiveConfig
-        
-        archive = ArchiveConfig(
-            format="tar.gz",
-            strip_prefix="app-1.5.0/",
-            extract_path="bin/"
-        )
-        binary = Binary(
-            name="main",
-            url="https://example.com/app.tar.gz",
-            archive=archive
-        )
+
+        archive = ArchiveConfig(format="tar.gz", strip_prefix="app-1.5.0/", extract_path="bin/")
+        binary = Binary(name="main", url="https://example.com/app.tar.gz", archive=archive)
         assert binary.archive.format == "tar.gz"
         assert binary.archive.strip_prefix == "app-1.5.0/"
         assert binary.archive.extract_path == "bin/"
@@ -164,10 +148,7 @@ class TestScriptModel03:
 
     def test_minimal_script(self):
         """Test minimal script configuration."""
-        script = Script(
-            name="official",
-            url="https://get.example.com/install.sh"
-        )
+        script = Script(name="official", url="https://get.example.com/install.sh")
         assert script.name == "official"
         assert script.url == "https://get.example.com/install.sh"
 
@@ -182,7 +163,7 @@ class TestScriptModel03:
             arguments=["--yes", "--quiet"],
             environment={"INSTALL_DIR": "/usr/local", "CHANNEL": "stable"},
             working_dir="/tmp",
-            timeout=600
+            timeout=600,
         )
         assert script.version == "1.2.0"
         assert script.interpreter == "bash"
@@ -196,12 +177,12 @@ class TestScriptModel03:
         custom_commands = CustomCommands(
             download="curl -o install.sh {{url}}",
             validation="bash -n install.sh",
-            version="bash install.sh --version"
+            version="bash install.sh --version",
         )
         script = Script(
             name="official",
             url="https://get.example.com/install.sh",
-            custom_commands=custom_commands
+            custom_commands=custom_commands,
         )
         assert script.custom_commands.download == "curl -o install.sh {{url}}"
         assert script.custom_commands.validation == "bash -n install.sh"
@@ -214,9 +195,15 @@ class TestProviderConfig03:
         """Test provider config with sources, binaries, scripts."""
         config = ProviderConfig(
             packages=[Package(name="nginx", package_name="nginx-full")],
-            sources=[Source(name="main", url="https://example.com/src.tar.gz", build_system=BuildSystem.AUTOTOOLS)],
+            sources=[
+                Source(
+                    name="main",
+                    url="https://example.com/src.tar.gz",
+                    build_system=BuildSystem.AUTOTOOLS,
+                )
+            ],
             binaries=[Binary(name="main", url="https://example.com/bin.tar.gz")],
-            scripts=[Script(name="official", url="https://example.com/install.sh")]
+            scripts=[Script(name="official", url="https://example.com/install.sh")],
         )
         assert len(config.packages) == 1
         assert len(config.sources) == 1
@@ -229,10 +216,7 @@ class TestSaiData03:
 
     def test_minimal_saidata_03(self):
         """Test minimal valid SaiData with schema 0.3."""
-        data = {
-            "version": "0.3",
-            "metadata": {"name": "nginx"}
-        }
+        data = {"version": "0.3", "metadata": {"name": "nginx"}}
         saidata = SaiData(**data)
         assert saidata.version == "0.3"
         assert saidata.metadata.name == "nginx"
@@ -242,9 +226,7 @@ class TestSaiData03:
         data = {
             "version": "0.3",
             "metadata": {"name": "nginx"},
-            "packages": [
-                {"name": "nginx", "package_name": "nginx-full", "version": "1.24.0"}
-            ]
+            "packages": [{"name": "nginx", "package_name": "nginx-full", "version": "1.24.0"}],
         }
         saidata = SaiData(**data)
         assert len(saidata.packages) == 1
@@ -260,9 +242,9 @@ class TestSaiData03:
                 {
                     "name": "main",
                     "url": "https://nginx.org/download/nginx-1.24.0.tar.gz",
-                    "build_system": "autotools"
+                    "build_system": "autotools",
                 }
-            ]
+            ],
         }
         saidata = SaiData(**data)
         assert len(saidata.sources) == 1
@@ -279,9 +261,9 @@ class TestSaiData03:
                     "name": "main",
                     "url": "https://example.com/app-linux-amd64.tar.gz",
                     "platform": "linux",
-                    "architecture": "amd64"
+                    "architecture": "amd64",
                 }
-            ]
+            ],
         }
         saidata = SaiData(**data)
         assert len(saidata.binaries) == 1
@@ -296,9 +278,9 @@ class TestSaiData03:
                 {
                     "name": "official",
                     "url": "https://get.example.com/install.sh",
-                    "interpreter": "bash"
+                    "interpreter": "bash",
                 }
-            ]
+            ],
         }
         saidata = SaiData(**data)
         assert len(saidata.scripts) == 1
@@ -309,23 +291,19 @@ class TestSaiData03:
         data = {
             "version": "0.3",
             "metadata": {"name": "nginx"},
-            "packages": [
-                {"name": "nginx", "package_name": "nginx"}
-            ],
+            "packages": [{"name": "nginx", "package_name": "nginx"}],
             "providers": {
                 "apt": {
-                    "packages": [
-                        {"name": "nginx", "package_name": "nginx-full"}
-                    ],
+                    "packages": [{"name": "nginx", "package_name": "nginx-full"}],
                     "sources": [
                         {
                             "name": "main",
                             "url": "https://nginx.org/download/nginx.tar.gz",
-                            "build_system": "autotools"
+                            "build_system": "autotools",
                         }
-                    ]
+                    ],
                 }
-            }
+            },
         }
         saidata = SaiData(**data)
         assert saidata.providers["apt"].packages[0].package_name == "nginx-full"

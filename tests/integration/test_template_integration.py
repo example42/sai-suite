@@ -21,8 +21,8 @@ class TestTemplateIntegration:
         )
 
         packages = [
-            Package(name="nginx", version="1.20.1"),
-            Package(name="nginx-common"),
+            Package(name="nginx", package_name="nginx", version="1.20.1"),
+            Package(name="nginx-common", package_name="nginx-common"),
         ]
 
         services = [
@@ -59,9 +59,9 @@ class TestTemplateIntegration:
         """Test resolving multi-step actions."""
         metadata = Metadata(name="postgresql", version="13.7")
         packages = [
-            Package(name="postgresql-13"),
-            Package(name="postgresql-client-13"),
-            Package(name="postgresql-contrib-13"),
+            Package(name="postgresql-13", package_name="postgresql-13"),
+            Package(name="postgresql-client-13", package_name="postgresql-client-13"),
+            Package(name="postgresql-contrib-13", package_name="postgresql-contrib-13"),
         ]
         services = [
             Service(name="postgresql", service_name="postgresql", type=ServiceType.SYSTEMD),
@@ -118,7 +118,7 @@ class TestTemplateIntegration:
     def test_conditional_template_resolution(self):
         """Test template resolution with conditionals."""
         metadata = Metadata(name="redis", version="6.2.7")
-        packages = [Package(name="redis-server")]
+        packages = [Package(name="redis-server", package_name="redis-server")]
 
         saidata = SaiData(
             version="0.2",
@@ -195,11 +195,11 @@ class TestTemplateIntegration:
         """Test complex array expansion scenarios."""
         metadata = Metadata(name="lamp-stack")
         packages = [
-            Package(name="apache2", version="2.4.41"),
-            Package(name="mysql-server", version="8.0.28"),
-            Package(name="php", version="7.4.3"),
-            Package(name="php-mysql"),
-            Package(name="libapache2-mod-php"),
+            Package(name="apache2", package_name="apache2", version="2.4.41"),
+            Package(name="mysql-server", package_name="mysql-server", version="8.0.28"),
+            Package(name="php", package_name="php", version="7.4.3"),
+            Package(name="php-mysql", package_name="php-mysql"),
+            Package(name="libapache2-mod-php", package_name="libapache2-mod-php"),
         ]
 
         saidata = SaiData(

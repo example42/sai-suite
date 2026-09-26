@@ -84,7 +84,7 @@ def test(
         click.echo("ERROR: Missing required argument FILE_PATH")
         click.echo("=" * 70)
         ctx.exit(2)
-    
+
     exit_code = 0
 
     # Handle dry-run confirmation outside try-catch to avoid catching SystemExit

@@ -27,7 +27,9 @@ def sample_existing_saidata():
             tags=["web", "server"],
             license="BSD-2-Clause",
         ),
-        providers={"apt": {"packages": [{"name": "nginx", "version": "1.20.0"}]}},
+        providers={
+            "apt": {"packages": [{"name": "nginx", "package_name": "nginx", "version": "1.20.0"}]}
+        },
     )
 
 
@@ -48,8 +50,8 @@ def sample_fresh_saidata():
             maintainer="NGINX Team",
         ),
         providers={
-            "apt": {"packages": [{"name": "nginx", "version": "1.22.0"}]},
-            "brew": {"packages": [{"name": "nginx", "version": "1.22.0"}]},
+            "apt": {"packages": [{"name": "nginx", "package_name": "nginx", "version": "1.22.0"}]},
+            "brew": {"packages": [{"name": "nginx", "package_name": "nginx", "version": "1.22.0"}]},
         },
         ports=[
             {"port": 80, "protocol": "tcp", "service": "http"},
@@ -89,10 +91,12 @@ providers:
   apt:
     packages:
       - name: nginx
+        package_name: nginx
         version: "1.22.0"
   brew:
     packages:
       - name: nginx
+        package_name: nginx
         version: "1.22.0"
 ports:
   - port: 80
@@ -171,10 +175,12 @@ providers:
   apt:
     packages:
       - name: nginx
+        package_name: nginx
         version: "1.22.0"
   brew:
     packages:
       - name: nginx
+        package_name: nginx
         version: "1.22.0"
 ports:
   - port: 80

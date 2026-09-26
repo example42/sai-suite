@@ -6,11 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from sai.core.execution_engine import (
-    ExecutionContext,
-    ExecutionEngine,
-    ExecutionStatus,
-)
+from sai.core.execution_engine import ExecutionContext, ExecutionEngine, ExecutionStatus
 from sai.models.provider_data import Action, Provider, ProviderData, ProviderType
 from sai.models.saidata import Metadata, SaiData
 from sai.providers.base import BaseProvider

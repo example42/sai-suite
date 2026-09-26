@@ -10,14 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..models.config import RepositoryAuthType, SaiConfig
 from ..models.saidata import SaiData
-from ..utils.errors import (
-    RepositoryError,
-)
-from ..utils.system import (
-    NetworkConnectivityTracker,
-    check_url_accessibility,
-    detect_offline_mode,
-)
+from ..utils.errors import RepositoryError
+from ..utils.system import NetworkConnectivityTracker, check_url_accessibility, detect_offline_mode
 from .git_repository_handler import GitOperationResult, GitRepositoryHandler, RepositoryInfo
 from .repository_cache import RepositoryCache
 from .saidata_loader import SaidataLoader, SaidataNotFoundError
@@ -203,7 +197,8 @@ class SaidataRepositoryManager:
                     logger.warning(f"Repository update failed during retry: {e}")
             elif self.is_offline_mode():
                 logger.debug(
-                    f"Saidata not found for {software_name} and offline mode active - no retry attempted")
+                    f"Saidata not found for {software_name} and offline mode active - no retry attempted"
+                )
 
             # Log detailed information about the failed search
             self._log_saidata_search_failure(software_name)
@@ -492,8 +487,7 @@ class SaidataRepositoryManager:
 
         if total_cleaned > 0:
             logger.info(
-                f"Cleaned up {total_cleaned} repository caches "
-                f"(expired: {expired_count}, old: {old_count}, invalid: {invalid_count})"
+                f"Cleaned up {total_cleaned} repository caches (expired: {expired_count}, old: {old_count}, invalid: {invalid_count})"
             )
 
         return total_cleaned
@@ -711,14 +705,12 @@ class SaidataRepositoryManager:
 
         if age_days > 7:
             logger.warning(
-                f"Using cached repository data that is {age_days} days old. "
-                f"Consider updating when network is available."
+                f"Using cached repository data that is {age_days} days old. Consider updating when network is available."
             )
         elif age_hours > 24:
             logger.warning(
-                f"Using cached repository data that is {age_days} days, {
-                    age_hours %
-                    24:.0f} hours old. " f"Data may be outdated.")
+                f"Using cached repository data that is {age_days} days, {age_hours % 24:.0f} hours old. Data may be outdated."
+            )
         elif age_hours > 6:
             logger.info(f"Using cached repository data that is {age_hours:.0f} hours old.")
         else:
@@ -823,8 +815,8 @@ class SaidataRepositoryManager:
             auth_data = self.config.saidata_repository_auth_data
 
             logger.debug(
-                f"Git update parameters: auth_type={auth_type}, shallow={
-                    self.config.saidata_shallow_clone}")
+                f"Git update parameters: auth_type={auth_type}, shallow={self.config.saidata_shallow_clone}"
+            )
 
             if self.repository_path.exists():
                 # Update existing repository
@@ -1115,7 +1107,8 @@ class SaidataRepositoryManager:
                     software_specific_dir = prefix_dir / software_name
                     if software_specific_dir.exists():
                         logger.info(
-                            f"Software directory exists but no default.yaml found: {software_specific_dir}")
+                            f"Software directory exists but no default.yaml found: {software_specific_dir}"
+                        )
                         # List what files are in the directory
                         files = list(software_specific_dir.iterdir())
                         if files:

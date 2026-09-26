@@ -144,8 +144,8 @@ def clear(ctx: click.Context, repository: tuple, clear_all: bool):
                 repo_names = list(repository)
                 removed_count = await repo_manager.clear_cache(repo_names)
                 click.echo(
-                    f"Cleared cache for {
-                        len(repo_names)} repositories: {removed_count} entries removed")
+                    f"Cleared cache for {len(repo_names)} repositories: {removed_count} entries removed"
+                )
 
                 if verbose:
                     for repo_name in repo_names:
@@ -253,8 +253,8 @@ def status(ctx: click.Context, detailed: bool):
 
                     status_indicator = "⚠️" if expired > 0 else "✓"
                     click.echo(
-                        f"  {status_indicator} {repo_name}: {entries} entries, {
-                            packages:,} packages")
+                        f"  {status_indicator} {repo_name}: {entries} entries, {packages:,} packages"
+                    )
                     if expired > 0:
                         click.echo(f"    ({expired} expired)")
             elif repositories:

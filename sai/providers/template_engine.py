@@ -7,7 +7,19 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from jinja2 import BaseLoader, Environment, StrictUndefined, TemplateSyntaxError, UndefinedError
 
-from saigen.models.saidata import SaiData
+from saigen.models.saidata import (
+    Binary,
+    Command,
+    Container,
+    Directory,
+    File,
+    Package,
+    Port,
+    SaiData,
+    Script,
+    Service,
+    Source,
+)
 
 from ..models.provider_data import Action
 
@@ -25,7 +37,7 @@ class TemplateContext:
         self,
         saidata: SaiData,
         variables: Optional[Dict[str, Any]] = None,
-        functions: Optional[Dict[str, Callable]] = None,
+        functions: Optional[Dict[str, Callable[..., Any]]] = None,
     ):
         """Initialize template context.
 
@@ -61,7 +73,7 @@ class TemplateContext:
 class TemplateFunction:
     """Wrapper for template functions with metadata."""
 
-    def __init__(self, name: str, function: Callable, description: str = ""):
+    def __init__(self, name: str, function: Callable[..., Any], description: str = ""):
         """Initialize template function.
 
         Args:
@@ -73,7 +85,7 @@ class TemplateFunction:
         self.function = function
         self.description = description
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Call the wrapped function."""
         return self.function(*args, **kwargs)
 
@@ -97,7 +109,7 @@ class SaidataContextBuilder:
         """
         saidata_context = self._build_saidata_context()
 
-        context = {
+        context: Dict[str, Any] = {
             "saidata": saidata_context,
             "metadata": self._build_metadata_context(),
         }
@@ -118,7 +130,7 @@ class SaidataContextBuilder:
 
     def _build_saidata_context(self) -> Dict[str, Any]:
         """Build the saidata section of the context."""
-        context = {
+        context: Dict[str, Any] = {
             "metadata": self._build_metadata_context(),
         }
 
@@ -190,37 +202,32 @@ class SaidataContextBuilder:
 
         metadata = self.saidata.metadata
 
-        # Helper function to handle None values for Jinja2 default filter
-        # Don't convert None to empty string - let Jinja2 handle it
-        def safe_value(value):
-            return value
-
-        context = {
-            "name": safe_value(metadata.name),
-            "display_name": safe_value(metadata.display_name) or safe_value(metadata.name),
-            "description": safe_value(metadata.description),
-            "version": safe_value(metadata.version),
-            "category": safe_value(metadata.category),
-            "subcategory": safe_value(metadata.subcategory),
+        context: Dict[str, Any] = {
+            "name": metadata.name,
+            "display_name": metadata.display_name or metadata.name,
+            "description": metadata.description,
+            "version": metadata.version,
+            "category": metadata.category,
+            "subcategory": metadata.subcategory,
             "tags": metadata.tags or [],
-            "license": safe_value(metadata.license),
-            "language": safe_value(metadata.language),
-            "maintainer": safe_value(metadata.maintainer),
+            "license": metadata.license,
+            "language": metadata.language,
+            "maintainer": metadata.maintainer,
         }
 
         # Add URLs if present
         if metadata.urls:
             context["urls"] = {
-                "website": safe_value(metadata.urls.website),
-                "documentation": safe_value(metadata.urls.documentation),
-                "source": safe_value(metadata.urls.source),
-                "issues": safe_value(metadata.urls.issues),
-                "support": safe_value(metadata.urls.support),
-                "download": safe_value(metadata.urls.download),
-                "changelog": safe_value(metadata.urls.changelog),
-                "license": safe_value(metadata.urls.license),
-                "sbom": safe_value(metadata.urls.sbom),
-                "icon": safe_value(metadata.urls.icon),
+                "website": metadata.urls.website,
+                "documentation": metadata.urls.documentation,
+                "source": metadata.urls.source,
+                "issues": metadata.urls.issues,
+                "support": metadata.urls.support,
+                "download": metadata.urls.download,
+                "changelog": metadata.urls.changelog,
+                "license": metadata.urls.license,
+                "sbom": metadata.urls.sbom,
+                "icon": metadata.urls.icon,
             }
 
         return context
@@ -246,7 +253,7 @@ class SaidataContextBuilder:
 
         return providers_context
 
-    def _provider_data_to_dict(self, provider_data) -> Dict[str, Any]:
+    def _provider_data_to_dict(self, provider_data: Any) -> Dict[str, Any]:
         """Convert provider data to dictionary."""
         if hasattr(provider_data, "__dict__"):
             # Convert object to dict
@@ -262,14 +269,14 @@ class SaidataContextBuilder:
         else:
             return {}
 
-    def _convert_to_dict(self, obj) -> Any:
+    def _convert_to_dict(self, obj: Any) -> Any:
         """Convert object to dictionary if possible."""
         if hasattr(obj, "__dict__"):
             return obj.__dict__
         else:
             return obj
 
-    def _package_to_dict(self, package) -> Dict[str, Any]:
+    def _package_to_dict(self, package: Package) -> Dict[str, Any]:
         """Convert Package model to dictionary."""
         return {
             "name": package.name,
@@ -283,7 +290,7 @@ class SaidataContextBuilder:
             "download_url": package.download_url,
         }
 
-    def _service_to_dict(self, service) -> Dict[str, Any]:
+    def _service_to_dict(self, service: Service) -> Dict[str, Any]:
         """Convert Service model to dictionary."""
         return {
             "name": service.name,
@@ -293,7 +300,7 @@ class SaidataContextBuilder:
             "config_files": service.config_files or [],
         }
 
-    def _file_to_dict(self, file) -> Dict[str, Any]:
+    def _file_to_dict(self, file: File) -> Dict[str, Any]:
         """Convert File model to dictionary."""
         return {
             "name": file.name,
@@ -305,7 +312,7 @@ class SaidataContextBuilder:
             "backup": file.backup,
         }
 
-    def _directory_to_dict(self, directory) -> Dict[str, Any]:
+    def _directory_to_dict(self, directory: Directory) -> Dict[str, Any]:
         """Convert Directory model to dictionary."""
         return {
             "name": directory.name,
@@ -316,7 +323,7 @@ class SaidataContextBuilder:
             "recursive": directory.recursive,
         }
 
-    def _command_to_dict(self, command) -> Dict[str, Any]:
+    def _command_to_dict(self, command: Command) -> Dict[str, Any]:
         """Convert Command model to dictionary."""
         return {
             "name": command.name,
@@ -327,7 +334,7 @@ class SaidataContextBuilder:
             "man_page": command.man_page,
         }
 
-    def _port_to_dict(self, port) -> Dict[str, Any]:
+    def _port_to_dict(self, port: Port) -> Dict[str, Any]:
         """Convert Port model to dictionary."""
         return {
             "port": port.port,
@@ -336,7 +343,7 @@ class SaidataContextBuilder:
             "description": port.description,
         }
 
-    def _container_to_dict(self, container) -> Dict[str, Any]:
+    def _container_to_dict(self, container: Container) -> Dict[str, Any]:
         """Convert Container model to dictionary."""
         return {
             "name": container.name,
@@ -351,7 +358,7 @@ class SaidataContextBuilder:
             "labels": container.labels or {},
         }
 
-    def _source_to_dict(self, source) -> Dict[str, Any]:
+    def _source_to_dict(self, source: Source) -> Dict[str, Any]:
         """Convert Source model to dictionary."""
         return {
             "name": source.name,
@@ -367,12 +374,10 @@ class SaidataContextBuilder:
             "prerequisites": source.prerequisites or [],
             "environment": source.environment or {},
             "checksum": source.checksum,
-            "custom_commands": (
-                source.custom_commands.__dict__ if source.custom_commands else {}
-            ),
+            "custom_commands": (source.custom_commands.__dict__ if source.custom_commands else {}),
         }
 
-    def _binary_to_dict(self, binary) -> Dict[str, Any]:
+    def _binary_to_dict(self, binary: Binary) -> Dict[str, Any]:
         """Convert Binary model to dictionary."""
         return {
             "name": binary.name,
@@ -385,12 +390,10 @@ class SaidataContextBuilder:
             "executable": binary.executable,
             "archive": binary.archive.__dict__ if binary.archive else {},
             "permissions": binary.permissions,
-            "custom_commands": (
-                binary.custom_commands.__dict__ if binary.custom_commands else {}
-            ),
+            "custom_commands": (binary.custom_commands.__dict__ if binary.custom_commands else {}),
         }
 
-    def _script_to_dict(self, script) -> Dict[str, Any]:
+    def _script_to_dict(self, script: Script) -> Dict[str, Any]:
         """Convert Script model to dictionary."""
         return {
             "name": script.name,
@@ -402,9 +405,7 @@ class SaidataContextBuilder:
             "environment": script.environment or {},
             "working_dir": script.working_dir,
             "timeout": script.timeout,
-            "custom_commands": (
-                script.custom_commands.__dict__ if script.custom_commands else {}
-            ),
+            "custom_commands": (script.custom_commands.__dict__ if script.custom_commands else {}),
         }
 
 
@@ -567,7 +568,9 @@ class TemplateEngine:
         def sai_packages_wrapper(saidata_obj, provider_name=None):
             return self._sai_packages_global(context, provider_name)
 
-        def sai_package_wrapper(saidata_obj, index_or_wildcard=0, field="package_name", provider_name=None):
+        def sai_package_wrapper(
+            saidata_obj, index_or_wildcard=0, field="package_name", provider_name=None
+        ):
             return self._sai_package_global(context, index_or_wildcard, field, provider_name)
 
         def sai_service_wrapper(saidata_obj, provider_name=None, index=0, field="name"):

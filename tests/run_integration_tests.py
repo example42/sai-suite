@@ -5,7 +5,6 @@ This script runs comprehensive integration tests for the repository system,
 including setup of test repositories and cleanup.
 """
 
-from tests.fixtures.test_repositories import TestRepositoryManager, cleanup_test_repositories
 import argparse
 import shutil
 import subprocess
@@ -13,6 +12,8 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
+
+from tests.fixtures.test_repositories import TestRepositoryManager, cleanup_test_repositories
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent

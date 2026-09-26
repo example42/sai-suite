@@ -139,11 +139,10 @@ class SaigenTestRunner:
         }
 
         if component not in component_test_map:
+            available = list(component_test_map.keys())
             return {
                 "success": False,
-                "error": f"Unknown component: {component}. Available: {
-                    list(
-                        component_test_map.keys())}",
+                "error": f"Unknown component: {component}. Available: {available}",
             }
 
         test_files = component_test_map[component]

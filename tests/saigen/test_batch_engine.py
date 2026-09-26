@@ -405,7 +405,7 @@ postgresql
         mock_generation_engine.save_saidata.assert_called_once()
         call_args = mock_generation_engine.save_saidata.call_args
         assert call_args[0][0] == sample_saidata  # saidata argument
-        assert call_args[0][1] == output_dir / "nginx.yaml"  # path argument
+        assert call_args[0][1] == output_dir / "ng" / "nginx" / "default.yaml"
 
     def test_get_statistics_summary(self, batch_engine):
         """Test statistics summary formatting."""

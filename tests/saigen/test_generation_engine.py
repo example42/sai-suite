@@ -1,6 +1,6 @@
 """Tests for the GenerationEngine class."""
 
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import yaml
@@ -12,10 +12,7 @@ from saigen.core.generation_engine import (
     ValidationFailedError,
 )
 from saigen.llm.providers.base import LLMResponse, ModelCapability, ModelInfo
-from saigen.models.generation import (
-    GenerationRequest,
-    LLMProvider,
-)
+from saigen.models.generation import GenerationRequest, LLMProvider
 from saigen.models.saidata import Metadata, SaiData
 
 
@@ -30,15 +27,14 @@ class TestGenerationEngine:
     @pytest.fixture
     def generation_engine(self, mock_config):
         """Create GenerationEngine instance for testing."""
-        with patch("saigen.core.generation_engine.OpenAIProvider") as mock_provider_class:
-            mock_provider = Mock()
-            mock_provider.is_available.return_value = True
-            mock_provider.get_provider_name.return_value = "openai"
-            mock_provider_class.return_value = mock_provider
+        mock_provider = Mock()
+        mock_provider.is_available.return_value = True
+        mock_provider.get_provider_name.return_value = "openai"
 
-            engine = GenerationEngine(mock_config)
-            engine._llm_providers["openai"] = mock_provider
-            return engine
+        engine = GenerationEngine(mock_config)
+        engine._llm_providers["openai"] = mock_provider
+        engine.provider_manager.get_available_providers = Mock(return_value=["openai"])
+        return engine
 
     @pytest.fixture
     def sample_request(self):
@@ -69,6 +65,7 @@ providers:
   apt:
     packages:
       - name: "nginx"
+        package_name: "nginx"
         version: "latest"
     services:
       - name: "nginx"
@@ -77,22 +74,18 @@ providers:
   brew:
     packages:
       - name: "nginx"
+        package_name: "nginx"
 """
 
     def test_initialization_with_config(self, mock_config):
         """Test GenerationEngine initialization with configuration."""
-        with patch("saigen.core.generation_engine.OpenAIProvider") as mock_provider_class:
-            mock_provider = Mock()
-            mock_provider.is_available.return_value = True
-            mock_provider_class.return_value = mock_provider
+        engine = GenerationEngine(mock_config)
 
-            engine = GenerationEngine(mock_config)
-
-            assert engine.config == mock_config
-            assert isinstance(engine.validator, type(engine.validator))
-            assert engine._generation_count == 0
-            assert engine._total_tokens_used == 0
-            assert engine._total_cost == 0.0
+        assert engine.config == mock_config
+        assert isinstance(engine.validator, type(engine.validator))
+        assert engine._generation_count == 0
+        assert engine._total_tokens_used == 0
+        assert engine._total_cost == 0.0
 
     def test_initialization_without_config(self):
         """Test GenerationEngine initialization without configuration."""
@@ -453,33 +446,28 @@ providers:
   apt:
     packages:
       - name: "redis-server"
+        package_name: "redis-server"
 """
 
-    with patch("saigen.core.generation_engine.OpenAIProvider") as mock_provider_class:
-        # Mock provider
-        mock_provider = Mock()
-        mock_provider.is_available.return_value = True
-        mock_provider.get_provider_name.return_value = "openai"
-        mock_provider.generate_saidata = AsyncMock(
-            return_value=LLMResponse(content=sample_yaml, tokens_used=800, cost_estimate=0.0016)
-        )
-        mock_provider_class.return_value = mock_provider
+    mock_provider = Mock()
+    mock_provider.is_available.return_value = True
+    mock_provider.get_provider_name.return_value = "openai"
+    mock_provider.generate_saidata = AsyncMock(
+        return_value=LLMResponse(content=sample_yaml, tokens_used=800, cost_estimate=0.0016)
+    )
 
-        # Create engine and request
-        engine = GenerationEngine(config)
-        engine._llm_providers["openai"] = mock_provider  # Add mocked provider for compatibility
-        request = GenerationRequest(software_name="redis", llm_provider=LLMProvider.OPENAI)
+    engine = GenerationEngine(config)
+    engine._llm_providers["openai"] = mock_provider
+    engine.provider_manager.get_available_providers = Mock(return_value=["openai"])
+    request = GenerationRequest(software_name="redis", llm_provider=LLMProvider.OPENAI)
 
-        # Execute generation
-        result = await engine.generate_saidata(request)
+    result = await engine.generate_saidata(request)
 
-        # Verify integration
-        assert result.success is True
-        assert result.saidata.metadata.name == "redis"
-        assert result.tokens_used == 800
-        assert result.cost_estimate == 0.0016
+    assert result.success is True
+    assert result.saidata.metadata.name == "redis"
+    assert result.tokens_used == 800
+    assert result.cost_estimate == 0.0016
 
-        # Verify metrics were updated
-        stats = engine.get_generation_stats()
-        assert stats["total_generations"] == 1
-        assert stats["total_tokens_used"] == 800
+    stats = engine.get_generation_stats()
+    assert stats["total_generations"] == 1
+    assert stats["total_tokens_used"] == 800

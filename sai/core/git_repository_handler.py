@@ -227,9 +227,8 @@ class GitRepositoryHandler:
         repo_info = self.get_repository_info(repo_dir)
         if repo_info:
             logger.debug(
-                f"Repository info before update: branch={
-                    repo_info.branch}, commit={
-                    repo_info.commit_hash}")
+                f"Repository info before update: branch={repo_info.branch}, commit={repo_info.commit_hash}"
+            )
 
         # Setup environment for authentication
         env = self._setup_git_environment(auth_type, auth_data)
@@ -771,7 +770,8 @@ class GitRepositoryHandler:
             repo_info = self.get_repository_info(repo_dir)
             if not repo_info:
                 logger.error(
-                    f"Repository integrity check failed: unable to get repository info for {repo_dir}")
+                    f"Repository integrity check failed: unable to get repository info for {repo_dir}"
+                )
                 return False
 
             # Verify remote URL if provided
@@ -782,16 +782,14 @@ class GitRepositoryHandler:
 
                 if normalized_expected != normalized_actual:
                     logger.error(
-                        f"Repository integrity check failed: URL mismatch. "
-                        f"Expected: {normalized_expected}, Actual: {normalized_actual}"
+                        f"Repository integrity check failed: URL mismatch. Expected: {normalized_expected}, Actual: {normalized_actual}"
                     )
                     return False
 
             # Verify branch if provided
             if expected_branch and repo_info.branch != expected_branch:
                 logger.error(
-                    f"Repository integrity check failed: branch mismatch. "
-                    f"Expected: {expected_branch}, Actual: {repo_info.branch}"
+                    f"Repository integrity check failed: branch mismatch. Expected: {expected_branch}, Actual: {repo_info.branch}"
                 )
                 return False
 

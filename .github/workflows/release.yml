@@ -25,7 +25,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[dev,test]"
+        pip install -e "./saigen[dev,test]" -e "./sai[dev,test]"
 
     - name: Run tests
       run: |
@@ -56,16 +56,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install build twine
 
-    - name: Build package
+    - name: Build packages
       run: |
-        python -m build
+        python -m build saigen --outdir dist
+        python -m build sai --outdir dist
 
     - name: Check package
       run: |
         twine check dist/*
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/
@@ -76,7 +77,7 @@ jobs:
     environment: release
     steps:
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
@@ -95,7 +96,7 @@ jobs:
         fetch-depth: 0
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/

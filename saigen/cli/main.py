@@ -1,18 +1,19 @@
 """Main CLI entry point for saigen tool."""
 
-from .commands.quality import quality
-from .commands.index import index
-from .repositories import repositories
-from .commands.batch import batch
-from .commands import cache, config, generate, refresh_versions, test, test_system, update, validate
-from ..version import get_version
-from ..utils.config import get_config_manager
 import logging
 import warnings
 from pathlib import Path
 from typing import Optional
 
 import click
+
+from ..utils.config import get_config_manager
+from ..version import get_version
+from .commands import cache, config, generate, refresh_versions, test, test_system, update, validate
+from .commands.batch import batch
+from .commands.index import index
+from .commands.quality import quality
+from .repositories import repositories
 
 # Suppress urllib3 SSL warnings on macOS
 warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL 1.1.1+")

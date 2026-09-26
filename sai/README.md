@@ -45,11 +45,8 @@ Use SAI when you need to:
 ## Installation Options
 
 ```bash
-# Lightweight installation (execution only)
+# Execution CLI with its SAIGEN runtime dependency
 pip install sai
-
-# With generation support (includes saigen)
-pip install sai[generation]
 
 # Development installation
 pip install sai[dev]
@@ -76,4 +73,4 @@ pip install sai[dev]
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.
+Apache License 2.0 - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.

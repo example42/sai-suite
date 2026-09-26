@@ -1,8 +1,6 @@
 name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       package:
@@ -47,19 +45,7 @@ jobs:
     - name: Determine packages to publish
       id: packages
       run: |
-        if [[ "${{ github.event_name }}" == "release" ]]; then
-          # Determine from tag
-          TAG="${{ github.event.release.tag_name }}"
-          if [[ $TAG == sai-* ]]; then
-            echo "packages=sai" >> $GITHUB_OUTPUT
-          elif [[ $TAG == saigen-* ]]; then
-            echo "packages=saigen" >> $GITHUB_OUTPUT
-          else
-            echo "packages=both" >> $GITHUB_OUTPUT
-          fi
-        else
-          echo "packages=${{ github.event.inputs.package }}" >> $GITHUB_OUTPUT
-        fi
+        echo "packages=${{ github.event.inputs.package }}" >> $GITHUB_OUTPUT
 
     - name: Build SAI package
       if: steps.packages.outputs.packages == 'sai' || steps.packages.outputs.packages == 'both'
@@ -90,13 +76,13 @@ jobs:
         packages-dir: saigen/dist/
 
     - name: Publish SAI to PyPI
-      if: (steps.packages.outputs.packages == 'sai' || steps.packages.outputs.packages == 'both') && (github.event.inputs.environment == 'pypi' || github.event_name == 'release')
+      if: (steps.packages.outputs.packages == 'sai' || steps.packages.outputs.packages == 'both') && github.event.inputs.environment == 'pypi'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         packages-dir: sai/dist/
 
     - name: Publish SAIGEN to PyPI
-      if: (steps.packages.outputs.packages == 'saigen' || steps.packages.outputs.packages == 'both') && (github.event.inputs.environment == 'pypi' || github.event_name == 'release')
+      if: (steps.packages.outputs.packages == 'saigen' || steps.packages.outputs.packages == 'both') && github.event.inputs.environment == 'pypi'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         packages-dir: saigen/dist/

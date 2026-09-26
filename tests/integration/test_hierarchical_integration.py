@@ -24,7 +24,7 @@ class TestHierarchicalIntegration:
                     "description": "Apache HTTP Server",
                     "category": "web-server",
                 },
-                "packages": [{"name": "apache2"}],
+                "packages": [{"name": "apache2", "package_name": "apache2"}],
             },
             "nginx": {
                 "version": "0.2",
@@ -33,7 +33,7 @@ class TestHierarchicalIntegration:
                     "description": "Nginx Web Server",
                     "category": "web-server",
                 },
-                "packages": [{"name": "nginx"}],
+                "packages": [{"name": "nginx", "package_name": "nginx"}],
             },
             "mysql": {
                 "version": "0.2",
@@ -42,7 +42,7 @@ class TestHierarchicalIntegration:
                     "description": "MySQL Database Server",
                     "category": "database",
                 },
-                "packages": [{"name": "mysql-server"}],
+                "packages": [{"name": "mysql-server", "package_name": "mysql-server"}],
             },
             "redis": {
                 "version": "0.2",
@@ -51,7 +51,7 @@ class TestHierarchicalIntegration:
                     "description": "Redis In-Memory Database",
                     "category": "database",
                 },
-                "packages": [{"name": "redis-server"}],
+                "packages": [{"name": "redis-server", "package_name": "redis-server"}],
             },
         }
 
@@ -256,14 +256,14 @@ class TestHierarchicalIntegration:
             content1 = {
                 "version": "0.2",
                 "metadata": {"name": "apache", "description": "Apache from path 1"},
-                "packages": [{"name": "apache2-high"}],
+                "packages": [{"name": "apache2-high", "package_name": "apache2-high"}],
             }
 
             # Lower precedence version
             content2 = {
                 "version": "0.2",
                 "metadata": {"name": "apache", "description": "Apache from path 2"},
-                "packages": [{"name": "apache2-low"}],
+                "packages": [{"name": "apache2-low", "package_name": "apache2-low"}],
             }
 
             # Create files in both paths

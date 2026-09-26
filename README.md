@@ -27,7 +27,7 @@
 
 ## 📦 Two Packages, One Repository
 
-This repository provides **separate pip packages** that can be installed independently or together:
+This repository provides **separate pip packages**. Installing SAI also installs SAIGEN because SAI imports its saidata model:
 
 ### 🔧 SAI - Software Action Interface
 
@@ -47,7 +47,7 @@ pip install sai
   - **Scripts**: Execute installation scripts with security validation
 - Enhanced template functions for flexible configuration
 - **Package name distinction**: Separate logical names (`name`) from actual package names (`package_name`)
-- Minimal dependencies for production use
+- SAIGEN is a required runtime dependency; its AI/ML integrations remain optional
 - Dry-run mode for safe testing
 - Works with existing saidata from the [saidata repository](https://github.com/example42/saidata)
 
@@ -105,14 +105,11 @@ saigen --version
 
 **Future PyPI Installation (coming soon):**
 ```bash
-# Install SAI only (lightweight, for execution)
+# Install SAI for execution (includes SAIGEN)
 pip install sai
 
 # Install SAIGEN only (for metadata generation)
 pip install saigen
-
-# Install SAI with generation support
-pip install sai[generation]
 
 # Install SAIGEN with all features (LLM + RAG)
 pip install saigen[all]
@@ -704,7 +701,7 @@ SAI includes specialized providers for security, debugging, and analysis:
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ---
 

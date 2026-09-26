@@ -256,7 +256,7 @@ class TestRepositoryIntegrationE2E:
 
             # Test download and extraction
             extract_path = self.repo_dir / "extracted_repo"
-            download_result = self.tarball_handler.download_and_extract_release(
+            self.tarball_handler.download_and_extract_release(
                 TEST_RELEASE_URLS["small_release"], extract_path
             )
 

@@ -13,9 +13,7 @@ from sai.core.repository_cache import RepositoryCache
 from sai.core.saidata_repository_manager import RepositoryStatus, SaidataRepositoryManager
 from sai.core.tarball_repository_handler import TarballRepositoryHandler
 from sai.models.config import RepositoryAuthType, SaiConfig
-from sai.utils.errors import (
-    SecurityError,
-)
+from sai.utils.errors import SecurityError
 
 
 class TestGitRepositoryErrorHandling:

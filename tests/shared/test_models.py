@@ -29,7 +29,7 @@ class TestSaiDataModels:
                 "category": "web-server",
                 "tags": ["web", "server", "proxy"],
             },
-            "packages": [{"name": "nginx", "version": "1.24.0"}],
+            "packages": [{"name": "nginx", "package_name": "nginx", "version": "1.24.0"}],
             "services": [{"name": "nginx", "type": "systemd", "enabled": True}],
         }
         saidata = SaiData(**data)
@@ -44,9 +44,8 @@ class TestSaiDataModels:
 
     def test_missing_required_fields(self):
         """Test validation of required fields."""
-        # Missing version
-        with pytest.raises(ValidationError):
-            SaiData(metadata={"name": "test"})
+        # Version defaults to the current schema when omitted.
+        assert SaiData(metadata={"name": "test"}).version == "0.3"
 
         # Missing metadata
         with pytest.raises(ValidationError):

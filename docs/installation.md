@@ -41,10 +41,10 @@ This installs the SAIGEN tool with all generation capabilities.
 If you need both execution and generation capabilities:
 
 ```bash
-pip install sai[generation]
+pip install sai
 ```
 
-This installs SAI with SAIGEN included as an optional dependency.
+This installs SAI and its required SAIGEN dependency.
 
 **Use this when:**
 - You need both execution and generation in one environment
@@ -70,9 +70,8 @@ pip install saigen[all]
 
 | Package | Size | Dependencies | Use Case |
 |---------|------|--------------|----------|
-| `sai` | Small | Minimal | Production execution |
+| `sai` | Medium | SAIGEN plus execution libraries | Production execution |
 | `saigen` | Medium | Standard | Metadata generation |
-| `sai[generation]` | Medium | Standard | Development & testing |
 | `saigen[llm]` | Large | +AI providers | AI-powered generation |
 | `saigen[rag]` | Large | +ML libraries | Advanced RAG features |
 | `saigen[all]` | Largest | Everything | Full development suite |

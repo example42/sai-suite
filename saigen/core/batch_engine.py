@@ -251,10 +251,10 @@ class BatchGenerationEngine:
                     skipped_count += 1
                 else:
                     software_to_process.append(software_name)
-            
+
             if skipped_count > 0:
                 logger.info(f"Skipped {skipped_count} existing files (use --force to regenerate)")
-        
+
         if not software_to_process:
             logger.info("No software packages to process (all files exist)")
             return BatchGenerationResult(

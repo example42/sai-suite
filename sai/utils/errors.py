@@ -68,7 +68,7 @@ class SaiError(Exception):
 class ConfigurationError(SaiError):
     """Raised when there are configuration-related issues."""
 
-    def __init__(self, message: str, config_file: Optional[Path] = None, **kwargs):
+    def __init__(self, message: str, config_file: Optional[Path] = None, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
         if config_file:
             self.details["config_file"] = str(config_file)
@@ -77,7 +77,9 @@ class ConfigurationError(SaiError):
 class InvalidConfigurationError(ConfigurationError):
     """Raised when configuration is invalid or malformed."""
 
-    def __init__(self, message: str, validation_errors: Optional[List[str]] = None, **kwargs):
+    def __init__(
+        self, message: str, validation_errors: Optional[List[str]] = None, **kwargs: Any
+    ) -> None:
         super().__init__(message, **kwargs)
         if validation_errors:
             self.details["validation_errors"] = validation_errors
@@ -91,7 +93,7 @@ class InvalidConfigurationError(ConfigurationError):
 class MissingConfigurationError(ConfigurationError):
     """Raised when required configuration is missing."""
 
-    def __init__(self, missing_key: str, **kwargs):
+    def __init__(self, missing_key: str, **kwargs: Any) -> None:
         message = f"Missing required configuration: {missing_key}"
         super().__init__(message, **kwargs)
         self.details["missing_key"] = missing_key
@@ -108,7 +110,7 @@ class MissingConfigurationError(ConfigurationError):
 class ProviderError(SaiError):
     """Base class for provider-related errors."""
 
-    def __init__(self, message: str, provider_name: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, provider_name: Optional[str] = None, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
         if provider_name:
             self.details["provider"] = provider_name
@@ -118,8 +120,11 @@ class ProviderNotFoundError(ProviderError):
     """Raised when a requested provider is not found."""
 
     def __init__(
-        self, provider_name: str, available_providers: Optional[List[str]] = None, **kwargs
-    ):
+        self,
+        provider_name: str,
+        available_providers: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
         message = f"Provider '{provider_name}' not found"
         super().__init__(message, provider_name=provider_name, **kwargs)
 
@@ -141,7 +146,7 @@ class ProviderNotFoundError(ProviderError):
 class ProviderNotAvailableError(ProviderError):
     """Raised when a provider exists but is not available on the current system."""
 
-    def __init__(self, provider_name: str, reason: Optional[str] = None, **kwargs):
+    def __init__(self, provider_name: str, reason: Optional[str] = None, **kwargs: Any) -> None:
         message = f"Provider '{provider_name}' is not available"
         if reason:
             message += f": {reason}"
@@ -161,7 +166,12 @@ class ProviderNotAvailableError(ProviderError):
 class ProviderSelectionError(ProviderError):
     """Raised when provider selection fails."""
 
-    def __init__(self, message: str, available_providers: Optional[List[str]] = None, **kwargs):
+    def __init__(
+        self,
+        message: str,
+        available_providers: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(message, **kwargs)
 
         if available_providers:
@@ -187,8 +197,8 @@ class ProviderValidationError(ProviderError):
         provider_name: str,
         validation_errors: List[str],
         provider_file: Optional[Path] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         message = f"Provider '{provider_name}' configuration is invalid"
         super().__init__(message, provider_name=provider_name, **kwargs)
 
@@ -211,8 +221,8 @@ class ProviderLoadError(ProviderError):
         provider_name: str,
         provider_file: Path,
         original_error: Optional[Exception] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         message = f"Failed to load provider '{provider_name}' from {provider_file}"
         super().__init__(message, provider_name=provider_name, **kwargs)
 
@@ -233,7 +243,7 @@ class ProviderLoadError(ProviderError):
 class SaidataError(SaiError):
     """Base class for saidata-related errors."""
 
-    def __init__(self, message: str, software_name: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, software_name: Optional[str] = None, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
         if software_name:
             self.details["software"] = software_name
@@ -242,7 +252,12 @@ class SaidataError(SaiError):
 class SaidataNotFoundError(SaidataError):
     """Raised when saidata file is not found."""
 
-    def __init__(self, software_name: str, search_paths: Optional[List[str]] = None, **kwargs):
+    def __init__(
+        self,
+        software_name: str,
+        search_paths: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
         message = f"No saidata found for software: {software_name}"
         super().__init__(message, software_name=software_name, **kwargs)
 
@@ -265,8 +280,8 @@ class SaidataValidationError(SaidataError):
         software_name: str,
         validation_errors: List[str],
         saidata_file: Optional[Path] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         message = f"Saidata validation failed for '{software_name}'"
         super().__init__(message, software_name=software_name, **kwargs)
 
@@ -284,7 +299,9 @@ class SaidataValidationError(SaidataError):
 class SaidataParseError(SaidataError):
     """Raised when saidata file cannot be parsed."""
 
-    def __init__(self, software_name: str, saidata_file: Path, parse_error: str, **kwargs):
+    def __init__(
+        self, software_name: str, saidata_file: Path, parse_error: str, **kwargs: Any
+    ) -> None:
         message = f"Failed to parse saidata file for '{software_name}': {parse_error}"
         super().__init__(message, software_name=software_name, **kwargs)
 
@@ -310,8 +327,8 @@ class ExecutionError(SaiError):
         action: Optional[str] = None,
         software: Optional[str] = None,
         provider: Optional[str] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(message, **kwargs)
         if action:
             self.details["action"] = action
@@ -324,7 +341,9 @@ class ExecutionError(SaiError):
 class ActionNotSupportedError(ExecutionError):
     """Raised when an action is not supported by any available provider."""
 
-    def __init__(self, action: str, available_actions: Optional[List[str]] = None, **kwargs):
+    def __init__(
+        self, action: str, available_actions: Optional[List[str]] = None, **kwargs: Any
+    ) -> None:
         message = f"Action '{action}' is not supported by any available provider"
         super().__init__(message, action=action, **kwargs)
 
@@ -351,8 +370,8 @@ class CommandExecutionError(ExecutionError):
         exit_code: int,
         stderr: Optional[str] = None,
         timeout: bool = False,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         if timeout:
             message = f"Command timed out: {command}"
         else:
@@ -384,7 +403,7 @@ class CommandExecutionError(ExecutionError):
 class PermissionError(ExecutionError):
     """Raised when execution fails due to insufficient permissions."""
 
-    def __init__(self, action: str, required_permission: str = "root", **kwargs):
+    def __init__(self, action: str, required_permission: str = "root", **kwargs: Any) -> None:
         message = f"Action '{action}' requires {required_permission} permissions"
         super().__init__(message, action=action, **kwargs)
 
@@ -400,7 +419,7 @@ class PermissionError(ExecutionError):
 class TemplateResolutionError(ExecutionError):
     """Raised when template resolution fails."""
 
-    def __init__(self, template: str, resolution_error: str, **kwargs):
+    def __init__(self, template: str, resolution_error: str, **kwargs: Any) -> None:
         message = f"Failed to resolve template: {resolution_error}"
         super().__init__(message, **kwargs)
 
@@ -420,7 +439,7 @@ class TemplateResolutionError(ExecutionError):
 class SecurityError(SaiError):
     """Base class for security-related errors."""
 
-    def __init__(self, message: str, security_issue: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, security_issue: Optional[str] = None, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
         if security_issue:
             self.details["security_issue"] = security_issue
@@ -429,7 +448,7 @@ class SecurityError(SaiError):
 class UnsafeCommandError(SecurityError):
     """Raised when a command is deemed unsafe to execute."""
 
-    def __init__(self, command: str, reason: str, **kwargs):
+    def __init__(self, command: str, reason: str, **kwargs: Any) -> None:
         message = f"Command blocked for security reasons: {reason}"
         super().__init__(message, **kwargs)
 
@@ -446,7 +465,7 @@ class UnsafeCommandError(SecurityError):
 class CommandInjectionError(SecurityError):
     """Raised when potential command injection is detected."""
 
-    def __init__(self, suspicious_input: str, **kwargs):
+    def __init__(self, suspicious_input: str, **kwargs: Any) -> None:
         message = "Potential command injection detected"
         super().__init__(message, **kwargs)
 
@@ -469,7 +488,7 @@ class CacheError(SaiError):
 class CacheCorruptedError(CacheError):
     """Raised when cache data is corrupted."""
 
-    def __init__(self, cache_type: str, cache_key: str, **kwargs):
+    def __init__(self, cache_type: str, cache_key: str, **kwargs: Any) -> None:
         message = f"Cache data corrupted: {cache_type}[{cache_key}]"
         super().__init__(message, **kwargs)
 
@@ -486,7 +505,7 @@ class CacheCorruptedError(CacheError):
 class CacheWriteError(CacheError):
     """Raised when cache write operation fails."""
 
-    def __init__(self, cache_path: Path, original_error: Exception, **kwargs):
+    def __init__(self, cache_path: Path, original_error: Exception, **kwargs: Any) -> None:
         message = f"Failed to write cache: {original_error}"
         super().__init__(message, **kwargs)
 
@@ -510,7 +529,7 @@ class NetworkError(SaiError):
 class RepositoryError(NetworkError):
     """Base class for repository-related errors."""
 
-    def __init__(self, repository_url: str, operation: str, **kwargs):
+    def __init__(self, repository_url: str, operation: str, **kwargs: Any) -> None:
         message = f"Repository operation failed: {operation} on {repository_url}"
         super().__init__(message, **kwargs)
 
@@ -521,7 +540,7 @@ class RepositoryError(NetworkError):
 class RepositoryNotFoundError(RepositoryError):
     """Raised when repository is not found or inaccessible."""
 
-    def __init__(self, repository_url: str, **kwargs):
+    def __init__(self, repository_url: str, **kwargs: Any) -> None:
         super().__init__(repository_url, "access", **kwargs)
         self.message = f"Repository not found or inaccessible: {repository_url}"
 
@@ -536,7 +555,7 @@ class RepositoryNotFoundError(RepositoryError):
 class RepositoryAuthenticationError(RepositoryError):
     """Raised when repository authentication fails."""
 
-    def __init__(self, repository_url: str, auth_type: Optional[str] = None, **kwargs):
+    def __init__(self, repository_url: str, auth_type: Optional[str] = None, **kwargs: Any) -> None:
         super().__init__(repository_url, "authentication", **kwargs)
         self.message = f"Authentication failed for repository: {repository_url}"
 
@@ -557,8 +576,12 @@ class RepositoryNetworkError(RepositoryError):
     """Raised when network connectivity issues prevent repository operations."""
 
     def __init__(
-        self, repository_url: str, network_error: str, is_temporary: bool = True, **kwargs
-    ):
+        self,
+        repository_url: str,
+        network_error: str,
+        is_temporary: bool = True,
+        **kwargs: Any,
+    ) -> None:
         operation = "network_access"
         super().__init__(repository_url, operation, **kwargs)
 
@@ -585,7 +608,7 @@ class RepositoryNetworkError(RepositoryError):
 class RepositoryIntegrityError(RepositoryError):
     """Raised when repository integrity validation fails."""
 
-    def __init__(self, repository_url: str, integrity_issue: str, **kwargs):
+    def __init__(self, repository_url: str, integrity_issue: str, **kwargs: Any) -> None:
         super().__init__(repository_url, "integrity_validation", **kwargs)
         self.message = f"Repository integrity validation failed: {integrity_issue}"
 
@@ -607,8 +630,8 @@ class RepositoryStructureError(RepositoryError):
         repository_url: str,
         structure_issue: str,
         expected_structure: Optional[str] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(repository_url, "structure_validation", **kwargs)
         self.message = f"Invalid repository structure: {structure_issue}"
 
@@ -633,8 +656,8 @@ class GitOperationError(RepositoryError):
         git_command: str,
         exit_code: int,
         stderr: Optional[str] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(repository_url, f"git_{git_command}", **kwargs)
 
         self.message = f"Git {git_command} failed for {repository_url} (exit code: {exit_code})"
@@ -659,7 +682,9 @@ class GitOperationError(RepositoryError):
 class TarballDownloadError(RepositoryError):
     """Raised when tarball download operations fail."""
 
-    def __init__(self, repository_url: str, download_url: str, error_details: str, **kwargs):
+    def __init__(
+        self, repository_url: str, download_url: str, error_details: str, **kwargs: Any
+    ) -> None:
         super().__init__(repository_url, "tarball_download", **kwargs)
 
         self.message = f"Failed to download tarball from {download_url}: {error_details}"
@@ -683,8 +708,8 @@ class ChecksumValidationError(RepositoryError):
         expected_checksum: str,
         actual_checksum: str,
         algorithm: str = "sha256",
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(repository_url, "checksum_validation", **kwargs)
 
         self.message = (
@@ -705,7 +730,13 @@ class ChecksumValidationError(RepositoryError):
 class RepositoryCacheError(CacheError):
     """Raised when repository cache operations fail."""
 
-    def __init__(self, repository_url: str, cache_operation: str, error_details: str, **kwargs):
+    def __init__(
+        self,
+        repository_url: str,
+        cache_operation: str,
+        error_details: str,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
             f"Repository cache {cache_operation} failed for {repository_url}: {error_details}",
             **kwargs,

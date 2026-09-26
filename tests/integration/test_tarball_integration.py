@@ -1,7 +1,9 @@
-"""Integration tests for TarballRepositoryHandler with real GitHub repositories."""
+"""Integration tests for TarballRepositoryHandler GitHub release handling."""
 
 import tempfile
+import urllib.error
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -16,35 +18,48 @@ class TestTarballIntegration:
         self.handler = TarballRepositoryHandler(timeout=60, max_retries=2)
 
     @pytest.mark.integration
-    def test_get_release_info_real_repo(self):
-        """Test getting release info from a real GitHub repository."""
-        # Use a small, stable repository for testing
+    def test_get_release_info_without_release(self):
+        """Test GitHub's no-release response for an existing repository."""
         repo_url = "https://github.com/octocat/Hello-World"
 
-        result = self.handler.get_latest_release_info(repo_url)
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_urlopen.side_effect = urllib.error.HTTPError(
+                "https://api.github.com/repos/octocat/Hello-World/releases/latest",
+                404,
+                "Not Found",
+                {},
+                None,
+            )
+            result = self.handler.get_latest_release_info(repo_url)
 
-        # This repository might not have releases, so we just test that the API call works
-        # and doesn't crash (it should return success=False with appropriate message)
-        assert result is not None
-        assert isinstance(result.success, bool)
-        assert isinstance(result.message, str)
-
-        if not result.success:
-            # Expected for repositories without releases
-            assert "no releases" in result.message.lower() or "not found" in result.message.lower()
+        assert not result.success
+        assert "no releases available" in result.message.lower()
+        assert mock_urlopen.call_args.args[0].full_url.endswith(
+            "/repos/octocat/Hello-World/releases/latest"
+        )
 
     @pytest.mark.integration
     def test_download_nonexistent_repo(self):
         """Test downloading from a non-existent repository."""
         repo_url = "https://github.com/nonexistent/nonexistent-repo-12345"
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            target_dir = Path(temp_dir) / "target"
+        with patch("urllib.request.urlopen") as mock_urlopen:
+            mock_urlopen.side_effect = urllib.error.HTTPError(
+                "https://api.github.com/repos/nonexistent/nonexistent-repo-12345/releases/latest",
+                404,
+                "Not Found",
+                {},
+                None,
+            )
+            with tempfile.TemporaryDirectory() as temp_dir:
+                target_dir = Path(temp_dir) / "target"
 
-            result = self.handler.download_latest_release(repo_url, target_dir)
+                result = self.handler.download_latest_release(repo_url, target_dir)
 
-            assert not result.success
-            assert "404" in result.message or "not found" in result.message.lower()
+                assert not result.success
+                assert "404" in result.message
+                assert not target_dir.exists()
+        mock_urlopen.assert_called_once()
 
     @pytest.mark.integration
     def test_invalid_github_url(self):

@@ -1,5 +1,6 @@
 """Tests for saigen CLI main interface."""
 
+import json
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
@@ -31,9 +32,11 @@ class TestSaigenCLIMain:
     def sample_config(self, temp_config_dir):
         """Create sample configuration file."""
         config_data = {
-            "llm_providers": {"openai": {"api_key": "test-key", "model": "gpt-4o-mini"}},
-            "output_directory": str(temp_config_dir / "output"),
-            "cache_directory": str(temp_config_dir / "cache"),
+            "llm_providers": {
+                "openai": {"provider": "openai", "api_key": "test-key", "model": "gpt-4o-mini"}
+            },
+            "generation": {"output_directory": str(temp_config_dir / "output")},
+            "cache": {"directory": str(temp_config_dir / "cache")},
         }
 
         config_file = temp_config_dir / "saigen.yaml"
@@ -73,6 +76,7 @@ class TestSaigenCLIMain:
                     cost_estimate=0.001,
                 )
             )
+            mock_engine.save_saidata = AsyncMock()
             mock_engine_class.return_value = mock_engine
 
             result = runner.invoke(
@@ -90,30 +94,15 @@ class TestSaigenCLIMain:
         assert result.exit_code != 0
         assert "does not exist" in result.output
 
-    def test_cli_json_output(self, runner):
+    def test_cli_json_output(self, runner, tmp_path):
         """Test CLI JSON output format."""
-        with patch("saigen.core.generation_engine.GenerationEngine") as mock_engine_class:
-            mock_engine = Mock()
-            mock_engine.generate_saidata = AsyncMock(
-                return_value=GenerationResult(
-                    success=True,
-                    saidata=SaiData(version="0.2", metadata=Metadata(name="nginx")),
-                    validation_errors=[],
-                    warnings=[],
-                    generation_time=1.5,
-                    llm_provider_used="openai",
-                    tokens_used=150,
-                    cost_estimate=0.002,
-                )
-            )
-            mock_engine_class.return_value = mock_engine
+        record = tmp_path / "nginx.yaml"
+        record.write_text('version: "0.3"\nmetadata:\n  name: nginx\n')
 
-            result = runner.invoke(cli, ["--json", "generate", "nginx"])
+        result = runner.invoke(cli, ["validate", str(record), "--format", "json"])
 
-            assert result.exit_code == 0
-            # Should contain JSON output
-            assert "{" in result.output
-            assert "}" in result.output
+        assert result.exit_code == 0
+        assert json.loads(result.output)["schema_version"] == "0.3"
 
     def test_cli_dry_run_mode(self, runner):
         """Test CLI dry-run mode."""
@@ -131,6 +120,7 @@ class TestSaigenCLIMain:
                     cost_estimate=0.001,
                 )
             )
+            mock_engine.save_saidata = AsyncMock()
             mock_engine_class.return_value = mock_engine
 
             result = runner.invoke(cli, ["--dry-run", "generate", "nginx"])
@@ -189,6 +179,7 @@ class TestSaigenCLICommands:
                     cost_estimate=0.001,
                 )
             )
+            mock_engine.save_saidata = AsyncMock()
             mock_engine_class.return_value = mock_engine
 
             result = runner.invoke(cli, ["generate", "nginx"])
@@ -212,10 +203,21 @@ class TestSaigenCLICommands:
                     cost_estimate=0.001,
                 )
             )
+            mock_engine.save_saidata = AsyncMock()
             mock_engine_class.return_value = mock_engine
 
             result = runner.invoke(
-                cli, ["generate", "nginx", "--providers", "apt,brew", "--llm-provider", "openai"]
+                cli,
+                [
+                    "--llm-provider",
+                    "openai",
+                    "generate",
+                    "nginx",
+                    "--providers",
+                    "apt",
+                    "--providers",
+                    "brew",
+                ],
             )
 
             assert result.exit_code == 0
@@ -259,11 +261,10 @@ class TestSaigenCLICommands:
             temp_file = Path(f.name)
 
         try:
-            with patch("saigen.core.tester.SaidataTester") as mock_tester_class:
+            with patch("saigen.cli.commands.test.SaidataTester") as mock_tester_class:
                 mock_tester = Mock()
-                mock_tester.test_saidata = AsyncMock(
-                    return_value=Mock(success=True, tests_passed=5, tests_failed=0, test_results=[])
-                )
+                mock_tester.test_file = AsyncMock(return_value=Mock(has_failures=False, warnings=0))
+                mock_tester.format_test_report.return_value = "5 tests passed"
                 mock_tester_class.return_value = mock_tester
 
                 result = runner.invoke(cli, ["test", str(temp_file)])
@@ -280,17 +281,10 @@ class TestSaigenCLICommands:
             temp_file = Path(f.name)
 
         try:
-            with patch("saigen.core.batch_engine.BatchGenerationEngine") as mock_batch_class:
-                mock_batch = Mock()
-                mock_batch.process_batch = AsyncMock(
-                    return_value=Mock(total_processed=3, successful=3, failed=0, results=[])
-                )
-                mock_batch_class.return_value = mock_batch
+            result = runner.invoke(cli, ["batch", "--input-file", str(temp_file), "--preview"])
 
-                result = runner.invoke(cli, ["batch", str(temp_file)])
-
-                assert result.exit_code == 0
-                assert "batch" in result.output.lower()
+            assert result.exit_code == 0
+            assert "Preview: Would process 3 software packages" in result.output
         finally:
             temp_file.unlink()
 
@@ -330,19 +324,11 @@ class TestSaigenCLICommands:
 
     def test_index_command_status(self, runner):
         """Test index status command."""
-        with patch("saigen.repositories.indexer.RAGIndexer") as mock_indexer_class:
-            mock_indexer = Mock()
-            mock_indexer.get_index_stats = AsyncMock(
-                return_value={
-                    "package_count": 1000,
-                    "saidata_count": 50,
-                    "model_name": "all-MiniLM-L6-v2",
-                    "index_size": "5.2 MB",
-                }
-            )
-            mock_indexer_class.return_value = mock_indexer
+        with patch("saigen.cli.commands.index.GenerationEngine") as mock_engine_class:
+            mock_engine_class.return_value.is_rag_available.return_value = False
 
             result = runner.invoke(cli, ["index", "status"])
 
             assert result.exit_code == 0
-            assert "index" in result.output.lower()
+            assert "RAG functionality is not available" in result.output
+            mock_engine_class.return_value.is_rag_available.assert_called_once_with()

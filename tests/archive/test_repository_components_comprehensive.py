@@ -17,19 +17,11 @@ import pytest
 from sai.core.git_repository_handler import GitOperationResult, GitRepositoryHandler
 from sai.core.repository_cache import RepositoryCache, RepositoryMetadata
 from sai.core.saidata_path import HierarchicalPathResolver, SaidataPath
-from sai.core.saidata_repository_manager import (
-    RepositoryStatus,
-    SaidataRepositoryManager,
-)
-from sai.core.tarball_repository_handler import (
-    TarballOperationResult,
-    TarballRepositoryHandler,
-)
+from sai.core.saidata_repository_manager import RepositoryStatus, SaidataRepositoryManager
+from sai.core.tarball_repository_handler import TarballOperationResult, TarballRepositoryHandler
 from sai.models.config import SaiConfig
 from sai.models.saidata import SaiData
-from sai.utils.errors import (
-    SecurityError,
-)
+from sai.utils.errors import SecurityError
 
 
 class TestGitRepositoryHandlerComprehensive:

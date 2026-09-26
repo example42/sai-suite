@@ -1,8 +1,5 @@
 """RAG (Retrieval-Augmented Generation) indexer for semantic search."""
 
-from ..utils.errors import RAGError
-from ..models.saidata import SaiData
-from ..models.repository import RepositoryPackage
 import asyncio
 import json
 import logging
@@ -11,6 +8,10 @@ import pickle
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+from ..models.repository import RepositoryPackage
+from ..models.saidata import SaiData
+from ..utils.errors import RAGError
 
 # Disable tokenizers parallelism to avoid fork-related warnings
 # This must be set before importing sentence_transformers

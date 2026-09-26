@@ -66,7 +66,7 @@ def generate(
         click.echo("ERROR: Missing required argument SOFTWARE_NAME")
         click.echo("=" * 70)
         ctx.exit(2)
-    
+
     # Input validation for security
     if not software_name.strip():
         raise click.BadParameter("Software name cannot be empty")
@@ -154,8 +154,8 @@ def generate(
                                 Path(sample_dir).glob("**/*.yml")
                             )
                             click.echo(
-                                f"[DRY RUN] Would use {
-                                    len(yaml_files)} sample saidata files as examples")
+                                f"[DRY RUN] Would use {len(yaml_files)} sample saidata files as examples"
+                            )
                         else:
                             click.echo("[DRY RUN] Sample data configured but directory not found")
                     else:
@@ -203,9 +203,7 @@ def generate(
             try:
                 provider_enum = LLMProvider(llm_provider)
             except ValueError:
-                error_msg = f"Invalid LLM provider '{llm_provider}'. Available: {
-                    [
-                        p.value for p in LLMProvider]}"
+                error_msg = f"Invalid LLM provider '{llm_provider}'. Available: {[p.value for p in LLMProvider]}"
                 if generation_logger:
                     generation_logger.log_error(error_msg)
                 click.echo(f"Error: {error_msg}", err=True)
@@ -296,9 +294,7 @@ def generate(
                 if verbose:
                     summary = generation_logger.get_summary()
                     click.echo(
-                        f"Log summary: {summary['llm_interactions_count']} LLM interactions, "
-                        f"{summary['data_operations_count']} data operations, "
-                        f"{summary['process_steps_count']} process steps"
+                        f"Log summary: {summary['llm_interactions_count']} LLM interactions, {summary['data_operations_count']} data operations, {summary['process_steps_count']} process steps"
                     )
 
             # Show warnings if any

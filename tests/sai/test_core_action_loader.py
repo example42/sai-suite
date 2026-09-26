@@ -7,11 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from sai.core.action_loader import (
-    ActionFileNotFoundError,
-    ActionFileValidationError,
-    ActionLoader,
-)
+from sai.core.action_loader import ActionFileNotFoundError, ActionFileValidationError, ActionLoader
 from sai.models.actions import ActionFile
 
 

@@ -257,9 +257,8 @@ class GenerationEngine:
             )
 
             logger.info(
-                f"Successfully generated saidata for '{
-                    request.software_name}' in {
-                    generation_time:.2f}s")
+                f"Successfully generated saidata for '{request.software_name}' in {generation_time:.2f}s"
+            )
             return result
 
         except Exception as e:
@@ -375,13 +374,8 @@ class GenerationEngine:
                 context.sample_saidata = rag_context.get("sample_saidata", [])
 
                 logger.debug(
-                    f"RAG context built: {
-                        len(
-                            context.repository_data)} packages, {
-                        len(
-                            context.similar_saidata)} similar saidata, {
-                        len(
-                            context.sample_saidata)} sample saidata")
+                    f"RAG context built: {len(context.repository_data)} packages, {len(context.similar_saidata)} similar saidata, {len(context.sample_saidata)} sample saidata"
+                )
 
             except Exception as e:
                 logger.warning(f"Failed to build RAG context for {request.software_name}: {e}")
@@ -652,8 +646,8 @@ class GenerationEngine:
             ValidationFailedError: If retry also fails
         """
         logger.info(
-            f"First generation attempt failed validation for '{
-                context.software_name}', retrying with feedback")
+            f"First generation attempt failed validation for '{context.software_name}', retrying with feedback"
+        )
 
         if self.logger:
             self.logger.log_error(f"First attempt validation failed: {validation_error}")

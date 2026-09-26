@@ -96,4 +96,4 @@ SAIGEN supports 50+ package managers including:
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.
+Apache License 2.0 - see [LICENSE](https://github.com/example42/sai-suite/blob/main/LICENSE) for details.
