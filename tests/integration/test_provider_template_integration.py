@@ -66,8 +66,8 @@ class TestProviderTemplateIntegration:
         )
 
         packages = [
-            Package(name="nginx", version="1.20.1"),
-            Package(name="nginx-common"),
+            Package(name="nginx", package_name="nginx", version="1.20.1"),
+            Package(name="nginx-common", package_name="nginx-common"),
         ]
 
         services = [
@@ -210,9 +210,9 @@ class TestProviderTemplateIntegration:
         # Create more complex saidata
         metadata = Metadata(name="postgresql", version="13.7")
         packages = [
-            Package(name="postgresql-13", version="13.7"),
-            Package(name="postgresql-client-13"),
-            Package(name="postgresql-contrib-13"),
+            Package(name="postgresql-13", package_name="postgresql-13", version="13.7"),
+            Package(name="postgresql-client-13", package_name="postgresql-client-13"),
+            Package(name="postgresql-contrib-13", package_name="postgresql-contrib-13"),
         ]
         services = [
             Service(name="postgresql", service_name="postgresql", type=ServiceType.SYSTEMD),

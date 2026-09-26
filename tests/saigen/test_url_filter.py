@@ -413,7 +413,8 @@ async def test_filter_saidata_preserves_template_urls():
         # Template URLs should be preserved (not filtered out)
         assert filtered.metadata.urls.website == "https://example.com"
         assert (
-            filtered.metadata.urls.documentation == "https://docs.example.com/{{version}}/index.html"
+            filtered.metadata.urls.documentation
+            == "https://docs.example.com/{{version}}/index.html"
         )
         assert len(filtered.sources) == 1
         assert filtered.sources[0].url == "https://nginx.org/download/nginx-{{version}}.tar.gz"

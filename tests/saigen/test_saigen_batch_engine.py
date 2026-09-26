@@ -7,9 +7,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from saigen.core.batch_engine import (
-    BatchEngine,
-)
+from saigen.core.batch_engine import BatchEngine
 from saigen.core.generation_engine import GenerationEngineError
 from saigen.models.generation import (
     BatchError,

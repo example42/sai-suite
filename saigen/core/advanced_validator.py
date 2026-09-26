@@ -470,9 +470,8 @@ class AdvancedSaidataValidator:
                             if package.repository not in repository_names:
                                 undefined_repo_refs.add(package.repository)
                                 issues.append(
-                                    f"Package '{
-                                        package.name}' references undefined repository '{
-                                        package.repository}'")
+                                    f"Package '{package.name}' references undefined repository '{package.repository}'"
+                                )
                                 integrity_score -= 0.1
 
         details["total_package_repository_refs"] = total_package_refs
@@ -605,8 +604,8 @@ class AdvancedSaidataValidator:
 
             if provider_alignment["score"] < 0.8:
                 issues.append(
-                    f"Low repository alignment for provider {provider_name}: {
-                        provider_alignment['score']:.2f}")
+                    f"Low repository alignment for provider {provider_name}: {provider_alignment['score']:.2f}"
+                )
 
             alignment_score *= provider_alignment["score"]
 
@@ -729,12 +728,12 @@ class AdvancedSaidataValidator:
                         errors.append(
                             ValidationError(
                                 severity=ValidationSeverity.WARNING,
-                                message=f"Potential circular dependency detected: {
-                                    ' -> '.join(cycle)}",
+                                message=f"Potential circular dependency detected: {' -> '.join(cycle)}",
                                 path=f"providers.{provider_name}.packages",
                                 code="circular_dependency",
                                 suggestion="Review package dependencies to avoid circular references",
-                            ))
+                            )
+                        )
 
         # Check for orphaned configurations
         orphaned_configs = self._detect_orphaned_configurations(saidata)
@@ -747,7 +746,8 @@ class AdvancedSaidataValidator:
                         path=config_type,
                         code="orphaned_configuration",
                         suggestion=f"Consider removing unused {config_type} or link it to a provider",
-                    ))
+                    )
+                )
 
         return errors
 
@@ -936,9 +936,9 @@ class AdvancedSaidataValidator:
         lowest_score_metric = min(metric_scores.items(), key=lambda x: x[1].score)
         if lowest_score_metric[1].score < 0.5:
             recommendations.insert(
-                0, f"Priority: Improve {
-                    lowest_score_metric[0].value} (score: {
-                    lowest_score_metric[1].score:.2f})", )
+                0,
+                f"Priority: Improve {lowest_score_metric[0].value} (score: {lowest_score_metric[1].score:.2f})",
+            )
 
         return recommendations[:10]  # Limit to top 10 recommendations
 

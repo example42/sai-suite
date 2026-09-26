@@ -351,12 +351,8 @@ async def _show_statistics(
                 click.echo(f"Total repositories: {stats.get('total_repositories', 0)}")
                 click.echo(f"Enabled repositories: {stats.get('enabled_repositories', 0)}")
                 click.echo(
-                    f"Supported platforms: {
-                        ', '.join(
-                            sorted(
-                                stats.get(
-                                    'supported_platforms',
-                                    [])))}")
+                    f"Supported platforms: {', '.join(sorted(stats.get('supported_platforms', [])))}"
+                )
                 click.echo(
                     f"Supported types: {', '.join(sorted(stats.get('supported_types', [])))}"
                 )

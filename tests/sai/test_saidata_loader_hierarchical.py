@@ -25,7 +25,7 @@ class TestSaidataLoaderHierarchical:
                 "description": "Apache HTTP Server",
                 "category": "web-server",
             },
-            "packages": [{"name": "apache2"}],
+            "packages": [{"name": "apache2", "package_name": "apache2"}],
         }
 
     def create_hierarchical_structure(self, base_path: Path, software_name: str, content: dict):
@@ -41,9 +41,9 @@ class TestSaidataLoaderHierarchical:
 
         return saidata_path.hierarchical_path
 
-    def test_init_with_hierarchical_resolver(self):
+    def test_init_with_hierarchical_resolver(self, tmp_path):
         """Test SaidataLoader initialization creates hierarchical path resolver."""
-        config = SaiConfig()
+        config = SaiConfig(saidata_paths=[str(tmp_path)])
         loader = SaidataLoader(config)
 
         assert hasattr(loader, "_path_resolver")
@@ -188,9 +188,9 @@ class TestSaidataLoaderHierarchical:
             saidata = loader.load_saidata("mysql")
             assert saidata.metadata.name == "apache"  # Content has apache name
 
-    def test_get_expected_hierarchical_path(self):
+    def test_get_expected_hierarchical_path(self, tmp_path):
         """Test get_expected_hierarchical_path method."""
-        config = SaiConfig()
+        config = SaiConfig(saidata_paths=[str(tmp_path)])
         loader = SaidataLoader(config)
 
         expected_path = loader.get_expected_hierarchical_path("apache")
@@ -382,7 +382,7 @@ class TestSaidataLoaderHierarchical:
             base_content = {
                 "version": "0.2",
                 "metadata": {"name": "apache", "description": "Base Apache"},
-                "packages": [{"name": "apache2"}],
+                "packages": [{"name": "apache2", "package_name": "apache2"}],
             }
 
             # Create override saidata in first path (higher precedence)

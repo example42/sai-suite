@@ -212,9 +212,8 @@ class BaseProvider:
                 cached_info = cache.get_cached_provider_info(self.name)
                 if cached_info is not None:
                     logger.debug(
-                        f"Using cached availability for provider '{
-                            self.name}': {
-                            cached_info['available']}")
+                        f"Using cached availability for provider '{self.name}': {cached_info['available']}"
+                    )
                     return cached_info["available"]
 
             except Exception as e:
@@ -374,8 +373,8 @@ class BaseProvider:
                         timeout = action.validation.timeout or 30
 
                         logger.debug(
-                            f"Testing provider '{
-                                self.name}' with validation command: {test_command}")
+                            f"Testing provider '{self.name}' with validation command: {test_command}"
+                        )
 
                         return check_executable_functionality(
                             test_command[0] if test_command else self._get_main_executable(),
@@ -463,8 +462,8 @@ class BaseProvider:
             return self.template_engine.resolve_action_template(action, saidata, additional_context)
         except TemplateResolutionError as e:
             logger.error(
-                f"Failed to resolve templates for action '{action_name}' in provider '{
-                    self.name}': {e}")
+                f"Failed to resolve templates for action '{action_name}' in provider '{self.name}': {e}"
+            )
             raise
 
     def resolve_template(
@@ -502,10 +501,7 @@ class BaseProvider:
 
     def __repr__(self) -> str:
         """Detailed string representation of the provider."""
-        return (
-            f"BaseProvider(name='{self.name}', type='{self.type}', "
-            f"platforms={self.platforms}, actions={len(self.get_supported_actions())})"
-        )
+        return f"BaseProvider(name='{self.name}', type='{self.type}', platforms={self.platforms}, actions={len(self.get_supported_actions())})"
 
 
 class ProviderFactory:
@@ -573,9 +569,8 @@ class ProviderFactory:
                 # Continue with other providers
 
         logger.info(
-            f"Found {
-                len(available_providers)} available providers out of {
-                len(all_providers)} total")
+            f"Found {len(available_providers)} available providers out of {len(all_providers)} total"
+        )
         return available_providers
 
     def detect_providers(
@@ -630,8 +625,8 @@ class ProviderFactory:
 
         available_count = sum(1 for info in provider_info.values() if info.get("available", False))
         logger.info(
-            f"Detection complete: {available_count} available out of {
-                len(provider_info)} total providers")
+            f"Detection complete: {available_count} available out of {len(provider_info)} total providers"
+        )
 
         return provider_info
 

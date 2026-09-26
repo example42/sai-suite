@@ -26,7 +26,7 @@ sai-suite/
 ## Package Independence
 
 Each package can be:
-- **Installed independently**: `pip install sai` or `pip install saigen`
+- **Installed separately**: `pip install sai` installs SAIGEN as a runtime dependency; `pip install saigen` installs SAIGEN alone
 - **Built separately**: Each has its own `pyproject.toml`
 - **Versioned independently**: Separate version numbers
 - **Published separately**: Independent PyPI releases
@@ -36,14 +36,11 @@ Each package can be:
 ### For End Users
 
 ```bash
-# Install SAI only (lightweight, for execution)
+# Install SAI for execution (includes SAIGEN)
 pip install sai
 
 # Install SAIGEN only (for metadata generation)
 pip install saigen
-
-# Install SAI with generation support
-pip install sai[generation]
 
 # Install SAIGEN with all features
 pip install saigen[all]
@@ -153,19 +150,17 @@ pytest
 
 ## Dependency Management
 
-### SAI Dependencies (Minimal)
-- Core execution libraries only
-- No AI/ML dependencies
-- Lightweight for production use
+### SAI Dependencies
+- Core execution libraries and SAIGEN, whose saidata model SAI imports
+- SAIGEN's AI/ML providers remain optional
 
-### SAIGEN Dependencies (Comprehensive)
-- All SAI dependencies
+### SAIGEN Dependencies
+- Shared data and generation libraries
 - AI/ML libraries (optional)
 - Repository integration tools
 - Generation and validation tools
 
 ### Optional Dependencies
-- `sai[generation]`: Adds SAIGEN as dependency
 - `saigen[llm]`: Adds LLM providers
 - `saigen[rag]`: Adds RAG capabilities
 - `saigen[all]`: All features

@@ -413,7 +413,10 @@ class TestTemplateEngine:
     def test_whitespace_handling(self):
         """Test proper whitespace handling in templates."""
         metadata = Metadata(name="nginx")
-        packages = [Package(name="nginx", package_name="nginx"), Package(name="nginx-common", package_name="nginx-common")]
+        packages = [
+            Package(name="nginx", package_name="nginx"),
+            Package(name="nginx-common", package_name="nginx-common"),
+        ]
         saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
 
         engine = TemplateEngine()

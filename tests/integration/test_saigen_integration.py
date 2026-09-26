@@ -13,6 +13,7 @@ from saigen.core.generation_engine import GenerationEngine
 from saigen.core.tester import SaidataTester
 from saigen.core.validator import SaidataValidator
 from saigen.models.generation import GenerationRequest, LLMProvider
+from saigen.repositories.downloaders.universal import UniversalRepositoryDownloader
 from saigen.repositories.manager import RepositoryManager
 
 # Skip integration tests if API keys are not available
@@ -324,14 +325,26 @@ class TestRepositoryIntegration:
 
     @pytest.mark.asyncio
     async def test_repository_manager_real_data(self, temp_cache_dir):
-        """Test repository manager with real repository data."""
-        # Use a minimal config that doesn't require external dependencies
-        config = {
-            "repositories": {"test_repo": {"enabled": True, "priority": 80, "cache_ttl": 3600}},
-            "cache_directory": str(temp_cache_dir),
-        }
-
-        manager = RepositoryManager(config)
+        """Test repository operations through the YAML-driven manager."""
+        config_dir = temp_cache_dir / "config"
+        config_dir.mkdir()
+        (config_dir / "test.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "version": "1.0",
+                    "repositories": [
+                        {
+                            "name": "test_repo",
+                            "type": "test",
+                            "platform": "test",
+                            "endpoints": {"packages": "https://example.org/packages"},
+                            "parsing": {"format": "json"},
+                        }
+                    ],
+                }
+            )
+        )
+        manager = RepositoryManager(temp_cache_dir / "cache", config_dir)
 
         # Mock a simple downloader that simulates real data
         from saigen.models.repository import RepositoryPackage
@@ -357,30 +370,32 @@ class TestRepositoryIntegration:
             ),
         ]
 
-        # Mock downloader
-        from unittest.mock import AsyncMock, Mock
-
-        mock_downloader = Mock()
-        mock_downloader.download_packages = AsyncMock(return_value=mock_packages)
-
-        with patch.object(manager, "_get_downloader", return_value=mock_downloader):
+        with patch.object(
+            UniversalRepositoryDownloader, "download_package_list", new_callable=AsyncMock
+        ) as mock_download, patch.object(
+            UniversalRepositoryDownloader, "search_package", new_callable=AsyncMock
+        ) as mock_search, patch.object(
+            UniversalRepositoryDownloader, "get_package_details", new_callable=AsyncMock
+        ) as mock_details:
+            mock_download.return_value = mock_packages
+            mock_search.return_value = [mock_packages[0]]
+            mock_details.return_value = mock_packages[0]
             # Test cache update
-            update_result = await manager.update_cache(repositories=["test_repo"])
+            update_result = await manager.update_cache(repository_names=["test_repo"])
 
-            assert update_result["updated_repositories"] == 1
-            assert update_result["total_packages"] == 2
+            assert update_result["test_repo"] is True
 
             # Test package retrieval
             packages = await manager.get_packages("test_repo")
             assert len(packages) == 2
 
             # Test search
-            curl_results = await manager.search_packages("curl")
-            assert len(curl_results) == 1
-            assert curl_results[0].name == "curl"
+            curl_results = await manager.search_packages("curl", repository_names=["test_repo"])
+            assert curl_results.total_results == 1
+            assert curl_results.packages[0].name == "curl"
 
             # Test package info
-            curl_info = await manager.get_package_info("curl", "test_repo")
+            curl_info = await manager.get_package_details("curl", platform="test")
             assert curl_info is not None
             assert curl_info.name == "curl"
 

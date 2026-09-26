@@ -169,29 +169,6 @@ class ConfigManager:
         else:
             return data
 
-    def _fix_secret_str_values(self, data: Any) -> Any:
-        """Fix SecretStr serialization issues in loaded data.
-
-        Args:
-            data: Configuration data that may contain SecretStr objects
-
-        Returns:
-            Fixed configuration data
-        """
-        if isinstance(data, dict):
-            # Check for SecretStr object patterns
-            if "_secret_value" in data and len(data) == 1:
-                # This looks like a serialized SecretStr, extract the value
-                return data["_secret_value"]
-            else:
-                # Recursively fix nested dictionaries
-                return {k: self._fix_secret_str_values(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            # Recursively fix list items
-            return [self._fix_secret_str_values(item) for item in data]
-        else:
-            return data
-
     def _create_default_config(self) -> SaigenConfig:
         """Create default configuration."""
         return SaigenConfig()

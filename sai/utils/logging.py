@@ -342,9 +342,7 @@ class SaiLogger:
                 extra["stderr_preview"] = stderr
 
         success = exit_code == 0
-        message = f"Command {
-            'succeeded' if success else 'failed'}: {command} (exit: {exit_code}, time: {
-            execution_time:.2f}s)"
+        message = f"Command {('succeeded' if success else 'failed')}: {command} (exit: {exit_code}, time: {execution_time:.2f}s)"
 
         if success:
             self.debug(message, extra=extra)

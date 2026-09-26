@@ -83,7 +83,7 @@ def update(
         click.echo("ERROR: Missing required argument SAIDATA_FILE")
         click.echo("=" * 70)
         ctx.exit(2)
-    
+
     # Handle both test context and real context
     if ctx.obj is None:
         ctx.obj = {}
@@ -295,16 +295,10 @@ def _get_backup_path(original_path: Path, backup_dir: Optional[Path] = None) -> 
     """
     if backup_dir:
         backup_dir.mkdir(parents=True, exist_ok=True)
-        backup_name = f"{
-            original_path.stem}.backup.{
-            datetime.now().strftime('%Y%m%d_%H%M%S')}{
-            original_path.suffix}"
+        backup_name = f"{original_path.stem}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}{original_path.suffix}"
         return backup_dir / backup_name
     else:
-        backup_name = f"{
-            original_path.stem}.backup.{
-            datetime.now().strftime('%Y%m%d_%H%M%S')}{
-            original_path.suffix}"
+        backup_name = f"{original_path.stem}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}{original_path.suffix}"
         return original_path.parent / backup_name
 
 

@@ -2,20 +2,8 @@
 
 import pytest
 
-from sai.providers.template_engine import (
-    SaidataContextBuilder,
-    TemplateEngine,
-    TemplateResolutionError,
-)
-from saigen.models.saidata import (
-    Binary,
-    BuildSystem,
-    Metadata,
-    Package,
-    SaiData,
-    Script,
-    Source,
-)
+from sai.providers.template_engine import SaidataContextBuilder, TemplateEngine
+from saigen.models.saidata import Binary, BuildSystem, Metadata, Package, SaiData, Script, Source
 
 
 class TestSaidataContextBuilder03:
@@ -28,16 +16,16 @@ class TestSaidataContextBuilder03:
             Package(name="nginx", package_name="nginx-full", version="1.24.0"),
             Package(name="nginx-common", package_name="nginx-common-pkg"),
         ]
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
             packages=packages,
         )
-        
+
         builder = SaidataContextBuilder(saidata)
         context = builder.build_context()
-        
+
         assert len(context["saidata"]["packages"]) == 2
         assert context["saidata"]["packages"][0]["name"] == "nginx"
         assert context["saidata"]["packages"][0]["package_name"] == "nginx-full"
@@ -56,19 +44,22 @@ class TestSaidataContextBuilder03:
                 configure_args=["--with-http_ssl_module"],
             ),
         ]
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
             sources=sources,
         )
-        
+
         builder = SaidataContextBuilder(saidata)
         context = builder.build_context()
-        
+
         assert len(context["saidata"]["sources"]) == 1
         assert context["saidata"]["sources"][0]["name"] == "main"
-        assert context["saidata"]["sources"][0]["url"] == "https://nginx.org/download/nginx-1.24.0.tar.gz"
+        assert (
+            context["saidata"]["sources"][0]["url"]
+            == "https://nginx.org/download/nginx-1.24.0.tar.gz"
+        )
         assert context["saidata"]["sources"][0]["build_system"] == "autotools"
         assert context["saidata"]["sources"][0]["version"] == "1.24.0"
         assert len(context["saidata"]["sources"][0]["configure_args"]) == 1
@@ -86,16 +77,16 @@ class TestSaidataContextBuilder03:
                 install_path="/usr/local/bin",
             ),
         ]
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
             binaries=binaries,
         )
-        
+
         builder = SaidataContextBuilder(saidata)
         context = builder.build_context()
-        
+
         assert len(context["saidata"]["binaries"]) == 1
         assert context["saidata"]["binaries"][0]["name"] == "main"
         assert context["saidata"]["binaries"][0]["platform"] == "linux"
@@ -112,16 +103,16 @@ class TestSaidataContextBuilder03:
                 timeout=600,
             ),
         ]
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
             scripts=scripts,
         )
-        
+
         builder = SaidataContextBuilder(saidata)
         context = builder.build_context()
-        
+
         assert len(context["saidata"]["scripts"]) == 1
         assert context["saidata"]["scripts"][0]["name"] == "official"
         assert context["saidata"]["scripts"][0]["interpreter"] == "bash"
@@ -130,15 +121,15 @@ class TestSaidataContextBuilder03:
     def test_build_context_empty_installation_methods(self):
         """Test context with empty sources, binaries, scripts."""
         metadata = Metadata(name="nginx")
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
         )
-        
+
         builder = SaidataContextBuilder(saidata)
         context = builder.build_context()
-        
+
         assert context["saidata"]["sources"] == []
         assert context["saidata"]["binaries"] == []
         assert context["saidata"]["scripts"] == []
@@ -154,13 +145,12 @@ class TestTemplateEngine03:
             Package(name="nginx", package_name="nginx-full", version="1.24.0"),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
-        
+
         engine = TemplateEngine()
         result = engine.resolve_template(
-            "{{sai_package(saidata, 0, 'package_name', 'apt')}}",
-            saidata
+            "{{sai_package(saidata, 0, 'package_name', 'apt')}}", saidata
         )
-        
+
         assert result == "nginx-full"
 
     def test_sai_package_with_name_field(self):
@@ -170,13 +160,10 @@ class TestTemplateEngine03:
             Package(name="nginx", package_name="nginx-full"),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
-        
+
         engine = TemplateEngine()
-        result = engine.resolve_template(
-            "{{sai_package(saidata, 0, 'name')}}",
-            saidata
-        )
-        
+        result = engine.resolve_template("{{sai_package(saidata, 0, 'name')}}", saidata)
+
         assert result == "nginx"
 
     def test_sai_package_wildcard_package_names(self):
@@ -187,13 +174,10 @@ class TestTemplateEngine03:
             Package(name="nginx-common", package_name="nginx-common-pkg"),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
-        
+
         engine = TemplateEngine()
-        result = engine.resolve_template(
-            "{{sai_package(saidata, '*', 'package_name')}}",
-            saidata
-        )
-        
+        result = engine.resolve_template("{{sai_package(saidata, '*', 'package_name')}}", saidata)
+
         assert result == "nginx-full nginx-common-pkg"
 
     def test_sai_package_default_field(self):
@@ -203,14 +187,11 @@ class TestTemplateEngine03:
             Package(name="nginx", package_name="nginx-full"),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, packages=packages)
-        
+
         engine = TemplateEngine()
         # Without field parameter, should default to package_name
-        result = engine.resolve_template(
-            "{{sai_package(saidata, 0)}}",
-            saidata
-        )
-        
+        result = engine.resolve_template("{{sai_package(saidata, 0)}}", saidata)
+
         # Should return package_name by default
         assert result in ["nginx-full", "nginx"]  # Depends on implementation
 
@@ -226,28 +207,19 @@ class TestTemplateEngine03:
             ),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, sources=sources)
-        
+
         engine = TemplateEngine()
-        
+
         # Test URL field
-        result = engine.resolve_template(
-            "{{sai_source(saidata, 0, 'url')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_source(saidata, 0, 'url')}}", saidata)
         assert result == "https://nginx.org/download/nginx-1.24.0.tar.gz"
-        
+
         # Test version field
-        result = engine.resolve_template(
-            "{{sai_source(saidata, 0, 'version')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_source(saidata, 0, 'version')}}", saidata)
         assert result == "1.24.0"
-        
+
         # Test build_system field
-        result = engine.resolve_template(
-            "{{sai_source(saidata, 0, 'build_system')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_source(saidata, 0, 'build_system')}}", saidata)
         assert result == "autotools"
 
     def test_sai_binary_function(self):
@@ -262,28 +234,19 @@ class TestTemplateEngine03:
             ),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, binaries=binaries)
-        
+
         engine = TemplateEngine()
-        
+
         # Test URL field
-        result = engine.resolve_template(
-            "{{sai_binary(saidata, 0, 'url')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_binary(saidata, 0, 'url')}}", saidata)
         assert result == "https://example.com/app-linux-amd64.tar.gz"
-        
+
         # Test platform field
-        result = engine.resolve_template(
-            "{{sai_binary(saidata, 0, 'platform')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_binary(saidata, 0, 'platform')}}", saidata)
         assert result == "linux"
-        
+
         # Test architecture field
-        result = engine.resolve_template(
-            "{{sai_binary(saidata, 0, 'architecture')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_binary(saidata, 0, 'architecture')}}", saidata)
         assert result == "amd64"
 
     def test_sai_script_function(self):
@@ -297,21 +260,15 @@ class TestTemplateEngine03:
             ),
         ]
         saidata = SaiData(version="0.3", metadata=metadata, scripts=scripts)
-        
+
         engine = TemplateEngine()
-        
+
         # Test URL field
-        result = engine.resolve_template(
-            "{{sai_script(saidata, 0, 'url')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_script(saidata, 0, 'url')}}", saidata)
         assert result == "https://get.example.com/install.sh"
-        
+
         # Test interpreter field
-        result = engine.resolve_template(
-            "{{sai_script(saidata, 0, 'interpreter')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_script(saidata, 0, 'interpreter')}}", saidata)
         assert result == "bash"
 
     def test_provider_specific_lookup(self):
@@ -320,33 +277,30 @@ class TestTemplateEngine03:
         packages = [
             Package(name="nginx", package_name="nginx"),
         ]
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
             packages=packages,
             providers={
                 "apt": {
-                    "packages": [
-                        {"name": "nginx", "package_name": "nginx-full"}
-                    ],
+                    "packages": [{"name": "nginx", "package_name": "nginx-full"}],
                     "sources": [
                         {
                             "name": "main",
                             "url": "https://nginx.org/apt-source.tar.gz",
-                            "build_system": "autotools"
+                            "build_system": "autotools",
                         }
-                    ]
+                    ],
                 }
-            }
+            },
         )
-        
+
         engine = TemplateEngine()
-        
+
         # Provider-specific package lookup
         result = engine.resolve_template(
-            "{{sai_package(saidata, 0, 'package_name', 'apt')}}",
-            saidata
+            "{{sai_package(saidata, 0, 'package_name', 'apt')}}", saidata
         )
         assert result == "nginx-full"
 
@@ -354,28 +308,19 @@ class TestTemplateEngine03:
         """Test handling of missing installation methods."""
         metadata = Metadata(name="nginx")
         saidata = SaiData(version="0.3", metadata=metadata)
-        
+
         engine = TemplateEngine()
-        
+
         # Should return empty string for missing sources
-        result = engine.resolve_template(
-            "{{sai_source(saidata, 0, 'url')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_source(saidata, 0, 'url')}}", saidata)
         assert result == ""
-        
+
         # Should return empty string for missing binaries
-        result = engine.resolve_template(
-            "{{sai_binary(saidata, 0, 'url')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_binary(saidata, 0, 'url')}}", saidata)
         assert result == ""
-        
+
         # Should return empty string for missing scripts
-        result = engine.resolve_template(
-            "{{sai_script(saidata, 0, 'url')}}",
-            saidata
-        )
+        result = engine.resolve_template("{{sai_script(saidata, 0, 'url')}}", saidata)
         assert result == ""
 
     def test_complex_template_with_03_functions(self):
@@ -391,23 +336,23 @@ class TestTemplateEngine03:
                 build_system=BuildSystem.AUTOTOOLS,
             ),
         ]
-        
+
         saidata = SaiData(
             version="0.3",
             metadata=metadata,
             packages=packages,
             sources=sources,
         )
-        
+
         engine = TemplateEngine()
         template = """
         Package: {{sai_package(saidata, 0, 'package_name')}}
         Source: {{sai_source(saidata, 0, 'url')}}
         Build: {{sai_source(saidata, 0, 'build_system')}}
         """
-        
+
         result = engine.resolve_template(template, saidata)
-        
+
         assert "nginx-full" in result
         assert "https://nginx.org/download/nginx-{{version}}.tar.gz" in result
         assert "autotools" in result

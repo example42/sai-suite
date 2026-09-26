@@ -48,10 +48,12 @@ class ProviderLoader:
                         If None, uses the default schema location.
             enable_caching: Whether to enable provider data caching for performance
         """
-        self.schema_path = (
-            schema_path
-            or Path(__file__).parent.parent.parent / "schemas" / "providerdata-0.1-schema.json"
-        )
+        default_schema = Path(__file__).parent.parent / "schemas" / "providerdata-0.1-schema.json"
+        if not default_schema.exists():
+            default_schema = (
+                Path(__file__).parent.parent.parent / "schemas" / "providerdata-0.1-schema.json"
+            )
+        self.schema_path = schema_path or default_schema
         self._schema_validator: Optional[Draft7Validator] = None
         self.enable_caching = enable_caching
         self._provider_cache: Dict[Path, ProviderData] = {}

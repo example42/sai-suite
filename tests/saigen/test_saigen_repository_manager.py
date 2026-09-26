@@ -1,15 +1,15 @@
 """Tests for saigen repository manager."""
 
-from saigen.repositories.universal_manager import UniversalRepositoryManager
-from saigen.repositories.cache import RepositoryCache
-from saigen.models.repository import RepositoryPackage, SearchResult
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from saigen.models.repository import RepositoryPackage, SearchResult
+from saigen.repositories.cache import RepositoryCache
 from saigen.repositories.manager import RepositoryManager
+from saigen.repositories.universal_manager import UniversalRepositoryManager
 from saigen.utils.errors import RepositoryError
 
 

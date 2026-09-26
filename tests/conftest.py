@@ -44,7 +44,7 @@ def sample_saidata():
             display_name="Nginx Web Server",
             description="High-performance HTTP server and reverse proxy",
         ),
-        packages=[Package(name="nginx", version=">=1.18.0")],
+        packages=[Package(name="nginx", package_name="nginx", version=">=1.18.0")],
         services=[Service(name="nginx", type="systemd", enabled=True)],
     )
 
@@ -115,11 +115,11 @@ def test_saidata_files(temp_dir):
             "display_name": "Nginx Web Server",
             "description": "High-performance HTTP server",
         },
-        "packages": [{"name": "nginx"}],
+        "packages": [{"name": "nginx", "package_name": "nginx"}],
         "services": [{"name": "nginx", "type": "systemd"}],
         "providers": {
-            "apt": {"packages": [{"name": "nginx"}]},
-            "brew": {"packages": [{"name": "nginx"}]},
+            "apt": {"packages": [{"name": "nginx", "package_name": "nginx"}]},
+            "brew": {"packages": [{"name": "nginx", "package_name": "nginx"}]},
         },
     }
 
@@ -138,11 +138,11 @@ def test_saidata_files(temp_dir):
             "display_name": "Git Version Control",
             "description": "Distributed version control system",
         },
-        "packages": [{"name": "git"}],
+        "packages": [{"name": "git", "package_name": "git"}],
         "providers": {
-            "apt": {"packages": [{"name": "git"}]},
-            "brew": {"packages": [{"name": "git"}]},
-            "yum": {"packages": [{"name": "git"}]},
+            "apt": {"packages": [{"name": "git", "package_name": "git"}]},
+            "brew": {"packages": [{"name": "git", "package_name": "git"}]},
+            "yum": {"packages": [{"name": "git", "package_name": "git"}]},
         },
     }
 
@@ -323,6 +323,7 @@ providers:
   apt:
     packages:
       - name: "test-software"
+        package_name: "test-software"
         version: "latest"
 """,
         tokens_used=150,

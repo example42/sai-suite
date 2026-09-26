@@ -47,7 +47,8 @@ class SaidataPath:
         # Validate software name contains only valid characters
         if not normalized_name.replace("-", "").replace("_", "").replace(".", "").isalnum():
             raise ValueError(
-                f"Invalid software name: {software_name}. Must contain only alphanumeric characters, hyphens, underscores, and dots.")
+                f"Invalid software name: {software_name}. Must contain only alphanumeric characters, hyphens, underscores, and dots."
+            )
 
         # Generate prefix from first two characters
         prefix = normalized_name[:2] if len(normalized_name) >= 2 else normalized_name
@@ -185,9 +186,7 @@ class SaidataPath:
 
     def __repr__(self) -> str:
         """Detailed string representation of the SaidataPath."""
-        return f"SaidataPath(software_name='{
-            self.software_name}', hierarchical_path='{
-            self.hierarchical_path}')"
+        return f"SaidataPath(software_name='{self.software_name}', hierarchical_path='{self.hierarchical_path}')"
 
 
 class HierarchicalPathResolver:

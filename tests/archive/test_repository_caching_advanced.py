@@ -363,7 +363,6 @@ class TestRepositoryCacheAdvanced:
         cache.mark_repository_updated("https://github.com/healthy/repo", "main")
 
         # Create corrupted repository (metadata exists but files missing)
-        corrupted_repo = cache._get_repository_path("https://github.com/corrupted/repo", "main")
         cache.mark_repository_updated("https://github.com/corrupted/repo", "main")
         # Don't create actual files - this simulates corruption
 

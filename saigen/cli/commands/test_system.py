@@ -87,7 +87,7 @@ def test_system(
         click.echo("ERROR: Missing required argument SAIDATA_PATH")
         click.echo("=" * 70)
         ctx.exit(2)
-    
+
     if verbose:
         logging.basicConfig(level=logging.INFO)
 

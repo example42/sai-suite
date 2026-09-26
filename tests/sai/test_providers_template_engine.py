@@ -28,7 +28,10 @@ class TestTemplateEngine:
                 display_name="Nginx Web Server",
                 description="High-performance HTTP server",
             ),
-            packages=[Package(name="nginx", version=">=1.18.0"), Package(name="nginx-extras")],
+            packages=[
+                Package(name="nginx", package_name="nginx", version=">=1.18.0"),
+                Package(name="nginx-extras", package_name="nginx-extras"),
+            ],
             services=[Service(name="nginx", type="systemd", enabled=True)],
         )
 
@@ -164,13 +167,13 @@ class TestTemplateEngine:
         """Test built-in sai_package function."""
         # Add provider data
         self.saidata.providers = {
-            "apt": {"packages": [{"name": "nginx-full"}]},
-            "brew": {"packages": [{"name": "nginx"}]},
+            "apt": {"packages": [{"name": "nginx", "package_name": "nginx-full"}]},
+            "brew": {"packages": [{"name": "nginx", "package_name": "nginx"}]},
         }
 
-        template_apt = "{{sai_package(saidata, 'apt')}}"
-        template_brew = "{{sai_package(saidata, 'brew')}}"
-        template_unknown = "{{sai_package(saidata, 'unknown')}}"
+        template_apt = "{{sai_package(saidata, 0, 'package_name', 'apt')}}"
+        template_brew = "{{sai_package(saidata, 0, 'package_name', 'brew')}}"
+        template_unknown = "{{sai_package(saidata, 0, 'package_name', 'unknown')}}"
 
         result_apt = self.engine.resolve_template(template_apt, self.saidata)
         result_brew = self.engine.resolve_template(template_brew, self.saidata)

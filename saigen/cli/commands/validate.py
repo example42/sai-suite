@@ -14,12 +14,20 @@ from ...repositories.manager import RepositoryManager
 from ...utils.config import get_config
 
 
+def _schema_version(file_path: Path) -> str:
+    try:
+        data = yaml.safe_load(file_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return "0.3"
+    return "0.4" if isinstance(data, dict) and data.get("version") == "0.4" else "0.3"
+
+
 @click.command()
 @click.argument("file_path", type=click.Path(exists=True, path_type=Path), required=False)
 @click.option(
     "--schema",
     type=click.Path(exists=True, path_type=Path),
-    help="Path to custom saidata schema file (defaults to saidata-0.3-schema.json)",
+    help="Path to custom saidata schema file (defaults to the file's schema version)",
 )
 @click.option("--show-context", is_flag=True, help="Show detailed context information for errors")
 @click.option(
@@ -71,7 +79,7 @@ def validate(
 
     \b
     🔍 CORE VALIDATION:
-    • JSON schema compliance (saidata-0.3-schema.json)
+    • JSON schema compliance (saidata-0.3 or saidata-0.4)
     • Required fields and structure validation
     • Enum value validation for build systems, service types, etc.
     • Cross-reference consistency checking
@@ -133,7 +141,7 @@ def validate(
         click.echo("ERROR: Missing required argument FILE_PATH")
         click.echo("=" * 70)
         ctx.exit(2)
-    
+
     try:
         if advanced:
             # Use advanced validation with quality metrics
@@ -177,8 +185,8 @@ def _run_basic_validation(
     validate_checksums: bool = False,
     auto_recover: bool = False,
 ) -> None:
-    """Run basic schema validation with 0.3 features."""
-    # Create validator with optional custom schema (defaults to 0.3 schema)
+    """Run basic schema validation with version-specific features."""
+    # Create validator with optional custom schema.
     validator = SaidataValidator(schema_path=schema)
 
     # Load and validate the file
@@ -212,7 +220,7 @@ def _run_basic_validation(
 
         output = {
             "file": str(file_path),
-            "schema_version": "0.3",
+            "schema_version": _schema_version(file_path),
             "valid": result.is_valid,
             "total_issues": result.total_issues,
             "validation_features": {
@@ -266,7 +274,7 @@ def _run_basic_validation(
         click.echo(json.dumps(output, indent=2))
     else:
         # Human-readable text output
-        click.echo(f"📋 Saidata 0.3 Schema Validation Report")
+        click.echo(f"📋 Saidata {_schema_version(file_path)} Schema Validation Report")
         click.echo(f"File: {file_path}")
         click.echo("")
 
@@ -304,14 +312,14 @@ async def _run_advanced_validation(
     validate_checksums: bool = False,
     auto_recover: bool = False,
 ) -> None:
-    """Run advanced validation with quality metrics and 0.3 features."""
+    """Run advanced validation with quality metrics."""
     # Load saidata file
     with open(file_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    # Check if this is a 0.3 saidata file
+    # Check if this is a supported saidata file
     version = data.get("version", "unknown")
-    if version != "0.3":
+    if version not in ("0.3", "0.4"):
         click.echo(
             f"⚠️  Warning: File version is '{version}', but validating against 0.3 schema", err=True
         )
@@ -340,7 +348,7 @@ async def _run_advanced_validation(
             click.echo(f"⚠️  Repository checking disabled: {e}", err=True)
             check_repository_accuracy = False
 
-    # Create advanced validator with 0.3 schema
+    # Create advanced validator with the selected schema
     base_validator = SaidataValidator(schema_path=schema)
     advanced_validator = AdvancedSaidataValidator(repository_manager, base_validator)
 
@@ -374,7 +382,7 @@ async def _run_advanced_validation(
 
         output = {
             "file": str(file_path),
-            "schema_version": "0.3",
+            "schema_version": _schema_version(file_path),
             "file_version": version,
             "overall_score": quality_report.overall_score,
             "valid": quality_report.validation_result.is_valid,
@@ -443,7 +451,7 @@ async def _run_advanced_validation(
         click.echo(json.dumps(output, indent=2))
     else:
         # Human-readable text output
-        click.echo(f"📋 Advanced Saidata 0.3 Schema Validation Report")
+        click.echo(f"📋 Advanced Saidata {_schema_version(file_path)} Schema Validation Report")
         click.echo(f"File: {file_path}")
         click.echo(f"File Version: {version}")
         click.echo("")

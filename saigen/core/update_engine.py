@@ -8,12 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import click
 
-from ..models.generation import (
-    GenerationMode,
-    GenerationRequest,
-    GenerationResult,
-    LLMProvider,
-)
+from ..models.generation import GenerationMode, GenerationRequest, GenerationResult, LLMProvider
 from ..models.generation import ValidationError as GenValidationError
 from ..models.saidata import SaiData
 from .generation_engine import GenerationEngine
@@ -180,14 +175,11 @@ class UpdateEngine:
             )
 
             logger.info(
-                f"Successfully updated saidata for '{
-                    existing_saidata.metadata.name}' in {
-                    generation_time:.2f}s")
+                f"Successfully updated saidata for '{existing_saidata.metadata.name}' in {generation_time:.2f}s"
+            )
             logger.info(
-                f"Merge stats: {
-                    merge_result.fields_added} added, {
-                    merge_result.fields_updated} updated, {
-                    merge_result.conflicts_resolved} conflicts resolved")
+                f"Merge stats: {merge_result.fields_added} added, {merge_result.fields_updated} updated, {merge_result.conflicts_resolved} conflicts resolved"
+            )
 
             return result
 

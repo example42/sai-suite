@@ -1,13 +1,12 @@
 """Tests for SaidataLoader with schema 0.3 support."""
 
-import json
 import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 
-from sai.core.saidata_loader import SaidataLoader, ValidationError
+from sai.core.saidata_loader import SaidataLoader
 from sai.models.config import SaiConfig
 from sai.models.saidata import SaiData
 
@@ -19,7 +18,7 @@ class TestSaidataLoader03:
         """Test that loader uses schema 0.3."""
         loader = SaidataLoader()
         loader._load_schema()
-        
+
         # Verify schema is loaded
         assert loader._schema_cache is not None
         # Schema should have version property
@@ -28,14 +27,11 @@ class TestSaidataLoader03:
 
     def test_validate_03_minimal(self):
         """Test validation of minimal schema 0.3 saidata."""
-        data = {
-            "version": "0.3",
-            "metadata": {"name": "nginx"}
-        }
-        
+        data = {"version": "0.3", "metadata": {"name": "nginx"}}
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert result.valid
         assert len(result.errors) == 0
 
@@ -44,14 +40,12 @@ class TestSaidataLoader03:
         data = {
             "version": "0.3",
             "metadata": {"name": "nginx"},
-            "packages": [
-                {"name": "nginx", "package_name": "nginx-full", "version": "1.24.0"}
-            ]
+            "packages": [{"name": "nginx", "package_name": "nginx-full", "version": "1.24.0"}],
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert result.valid
         assert len(result.errors) == 0
 
@@ -60,14 +54,12 @@ class TestSaidataLoader03:
         data = {
             "version": "0.3",
             "metadata": {"name": "nginx"},
-            "packages": [
-                {"name": "nginx"}  # Missing package_name
-            ]
+            "packages": [{"name": "nginx"}],  # Missing package_name
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert not result.valid
         assert len(result.errors) > 0
         assert any("package_name" in error.lower() for error in result.errors)
@@ -81,14 +73,14 @@ class TestSaidataLoader03:
                 {
                     "name": "main",
                     "url": "https://nginx.org/download/nginx-1.24.0.tar.gz",
-                    "build_system": "autotools"
+                    "build_system": "autotools",
                 }
-            ]
+            ],
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert result.valid
         assert len(result.errors) == 0
 
@@ -97,17 +89,12 @@ class TestSaidataLoader03:
         data = {
             "version": "0.3",
             "metadata": {"name": "app"},
-            "binaries": [
-                {
-                    "name": "main",
-                    "url": "https://example.com/app-linux-amd64.tar.gz"
-                }
-            ]
+            "binaries": [{"name": "main", "url": "https://example.com/app-linux-amd64.tar.gz"}],
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert result.valid
         assert len(result.errors) == 0
 
@@ -116,17 +103,12 @@ class TestSaidataLoader03:
         data = {
             "version": "0.3",
             "metadata": {"name": "app"},
-            "scripts": [
-                {
-                    "name": "official",
-                    "url": "https://get.example.com/install.sh"
-                }
-            ]
+            "scripts": [{"name": "official", "url": "https://get.example.com/install.sh"}],
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert result.valid
         assert len(result.errors) == 0
 
@@ -140,12 +122,12 @@ class TestSaidataLoader03:
                     "name": "main"
                     # Missing required url and build_system
                 }
-            ]
+            ],
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert not result.valid
         assert len(result.errors) > 0
 
@@ -153,34 +135,32 @@ class TestSaidataLoader03:
         """Test loading schema 0.3 saidata from file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            
+
             test_data = {
                 "version": "0.3",
                 "metadata": {"name": "nginx", "description": "Web server"},
-                "packages": [
-                    {"name": "nginx", "package_name": "nginx-full", "version": "1.24.0"}
-                ],
+                "packages": [{"name": "nginx", "package_name": "nginx-full", "version": "1.24.0"}],
                 "sources": [
                     {
                         "name": "main",
                         "url": "https://nginx.org/download/nginx-1.24.0.tar.gz",
-                        "build_system": "autotools"
+                        "build_system": "autotools",
                     }
-                ]
+                ],
             }
-            
+
             # Create hierarchical structure
             nginx_dir = temp_path / "software" / "ng" / "nginx"
             nginx_dir.mkdir(parents=True)
             saidata_file = nginx_dir / "default.yaml"
             with open(saidata_file, "w") as f:
                 yaml.dump(test_data, f)
-            
+
             config = SaiConfig(saidata_paths=[str(temp_path)])
             loader = SaidataLoader(config)
-            
+
             saidata = loader.load_saidata("nginx")
-            
+
             assert isinstance(saidata, SaiData)
             assert saidata.version == "0.3"
             assert saidata.metadata.name == "nginx"
@@ -193,40 +173,36 @@ class TestSaidataLoader03:
         """Test loading schema 0.3 with provider-specific overrides."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            
+
             test_data = {
                 "version": "0.3",
                 "metadata": {"name": "nginx"},
-                "packages": [
-                    {"name": "nginx", "package_name": "nginx"}
-                ],
+                "packages": [{"name": "nginx", "package_name": "nginx"}],
                 "providers": {
                     "apt": {
-                        "packages": [
-                            {"name": "nginx", "package_name": "nginx-full"}
-                        ],
+                        "packages": [{"name": "nginx", "package_name": "nginx-full"}],
                         "sources": [
                             {
                                 "name": "main",
                                 "url": "https://nginx.org/download/nginx.tar.gz",
-                                "build_system": "autotools"
+                                "build_system": "autotools",
                             }
-                        ]
+                        ],
                     }
-                }
+                },
             }
-            
+
             nginx_dir = temp_path / "software" / "ng" / "nginx"
             nginx_dir.mkdir(parents=True)
             saidata_file = nginx_dir / "default.yaml"
             with open(saidata_file, "w") as f:
                 yaml.dump(test_data, f)
-            
+
             config = SaiConfig(saidata_paths=[str(temp_path)])
             loader = SaidataLoader(config)
-            
+
             saidata = loader.load_saidata("nginx")
-            
+
             assert saidata.providers["apt"].packages[0].package_name == "nginx-full"
             assert len(saidata.providers["apt"].sources) == 1
 
@@ -235,14 +211,12 @@ class TestSaidataLoader03:
         data = {
             "version": "0.3",
             "metadata": {"name": "nginx"},
-            "packages": [
-                {"name": "nginx"}  # Missing package_name
-            ]
+            "packages": [{"name": "nginx"}],  # Missing package_name
         }
-        
+
         loader = SaidataLoader()
         result = loader.validate_saidata(data)
-        
+
         assert not result.valid
         # Error message should mention package_name requirement
         error_text = " ".join(result.errors).lower()
@@ -257,10 +231,10 @@ class TestSaidataLoader03Fixtures:
         fixture_path = Path("tests/fixtures/test-source-build.yaml")
         if not fixture_path.exists():
             pytest.skip("Fixture file not found")
-        
+
         loader = SaidataLoader()
         data = loader._load_hierarchical_saidata_file(fixture_path)
-        
+
         assert data["version"] == "0.3"
         assert "sources" in data
         assert len(data["sources"]) > 0
@@ -271,10 +245,10 @@ class TestSaidataLoader03Fixtures:
         fixture_path = Path("tests/fixtures/test-binary-download.yaml")
         if not fixture_path.exists():
             pytest.skip("Fixture file not found")
-        
+
         loader = SaidataLoader()
         data = loader._load_hierarchical_saidata_file(fixture_path)
-        
+
         assert data["version"] == "0.3"
         assert "binaries" in data
         assert len(data["binaries"]) > 0
@@ -284,10 +258,10 @@ class TestSaidataLoader03Fixtures:
         fixture_path = Path("tests/fixtures/test-script-install.yaml")
         if not fixture_path.exists():
             pytest.skip("Fixture file not found")
-        
+
         loader = SaidataLoader()
         data = loader._load_hierarchical_saidata_file(fixture_path)
-        
+
         assert data["version"] == "0.3"
         assert "scripts" in data
         assert len(data["scripts"]) > 0

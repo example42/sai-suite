@@ -79,8 +79,8 @@ async def rebuild(
                             repo_packages = await cache.get_packages_by_repository(repo_name)
                             all_packages.extend(repo_packages)
                             console.print(
-                                f"[blue]Loaded {
-                                    len(repo_packages)} packages from {repo_name}[/blue]")
+                                f"[blue]Loaded {len(repo_packages)} packages from {repo_name}[/blue]"
+                            )
                     else:
                         # Index all cached repositories
                         all_packages = await cache.get_all_packages(include_expired=False)
@@ -137,8 +137,9 @@ async def rebuild(
 
                         if success:
                             progress.update(
-                                saidata_task, description=f"Successfully indexed {
-                                    len(saidata_files)} saidata files", )
+                                saidata_task,
+                                description=f"Successfully indexed {len(saidata_files)} saidata files",
+                            )
                             console.print(
                                 f"[green]Indexed {len(saidata_files)} saidata files[/green]"
                             )
@@ -158,13 +159,11 @@ async def rebuild(
         if stats:
             console.print("\n[bold]RAG Index Statistics:[/bold]")
             console.print(
-                f"Package index: {
-                    '✓' if stats['package_index_available'] else '✗'} ({
-                    stats['package_count']} packages)")
+                f"Package index: {('✓' if stats['package_index_available'] else '✗')} ({stats['package_count']} packages)"
+            )
             console.print(
-                f"Saidata index: {
-                    '✓' if stats['saidata_index_available'] else '✗'} ({
-                    stats['saidata_count']} files)")
+                f"Saidata index: {('✓' if stats['saidata_index_available'] else '✗')} ({stats['saidata_count']} files)"
+            )
             console.print(f"Total index size: {stats['index_size_bytes'] / 1024 / 1024:.1f} MB")
             console.print(f"Model: {stats['model_name']}")
 

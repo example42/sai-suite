@@ -74,7 +74,7 @@ class TestSaidataRepositoryManager:
 
         # Mock repository exists and is valid
         manager.repository_path.mkdir(parents=True, exist_ok=True)
-        manager._is_cache_valid = Mock(return_value=True)
+        manager.repository_cache.is_repository_valid = Mock(return_value=True)
 
         result = manager.get_saidata("apache")
 
@@ -242,20 +242,22 @@ class TestSaidataRepositoryManager:
     def test_cleanup_old_repositories(self, manager, temp_dir):
         """Test cleanup of old repository caches."""
         # Create some old repository directories
-        old_repo1 = manager.repository_cache_dir / "old-repo-1"
-        old_repo2 = manager.repository_cache_dir / "old-repo-2"
         current_repo = manager.repository_path
-
-        old_repo1.mkdir(parents=True)
-        old_repo2.mkdir(parents=True)
         current_repo.mkdir(parents=True)
 
-        # Set old modification times
         old_time = datetime.now() - timedelta(days=10)
-        import os
-
-        os.utime(old_repo1, (old_time.timestamp(), old_time.timestamp()))
-        os.utime(old_repo2, (old_time.timestamp(), old_time.timestamp()))
+        with patch("sai.core.repository_cache.time.time", return_value=old_time.timestamp()):
+            manager.repository_cache.mark_repository_updated(
+                "https://github.com/example/old-repo-1"
+            )
+            manager.repository_cache.mark_repository_updated(
+                "https://github.com/example/old-repo-2"
+            )
+        old_repo1, old_repo2 = [
+            status.local_path for status in manager.repository_cache.get_all_repositories()
+        ]
+        old_repo1.mkdir(parents=True)
+        old_repo2.mkdir(parents=True)
 
         cleanup_count = manager.cleanup_old_repositories(keep_days=7)
 
@@ -299,7 +301,7 @@ class TestSaidataRepositoryManager:
         """Test should update with recent check."""
         manager.repository_path.mkdir(parents=True, exist_ok=True)
         manager._last_update_check = datetime.now() - timedelta(seconds=30)
-        manager._is_cache_valid = Mock(return_value=True)
+        manager.repository_cache.is_repository_valid = Mock(return_value=True)
 
         result = manager._should_update_repository()
 
@@ -314,7 +316,7 @@ class TestSaidataRepositoryManager:
     def test_is_cache_valid_recent_update(self, manager):
         """Test cache validity with recent update."""
         manager.repository_path.mkdir(parents=True, exist_ok=True)
-        manager._get_last_update_time = Mock(return_value=datetime.now() - timedelta(seconds=30))
+        manager.repository_cache.is_repository_valid = Mock(return_value=True)
 
         result = manager._is_cache_valid()
 

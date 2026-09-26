@@ -397,10 +397,12 @@ providers:
   apt:
     packages:
       - name: nginx
+        package_name: nginx
         version: "1.22.0"
   brew:
     packages:
       - name: nginx
+        package_name: nginx
         version: "1.22.0"
 ports:
   - port: 80

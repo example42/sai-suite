@@ -182,7 +182,7 @@ class TestRAGIndexer:
         # Mock the model and index
         with patch.object(indexer, "_get_model") as mock_get_model, patch.object(
             indexer, "_load_package_index"
-        ) as mock_load_index:
+        ):
             mock_model = Mock()
             mock_model.encode.return_value = [[0.1, 0.2, 0.3]]
             mock_get_model.return_value = mock_model

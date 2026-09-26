@@ -405,8 +405,8 @@ class URLValidationFilter:
                         and url not in valid_urls
                     ):
                         logger.debug(
-                            f"Filtering out invalid download_url from package {
-                                package['name']}: {url}")
+                            f"Filtering out invalid download_url from package {package['name']}: {url}"
+                        )
                         package["download_url"] = None
 
         # Filter sources

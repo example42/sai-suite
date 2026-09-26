@@ -1,9 +1,85 @@
 """Pydantic models for SaiData structure."""
 
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class EvidenceEntry(BaseModel):
+    kind: Literal["capture", "primary_source", "scenario_step"]
+    source: str
+    version: str
+    date: str
+    span: Optional[str] = None
+    step: Optional[str] = None
+    runner: Optional[str] = None
+    image_digest: Optional[str] = None
+    architecture: Optional[str] = None
+
+
+class EvidenceNode(BaseModel):
+    evidence: Optional[List[EvidenceEntry]] = None
+
+
+class LicenseEntry(EvidenceNode):
+    spdx_id: Optional[str] = None
+    name: Optional[str] = None
+    as_of_version: str
+    before_version: Optional[str] = None
+
+
+class Identifiers(EvidenceNode):
+    purl: Optional[str] = None
+    cpe: Optional[str] = None
+    repology: Optional[str] = None
+
+
+class SettingDefault(EvidenceNode):
+    value: Optional[Union[str, int, float, bool]]
+    as_of_version: str
+    before_version: Optional[str] = None
+
+
+class Setting(EvidenceNode):
+    key: str
+    type: Literal["string", "integer", "number", "boolean", "enum"]
+    scope: Literal["file", "runtime_command", "environment", "flag"]
+    file: Optional[str] = None
+    change_effect: Optional[Literal["immediate", "reload", "restart"]] = None
+    defaults: Optional[List[SettingDefault]] = None
+
+
+class CommandFlag(EvidenceNode):
+    name: str
+    aliases: Optional[List[str]] = None
+    value_type: Optional[Literal["string", "integer", "number", "boolean", "enum"]] = None
+    description: Optional[str] = None
+
+
+class CommandPositional(EvidenceNode):
+    name: str
+    value_type: Optional[Literal["string", "integer", "number", "boolean", "enum"]] = None
+    required: Optional[bool] = None
+    description: Optional[str] = None
+
+
+class CommandNode(EvidenceNode):
+    name: str
+    description: Optional[str] = None
+    subcommands: Optional[List["CommandNode"]] = None
+    flags: Optional[List[CommandFlag]] = None
+    positionals: Optional[List[CommandPositional]] = None
+
+
+class KubernetesArtifact(EvidenceNode):
+    name: str
+    publisher: str
+    version: str
+    source: str
+    digest: str
+    repository: Optional[str] = None
+    chart: Optional[str] = None
 
 
 class ServiceType(str, Enum):
@@ -68,7 +144,7 @@ class ArchiveFormat(str, Enum):
     NONE = "none"
 
 
-class Urls(BaseModel):
+class Urls(EvidenceNode):
     """URL metadata."""
 
     website: Optional[str] = None
@@ -83,7 +159,7 @@ class Urls(BaseModel):
     icon: Optional[str] = None
 
 
-class SecurityMetadata(BaseModel):
+class SecurityMetadata(EvidenceNode):
     """Security-related metadata."""
 
     cve_exceptions: Optional[List[str]] = None
@@ -93,7 +169,7 @@ class SecurityMetadata(BaseModel):
     signing_key: Optional[str] = None
 
 
-class Metadata(BaseModel):
+class Metadata(EvidenceNode):
     """Software metadata."""
 
     name: str
@@ -104,13 +180,15 @@ class Metadata(BaseModel):
     subcategory: Optional[str] = None
     tags: Optional[List[str]] = None
     license: Optional[str] = None
+    licenses: Optional[List[LicenseEntry]] = None
+    identifiers: Optional[Identifiers] = None
     language: Optional[str] = None
     maintainer: Optional[str] = None
     urls: Optional[Urls] = None
     security: Optional[SecurityMetadata] = None
 
 
-class Package(BaseModel):
+class Package(EvidenceNode):
     """Package definition."""
 
     name: str
@@ -124,7 +202,7 @@ class Package(BaseModel):
     download_url: Optional[str] = None
 
 
-class Service(BaseModel):
+class Service(EvidenceNode):
     """Service definition."""
 
     name: str
@@ -136,7 +214,7 @@ class Service(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class File(BaseModel):
+class File(EvidenceNode):
     """File definition."""
 
     name: str
@@ -150,7 +228,7 @@ class File(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class Directory(BaseModel):
+class Directory(EvidenceNode):
     """Directory definition."""
 
     name: str
@@ -161,7 +239,7 @@ class Directory(BaseModel):
     recursive: Optional[bool] = None
 
 
-class Command(BaseModel):
+class Command(EvidenceNode):
     """Command definition."""
 
     name: str
@@ -170,9 +248,12 @@ class Command(BaseModel):
     aliases: Optional[List[str]] = None
     shell_completion: Optional[bool] = None
     man_page: Optional[str] = None
+    subcommands: Optional[List[CommandNode]] = None
+    flags: Optional[List[CommandFlag]] = None
+    positionals: Optional[List[CommandPositional]] = None
 
 
-class Port(BaseModel):
+class Port(EvidenceNode):
     """Port definition."""
 
     port: int
@@ -183,7 +264,7 @@ class Port(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class Container(BaseModel):
+class Container(EvidenceNode):
     """Container definition."""
 
     name: str
@@ -198,7 +279,7 @@ class Container(BaseModel):
     labels: Optional[Dict[str, str]] = None
 
 
-class CustomCommands(BaseModel):
+class CustomCommands(EvidenceNode):
     """Custom commands that override default behavior."""
 
     download: Optional[str] = None
@@ -211,7 +292,7 @@ class CustomCommands(BaseModel):
     version: Optional[str] = None
 
 
-class ArchiveConfig(BaseModel):
+class ArchiveConfig(EvidenceNode):
     """Archive extraction configuration for binary downloads."""
 
     format: Optional[ArchiveFormat] = None
@@ -221,7 +302,7 @@ class ArchiveConfig(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class Source(BaseModel):
+class Source(EvidenceNode):
     """Source build configuration for compiling software from source code."""
 
     name: str
@@ -242,7 +323,7 @@ class Source(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class Binary(BaseModel):
+class Binary(EvidenceNode):
     """Binary download configuration for installing pre-compiled executables."""
 
     name: str
@@ -258,7 +339,7 @@ class Binary(BaseModel):
     custom_commands: Optional[CustomCommands] = None
 
 
-class Script(BaseModel):
+class Script(EvidenceNode):
     """Script installation configuration for executing installation scripts with security measures."""
 
     name: str
@@ -273,7 +354,7 @@ class Script(BaseModel):
     custom_commands: Optional[CustomCommands] = None
 
 
-class PackageSource(BaseModel):
+class PackageSource(EvidenceNode):
     """Package source definition."""
 
     name: str
@@ -284,7 +365,7 @@ class PackageSource(BaseModel):
     notes: Optional[str] = None
 
 
-class Repository(BaseModel):
+class Repository(EvidenceNode):
     """Repository definition."""
 
     name: str
@@ -310,7 +391,7 @@ class Repository(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class ProviderConfig(BaseModel):
+class ProviderConfig(EvidenceNode):
     """Provider-specific configuration."""
 
     prerequisites: Optional[List[str]] = None
@@ -322,6 +403,10 @@ class ProviderConfig(BaseModel):
     files: Optional[List[File]] = None
     directories: Optional[List[Directory]] = None
     commands: Optional[List[Command]] = None
+    settings: Optional[List[Setting]] = None
+    charts: Optional[List[KubernetesArtifact]] = None
+    operators: Optional[List[KubernetesArtifact]] = None
+    manifests: Optional[List[KubernetesArtifact]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
     sources: Optional[List[Source]] = None
@@ -329,7 +414,7 @@ class ProviderConfig(BaseModel):
     scripts: Optional[List[Script]] = None
 
 
-class CompatibilityEntry(BaseModel):
+class CompatibilityEntry(EvidenceNode):
     """Compatibility matrix entry."""
 
     provider: str
@@ -342,7 +427,7 @@ class CompatibilityEntry(BaseModel):
     recommended: Optional[bool] = None
 
 
-class VersionCompatibility(BaseModel):
+class VersionCompatibility(EvidenceNode):
     """Version compatibility information."""
 
     latest: Optional[str] = None
@@ -351,14 +436,14 @@ class VersionCompatibility(BaseModel):
     latest_minimum: Optional[str] = None
 
 
-class Compatibility(BaseModel):
+class Compatibility(EvidenceNode):
     """Compatibility information."""
 
     matrix: Optional[List[CompatibilityEntry]] = None
     versions: Optional[VersionCompatibility] = None
 
 
-class SaiData(BaseModel):
+class SaiData(EvidenceNode):
     """Complete SaiData structure."""
 
     version: str = Field(default="0.3", pattern=r"^\d+\.\d+(\.\d+)?$")
@@ -368,6 +453,7 @@ class SaiData(BaseModel):
     files: Optional[List[File]] = None
     directories: Optional[List[Directory]] = None
     commands: Optional[List[Command]] = None
+    settings: Optional[List[Setting]] = None
     ports: Optional[List[Port]] = None
     containers: Optional[List[Container]] = None
     sources: Optional[List[Source]] = None

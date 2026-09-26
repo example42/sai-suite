@@ -20,7 +20,9 @@ def load_saidata_schema() -> str:
     try:
         # Try to find the 0.3 schema file relative to this module
         current_dir = Path(__file__).parent
-        schema_path = current_dir.parent.parent / "schemas" / "saidata-0.3-schema.json"
+        schema_path = current_dir.parent / "schemas" / "saidata-0.3-schema.json"
+        if not schema_path.exists():
+            schema_path = current_dir.parent.parent / "schemas" / "saidata-0.3-schema.json"
 
         if schema_path.exists():
             with open(schema_path, "r", encoding="utf-8") as f:
@@ -212,8 +214,7 @@ class PromptTemplate:
 
         total_packages = len(packages)
         if total_shown < total_packages:
-            result += f"\n... and {total_packages -
-                                   total_shown} more packages across {len(repo_groups)} repositories"
+            result += f"\n... and {total_packages - total_shown} more packages across {len(repo_groups)} repositories"
 
         return result
 
@@ -335,9 +336,10 @@ class PromptTemplate:
             examples.append("\n".join(example_parts))
 
         return (
-            "Reference saidata samples showing proper structure:\n\n" +
-            "\n\n".join(examples) +
-            "\n\nNOTE: These samples demonstrate the correct pattern - top-level sections define defaults, provider sections contain overrides.")
+            "Reference saidata samples showing proper structure:\n\n"
+            + "\n\n".join(examples)
+            + "\n\nNOTE: These samples demonstrate the correct pattern - top-level sections define defaults, provider sections contain overrides."
+        )
 
     def _format_user_hints(self, user_hints: Optional[Dict[str, Any]]) -> str:
         """Format user hints for prompt inclusion.

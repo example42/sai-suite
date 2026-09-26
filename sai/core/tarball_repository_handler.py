@@ -17,9 +17,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from ..models.config import RepositoryAuthType
 from ..utils.credentials import CredentialManager
-from ..utils.errors import (
-    SecurityError,
-)
+from ..utils.errors import SecurityError
 from ..utils.security import (
     ChecksumValidator,
     PathTraversalProtector,
@@ -232,9 +230,8 @@ class TarballRepositoryHandler:
 
             logger.info(f"Found latest release: {release_info.tag_name} ({release_info.name})")
             logger.debug(
-                f"Release details: download_url={
-                    release_info.download_url}, size={
-                    release_info.size}")
+                f"Release details: download_url={release_info.download_url}, size={release_info.size}"
+            )
 
             return TarballOperationResult(
                 success=True,

@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-
 from sai.models.provider_data import Action, Provider, ProviderData, ProviderType
 from sai.providers.base import BaseProvider, ProviderFactory
 from sai.utils.system import (

@@ -251,8 +251,7 @@ async def _refresh_versions(
                     result.unchanged_packages += 1
             else:
                 result.warnings.append(
-                    f"Could not find version for {pkg_info['package_name']} "
-                    f"in {pkg_info['provider']} repository"
+                    f"Could not find version for {pkg_info['package_name']} in {pkg_info['provider']} repository"
                 )
                 result.unchanged_packages += 1
 
@@ -331,10 +330,10 @@ def _collect_packages_from_saidata(
                                         "provider": provider_name,
                                         "package_name": pkg.package_name,
                                         "current_version": pkg.version,
-                                        "location": f"providers.{provider_name}.package_sources.{
-                                            pkg_source.name}",
+                                        "location": f"providers.{provider_name}.package_sources.{pkg_source.name}",
                                         "object": pkg,
-                                    })
+                                    }
+                                )
 
             # Check repositories
             if provider_config.repositories:
@@ -347,10 +346,10 @@ def _collect_packages_from_saidata(
                                         "provider": provider_name,
                                         "package_name": pkg.package_name,
                                         "current_version": pkg.version,
-                                        "location": f"providers.{provider_name}.repositories.{
-                                            repo.name}",
+                                        "location": f"providers.{provider_name}.repositories.{repo.name}",
                                         "object": pkg,
-                                    })
+                                    }
+                                )
 
             # Check binaries
             if provider_config.binaries:
@@ -489,8 +488,7 @@ def _display_results(
         click.echo(f"\n{'Available' if check_only else 'Applied'} Updates:")
         for update in result.updates:
             click.echo(
-                f"  • {update['provider']}/{update['package']}: "
-                f"{update['old_version']} → {update['new_version']}"
+                f"  • {update['provider']}/{update['package']}: {update['old_version']} → {update['new_version']}"
             )
             if verbose:
                 click.echo(f"    Location: {update['location']}")

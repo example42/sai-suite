@@ -78,9 +78,11 @@ class TestCompleteWorkflows:
 
         # Add provider-specific data
         saidata["providers"] = {
-            "apt": {"packages": [{"name": f"{name}-apt"}]},
-            "brew": {"packages": [{"name": f"{name}-brew"}]},
-            "test-apt": {"packages": [{"name": f"{name}-test-apt"}]},
+            "apt": {"packages": [{"name": f"{name}-apt", "package_name": f"{name}-apt"}]},
+            "brew": {"packages": [{"name": f"{name}-brew", "package_name": f"{name}-brew"}]},
+            "test-apt": {
+                "packages": [{"name": f"{name}-test-apt", "package_name": f"{name}-test-apt"}]
+            },
         }
 
         # Create hierarchical structure: software/{prefix}/{name}/default.yaml
@@ -101,6 +103,7 @@ class TestCompleteWorkflows:
             saidata_paths=[str(self.saidata_dir)],
             provider_paths=[str(self.provider_dir)],
             cache_directory=self.cache_dir,
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -120,7 +123,7 @@ class TestCompleteWorkflows:
             },
             "actions": {
                 "install": {
-                    "template": "apt-get install -y {{sai_package(saidata, 'test-apt')}}",
+                    "template": "apt-get install -y {{sai_package(saidata, 0, 'package_name', 'test-apt')}}",
                     "requires_root": True,
                     "timeout": 300,
                 }
@@ -133,7 +136,9 @@ class TestCompleteWorkflows:
 
         # Create test saidata
         self.create_test_saidata(
-            "nginx", packages=[{"name": "nginx"}], services=[{"name": "nginx", "type": "systemd"}]
+            "nginx",
+            packages=[{"name": "nginx", "package_name": "nginx"}],
+            services=[{"name": "nginx", "package_name": "nginx", "type": "systemd"}],
         )
 
         # Mock provider loading to only return our test provider
@@ -187,6 +192,7 @@ class TestCompleteWorkflows:
             saidata_paths=[str(self.saidata_dir)],
             provider_paths=[str(self.provider_dir)],
             cache_directory=self.cache_dir,
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -195,7 +201,7 @@ class TestCompleteWorkflows:
             "apt",
             {
                 "install": {
-                    "template": "apt-get install -y {{sai_package(saidata, 'apt')}}",
+                    "template": "apt-get install -y {{sai_package(saidata, 0, 'package_name', 'apt')}}",
                     "requires_sudo": True,
                 }
             },
@@ -206,7 +212,7 @@ class TestCompleteWorkflows:
             "brew",
             {
                 "install": {
-                    "template": "brew install {{sai_package(saidata, 'brew')}}",
+                    "template": "brew install {{sai_package(saidata, 0, 'package_name', 'brew')}}",
                     "requires_sudo": False,
                 }
             },
@@ -246,7 +252,9 @@ class TestCompleteWorkflows:
         """Test dry run workflow."""
         # Setup config
         config = SaiConfig(
-            saidata_paths=[str(self.saidata_dir)], provider_paths=[str(self.provider_dir)]
+            saidata_paths=[str(self.saidata_dir)],
+            provider_paths=[str(self.provider_dir)],
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -255,7 +263,7 @@ class TestCompleteWorkflows:
             "apt",
             {
                 "install": {
-                    "template": "apt-get install -y {{sai_package(saidata, 'apt')}}",
+                    "template": "apt-get install -y {{sai_package(saidata, 0, 'package_name', 'apt')}}",
                     "requires_sudo": True,
                 }
             },
@@ -290,7 +298,9 @@ class TestCompleteWorkflows:
         """Test workflow with JSON output format."""
         # Setup config
         config = SaiConfig(
-            saidata_paths=[str(self.saidata_dir)], provider_paths=[str(self.provider_dir)]
+            saidata_paths=[str(self.saidata_dir)],
+            provider_paths=[str(self.provider_dir)],
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -364,7 +374,9 @@ class TestCompleteWorkflows:
         """Test error handling in complete workflow."""
         # Setup config
         config = SaiConfig(
-            saidata_paths=[str(self.saidata_dir)], provider_paths=[str(self.provider_dir)]
+            saidata_paths=[str(self.saidata_dir)],
+            provider_paths=[str(self.provider_dir)],
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -373,7 +385,7 @@ class TestCompleteWorkflows:
             "apt",
             {
                 "install": {
-                    "template": "apt-get install -y {{sai_package(saidata, 'apt')}}",
+                    "template": "apt-get install -y {{sai_package(saidata, 0, 'package_name', 'apt')}}",
                     "requires_sudo": True,
                 }
             },
@@ -402,7 +414,9 @@ class TestCompleteWorkflows:
         """Test workflow when no saidata is found."""
         # Setup config
         config = SaiConfig(
-            saidata_paths=[str(self.saidata_dir)], provider_paths=[str(self.provider_dir)]
+            saidata_paths=[str(self.saidata_dir)],
+            provider_paths=[str(self.provider_dir)],
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -448,7 +462,9 @@ class TestCompleteWorkflows:
         """Test workflow with specific provider selection."""
         # Setup config
         config = SaiConfig(
-            saidata_paths=[str(self.saidata_dir)], provider_paths=[str(self.provider_dir)]
+            saidata_paths=[str(self.saidata_dir)],
+            provider_paths=[str(self.provider_dir)],
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -467,7 +483,7 @@ class TestCompleteWorkflows:
             },
             "actions": {
                 "install": {
-                    "template": "apt-get install -y {{sai_package(saidata, 'apt')}}",
+                    "template": "apt-get install -y {{sai_package(saidata, 0, 'package_name', 'apt')}}",
                     "requires_root": True,
                     "timeout": 300,
                 }
@@ -488,7 +504,7 @@ class TestCompleteWorkflows:
             },
             "actions": {
                 "install": {
-                    "template": "snap install {{sai_package(saidata, 'snap')}}",
+                    "template": "snap install {{sai_package(saidata, 0, 'package_name', 'snap')}}",
                     "requires_root": True,
                     "timeout": 300,
                 }
@@ -500,8 +516,10 @@ class TestCompleteWorkflows:
             "version": "0.2",
             "metadata": {"name": "code", "display_name": "Visual Studio Code"},
             "providers": {
-                "apt": {"packages": [{"name": "code"}]},
-                "snap": {"packages": [{"name": "code", "channel": "classic"}]},
+                "apt": {"packages": [{"name": "code", "package_name": "code"}]},
+                "snap": {
+                    "packages": [{"name": "code", "package_name": "code", "channel": "classic"}]
+                },
             },
         }
 
@@ -551,7 +569,9 @@ class TestCompleteWorkflows:
         """Test informational action workflow (runs on all providers)."""
         # Setup config
         config = SaiConfig(
-            saidata_paths=[str(self.saidata_dir)], provider_paths=[str(self.provider_dir)]
+            saidata_paths=[str(self.saidata_dir)],
+            provider_paths=[str(self.provider_dir)],
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -560,7 +580,7 @@ class TestCompleteWorkflows:
             "apt",
             {
                 "info": {
-                    "template": "apt show {{sai_package(saidata, 'apt')}}",
+                    "template": "apt show {{sai_package(saidata, 0, 'package_name', 'apt')}}",
                     "requires_sudo": False,
                 }
             },
@@ -570,7 +590,7 @@ class TestCompleteWorkflows:
             "dpkg",
             {
                 "info": {
-                    "template": "dpkg -l {{sai_package(saidata, 'dpkg')}}",
+                    "template": "dpkg -l {{sai_package(saidata, 0, 'package_name', 'dpkg')}}",
                     "requires_sudo": False,
                 }
             },
@@ -603,6 +623,7 @@ class TestCompleteWorkflows:
             provider_paths=[str(self.provider_dir)],
             cache_enabled=True,
             cache_directory=self.cache_dir,
+            saidata_auto_update=False,
         )
         mock_get_config.return_value = config
 
@@ -611,7 +632,7 @@ class TestCompleteWorkflows:
             "apt",
             {
                 "install": {
-                    "template": "apt-get install -y {{sai_package(saidata, 'apt')}}",
+                    "template": "apt-get install -y {{sai_package(saidata, 0, 'package_name', 'apt')}}",
                     "requires_sudo": True,
                 }
             },
@@ -726,7 +747,7 @@ class TestWorkflowErrorScenarios:
             },
             "actions": {
                 "install": {  # Only has install action, no restart
-                    "template": "test-cmd install {{sai_package(saidata, 'test-provider')}}",
+                    "template": "test-cmd install {{sai_package(saidata, 0, 'package_name', 'test-provider')}}",
                     "requires_root": False,
                     "timeout": 300,
                 }

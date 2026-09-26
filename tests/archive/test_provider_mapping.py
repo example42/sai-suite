@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Test script to verify provider mapping fixes."""
 
-from saigen.models.saidata import Metadata, SaiData
-from sai.utils.config import get_config
-from sai.providers.loader import ProviderLoader
-from sai.providers.base import BaseProvider
-from sai.core.saidata_loader import SaidataLoader
 import os
 import sys
+
+from sai.core.saidata_loader import SaidataLoader
+from sai.providers.base import BaseProvider
+from sai.providers.loader import ProviderLoader
+from sai.utils.config import get_config
+from saigen.models.saidata import Metadata, SaiData
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
 

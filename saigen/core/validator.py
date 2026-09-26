@@ -78,38 +78,40 @@ class SaidataValidator:
         """Initialize validator with schema.
 
         Args:
-            schema_path: Path to saidata schema JSON file. If None, uses default 0.3 schema.
+            schema_path: Path to saidata schema JSON file. If None, selects by record version.
         """
-        self.schema_path = (
-            schema_path
-            or Path(__file__).parent.parent.parent / "schemas" / "saidata-0.3-schema.json"
-        )
-        self._schema: Optional[Dict[str, Any]] = None
-        self._validator: Optional[Draft7Validator] = None
+        self.schema_path = schema_path
+        self._schemas: Dict[Path, Dict[str, Any]] = {}
+        self._validators: Dict[Path, Draft7Validator] = {}
         self.url_processor = URLTemplateProcessor()
         self.checksum_validator = ChecksumValidator()
 
-    def _load_schema(self) -> Dict[str, Any]:
+    def _load_schema(self, schema_path: Path) -> Dict[str, Any]:
         """Load and cache the JSON schema."""
-        if self._schema is None:
-            if not self.schema_path.exists():
-                raise FileNotFoundError(f"Schema file not found: {self.schema_path}")
+        if schema_path not in self._schemas:
+            if not schema_path.exists():
+                raise FileNotFoundError(f"Schema file not found: {schema_path}")
 
             try:
-                with open(self.schema_path, "r", encoding="utf-8") as f:
-                    self._schema = json.load(f)
+                with open(schema_path, "r", encoding="utf-8") as f:
+                    self._schemas[schema_path] = json.load(f)
             except (json.JSONDecodeError, IOError) as e:
-                raise ValueError(f"Failed to load schema from {self.schema_path}: {e}")
+                raise ValueError(f"Failed to load schema from {schema_path}: {e}")
 
-        return self._schema
+        return self._schemas[schema_path]
 
-    def _get_validator(self) -> Draft7Validator:
+    def _get_validator(self, version: Any) -> Draft7Validator:
         """Get cached JSON schema validator."""
-        if self._validator is None:
-            schema = self._load_schema()
-            self._validator = Draft7Validator(schema)
+        schema_name = f"saidata-{'0.4' if version == '0.4' else '0.3'}-schema.json"
+        schema_path = Path(__file__).parent.parent / "schemas" / schema_name
+        if not schema_path.exists():
+            schema_path = Path(__file__).parent.parent.parent / "schemas" / schema_name
+        schema_path = self.schema_path or schema_path
+        if schema_path not in self._validators:
+            schema = self._load_schema(schema_path)
+            self._validators[schema_path] = Draft7Validator(schema)
 
-        return self._validator
+        return self._validators[schema_path]
 
     def validate_file(self, file_path: Path) -> ValidationResult:
         """Validate a saidata file.
@@ -229,7 +231,7 @@ class SaidataValidator:
     def _validate_json_schema(self, data: Dict[str, Any], source: str) -> List[ValidationError]:
         """Validate against JSON schema."""
         errors = []
-        validator = self._get_validator()
+        validator = self._get_validator(data.get("version"))
 
         for error in validator.iter_errors(data):
             path = ".".join(str(p) for p in error.absolute_path) if error.absolute_path else "root"
@@ -526,7 +528,8 @@ class SaidataValidator:
                         path=f"{source}.metadata",
                         code="name_display_name_mismatch",
                         suggestion="Consider if both names are necessary or if they should be more similar",
-                    ))
+                    )
+                )
 
         # Validate package names in providers
         providers = data.get("providers", {})
@@ -546,7 +549,8 @@ class SaidataValidator:
                                             path=f"{source}.providers.{provider_name}.packages[{i}].name",
                                             code="suspicious_package_name",
                                             suggestion="Verify package name exists in the target repository",
-                                        ))
+                                        )
+                                    )
 
         # Validate port ranges
         self._validate_ports(data, source, warnings)
@@ -595,9 +599,9 @@ class SaidataValidator:
                                             message=f"Package references undefined repository: '{repo_ref}'",
                                             path=f"{source}.providers.{provider_name}.packages[{i}].repository",
                                             code="undefined_repository_reference",
-                                            suggestion=f"Define repository '{repo_ref}' or use an existing one: {
-                                                ', '.join(repository_names) if repository_names else 'none defined'}",
-                                        ))
+                                            suggestion=f"Define repository '{repo_ref}' or use an existing one: {(', '.join(repository_names) if repository_names else 'none defined')}",
+                                        )
+                                    )
 
         return errors, warnings
 
@@ -773,9 +777,9 @@ class SaidataValidator:
                                     message=f"Invalid archive format '{archive_format}' in binaries[{i}]",
                                     path=f"{source}.binaries[{i}].archive.format",
                                     code="invalid_enum_value",
-                                    suggestion=f"Use one of: {
-                                        ', '.join(valid_archive_formats)}",
-                                ))
+                                    suggestion=f"Use one of: {', '.join(valid_archive_formats)}",
+                                )
+                            )
 
         # Check services type
         services = data.get("services", [])
@@ -845,9 +849,9 @@ class SaidataValidator:
                                             message=f"Invalid repository type '{repo_type}' in providers.{provider_name}.repositories[{i}]",
                                             path=f"{source}.providers.{provider_name}.repositories[{i}].type",
                                             code="invalid_enum_value",
-                                            suggestion=f"Use one of: {
-                                                ', '.join(valid_repo_types)}",
-                                        ))
+                                            suggestion=f"Use one of: {', '.join(valid_repo_types)}",
+                                        )
+                                    )
 
     def format_validation_report(self, result: ValidationResult, show_context: bool = False) -> str:
         """Format validation result as a human-readable report.

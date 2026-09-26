@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-
 from sai.utils.output_formatter import OutputFormatter, OutputType, create_output_formatter
 
 

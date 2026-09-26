@@ -75,12 +75,8 @@ class TestReporter:
         lines.append(f"{'=' * 60}")
         lines.append(f"Duration: {suite.duration:.2f}s")
         lines.append(
-            f"Total: {
-                suite.total} | Passed: {
-                suite.passed} | Failed: {
-                suite.failed} | Skipped: {
-                    suite.skipped} | Errors: {
-                        suite.errors}")
+            f"Total: {suite.total} | Passed: {suite.passed} | Failed: {suite.failed} | Skipped: {suite.skipped} | Errors: {suite.errors}"
+        )
         lines.append(f"{'-' * 60}")
 
         for result in suite.results:
@@ -109,9 +105,7 @@ class TestReporter:
         """Format as JUnit XML."""
         lines = ['<?xml version="1.0" encoding="UTF-8"?>']
         lines.append(
-            f'<testsuite name="{suite.name}" tests="{suite.total}" '
-            f'failures="{suite.failed}" errors="{suite.errors}" '
-            f'skipped="{suite.skipped}" time="{suite.duration:.3f}">'
+            f'<testsuite name="{suite.name}" tests="{suite.total}" failures="{suite.failed}" errors="{suite.errors}" skipped="{suite.skipped}" time="{suite.duration:.3f}">'
         )
 
         for result in suite.results:

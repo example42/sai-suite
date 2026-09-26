@@ -225,8 +225,7 @@ def _format_csv_output(quality_report, file_path: Path) -> str:
     # Individual metrics
     for metric, score in quality_report.metric_scores.items():
         lines.append(
-            f"{file_path},{metric.value},{score.score:.3f},{score.max_score:.3f},"
-            f"{len(score.issues)},{len(score.suggestions)}"
+            f"{file_path},{metric.value},{score.score:.3f},{score.max_score:.3f},{len(score.issues)},{len(score.suggestions)}"
         )
 
     return "\n".join(lines)
@@ -253,8 +252,8 @@ def _format_text_output(
         score_emoji = "🟢" if quality_report.overall_score >= threshold else "🔴"
         status = "PASS" if quality_report.overall_score >= threshold else "FAIL"
         lines.append(
-            f"Overall Quality Score: {score_emoji} {
-                quality_report.overall_score:.3f}/1.000 ({status})")
+            f"Overall Quality Score: {score_emoji} {quality_report.overall_score:.3f}/1.000 ({status})"
+        )
         lines.append(f"Threshold: {threshold}")
         lines.append("")
 
@@ -328,11 +327,11 @@ def _format_text_output(
         lines.append("Summary:")
         lines.append("-" * 40)
         lines.append(
-            f"Schema Validation: {
-                '✅ PASSED' if not quality_report.validation_result.has_errors else '❌ FAILED'}")
+            f"Schema Validation: {('✅ PASSED' if not quality_report.validation_result.has_errors else '❌ FAILED')}"
+        )
         lines.append(
-            f"Quality Threshold: {
-                '✅ PASSED' if quality_report.overall_score >= threshold else '❌ FAILED'}")
+            f"Quality Threshold: {('✅ PASSED' if quality_report.overall_score >= threshold else '❌ FAILED')}"
+        )
         lines.append(f"Cross-Reference Issues: {len(quality_report.cross_reference_issues)}")
         lines.append(f"Total Recommendations: {len(quality_report.recommendations)}")
 

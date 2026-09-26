@@ -5,6 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from saigen.cli.commands.batch import batch
+from saigen.models.config import SaigenConfig
 
 
 class TestBatchCLI:
@@ -18,10 +19,15 @@ class TestBatchCLI:
     @pytest.fixture
     def mock_config(self):
         """Create mock configuration."""
-        return {
-            "llm_providers": {"openai": {"api_key": "test-key", "model": "gpt-4o-mini"}},
-            "rag": {"enabled": True},
-        }
+        return SaigenConfig(
+            llm_providers={
+                "openai": {
+                    "provider": "openai",
+                    "api_key": "test-key",
+                    "model": "gpt-4o-mini",
+                }
+            }
+        )
 
     @pytest.fixture
     def sample_software_list(self, tmp_path):
@@ -60,7 +66,7 @@ postgresql
                 },
             )
             assert result.exit_code != 0
-            assert "Must specify either --input-file or --software-list" in result.output
+            assert "Must specify either --input-file (-f) or --software-list (-s)" in result.output
 
     def test_batch_both_inputs_error(self, runner, mock_config, sample_software_list):
         """Test error when both input methods are provided."""

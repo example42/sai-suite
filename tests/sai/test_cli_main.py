@@ -34,6 +34,10 @@ class TestCLIMain:
         assert "install" in result.output
         assert "uninstall" in result.output
 
+    def test_config_commands_are_registered(self):
+        """Configuration commands remain reachable through the active group."""
+        assert {"show", "set", "validate", "reset", "paths"} <= set(cli.commands["config"].commands)
+
     @patch("sai.cli.main.get_config")
     def test_cli_global_options(self, mock_get_config):
         """Test CLI global options are properly stored."""
@@ -88,11 +92,11 @@ class TestCLIMain:
         assert "No providers found" in result.output
 
     @patch("sai.cli.main.ProviderLoader")
-    @patch("sai.cli.main.SaidataLoader")
+    @patch("sai.cli.main.SaidataRepositoryManager")
     @patch("sai.cli.main.ExecutionEngine")
     @patch("sai.cli.main.get_config")
     def test_install_command_success(
-        self, mock_get_config, mock_execution_engine, mock_saidata_loader, mock_provider_loader
+        self, mock_get_config, mock_execution_engine, mock_repository_manager, mock_provider_loader
     ):
         """Test successful install command execution."""
         # Setup mocks
@@ -114,9 +118,7 @@ class TestCLIMain:
 
         # Mock saidata
         mock_saidata = SaiData(version="0.2", metadata=Metadata(name="test-software"))
-        mock_saidata_loader_instance = Mock()
-        mock_saidata_loader_instance.load_saidata.return_value = mock_saidata
-        mock_saidata_loader.return_value = mock_saidata_loader_instance
+        mock_repository_manager.return_value.get_saidata.return_value = mock_saidata
 
         # Mock execution result
         mock_result = ExecutionResult(
@@ -162,7 +164,7 @@ class TestCLIMain:
         mock_provider_loader.return_value = mock_loader
 
         with patch("sai.providers.base.BaseProvider", return_value=mock_provider), patch(
-            "sai.cli.main.SaidataLoader"
+            "sai.cli.main.SaidataRepositoryManager"
         ), patch("sai.cli.main.ExecutionEngine") as mock_engine_class:
             mock_engine = Mock()
             mock_result = ExecutionResult(
@@ -204,7 +206,7 @@ class TestCLIMain:
         mock_provider_loader.return_value = mock_loader
 
         with patch("sai.providers.base.BaseProvider", return_value=mock_provider), patch(
-            "sai.cli.main.SaidataLoader"
+            "sai.cli.main.SaidataRepositoryManager"
         ), patch("sai.cli.main.ExecutionEngine") as mock_engine_class:
             mock_engine = Mock()
             mock_result = ExecutionResult(
@@ -304,7 +306,7 @@ class TestCLIMain:
 
         with patch("sai.providers.base.BaseProvider", side_effect=[mock_provider1, mock_provider2]):
             # Test with --yes flag (should use default/highest priority)
-            with patch("sai.cli.main.SaidataLoader"), patch(
+            with patch("sai.cli.main.SaidataRepositoryManager"), patch(
                 "sai.cli.main.ExecutionEngine"
             ) as mock_engine_class:
                 mock_engine = Mock()

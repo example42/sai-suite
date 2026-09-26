@@ -105,7 +105,8 @@ class RepositorySecurityValidator:
 
         # Basic URL format validation
         try:
-            parsed = urllib.parse.urlparse(url)
+            parseable_url = "ssh://" + url.replace(":", "/", 1) if url.startswith("git@") else url
+            parsed = urllib.parse.urlparse(parseable_url)
             if not parsed.scheme or not parsed.netloc:
                 issues.append("Invalid URL format")
                 return SecurityValidationResult(
@@ -159,8 +160,8 @@ class RepositorySecurityValidator:
                 logger.debug(f"URL not in known safe patterns: {url}")
 
         # Domain validation
-        if parsed.netloc:
-            domain_issues = self._validate_domain(parsed.netloc)
+        if parsed.hostname:
+            domain_issues = self._validate_domain(parsed.hostname)
             if self.security_level == SecurityLevel.STRICT:
                 issues.extend(domain_issues)
             else:
